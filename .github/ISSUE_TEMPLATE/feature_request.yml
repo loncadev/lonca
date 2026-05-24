@@ -1,0 +1,37 @@
+name: ✨ Feature request
+description: Suggest a new feature for an existing Lonca package
+labels: ['enhancement', 'needs-triage']
+body:
+  - type: dropdown
+    id: package
+    attributes:
+      label: Target package
+      options:
+        - '@lonca/core'
+        - '@lonca/trendyol'
+        - '@lonca/hepsiburada'
+        - 'New package (use marketplace request template)'
+        - 'Other'
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does it solve?
+      description: The use case behind the feature. "Right now I can't do X because..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: API shape, behavior, examples.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered

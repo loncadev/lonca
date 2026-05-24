@@ -1,18 +1,18 @@
 # Changesets
 
-Bu monorepo [Changesets](https://github.com/changesets/changesets) ile versiyonlama ve yayınlama yönetir.
+This monorepo uses [Changesets](https://github.com/changesets/changesets) for versioning and publishing.
 
-Yayınlanmaya değer bir değişiklik yaptığında:
+When you make a change worth releasing:
 
 ```bash
 pnpm changeset
 ```
 
-Bu sana değişikliği tarif etmeni soracak. Üretilen changeset dosyası version control'e girer.
+This will prompt you to describe the change. The generated changeset file gets committed to version control.
 
-Release zamanında:
+At release time:
 
 ```bash
-pnpm version-packages   # changeset'lere göre versiyonları bump eder
-pnpm release            # build alıp publish eder
+pnpm version-packages   # bump versions based on changesets
+pnpm release            # build and publish to npm
 ```

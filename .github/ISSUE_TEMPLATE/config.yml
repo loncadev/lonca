@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Questions and general discussion
+    url: https://github.com/loncadev/lonca/discussions
+    about: Use Discussions for questions or to share ideas.
+  - name: 🔒 Report a security vulnerability
+    url: https://github.com/loncadev/lonca/security/advisories/new
+    about: Report vulnerabilities through a PRIVATE security advisory (see SECURITY.md).

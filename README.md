@@ -1,50 +1,88 @@
 # Lonca
 
-OSS Türk pazaryeri entegrasyon ekosistemi.
+[![CI](https://github.com/loncadev/lonca/actions/workflows/ci.yml/badge.svg)](https://github.com/loncadev/lonca/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![pnpm](https://img.shields.io/badge/maintained%20with-pnpm-cc00ff.svg)](https://pnpm.io/)
+[![Node](https://img.shields.io/node/v/@lonca/core.svg)](https://nodejs.org/)
 
-> Türk e-ticaret pazaryerleri için (Trendyol, Hepsiburada, n11, Amazon TR, Pazarama, Çiçeksepeti ve daha fazlası) açık kaynaklı SDK'ler, OpenAPI spec'leri ve entegrasyon araçları.
+Open-source SDKs and tooling for Turkish e-commerce marketplaces.
 
-## Durum
+> Type-safe TypeScript SDKs, curated OpenAPI specs, and integration utilities for Trendyol, Hepsiburada, n11, Amazon TR, Pazarama, Çiçeksepeti, and more.
 
-Erken geliştirme aşaması. İlk SDK'ler (Trendyol, Hepsiburada) üzerinde çalışılıyor.
+> [!WARNING]
+> 🚧 **Alpha** — APIs are not stable. Do not use in production. Minor versions may contain breaking changes until `1.0.0`.
 
-## Vizyon
+## Table of contents
 
-3 aşamalı yol haritası:
+- [Vision](#vision)
+- [Why?](#why)
+- [Packages](#packages)
+- [Development](#development)
+- [Contributing](#contributing)
+- [Security](#security)
+- [License](#license)
 
-1. **SDK + OpenAPI Spec Collection** — Türk pazaryerleri için tip-güvenli TypeScript/Python SDK'leri ve curated OpenAPI spec'leri
-2. **API Drift Detection** — Pazaryeri API'larındaki breaking change'leri proaktif tespit eden monitoring katmanı
-3. **Unified Marketplace API Gateway** — Tüm pazaryerlerini tek API arkasında birleştiren abstraction
+## Vision
 
-## Neden?
+Three-stage roadmap:
 
-Türk e-ticaret pazaryerlerinin API'leri fragmente, dokümantasyonu eksik ve sürekli değişiyor. Her e-ticaret geliştiricisi aynı entegrasyon kodunu sıfırdan yazıyor. Mevcut çözümler ya kapalı kaynak vendor-locked (IdeaSoft, T-Soft) ya da Türk pazaryerlerini desteklemiyor (Zapier, Make, n8n).
+1. **SDK + OpenAPI Spec Collection** — Type-safe TypeScript SDKs and curated OpenAPI specs for Turkish marketplaces (current stage)
+2. **API Drift Detection** — A monitoring layer that proactively detects breaking changes in marketplace APIs
+3. **Unified Marketplace API Gateway** — A Plaid-style abstraction that puts every marketplace behind a single API
 
-Lonca bu boşluğu topluluk tarafından maintain edilen açık standartla doldurmayı hedefliyor.
+## Why?
 
-## Paketler
+Turkish e-commerce marketplace APIs are fragmented, under-documented, and constantly shifting. Every e-commerce developer ends up rewriting the same integration code from scratch. Existing solutions are either closed-source vendor-locked (IdeaSoft, T-Soft) or simply don't support Turkish marketplaces (Zapier, Make, n8n).
 
-| Paket | Açıklama | Versiyon |
+Lonca aims to fill this gap with a community-maintained open standard.
+
+## Packages
+
+| Package | Description | Status |
 |---|---|---|
-| `@lonca/trendyol` | Trendyol Marketplace API SDK | Geliştirme aşamasında |
-| `@lonca/hepsiburada` | Hepsiburada Marketplace API SDK | Planlama aşamasında |
+| `@lonca/core` | Shared types, error hierarchy, retry / logger / rate-limiter | Planned |
+| `@lonca/trendyol` | Trendyol Marketplace API SDK | Planned |
+| `@lonca/hepsiburada` | Hepsiburada Marketplace API SDK | Planned |
 
-## Geliştirme
+Need an SDK for another marketplace? Open a [marketplace request](https://github.com/loncadev/lonca/issues/new?template=marketplace_request.yml).
 
-Gereksinimler:
-- Node.js >= 20
-- pnpm >= 10
+## Development
+
+Requirements:
+- Node.js >= 20 (LTS) — pinned via `.nvmrc`
+- pnpm >= 10 ([Corepack](https://nodejs.org/api/corepack.html) recommended)
 
 ```bash
+git clone https://github.com/loncadev/lonca.git
+cd lonca
 pnpm install
-pnpm build
-pnpm test
 ```
 
-## Katkıda Bulunma
+Common commands:
 
-Şu an çekirdek ekip ilk SDK'leri çıkarmaya odaklanmış. Erken katkı için issue açıp tanışalım.
+```bash
+pnpm typecheck      # TypeScript
+pnpm lint           # ESLint
+pnpm format         # Prettier (write)
+pnpm test           # Vitest
+pnpm build          # Build all packages via Turborepo
+pnpm dev            # Parallel watch (once packages land)
+```
 
-## Lisans
+Work on a single package:
 
-MIT — bkz. [LICENSE](./LICENSE)
+```bash
+pnpm --filter @lonca/trendyol test
+```
+
+## Contributing
+
+Pull requests are welcome. Start with [CONTRIBUTING.md](./CONTRIBUTING.md) and our [Code of Conduct](./CODE_OF_CONDUCT.md). For larger changes, open a [Discussion](https://github.com/loncadev/lonca/discussions) first.
+
+## Security
+
+**Do not file public issues for security vulnerabilities.** Follow the disclosure process in [SECURITY.md](./SECURITY.md).
+
+## License
+
+MIT — see [LICENSE](./LICENSE).

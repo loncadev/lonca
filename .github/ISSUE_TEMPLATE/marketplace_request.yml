@@ -1,0 +1,62 @@
+name: 🏬 New marketplace SDK request
+description: Request or propose an SDK for a new Turkish marketplace
+labels: ['marketplace-request', 'needs-triage']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template to request or propose a brand-new marketplace SDK.
+        For changes to existing SDKs, use the bug or feature templates instead.
+
+  - type: input
+    id: marketplace
+    attributes:
+      label: Marketplace name
+      placeholder: 'n11, Çiçeksepeti, Pazarama, ePttAVM...'
+    validations:
+      required: true
+
+  - type: input
+    id: docs
+    attributes:
+      label: API documentation URL
+      placeholder: 'https://...'
+    validations:
+      required: true
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Priority endpoint coverage
+      multiple: true
+      options:
+        - 'Orders (list orders, update status)'
+        - 'Products (list, create, update)'
+        - 'Inventory / Stock (stock updates)'
+        - 'Pricing'
+        - 'Categories / Brands'
+        - 'Webhooks'
+        - 'Shipments / Cargo'
+        - 'Returns / Claims'
+        - 'Finance / Settlement'
+    validations:
+      required: true
+
+  - type: dropdown
+    id: pain
+    attributes:
+      label: Have you personally integrated with this marketplace?
+      description: Authentic pain validation matters — we want to avoid building on assumption alone.
+      options:
+        - 'Yes, I wrote integration code in the last 12 months'
+        - 'Yes, but a while back (1–3 years ago)'
+        - 'No, but my team / customers have integrated with it'
+        - 'No, this is a speculative request'
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional notes
+      description: Auth model, rate-limit quirks, gotchas, relevant community resources...

@@ -1,0 +1,63 @@
+name: 🐛 Bug report
+description: Report a problem you ran into with a Lonca package
+labels: ['bug', 'needs-triage']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug report! Please fill in the details below as clearly as possible.
+
+  - type: dropdown
+    id: package
+    attributes:
+      label: Affected package
+      options:
+        - '@lonca/core'
+        - '@lonca/trendyol'
+        - '@lonca/hepsiburada'
+        - 'Other / multiple'
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Package version
+      placeholder: '0.1.0'
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Expected vs. observed behavior
+      description: What did you expect to happen, and what actually happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: Minimal code or commands to reproduce the issue.
+      render: typescript
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Node version, OS, pnpm version, etc.
+      value: |
+        - Node:
+        - OS:
+        - Lonca package version:
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs / stack trace (if any)
+      render: shell

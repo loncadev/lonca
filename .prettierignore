@@ -1,0 +1,8 @@
+node_modules
+dist
+.turbo
+coverage
+pnpm-lock.yaml
+.changeset/*.md
+CHANGELOG.md
+**/CHANGELOG.md
