@@ -1,0 +1,4 @@
+packages:
+  - 'sdks/*'
+  - 'packages/*'
+  - 'apps/*'
