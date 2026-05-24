@@ -6,7 +6,7 @@ packages:
 # Shared dependency versions. Packages reference these with `"typescript": "catalog:"`.
 # https://pnpm.io/catalogs
 catalog:
-  typescript: ^5.6.3
+  typescript: ^6.0.3
   "@types/node": ^24.0.0
   vitest: ^4.1.7
   tsup: ^8.3.5

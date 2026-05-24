@@ -10,6 +10,11 @@
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
     "resolveJsonModule": true,
+    "types": ["node"],
+
+    // Suppress TS 6 deprecation warnings emitted by tsup's internal DTS pipeline.
+    // Remove once tsup ships a TS 6-aware release and stops injecting deprecated baseUrl.
+    "ignoreDeprecations": "6.0",
 
     "strict": true,
     "noUncheckedIndexedAccess": true,
