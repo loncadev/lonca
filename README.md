@@ -38,17 +38,18 @@ Lonca aims to fill this gap with a community-maintained open standard.
 
 ## Packages
 
-| Package | Description | Status |
-|---|---|---|
-| `@lonca/core` | Shared types, error hierarchy, retry / logger / rate-limiter | Planned |
-| `@lonca/trendyol` | Trendyol Marketplace API SDK | Planned |
-| `@lonca/hepsiburada` | Hepsiburada Marketplace API SDK | Planned |
+| Package              | Description                                                  | Status  |
+| -------------------- | ------------------------------------------------------------ | ------- |
+| `@lonca/core`        | Shared types, error hierarchy, retry / logger / rate-limiter | Planned |
+| `@lonca/trendyol`    | Trendyol Marketplace API SDK                                 | Planned |
+| `@lonca/hepsiburada` | Hepsiburada Marketplace API SDK                              | Planned |
 
 Need an SDK for another marketplace? Open a [marketplace request](https://github.com/loncadev/lonca/issues/new?template=marketplace_request.yml).
 
 ## Development
 
 Requirements:
+
 - Node.js >= 20 (LTS) — pinned via `.nvmrc`
 - pnpm >= 10 ([Corepack](https://nodejs.org/api/corepack.html) recommended)
 

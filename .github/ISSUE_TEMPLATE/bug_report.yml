@@ -1,6 +1,6 @@
 name: 🐛 Bug report
 description: Report a problem you ran into with a Lonca package
-labels: ['bug', 'needs-triage']
+labels: ["bug", "needs-triage"]
 body:
   - type: markdown
     attributes:
@@ -12,10 +12,10 @@ body:
     attributes:
       label: Affected package
       options:
-        - '@lonca/core'
-        - '@lonca/trendyol'
-        - '@lonca/hepsiburada'
-        - 'Other / multiple'
+        - "@lonca/core"
+        - "@lonca/trendyol"
+        - "@lonca/hepsiburada"
+        - "Other / multiple"
     validations:
       required: true
 
@@ -23,7 +23,7 @@ body:
     id: version
     attributes:
       label: Package version
-      placeholder: '0.1.0'
+      placeholder: "0.1.0"
     validations:
       required: true
 

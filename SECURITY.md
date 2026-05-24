@@ -6,10 +6,10 @@ Lonca SDKs connect to marketplace APIs using credentials (API keys, tokens, secr
 
 Lonca has not reached `1.0.0` yet (alpha). Security fixes are only published for the **latest released minor version**. This policy will tighten once Lonca reaches a stable release.
 
-| Version | Supported |
-|---|---|
-| Latest `0.x` minor | ✅ |
-| Older `0.x` versions | ❌ |
+| Version              | Supported |
+| -------------------- | --------- |
+| Latest `0.x` minor   | ✅        |
+| Older `0.x` versions | ❌        |
 
 ## Reporting a vulnerability
 

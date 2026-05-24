@@ -1,17 +1,17 @@
 name: ✨ Feature request
 description: Suggest a new feature for an existing Lonca package
-labels: ['enhancement', 'needs-triage']
+labels: ["enhancement", "needs-triage"]
 body:
   - type: dropdown
     id: package
     attributes:
       label: Target package
       options:
-        - '@lonca/core'
-        - '@lonca/trendyol'
-        - '@lonca/hepsiburada'
-        - 'New package (use marketplace request template)'
-        - 'Other'
+        - "@lonca/core"
+        - "@lonca/trendyol"
+        - "@lonca/hepsiburada"
+        - "New package (use marketplace request template)"
+        - "Other"
     validations:
       required: true
 

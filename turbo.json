@@ -11,16 +11,23 @@
     },
     "test": {
       "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "vitest.config.*"]
+    },
+    "test:coverage": {
+      "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", "vitest.config.*"],
       "outputs": ["coverage/**"]
     },
     "lint": {
-      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/eslint.config.mjs", "$TURBO_ROOT$/.prettierrc.json"]
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/eslint.config.mjs",
+        "$TURBO_ROOT$/.prettierrc.json"
+      ]
     },
     "typecheck": {
       "dependsOn": ["^build"],
-      "inputs": ["$TURBO_DEFAULT$", "tsconfig*.json"],
-      "outputs": ["**/*.tsbuildinfo"]
+      "inputs": ["$TURBO_DEFAULT$", "tsconfig*.json"]
     },
     "dev": {
       "cache": false,
