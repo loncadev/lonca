@@ -437,6 +437,29 @@ if (firstApprovedBarcode) {
   }
 }
 
+// ── 6.86 claims smoke (Phase 4b) ───────────────────────────────────────
+console.log('\n── 6.86 claims.list({ limit: 2 }) ────────────────────────');
+try {
+  const page = await client.claims.list({ limit: 2 });
+  console.log(`✓ Got ${page.items.length} claim(s)${page.nextCursor ? ` (more)` : ' (no more)'}`);
+  for (const c of page.items.slice(0, 2)) {
+    console.log(`    claim ${c.id}  order ${c.orderNumber}  claimDate=${c.claimDate ?? '-'}`);
+  }
+} catch (err) {
+  console.log(`ℹ claims.list: ${formatError(err).slice(0, 100)}`);
+}
+
+console.log('\n── 6.87 claims.getIssueReasons() ─────────────────────────');
+try {
+  const reasons = await client.claims.getIssueReasons();
+  console.log(`✓ Got ${reasons.length} reason(s). First 5:`);
+  for (const r of reasons.slice(0, 5)) {
+    console.log(`    ${String(r.id).padStart(6)}  ${r.name}`);
+  }
+} catch (err) {
+  console.log(`ℹ getIssueReasons: ${formatError(err).slice(0, 100)}`);
+}
+
 // ── 6.85 orders.getCompensationTickets (Phase 4a — TR Express claims) ──
 console.log('\n── 6.85 orders.getCompensationTickets({ limit: 2 }) ──────');
 try {
