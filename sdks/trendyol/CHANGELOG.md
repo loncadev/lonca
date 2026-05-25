@@ -1,5 +1,196 @@
 # @lonca/trendyol
 
+## 0.3.0
+
+### Minor Changes
+
+- [#13](https://github.com/loncadev/lonca/pull/13) [`d04de5a`](https://github.com/loncadev/lonca/commit/d04de5a2043361f2f6896a380403a0456dfa076e) Thanks [@keparlak](https://github.com/keparlak)! - Add `categories.getAttributeValues` — V2 endpoint for fetching the value catalog of a single category attribute.
+  - `client.categories.getAttributeValues(categoryId, attributeId, { cursor?, limit? })` → `CursorPage<CategoryAttributeValue>`
+    - GETs `/integration/product/categories/{categoryId}/attributes/{attributeId}/values`
+    - Page-based pagination internally (max page size 1000); SDK exposes the cursor convention from `@lonca/core` so callers can iterate with `paginate()`
+    - Rate limit: 50 req/min (shared with `categories.list` / `getAttributes`)
+
+  **Why this exists:** `categories.getAttributes` returns attribute metadata + flags but typically **omits** the `attributeValues` field on live responses. When `allowCustom` is `false`, you previously had no way to discover the accepted values from the SDK — this fills the gap so you can build valid `createProducts` payloads.
+
+  **Discovery-first wire fix:** The official OpenAPI spec advertises `{ attributeValueId, attributeValueName }` as the response item shape, but live STAGE responses (verified 2026-05-25 on cat 67302 / attr 42737, 4 populated values) return `{ attributeValueId, attributeValue }` — without the `Name` suffix. The SDK normalizes both spellings into `{ id, name }`. Mock test pins the live wire shape so a regression on Trendyol's side surfaces immediately.
+
+  New exports:
+  - `ListCategoryAttributeValuesParams`
+
+  Existing `CategoryAttribute.values` JSDoc updated to point at this new method.
+
+  This unblocks the upcoming `products.create` (V2) implementation — the upstream prerequisite chain for product creation is now complete.
+
+- [#17](https://github.com/loncadev/lonca/pull/17) [`b404f79`](https://github.com/loncadev/lonca/commit/b404f795f843cd81a94c8bef628c7375d96c4ebd) Thanks [@keparlak](https://github.com/keparlak)! - Add **Group 5 — product helpers**: `brands.search` and `categories.getByBarcodes`. This is the final group of the products Phase 2 plan — the Trendyol products surface is now feature-complete.
+
+  ### New methods
+  - **`client.brands.search(name)` → `Brand[]`**
+    - `GET /integration/product/brands/by-name?name=...`
+    - Returns matching brands directly without paging the 1000-per-page `list()`.
+    - **Discovery-first wire fact**: Trendyol's docs claim case-sensitive exact match; the live wire is actually substring + case-insensitive. Documented in JSDoc.
+  - **`client.categories.getByBarcodes(barcodes)` → `BarcodeCategoryLookup`**
+    - `POST /integration/ecgw/v1/{sellerId}/lookup/product-categories/by-barcodes`
+    - Returns `{ matches: [{barcode, category: {id, name}}], notFound: string[] }`.
+    - Normalizes Trendyol's map-shaped `barcodeCategories` response into a flat array.
+    - **Requires Trendyol Export Center (AutoFT) enrollment.** Sellers without it will get an auth error — documented in JSDoc.
+
+  `CategoriesResource` now optionally takes a `sellerId` (third constructor arg) for the AutoFT lookup — wired automatically when constructed via `createTrendyolClient`. Other category endpoints are unaffected and require no seller ID.
+
+  ### New exports
+  - `BarcodeCategoryLookup`
+
+  ### Smoke verified (STAGE 2026-05-25, output)
+
+  ```
+  ── 1.5 brands.search("Trendyol")
+  ✓ Got 17 match(es). First 5:
+        311522  Trendyol
+            40  TRENDYOLMILLA
+         14161  TRENDYOLKIDS
+         13438  trendyol vavist
+        317259  Trendyol Üyelik
+
+  ── 5.5 categories.getByBarcodes(["3535ddvcxxnnbbvc"])
+  ✓ matches: 1  notFound: 0
+      3535ddvcxxnnbbvc  →      429  Yürüyüş Ayakkabısı
+  ```
+
+  Both endpoints round-trip cleanly. Bonus discovery: `brands.search` is substring + case-insensitive (not case-sensitive exact as docs claim).
+
+  ### Phase 2 final state — Trendyol products surface is feature-complete
+  - Group 1 ([#13](https://github.com/loncadev/lonca/issues/13)): `categories.getAttributeValues` ✅
+  - Group 2 ([#14](https://github.com/loncadev/lonca/issues/14)): read completion (`listUnapproved`, `getBase`, `getBuyboxInfo`) ✅
+  - Group 3 ([#15](https://github.com/loncadev/lonca/issues/15)): write core (`create`, `updateContent`, `updateVariants`, `updateUnapproved`, `updateDeliveryInfo`) ✅
+  - Group 4 ([#16](https://github.com/loncadev/lonca/issues/16)): lifecycle (`delete`, `archive`/`unarchive`, `unlock`) ✅
+  - **Group 5 (this PR): helpers (`brands.search`, `categories.getByBarcodes`) ✅**
+
+  Full chain coverage: brands (list + search) → categories (tree + attrs + values + barcode→cat lookup) → suppliers → products (read approved/unapproved + base + buybox + write 5 endpoints + lifecycle 4 endpoints + batch status) → inventory → orders.
+
+- [#16](https://github.com/loncadev/lonca/pull/16) [`356cba1`](https://github.com/loncadev/lonca/commit/356cba16ce1a5b8a626ced819fb93895c83d8ec0) Thanks [@keparlak](https://github.com/keparlak)! - Add **Group 4 — product lifecycle**: `delete`, `archive`/`unarchive`, `unlock`.
+
+  ### New methods
+  - **`client.products.delete(barcodes)`** → `BatchAcceptedResponse`
+    - `DELETE /integration/product/sellers/{sellerId}/products` with body `{ items: [{barcode}] }`
+    - Trendyol allows deletion of unapproved products and approved products that have been archived for more than a day (and not sales-stopped by Trendyol).
+    - **Rate-limited separately at 100 req/min** — much tighter than the other writes (the SDK provisions a dedicated `deleteLimiter`).
+  - **`client.products.archive(barcodes)`** → `BatchAcceptedResponse`
+  - **`client.products.unarchive(barcodes)`** → `BatchAcceptedResponse`
+    - Both `PUT /integration/product/sellers/{sellerId}/products/archive-state` with body `{ items: [{barcode, archived: bool}] }`
+    - Exposed as two methods for ergonomic call sites; share one endpoint and one rate limiter.
+  - **`client.products.unlock(barcodes)`** → `BatchAcceptedResponse`
+    - `PUT /integration/product/sellers/{sellerId}/products/unlock` with body `{ items: [{barcode}] }`
+    - Restores selling status for products Trendyol paused due to pricing or supply issues.
+
+  All 4 return the standard `{ batchRequestId }` for `getBatchStatus` polling, max 1000 items per call, and throw `ValidationError` for empty or oversized inputs before hitting the network.
+
+  ### Smoke verified (STAGE 2026-05-25, output)
+
+  ```
+  ── 6.45 products lifecycle smoke ────────────────────────
+  ✓ delete       accepted; batchRequestId=a6e1dc0a-…
+  ✓ archive      accepted; batchRequestId=23691686-…
+  ✓ unarchive    accepted; batchRequestId=807b9632-…  (state restored)
+  ✓ unlock       accepted; batchRequestId=f372ec93-…
+  ```
+
+  All 4 endpoints round-trip with real batch IDs. Archive → unarchive on a real approved barcode completes safely (state restored). Delete + unlock exercise the wire with a throw-away fake barcode (per-item fails server-side without affecting real listings).
+
+  ### Phase 2 progress
+  - Group 1 ([#13](https://github.com/loncadev/lonca/issues/13)): `categories.getAttributeValues` ✅
+  - Group 2 ([#14](https://github.com/loncadev/lonca/issues/14)): read completion ✅
+  - Group 3 ([#15](https://github.com/loncadev/lonca/issues/15)): write core ✅
+  - **Group 4 (this PR): lifecycle ✅**
+  - Group 5: helpers — `categories.getByBarcodes`, `brands.search`
+
+  After Group 5, **the Trendyol products surface is feature-complete**: brands → categories (tree + attrs + values + barcode→cat) → suppliers → products (read + write + lifecycle) → inventory → orders.
+
+- [#19](https://github.com/loncadev/lonca/pull/19) [`8540fb6`](https://github.com/loncadev/lonca/commit/8540fb6272899438c63d4855be7c55e5f5510cd8) Thanks [@keparlak](https://github.com/keparlak)! - Add **Group 2 — product reads**: 3 endpoints rounding out the read surface ahead of the upcoming write APIs.
+
+  ### New methods
+  - **`client.products.listUnapproved({ cursor?, limit?, barcode?, startDate?, endDate?, dateQueryType?, supplierId? })` → `CursorPage<UnapprovedProduct>`**
+    - GETs `/integration/product/sellers/{sellerId}/products/unapproved`
+    - Returns draft / `rejected` / `pendingApproval` products. Each item is a flat barcode/SKU (not nested under `variants[]` like approved products), with `rejectReasonDetails[]` populated for failed reviews.
+    - Same `nextPageToken` cursor convention as `list()`.
+    - Rate limit: shares the 2000 req/min filter bucket.
+  - **`client.products.getBase(barcode)` → `ProductBase`**
+    - GETs `/integration/product/sellers/{sellerId}/product/{barcode}` (singular `product` in path).
+    - Cheap polling primitive for `createProducts` — flip-detect `approved: true` and grab the assigned `contentId` / `listingId`.
+  - **`client.products.getBuyboxInfo(barcodes)` → `BuyboxInfo[]`**
+    - POSTs `/integration/product/sellers/{sellerId}/products/buybox-information`
+    - Max 10 barcodes per call; SDK throws `ValidationError` before hitting the network for empty or oversized inputs.
+    - Rate limit: 1000 req/min (separate bucket from filter/batch).
+
+  ### Discovery-first wire fixes
+
+  Verified live against Trendyol STAGE on 2026-05-25. The SDK normalizes spec/wire divergence so callers see a clean shape:
+
+  | Endpoint                   | Spec said                                                | Wire returns                                 | SDK                                                                                      |
+  | -------------------------- | -------------------------------------------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------------- |
+  | `filterUnapprovedProducts` | `media: [{url}]`                                         | `images: [{url}]`                            | Surfaces as `images: string[]`; accepts spec-name `media` as fallback                    |
+  | `getBuyboxInformation`     | `{barcode, buyboxOrder, buyboxPrice, hasMultipleSeller}` | adds `secondBuyboxPrice`, `thirdBuyboxPrice` | Both extra fields are surfaced — useful when buybox is lost                              |
+  | `filterUnapprovedProducts` | enum docs mention `waiting`                              | live returns `pendingApproval`, `rejected`   | Open-enum `UnapprovedProductStatus` (`(string & {})`) so unknown values still type-check |
+
+  ### New exports
+  - `ListUnapprovedProductsParams`, `UnapprovedDateQueryType`
+  - `UnapprovedProduct`, `UnapprovedProductStatus`, `UnapprovedProductRejectReason`
+  - `ProductBase`
+  - `BuyboxInfo`
+
+  ### Smoke verified
+  - `listUnapproved({limit:2})` pulled `rejected` + `pendingApproval` drafts with reject reasons parsed.
+  - `getBase("3535ddvcxxnnbbvc")` → `approved=true, approvedAt=2026-05-21T11:44:53Z, contentId=1135615039`.
+  - `getBuyboxInfo(["3535ddvcxxnnbbvc"])` → `order=1, price=100, multipleSeller=false`.
+
+  Phase 2 of Trendyol products coverage: Group 1 (categories.getAttributeValues, [#13](https://github.com/loncadev/lonca/issues/13)) + Group 2 (this PR) are now in. Next: Group 3 — write core (`create`, `updateContent`, `updateVariants`, `updateUnapproved`, `updateDeliveryInfo`).
+
+- [#15](https://github.com/loncadev/lonca/pull/15) [`51d6972`](https://github.com/loncadev/lonca/commit/51d6972efd41d964083b45dcda9428d147a05bee) Thanks [@keparlak](https://github.com/keparlak)! - Add **Group 3 — product write core**: 5 async batch write endpoints completing the product CRUD surface.
+
+  ### New methods
+
+  All 5 share the same contract: async batch, max 1000 items, returns `{ batchRequestId }` to poll via `products.getBatchStatus`. SDK-side validation throws `ValidationError` before hitting the network for empty or oversized batches.
+  - **`client.products.create(items)`** — V2 product creation; POSTs `/integration/product/sellers/{sellerId}/v2/products`. Required 14 fields enforced at compile time via `CreateProductV2Input`.
+  - **`client.products.updateContent(items)`** — Content updates on approved products (title, description, images, attributes), identified by `contentId`. Partial except attributes (send-all-or-nothing).
+  - **`client.products.updateVariants(items)`** — Variant updates on approved products (stockCode, vatRate, dimensionalWeight, warehouse IDs, location-based delivery, lot), identified by `barcode`.
+  - **`client.products.updateUnapproved(items)`** — Update draft products (typically to fix rejected drafts surfaced by `listUnapproved.rejectReasonDetails`), identified by `barcode`.
+  - **`client.products.updateDeliveryInfo(items)`** — Delivery duration / fast-delivery type updates.
+
+  ### Discovery-first gotchas (verified live STAGE 2026-05-25)
+
+  **Trendyol V2 spec is misleading on `updateUnapproved`**: the spec says only `barcode` is required, but the live endpoint returns HTTP 500 (`TrendyolSystemException` / `TypeError`) when too many optional fields are omitted. In practice, send at least `title`, `description`, `productMainId`, `brandId`, `categoryId`, `stockCode`, `dimensionalWeight`, `vatRate`, `images[]`, and `attributes[]` (an empty array is fine for the latter). Documented in the method JSDoc.
+
+  ### New exports
+
+  Input types (all in `@lonca/trendyol`):
+  - `BatchAcceptedResponse` — generic `{ batchRequestId }` shape for all 5 endpoints
+  - `CreateProductV2Input`
+  - `UpdateContentInput`
+  - `UpdateVariantInput`
+  - `UpdateUnapprovedInput`
+  - `UpdateDeliveryInfoInput`
+  - Building blocks: `ProductImageInput`, `ProductAttributeV2Input`, `DeliveryOptionInput`
+
+  ### Smoke verified (output)
+
+  ```
+  ── 6.4 products write smoke (5 endpoints) ───────────────
+  ✓ create               accepted; batchRequestId=a450334d-d813-4a38-b9e2-…
+  ✓ updateContent        accepted; batchRequestId=4ff126fe-7cfb-4b4f-9ca3-…
+  ✓ updateVariants       accepted; batchRequestId=c3e4289f-4d70-4fab-be6a-…
+  ✖ updateUnapproved     failed: HTTP 400 (Trendyol payload validation;
+                           test draft is in a non-updatable state on STAGE,
+                           contract verified separately with a clean payload)
+  ✓ updateDeliveryInfo   accepted; batchRequestId=2246c5ea-837c-4f7a-8e5f-…
+  ```
+
+  The 4 successful endpoints each got a real `batchRequestId` that can be tracked via `getBatchStatus`. The 5th (`updateUnapproved`) round-trips correctly with a clean payload on a clean draft — verified via an isolated probe to the same path; the smoke test happens to hit a pre-rejected draft whose data Trendyol now refuses to re-process.
+
+  ### Phase 2 progress
+  - **Group 1** ([#13](https://github.com/loncadev/lonca/issues/13)): `categories.getAttributeValues` ✅
+  - **Group 2** ([#14](https://github.com/loncadev/lonca/issues/14)): read completion ✅
+  - **Group 3** (this PR): write core ✅
+  - Group 4: lifecycle — `delete`, `archive`/`unarchive`, `unlock`
+  - Group 5: helpers — `categories.getByBarcodes`, `brands.search`
+
 ## 0.2.0
 
 ### Minor Changes
