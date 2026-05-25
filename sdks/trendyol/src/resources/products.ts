@@ -1,12 +1,21 @@
-import { TokenBucketRateLimiter, type CursorPage, type CursorPaginationParams } from '@lonca/core';
+import {
+  TokenBucketRateLimiter,
+  ValidationError,
+  type CursorPage,
+  type CursorPaginationParams,
+} from '@lonca/core';
 import type { TrendyolTransport } from '../transport.js';
 import type {
   BatchRequestItemResult,
   BatchRequestResult,
+  BuyboxInfo,
   NamedRef,
   Product,
   ProductAttribute,
+  ProductBase,
   ProductVariant,
+  UnapprovedProduct,
+  UnapprovedProductRejectReason,
 } from '../types/product.js';
 
 const DEFAULT_PAGE_SIZE = 50;
@@ -21,6 +30,25 @@ export interface ListProductsParams extends CursorPaginationParams {
   /** Filter products updated on or before this date. */
   endDate?: Date;
 }
+
+/** Date field to filter against on `listUnapproved` (default: server choice). */
+export type UnapprovedDateQueryType = 'CREATED_DATE' | 'LAST_MODIFIED_DATE';
+
+export interface ListUnapprovedProductsParams extends CursorPaginationParams {
+  barcode?: string;
+  startDate?: Date;
+  endDate?: Date;
+  /** Choose which date `startDate`/`endDate` apply to. */
+  dateQueryType?: UnapprovedDateQueryType;
+  /**
+   * Optional override of the seller-scoped query (rare; defaults to the
+   * client's `sellerId`).
+   */
+  supplierId?: number;
+}
+
+/** Trendyol caps `barcodes` at 10 for the buybox endpoint. */
+const MAX_BUYBOX_BARCODES = 10;
 
 // ─── Wire types (Trendyol's real shape, verified live) ──────────────────────
 
@@ -70,6 +98,82 @@ interface TrendyolFilterResponse {
   page?: number;
   size?: number;
   nextPageToken?: string;
+}
+
+// ─── Unapproved (draft) products wire shape (verified STAGE 2026-05-25) ────
+
+interface TrendyolUnapprovedRejectReason {
+  rejectReason?: string;
+  rejectReasonDetail?: string;
+}
+
+interface TrendyolUnapprovedNode {
+  supplierId?: number | string;
+  productMainId?: string;
+  status?: string;
+  createDateTime?: number;
+  lastUpdateDate?: number;
+  lastPriceChangeDate?: number;
+  lastStockChangeDate?: number;
+  brand?: TrendyolRef;
+  category?: TrendyolRef;
+  barcode?: string;
+  title?: string;
+  description?: string;
+  quantity?: number;
+  listPrice?: number;
+  salePrice?: number;
+  vatRate?: number;
+  dimensionalWeight?: number | null;
+  stockCode?: string;
+  origin?: string | null;
+  /** Spec calls this `media`; live wire returns `images`. We accept both. */
+  images?: Array<{ url?: string } | string>;
+  media?: Array<{ url?: string } | string>;
+  attributes?: TrendyolAttributeNode[];
+  rejectReasonDetails?: TrendyolUnapprovedRejectReason[];
+  locationBasedDelivery?: 'ENABLED' | 'DISABLED' | null;
+  lotNumber?: string | null;
+  specialConsumptionTax?: number | null;
+  sgrPrice?: number | null;
+  [key: string]: unknown;
+}
+
+interface TrendyolUnapprovedResponse {
+  content?: TrendyolUnapprovedNode[];
+  totalElements?: number;
+  totalPages?: number;
+  page?: number;
+  size?: number;
+  nextPageToken?: string;
+}
+
+// ─── Buybox + ProductBase wire shapes ──────────────────────────────────────
+
+interface TrendyolBuyboxInfoNode {
+  barcode?: string;
+  buyboxOrder?: number;
+  buyboxPrice?: number;
+  hasMultipleSeller?: boolean;
+  secondBuyboxPrice?: number | null;
+  thirdBuyboxPrice?: number | null;
+  [key: string]: unknown;
+}
+
+interface TrendyolBuyboxResponse {
+  buyboxInfo?: TrendyolBuyboxInfoNode[];
+  /** Some Trendyol responses use `content` instead — accept both defensively. */
+  content?: TrendyolBuyboxInfoNode[];
+}
+
+interface TrendyolProductBaseResponse {
+  barcode?: string;
+  approved?: boolean;
+  approvedDate?: number;
+  archived?: boolean;
+  listingId?: string;
+  contentId?: number | string;
+  [key: string]: unknown;
 }
 
 interface TrendyolBatchResultResponse {
@@ -167,6 +271,89 @@ function normalizeProduct(node: TrendyolProductNode): Product {
   return out;
 }
 
+function normalizeUnapprovedRejectReason(
+  r: TrendyolUnapprovedRejectReason,
+): UnapprovedProductRejectReason {
+  const out: UnapprovedProductRejectReason = {};
+  if (r.rejectReason !== undefined) out.rejectReason = r.rejectReason;
+  if (r.rejectReasonDetail !== undefined) out.rejectReasonDetail = r.rejectReasonDetail;
+  return out;
+}
+
+function normalizeUnapproved(node: TrendyolUnapprovedNode): UnapprovedProduct {
+  // Spec calls it `media`, live wire calls it `images` — accept both, prefer `images`.
+  const imagesSource = node.images ?? node.media;
+  const out: UnapprovedProduct = {
+    productMainId: node.productMainId ?? '',
+    brand: normalizeRef(node.brand),
+    category: normalizeRef(node.category),
+    barcode: node.barcode ?? '',
+    title: node.title ?? '',
+    images: normalizeImages(imagesSource),
+    attributes: (node.attributes ?? []).map(normalizeAttribute),
+    rejectReasonDetails: (node.rejectReasonDetails ?? []).map(normalizeUnapprovedRejectReason),
+    raw: node as Record<string, unknown>,
+  };
+  if (node.supplierId !== undefined) out.supplierId = String(node.supplierId);
+  if (node.status !== undefined) out.status = node.status as UnapprovedProduct['status'];
+  if (node.description !== undefined) out.description = node.description;
+  if (typeof node.quantity === 'number') out.quantity = node.quantity;
+  if (typeof node.listPrice === 'number') out.listPrice = node.listPrice;
+  if (typeof node.salePrice === 'number') out.salePrice = node.salePrice;
+  if (typeof node.vatRate === 'number') out.vatRate = node.vatRate;
+  if (node.dimensionalWeight !== undefined && node.dimensionalWeight !== null) {
+    out.dimensionalWeight = node.dimensionalWeight;
+  }
+  if (node.stockCode !== undefined) out.stockCode = node.stockCode;
+  if (node.origin !== undefined) out.origin = node.origin;
+  if (node.locationBasedDelivery !== undefined) {
+    out.locationBasedDelivery = node.locationBasedDelivery;
+  }
+  if (node.lotNumber !== undefined) out.lotNumber = node.lotNumber;
+  if (node.specialConsumptionTax !== undefined) {
+    out.specialConsumptionTax = node.specialConsumptionTax;
+  }
+  if (node.sgrPrice !== undefined) out.sgrPrice = node.sgrPrice;
+  const createdAt = toIso(node.createDateTime);
+  if (createdAt) out.createdAt = createdAt;
+  const updatedAt = toIso(node.lastUpdateDate);
+  if (updatedAt) out.updatedAt = updatedAt;
+  const priceChanged = toIso(node.lastPriceChangeDate);
+  if (priceChanged) out.lastPriceChangedAt = priceChanged;
+  const stockChanged = toIso(node.lastStockChangeDate);
+  if (stockChanged) out.lastStockChangedAt = stockChanged;
+  return out;
+}
+
+function normalizeBuyboxInfo(node: TrendyolBuyboxInfoNode): BuyboxInfo {
+  const out: BuyboxInfo = {
+    barcode: node.barcode ?? '',
+    raw: node as Record<string, unknown>,
+  };
+  if (typeof node.buyboxOrder === 'number') out.buyboxOrder = node.buyboxOrder;
+  if (typeof node.buyboxPrice === 'number') out.buyboxPrice = node.buyboxPrice;
+  if (typeof node.hasMultipleSeller === 'boolean') {
+    out.hasMultipleSeller = node.hasMultipleSeller;
+  }
+  if (node.secondBuyboxPrice !== undefined) out.secondBuyboxPrice = node.secondBuyboxPrice;
+  if (node.thirdBuyboxPrice !== undefined) out.thirdBuyboxPrice = node.thirdBuyboxPrice;
+  return out;
+}
+
+function normalizeProductBase(data: TrendyolProductBaseResponse): ProductBase {
+  const out: ProductBase = {
+    barcode: data.barcode ?? '',
+    approved: !!data.approved,
+    archived: !!data.archived,
+    raw: data as Record<string, unknown>,
+  };
+  const approvedAt = toIso(data.approvedDate);
+  if (approvedAt) out.approvedAt = approvedAt;
+  if (data.listingId !== undefined) out.listingId = data.listingId;
+  if (data.contentId !== undefined) out.contentId = String(data.contentId);
+  return out;
+}
+
 function normalizeBatchResult(data: TrendyolBatchResultResponse): BatchRequestResult {
   const items: BatchRequestItemResult[] = (data.items ?? []).map((item) => {
     const result: BatchRequestItemResult = {};
@@ -196,15 +383,17 @@ function normalizeBatchResult(data: TrendyolBatchResultResponse): BatchRequestRe
 }
 
 /**
- * Trendyol product list + batch-result endpoints.
+ * Trendyol product read + batch-result endpoints.
  *
  * Rate limits (per Trendyol service limits):
- * - filterProducts: 2000 req/min
+ * - filterProducts (approved + unapproved + getProductBase): 2000 req/min
  * - getBatchRequestResult: 1000 req/min
+ * - getBuyboxInformation: 1000 req/min
  */
 export class ProductsResource {
   private readonly filterLimiter: TokenBucketRateLimiter;
   private readonly batchLimiter: TokenBucketRateLimiter;
+  private readonly buyboxLimiter: TokenBucketRateLimiter;
 
   constructor(
     private readonly transport: TrendyolTransport,
@@ -212,12 +401,15 @@ export class ProductsResource {
     options: {
       filterLimiter?: TokenBucketRateLimiter;
       batchLimiter?: TokenBucketRateLimiter;
+      buyboxLimiter?: TokenBucketRateLimiter;
     } = {},
   ) {
     this.filterLimiter =
       options.filterLimiter ?? new TokenBucketRateLimiter({ capacity: 2000, intervalMs: 60_000 });
     this.batchLimiter =
       options.batchLimiter ?? new TokenBucketRateLimiter({ capacity: 1000, intervalMs: 60_000 });
+    this.buyboxLimiter =
+      options.buyboxLimiter ?? new TokenBucketRateLimiter({ capacity: 1000, intervalMs: 60_000 });
   }
 
   /**
@@ -283,5 +475,109 @@ export class ProductsResource {
       rateLimiter: this.batchLimiter,
     });
     return normalizeBatchResult(data);
+  }
+
+  /**
+   * List **unapproved** (draft / rejected / pending-review) products.
+   *
+   * Wire shape is intentionally flatter than the approved-product shape:
+   * each barcode is one top-level item with `barcode`, `quantity`, `salePrice`
+   * etc. at the root. Rejected drafts carry `rejectReasonDetails` so you can
+   * surface why Trendyol's content team turned them down.
+   *
+   * Pagination follows the same convention as `list()`: `cursor` from the
+   * previous response forwards as `nextPageToken`.
+   *
+   * @example
+   * ```ts
+   * const page = await client.products.listUnapproved({ limit: 50 });
+   * for (const draft of page.items) {
+   *   if (draft.status === 'rejected') {
+   *     console.warn(draft.barcode, draft.rejectReasonDetails);
+   *   }
+   * }
+   * ```
+   */
+  async listUnapproved(
+    params: ListUnapprovedProductsParams = {},
+  ): Promise<CursorPage<UnapprovedProduct>> {
+    const size = Math.min(params.limit ?? DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
+    const query: Record<string, string | number | undefined> = { size };
+    if (params.cursor) {
+      query.nextPageToken = params.cursor;
+    } else {
+      query.page = 0;
+    }
+    if (params.barcode) query.barcode = params.barcode;
+    if (params.startDate) query.startDate = params.startDate.getTime();
+    if (params.endDate) query.endDate = params.endDate.getTime();
+    if (params.dateQueryType) query.dateQueryType = params.dateQueryType;
+    if (params.supplierId !== undefined) query.supplierId = params.supplierId;
+
+    const data = await this.transport.request<TrendyolUnapprovedResponse>({
+      method: 'GET',
+      path: `/integration/product/sellers/${this.sellerId}/products/unapproved`,
+      query,
+      rateLimiter: this.filterLimiter,
+    });
+
+    const items = (data.content ?? []).map(normalizeUnapproved);
+    const page: CursorPage<UnapprovedProduct> = { items };
+    if (data.nextPageToken) {
+      page.nextCursor = data.nextPageToken;
+    }
+    return page;
+  }
+
+  /**
+   * Fetch the basic lifecycle status of a single product by barcode.
+   *
+   * Cheap and useful as a polling primitive after `createProducts`: poll
+   * this endpoint until `approved` flips to `true` (or use
+   * `client.products.getBatchStatus()` to track the originating batch).
+   *
+   * @param barcode The product barcode to look up.
+   */
+  async getBase(barcode: string): Promise<ProductBase> {
+    const code = encodeURIComponent(barcode);
+    const data = await this.transport.request<TrendyolProductBaseResponse>({
+      method: 'GET',
+      path: `/integration/product/sellers/${this.sellerId}/product/${code}`,
+      rateLimiter: this.filterLimiter,
+    });
+    return normalizeProductBase(data);
+  }
+
+  /**
+   * Fetch buybox information for up to 10 barcodes in one call.
+   *
+   * Returns rank (`buyboxOrder === 1` means you hold the buybox), the
+   * current buybox price, and — beyond the spec — the second and third
+   * competing prices when other sellers are present.
+   *
+   * @param barcodes 1–10 product barcodes.
+   * @throws {ValidationError} when `barcodes` is empty or longer than 10.
+   */
+  async getBuyboxInfo(barcodes: string[]): Promise<BuyboxInfo[]> {
+    if (!Array.isArray(barcodes) || barcodes.length === 0) {
+      throw new ValidationError({
+        message: 'getBuyboxInfo: barcodes must be a non-empty array',
+      });
+    }
+    if (barcodes.length > MAX_BUYBOX_BARCODES) {
+      throw new ValidationError({
+        message: `getBuyboxInfo: max ${MAX_BUYBOX_BARCODES} barcodes per call (got ${barcodes.length})`,
+      });
+    }
+
+    const data = await this.transport.request<TrendyolBuyboxResponse>({
+      method: 'POST',
+      path: `/integration/product/sellers/${this.sellerId}/products/buybox-information`,
+      body: { barcodes },
+      rateLimiter: this.buyboxLimiter,
+    });
+
+    const list = data.buyboxInfo ?? data.content ?? [];
+    return list.map(normalizeBuyboxInfo);
   }
 }

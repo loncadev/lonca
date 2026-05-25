@@ -15,6 +15,7 @@ function newResource(transport: TrendyolTransport, sellerId = 42) {
   return new ProductsResource(transport, sellerId, {
     filterLimiter: fastLimiter(),
     batchLimiter: fastLimiter(),
+    buyboxLimiter: fastLimiter(),
   });
 }
 
@@ -262,5 +263,258 @@ describe('ProductsResource.getBatchStatus', () => {
     const transport = mockTransport({ batchRequestId: 'b1', items: [] });
     const result = await newResource(transport).getBatchStatus('b1');
     expect(result.status).toBe('PROCESSING');
+  });
+});
+
+describe('ProductsResource.listUnapproved', () => {
+  it('hits /products/unapproved with page=0 and size=50 by default', async () => {
+    const transport = mockTransport({ content: [] });
+    await newResource(transport).listUnapproved();
+
+    expect(transport.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: 'GET',
+        path: '/integration/product/sellers/42/products/unapproved',
+        query: { size: 50, page: 0 },
+      }),
+    );
+  });
+
+  it('forwards cursor + filter params + dateQueryType + supplierId', async () => {
+    const transport = mockTransport({ content: [] });
+    const start = new Date('2026-01-01T00:00:00Z');
+
+    await newResource(transport).listUnapproved({
+      cursor: 'tok-7',
+      limit: 200,
+      barcode: 'B1',
+      startDate: start,
+      dateQueryType: 'CREATED_DATE',
+      supplierId: 99,
+    });
+
+    expect(transport.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        query: {
+          size: 200,
+          nextPageToken: 'tok-7',
+          barcode: 'B1',
+          startDate: start.getTime(),
+          dateQueryType: 'CREATED_DATE',
+          supplierId: 99,
+        },
+      }),
+    );
+  });
+
+  it('normalizes the live STAGE wire shape (flat barcode, images, rejection)', async () => {
+    // Verified against Trendyol STAGE on 2026-05-25.
+    const transport = mockTransport({
+      content: [
+        {
+          supplierId: 2738,
+          productMainId: 'CHTEST260522204622',
+          status: 'rejected',
+          createDateTime: 1779471989782,
+          lastUpdateDate: 1779472029421,
+          lastPriceChangeDate: 1779471989732,
+          lastStockChangeDate: 1779471989732,
+          brand: { id: 172147, name: 'AYŞE TAŞKALE' },
+          category: { id: 31726, name: '0VxuerA' },
+          barcode: 'CHTEST260522204622',
+          title: 'Charybdis Stage Test Urunu',
+          description: '<p>desc</p>',
+          quantity: 0,
+          listPrice: 129.9,
+          salePrice: 99.9,
+          vatRate: 20,
+          dimensionalWeight: 1,
+          stockCode: 'CHTEST-260522204622',
+          origin: null,
+          images: [{ url: 'https://cdn.example/1.jpg' }, { url: 'https://cdn.example/2.jpg' }],
+          attributes: [],
+          rejectReasonDetails: [
+            {
+              rejectReason: 'Kategori Bilgisi Eksik',
+              rejectReasonDetail: 'detay',
+            },
+          ],
+          locationBasedDelivery: 'DISABLED',
+          lotNumber: null,
+          specialConsumptionTax: null,
+          sgrPrice: null,
+        },
+      ],
+      page: 0,
+      size: 1,
+      totalPages: 1459,
+      totalElements: 2917,
+      nextPageToken: 'next-tok',
+    });
+
+    const page = await newResource(transport).listUnapproved({ limit: 1 });
+
+    expect(page.nextCursor).toBe('next-tok');
+    const u = page.items[0]!;
+    expect(u).toMatchObject({
+      supplierId: '2738',
+      productMainId: 'CHTEST260522204622',
+      status: 'rejected',
+      brand: { id: '172147', name: 'AYŞE TAŞKALE' },
+      category: { id: '31726', name: '0VxuerA' },
+      barcode: 'CHTEST260522204622',
+      title: 'Charybdis Stage Test Urunu',
+      description: '<p>desc</p>',
+      quantity: 0,
+      listPrice: 129.9,
+      salePrice: 99.9,
+      vatRate: 20,
+      dimensionalWeight: 1,
+      stockCode: 'CHTEST-260522204622',
+      origin: null,
+      images: ['https://cdn.example/1.jpg', 'https://cdn.example/2.jpg'],
+      attributes: [],
+      rejectReasonDetails: [
+        { rejectReason: 'Kategori Bilgisi Eksik', rejectReasonDetail: 'detay' },
+      ],
+      locationBasedDelivery: 'DISABLED',
+      lotNumber: null,
+      specialConsumptionTax: null,
+      sgrPrice: null,
+      createdAt: new Date(1779471989782).toISOString(),
+      updatedAt: new Date(1779472029421).toISOString(),
+      lastPriceChangedAt: new Date(1779471989732).toISOString(),
+      lastStockChangedAt: new Date(1779471989732).toISOString(),
+    });
+  });
+
+  it('falls back to the spec`s `media` field if `images` is absent', async () => {
+    const transport = mockTransport({
+      content: [
+        {
+          productMainId: 'P1',
+          barcode: 'B1',
+          title: 't',
+          brand: {},
+          category: {},
+          media: [{ url: 'https://x/a.jpg' }],
+        },
+      ],
+    });
+    const page = await newResource(transport).listUnapproved();
+    expect(page.items[0]!.images).toEqual(['https://x/a.jpg']);
+  });
+});
+
+describe('ProductsResource.getBase', () => {
+  it('hits /product/{barcode} with the sellerId in path', async () => {
+    const transport = mockTransport({ barcode: 'B1', approved: true, archived: false });
+    await newResource(transport).getBase('B1');
+
+    expect(transport.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: 'GET',
+        path: '/integration/product/sellers/42/product/B1',
+      }),
+    );
+  });
+
+  it('url-encodes the barcode', async () => {
+    const transport = mockTransport({ barcode: 'odd id', approved: false, archived: false });
+    await newResource(transport).getBase('odd id');
+    const call = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0];
+    expect(call.path).toBe('/integration/product/sellers/42/product/odd%20id');
+  });
+
+  it('normalizes the verified live wire shape with ISO approvedAt', async () => {
+    // Verified against Trendyol STAGE on 2026-05-25.
+    const transport = mockTransport({
+      barcode: '3535ddvcxxnnbbvc',
+      approved: true,
+      approvedDate: 1779363893000,
+      archived: false,
+      listingId: '67db4e3e7292a945c609db30cfc5109a',
+      contentId: 1135615039,
+    });
+
+    const result = await newResource(transport).getBase('3535ddvcxxnnbbvc');
+
+    expect(result).toMatchObject({
+      barcode: '3535ddvcxxnnbbvc',
+      approved: true,
+      archived: false,
+      approvedAt: new Date(1779363893000).toISOString(),
+      listingId: '67db4e3e7292a945c609db30cfc5109a',
+      contentId: '1135615039',
+    });
+  });
+
+  it('omits approvedAt for unapproved products', async () => {
+    const transport = mockTransport({ barcode: 'X', approved: false, archived: false });
+    const result = await newResource(transport).getBase('X');
+    expect(result.approvedAt).toBeUndefined();
+  });
+});
+
+describe('ProductsResource.getBuyboxInfo', () => {
+  it('POSTs to /products/buybox-information with body { barcodes }', async () => {
+    const transport = mockTransport({ buyboxInfo: [] });
+    await newResource(transport).getBuyboxInfo(['B1', 'B2']);
+
+    expect(transport.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: 'POST',
+        path: '/integration/product/sellers/42/products/buybox-information',
+        body: { barcodes: ['B1', 'B2'] },
+      }),
+    );
+  });
+
+  it('throws ValidationError on empty input', async () => {
+    const transport = mockTransport({ buyboxInfo: [] });
+    await expect(newResource(transport).getBuyboxInfo([])).rejects.toThrow(/non-empty/);
+  });
+
+  it('throws ValidationError on more than 10 barcodes', async () => {
+    const transport = mockTransport({ buyboxInfo: [] });
+    const tooMany = Array.from({ length: 11 }, (_, i) => `B${i}`);
+    await expect(newResource(transport).getBuyboxInfo(tooMany)).rejects.toThrow(/max 10/);
+  });
+
+  it('normalizes the verified live wire shape with second/third prices', async () => {
+    // Verified against Trendyol STAGE on 2026-05-25.
+    const transport = mockTransport({
+      buyboxInfo: [
+        {
+          barcode: '3535ddvcxxnnbbvc',
+          buyboxPrice: 100,
+          buyboxOrder: 1,
+          hasMultipleSeller: false,
+          secondBuyboxPrice: null,
+          thirdBuyboxPrice: null,
+        },
+      ],
+    });
+
+    const results = await newResource(transport).getBuyboxInfo(['3535ddvcxxnnbbvc']);
+
+    expect(results).toHaveLength(1);
+    expect(results[0]).toMatchObject({
+      barcode: '3535ddvcxxnnbbvc',
+      buyboxPrice: 100,
+      buyboxOrder: 1,
+      hasMultipleSeller: false,
+      secondBuyboxPrice: null,
+      thirdBuyboxPrice: null,
+    });
+  });
+
+  it('also accepts `content` as an alias for `buyboxInfo`', async () => {
+    const transport = mockTransport({
+      content: [{ barcode: 'X', buyboxOrder: 2, buyboxPrice: 50, hasMultipleSeller: true }],
+    });
+    const results = await newResource(transport).getBuyboxInfo(['X']);
+    expect(results).toHaveLength(1);
+    expect(results[0]!.buyboxOrder).toBe(2);
   });
 });

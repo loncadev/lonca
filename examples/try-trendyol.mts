@@ -164,6 +164,7 @@ if (process.env.TY_SKIP_SUPPLIERS === '1') {
 }
 
 // ── 5. Products: list a small page ───────────────────────────────────────
+let firstApprovedBarcode: string | null = null;
 console.log('\n── 5. products.list({ limit: 3 }) ────────────────────────');
 try {
   const page = await client.products.list({ limit: 3 });
@@ -173,10 +174,63 @@ try {
   for (const p of page.items.slice(0, 3)) {
     const title = p.title.length > 48 ? `${p.title.slice(0, 45)}…` : p.title;
     const barcode = p.variants[0]?.barcode ?? '(no variant)';
+    if (!firstApprovedBarcode && p.variants[0]?.barcode) {
+      firstApprovedBarcode = p.variants[0].barcode;
+    }
     console.log(`    ${barcode.padStart(16)}  ${title}  [${p.brand.name}, ${p.category.name}]`);
   }
 } catch (err) {
   console.error('✖ products.list failed:', formatError(err));
+}
+
+// ── 5.1 products.listUnapproved (draft / rejected products) ─────────────
+console.log('\n── 5.1 products.listUnapproved({ limit: 2 }) ──────────────');
+try {
+  const page = await client.products.listUnapproved({ limit: 2 });
+  console.log(
+    `✓ Got ${page.items.length} draft(s)${page.nextCursor ? ` (nextCursor: ${page.nextCursor.slice(0, 20)}…)` : ' (no more pages)'}`,
+  );
+  for (const u of page.items.slice(0, 2)) {
+    const title = u.title.length > 40 ? `${u.title.slice(0, 37)}…` : u.title;
+    console.log(
+      `    ${u.barcode.padStart(16)}  ${u.status ?? '(no status)'.padEnd(10)}  ${title}  [${u.brand.name}]`,
+    );
+    if (u.rejectReasonDetails.length > 0) {
+      console.log(`      └ rejected: ${u.rejectReasonDetails[0]!.rejectReason}`);
+    }
+  }
+} catch (err) {
+  console.error('✖ products.listUnapproved failed:', formatError(err));
+}
+
+// ── 5.2 products.getBase (basic lifecycle info for one barcode) ─────────
+if (firstApprovedBarcode) {
+  console.log(`\n── 5.2 products.getBase("${firstApprovedBarcode}") ─────────`);
+  try {
+    const base = await client.products.getBase(firstApprovedBarcode);
+    console.log(
+      `✓ approved=${base.approved} archived=${base.archived} contentId=${base.contentId ?? '(none)'} listingId=${base.listingId ?? '(none)'}`,
+    );
+    if (base.approvedAt) console.log(`     approvedAt: ${base.approvedAt}`);
+  } catch (err) {
+    console.error('✖ products.getBase failed:', formatError(err));
+  }
+}
+
+// ── 5.3 products.getBuyboxInfo (max 10 barcodes per call) ───────────────
+if (firstApprovedBarcode) {
+  console.log(`\n── 5.3 products.getBuyboxInfo(["${firstApprovedBarcode}"]) ─────────`);
+  try {
+    const infos = await client.products.getBuyboxInfo([firstApprovedBarcode]);
+    console.log(`✓ Got buybox info for ${infos.length} barcode(s)`);
+    for (const i of infos) {
+      console.log(
+        `    ${i.barcode.padStart(16)}  order=${i.buyboxOrder ?? '?'}  price=${i.buyboxPrice ?? '?'}  multipleSeller=${i.hasMultipleSeller ?? '?'}  2nd=${i.secondBuyboxPrice ?? 'n/a'}  3rd=${i.thirdBuyboxPrice ?? 'n/a'}`,
+      );
+    }
+  } catch (err) {
+    console.error('✖ products.getBuyboxInfo failed:', formatError(err));
+  }
 }
 
 // ── 6.5 inventory.update — full round-trip with a REAL product ──────────
