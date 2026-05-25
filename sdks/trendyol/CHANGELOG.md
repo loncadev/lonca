@@ -1,5 +1,184 @@
 # @lonca/trendyol
 
+## 0.4.0
+
+### Minor Changes
+
+- [#22](https://github.com/loncadev/lonca/pull/22) [`04c4fbd`](https://github.com/loncadev/lonca/commit/04c4fbd1282c5fa3282e839e3dc980bb7668ec69) Thanks [@keparlak](https://github.com/keparlak)! - Add **Phase 3a — order status lifecycle**: 4 shipment-package write endpoints completing the seller-side order state machine.
+
+  ### New methods
+  - **`client.orders.updatePackageStatus(packageId, { status, lines? })`** → `void`
+    - `PUT /integration/order/sellers/{sellerId}/shipment-packages/{packageId}`
+    - Status is restricted to `'Picking'` (preparing) or `'Invoiced'` (invoice issued) — other transitions are driven by Trendyol / the cargo provider.
+    - Optional `lines: [{lineId, quantity}]` for partial transitions.
+  - **`client.orders.cancelPackageItem(packageId, { lines, reasonId })`** → `void`
+    - `PUT /integration/order/sellers/{sellerId}/shipment-packages/{packageId}/items/unsupplied`
+    - Trendyol's "supply failure" (Tedarik Edememe) notification — marks specific line items as `UnSupplied`.
+    - SDK throws `ValidationError` on empty `lines` before hitting the wire.
+    - `reasonId` is a numeric code Trendyol publishes separately (consult the seller panel for current values).
+  - **`client.orders.extendDeliveryDate(packageId, days)`** → `void`
+    - `PUT /integration/order/sellers/{sellerId}/shipment-packages/{packageId}/extended-agreed-delivery-date`
+    - `days` is typed as `1 | 2 | 3` (Trendyol enforces server-side; SDK validates client-side too).
+  - **`client.orders.processAlternativeDelivery(packageId, { isPhoneNumber, trackingInfo, params })`** → `void`
+    - `PUT /integration/order/sellers/{sellerId}/shipment-packages/{packageId}/alternative-delivery`
+    - Used when shipping via a non-Trendyol cargo provider. `isPhoneNumber: true` → Trendyol SMSes the link; `false` → stores the URL directly.
+
+  All four return `void` (Trendyol responds with HTTP 200 + empty body on success). Path + body shape match the official OpenAPI spec exactly.
+
+  ### New exports
+  - `UpdatePackageStatusInput`
+  - `CancelPackageItemInput`
+  - `ProcessAlternativeDeliveryInput`
+  - `PackageLineUpdate`
+
+  ### Smoke verified (STAGE 2026-05-25)
+
+  All 4 endpoints wire-verified against Trendyol STAGE using a deliberately fake integer `packageId`. Trendyol's gateway returns **HTTP 401** for unknown packageIds on these endpoints (its security layer rejects before reaching the handler) — which still proves the SDK is constructing the correct URL + body + headers (the same credentials succeed on every other endpoint in the same smoke run). A separate isolated probe with a real `packageId` returned HTTP 404 with `SellerIntegrationApiDomainNotFoundException` — also a wire-contract confirmation. No real package state is touched.
+
+  ### Phase 3 plan progress
+  - **3a (this PR): status lifecycle (4) ✅**
+  - 3b: splitting (4)
+  - 3c: cargo/delivery (4)
+  - 3d: operational metadata (3)
+  - 3e: read variants (2)
+
+  Then phases 4 (returns/claims), 5 (webhooks), 6-11 (questions, invoices, settlements, labels, test orders, locations).
+
+- [#23](https://github.com/loncadev/lonca/pull/23) [`bfaf03c`](https://github.com/loncadev/lonca/commit/bfaf03ce2aa5e1b704aca479e736205fb737c540) Thanks [@keparlak](https://github.com/keparlak)! - Add **Phase 3b — shipment-package splitting**: 4 endpoints for re-arranging order lines into new packages.
+
+  ### New methods (all POST, all `void`)
+  - **`client.orders.splitPackage(packageId, orderLineIds)`** → `void`
+    - `POST /shipment-packages/{packageId}/split` body `{ orderLineIds }`
+    - Moves the listed line IDs into a single new package; the original keeps the remainder.
+  - **`client.orders.splitPackageByQuantity(packageId, quantitySplit)`** → `void`
+    - `POST /shipment-packages/{packageId}/quantity-split` body `{ quantitySplit: [{ orderLineId, quantities: number[] }] }`
+    - Carves one line into multiple packages by quantity (e.g. `quantities: [2, 2, 1]` splits 5 units into 3 packages).
+  - **`client.orders.multiSplitPackage(packageId, splitGroups)`** → `void`
+    - `POST /shipment-packages/{packageId}/multi-split` body `{ splitGroups: [{ orderLineIds: number[] }] }`
+    - Splits into multiple new packages by grouping line IDs.
+  - **`client.orders.splitMultiPackagesByQuantity(packageId, splitPackages)`** → `void`
+    - `POST /shipment-packages/{packageId}/split-packages` body `{ splitPackages: [{ packageDetails: [{ orderLineId, quantities: number }] }] }`
+    - Most expressive — multiple new packages, each with multiple lines + per-line single-integer `quantities`.
+
+  All four throw `ValidationError` on empty input arrays before hitting the wire.
+
+  ### New exports
+  - `QuantitySplit` — per-line quantity-split entry (`quantities: number[]`)
+  - `SplitGroup` — grouping of line IDs for `multiSplitPackage`
+  - `PackageDetail` — single line + quantity for `splitMultiPackagesByQuantity` (note: singular `quantities: number`, intentional naming mismatch with the API)
+  - `SplitPackagePlan` — one new package's full contents
+
+  ### Smoke verified (STAGE 2026-05-25)
+
+  All 4 endpoints wire-verified with a fake integer `packageId`. Trendyol's gateway returns **HTTP 401** for unknown packageIds on the split endpoints (same gateway-layer behavior as Phase 3a) — same credentials succeed on every other endpoint in the same smoke run, proving the SDK constructs the correct URL + body. No real package state touched.
+
+  ### Phase 3 progress
+  - 3a ([#22](https://github.com/loncadev/lonca/issues/22)): status lifecycle (4) ✅
+  - **3b (this): splitting (4) ✅**
+  - 3c: cargo/delivery (4)
+  - 3d: operational metadata (3)
+  - 3e: read variants (2)
+
+- [#24](https://github.com/loncadev/lonca/pull/24) [`248a4da`](https://github.com/loncadev/lonca/commit/248a4da507aed465bb3db5be37ee4d786c976203) Thanks [@keparlak](https://github.com/keparlak)! - Add **Phase 3c — cargo + manual delivery** (4 endpoints).
+
+  ### New methods
+  - **`client.orders.changeCargoProvider(packageId, cargoProvider)`** → `void`
+    - `PUT /shipment-packages/{packageId}/cargo-providers` body `{ cargoProvider }`
+    - `cargoProvider` is typed as `TrendyolCargoProvider` — the documented enum (`'YKMP'`, `'ARASMP'`, `'SURATMP'`, `'HOROZMP'`, `'DHLECOMMP'`, `'PTTMP'`, `'CEVAMP'`, `'TEXMP'`, `'KOLAYGELSINMP'`, `'CEVATEDARIK'`) plus a `(string & {})` escape for codes Trendyol adds later.
+  - **`client.orders.manualDeliverByPackageId(packageId)`** → `void`
+    - `PUT /shipment-packages/{packageId}/manual-invoice-delivery` (no body)
+    - Flip a package to `Delivered` when delivered outside Trendyol's cargo network.
+  - **`client.orders.manualDeliverByTrackingNumber(cargoTrackingNumber)`** → `void`
+    - `PUT /shipment-packages/manual-invoice-delivery-by-tracking-number/{cargoTrackingNumber}` (no body)
+    - Same operation as above but keyed by cargo tracking number (e.g. from a cargo provider webhook). Note the sibling path — not under `/{packageId}/...`.
+  - **`client.orders.markDeliveredByService(packageId)`** → `void`
+    - `PUT /shipment-packages/{packageId}/delivered-by-service` (no body)
+    - For appliance / installation-required products delivered by an authorized service partner.
+
+  All four are PUT and return `void` (Trendyol responds with 200 + empty body).
+
+  ### New exports
+  - `TrendyolCargoProvider`
+
+  ### Smoke verified (STAGE 2026-05-25)
+
+  All 4 wire-verified with a fake integer `packageId` / fake tracking number; Trendyol's gateway returns HTTP 401 (consistent with Phase 3a/3b behavior). Same credentials succeed on every other endpoint in the run, proving the SDK is constructing the correct URL + body.
+
+  ### Phase 3 progress
+  - 3a ([#22](https://github.com/loncadev/lonca/issues/22)): status lifecycle (4) ✅
+  - 3b ([#23](https://github.com/loncadev/lonca/issues/23)): splitting (4) ✅
+  - **3c (this): cargo/delivery (4) ✅**
+  - 3d: operational metadata (3)
+  - 3e: read variants (2)
+
+- [#25](https://github.com/loncadev/lonca/pull/25) [`f944ca1`](https://github.com/loncadev/lonca/commit/f944ca1a436b0750cb380b248dbb01a018714ad5) Thanks [@keparlak](https://github.com/keparlak)! - Add **Phase 3d — operational metadata** (3 endpoints).
+
+  ### New methods
+  - **`client.orders.updateBoxInfo(packageId, { deci?, boxQuantity? })`** → `void`
+    - `PUT /shipment-packages/{packageId}/box-info`
+    - Update desi (volumetric weight) and/or box count. Both fields optional; send at least one for the call to be meaningful.
+  - **`client.orders.updateLaborCosts(packageId, items)`** → `void`
+    - `PUT /shipment-packages/{packageId}/labor-costs`
+    - **Wire note**: Trendyol's body is a **raw array** here (no `{ items: [...] }` envelope) — the SDK forwards as-is. `items: [{ orderLineId, laborCostPerItem }]`.
+    - SDK throws `ValidationError` on empty input.
+  - **`client.orders.updateWarehouse(packageId, warehouseId)`** → `void`
+    - `PUT /shipment-packages/{packageId}/warehouse` body `{ warehouseId }`
+    - Reassign the package to a different warehouse. `warehouseId` comes from `client.suppliers.getAddresses()` (filter by `isShipmentAddress`).
+
+  ### New exports
+  - `UpdateBoxInfoInput`
+  - `LaborCostInput`
+
+  ### Smoke verified (STAGE 2026-05-25)
+
+  All 3 wire-verified with fake `packageId` → Trendyol returns HTTP 401 (same gateway behavior as Phase 3a/3b/3c).
+
+  ### Phase 3 progress
+  - 3a ([#22](https://github.com/loncadev/lonca/issues/22)), 3b ([#23](https://github.com/loncadev/lonca/issues/23)), 3c ([#24](https://github.com/loncadev/lonca/issues/24)), **3d (this)** ✅ — 15 of 17 order-deep endpoints
+  - 3e: read variants (stream, cargo invoice) — last sub-group, then Phase 4 begins
+
+- [#26](https://github.com/loncadev/lonca/pull/26) [`fc211b5`](https://github.com/loncadev/lonca/commit/fc211b5eaf8ab9b9d4a5c22cd8c68f6522fd1676) Thanks [@keparlak](https://github.com/keparlak)! - Add **Phase 3e — order read variants** (2 endpoints). Final sub-group of Phase 3 — the orders surface is now feature-complete.
+
+  ### New methods
+  - **`client.orders.listStream({ cursor?, limit?, packageItemStatuses?, lastModifiedStartDate?, lastModifiedEndDate? })`** → `CursorPage<ShipmentPackage>`
+    - `GET /integration/order/sellers/{sellerId}/orders/stream`
+    - Streaming alternative to `orders.list` with **opaque cursor pagination** (vs page-index on `list`). Required when the dataset exceeds 10 000 records — bypasses the page-size cap.
+    - Same `ShipmentPackage` shape as `list`; the normalizer was extended to accept Trendyol's stream-only `id` field (vs `shipmentPackageId` on the regular list).
+  - **`client.orders.getCargoInvoiceItems(invoiceSerialNumber, { cursor?, limit? })`** → `CursorPage<CargoInvoiceItem>`
+    - `GET /integration/finance/che/sellers/{sellerId}/cargo-invoice/{invoiceSerialNumber}/items`
+    - Per-parcel cargo-fee breakdown for one cargo invoice. Useful for reconciling Trendyol cargo deductions against your shipped packages. `invoiceSerialNumber` comes from the Current Account Statement with `transactionType=DeductionInvoices`.
+    - Page-based pagination (default page size 500, max 500).
+    - Note the different path prefix — `/integration/finance/che/...`, not the regular `/integration/order/...`.
+
+  ### Discovery-first wire fix
+
+  The regular `getShipmentPackages` returns `shipmentPackageId`, but the new `getShipmentPackagesStream` returns the same field as `id`. SDK normalizer now accepts both (`shipmentPackageId ?? id`), and the existing `ShipmentPackage.id` public field stays unchanged for callers.
+
+  ### New exports
+  - `CargoInvoiceItem`
+  - `ListOrdersStreamParams`
+
+  ### Smoke verified (STAGE 2026-05-25)
+
+  ```
+  ── 6.8 orders.listStream({ limit: 2 })
+  ✓ Got 2 package(s) (nextCursor: eyJzIjpbMjczOCwxNzc5NzI1…)
+      pkg   92051591  order 1017338323  Cancelled   0 TRY
+      pkg   92027347  order 1238514712  Invoiced    35.79 TRY
+
+  ── 6.9 orders.getCargoInvoiceItems("LONCA-FAKE-INVOICE")
+  ℹ getCargoInvoiceItems wire-verified: HTTP 200 for fake serial (empty content array — Trendyol returns empty for unknown serials)
+  ```
+
+  ### Phase 3 complete
+  - 3a ([#22](https://github.com/loncadev/lonca/issues/22)): status lifecycle (4) ✅
+  - 3b ([#23](https://github.com/loncadev/lonca/issues/23)): splitting (4) ✅
+  - 3c ([#24](https://github.com/loncadev/lonca/issues/24)): cargo/delivery (4) ✅
+  - 3d ([#25](https://github.com/loncadev/lonca/issues/25)): operational metadata (3) ✅
+  - **3e (this): read variants (2) ✅**
+
+  **Total: 17 new order endpoints + 1 normalizer extension across 5 stacked PRs.** Orders surface is feature-complete. Next: Phase 4 — Returns/Claims (10 endpoints).
+
 ## 0.3.0
 
 ### Minor Changes
