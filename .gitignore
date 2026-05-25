@@ -17,3 +17,4 @@ coverage/
 .pnpm-store/
 *.tgz
 .eslintcache
+eslint-results.sarif
