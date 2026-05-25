@@ -129,7 +129,10 @@ describe.each(cases)('ProductsResource.$name (write)', ({ name, path, invoke, bo
       new Proxy(resource, {
         get(target, prop) {
           if (prop === name) {
-            return () => (target[name as keyof ProductsResource] as (...args: unknown[]) => Promise<unknown>).call(target, []);
+            return () =>
+              (
+                target[name as keyof ProductsResource] as (...args: unknown[]) => Promise<unknown>
+              ).call(target, []);
           }
           return Reflect.get(target, prop);
         },
