@@ -74,7 +74,7 @@ export function createTrendyolClient(opts: CreateClientOptions): TrendyolClient 
 
   return {
     brands: new BrandsResource(transport),
-    categories: new CategoriesResource(transport),
+    categories: new CategoriesResource(transport, undefined, opts.sellerId),
     suppliers: new SuppliersResource(transport, opts.sellerId),
     products: new ProductsResource(transport, opts.sellerId),
     inventory: new InventoryResource(transport, opts.sellerId),

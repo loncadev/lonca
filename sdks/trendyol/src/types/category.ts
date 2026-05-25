@@ -20,6 +20,20 @@ export interface CategoryAttributeValue {
 }
 
 /**
+ * Result of `categories.getByBarcodes` — a barcode → category mapping
+ * sourced from Trendyol's Export Center (AutoFT) lookup endpoint.
+ */
+export interface BarcodeCategoryLookup {
+  /** Successful matches. */
+  matches: Array<{
+    barcode: string;
+    category: { id: string; name: string };
+  }>;
+  /** Barcodes Trendyol could not resolve to a category. */
+  notFound: string[];
+}
+
+/**
  * A required or optional attribute for products in a given category.
  * Use these when constructing a `createProduct V2` payload — the API rejects
  * products that omit `required` attributes.

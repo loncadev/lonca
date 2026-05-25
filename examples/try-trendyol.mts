@@ -139,6 +139,18 @@ try {
   console.error('✖ categories failed:', formatError(err));
 }
 
+// ── 1.5 brands.search (case-sensitive name lookup) ──────────────────────
+console.log('\n── 1.5 brands.search("Trendyol") ─────────────────────────');
+try {
+  const hits = await client.brands.search('Trendyol');
+  console.log(`✓ Got ${hits.length} match(es). First 5:`);
+  for (const b of hits.slice(0, 5)) {
+    console.log(`    ${b.id.padStart(8)}  ${b.name}`);
+  }
+} catch (err) {
+  console.error('✖ brands.search failed:', formatError(err));
+}
+
 // ── 4. Suppliers (1 req/hour rate limit; skippable) ──────────────────────
 if (process.env.TY_SKIP_SUPPLIERS === '1') {
   console.log('\n⏭  Skipping suppliers.getAddresses (TY_SKIP_SUPPLIERS=1)');
@@ -402,6 +414,26 @@ if (process.env.TY_SKIP_PRODUCT_LIFECYCLE === '1') {
     console.log(`✓ unlock       accepted; batchRequestId=${batchRequestId}`);
   } catch (err) {
     console.error('✖ unlock failed:', formatError(err));
+  }
+}
+
+// ── 5.5 categories.getByBarcodes (AutoFT — Export Center) ──────────────
+if (firstApprovedBarcode) {
+  console.log(`\n── 5.5 categories.getByBarcodes(["${firstApprovedBarcode}"]) ─────────`);
+  try {
+    const lookup = await client.categories.getByBarcodes([firstApprovedBarcode]);
+    console.log(`✓ matches: ${lookup.matches.length}  notFound: ${lookup.notFound.length}`);
+    for (const m of lookup.matches.slice(0, 3)) {
+      console.log(
+        `    ${m.barcode.padStart(16)}  → ${m.category.id.padStart(8)}  ${m.category.name}`,
+      );
+    }
+    for (const nf of lookup.notFound.slice(0, 3)) {
+      console.log(`    ✗ not found: ${nf}`);
+    }
+  } catch (err) {
+    // Expected if seller is not enrolled in Trendyol Export Center (AutoFT).
+    console.log(`ℹ getByBarcodes failed (likely AutoFT not enrolled): ${formatError(err)}`);
   }
 }
 

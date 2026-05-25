@@ -287,3 +287,61 @@ describe('CategoriesResource.getAttributeValues', () => {
     );
   });
 });
+
+describe('CategoriesResource.getByBarcodes', () => {
+  it('POSTs to the AutoFT lookup endpoint with body { barcodes }', async () => {
+    const transport = mockTransport({ barcodeCategories: {}, notFound: [] });
+    const resource = new CategoriesResource(transport, fastLimiter(), 2738);
+
+    await resource.getByBarcodes(['B1', 'B2']);
+
+    expect(transport.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: 'POST',
+        path: '/integration/ecgw/v1/2738/lookup/product-categories/by-barcodes',
+        body: { barcodes: ['B1', 'B2'] },
+      }),
+    );
+  });
+
+  it('normalizes the map-shaped barcodeCategories response into an array', async () => {
+    const transport = mockTransport({
+      barcodeCategories: {
+        'barcode-1': { id: 123, displayName: 'Etek' },
+        'barcode-2': { id: 124, displayName: 'Deri Ceket' },
+      },
+      notFound: ['barcode-4'],
+    });
+    const resource = new CategoriesResource(transport, fastLimiter(), 2738);
+
+    const result = await resource.getByBarcodes(['barcode-1', 'barcode-2', 'barcode-4']);
+
+    expect(result.matches).toEqual(
+      expect.arrayContaining([
+        { barcode: 'barcode-1', category: { id: '123', name: 'Etek' } },
+        { barcode: 'barcode-2', category: { id: '124', name: 'Deri Ceket' } },
+      ]),
+    );
+    expect(result.notFound).toEqual(['barcode-4']);
+  });
+
+  it('throws ValidationError on empty input', async () => {
+    const transport = mockTransport({});
+    const resource = new CategoriesResource(transport, fastLimiter(), 2738);
+    await expect(resource.getByBarcodes([])).rejects.toThrow(/must not be empty/);
+    expect(transport.request).not.toHaveBeenCalled();
+  });
+
+  it('throws when constructed without a sellerId', async () => {
+    const transport = mockTransport({ barcodeCategories: {} });
+    const resource = new CategoriesResource(transport, fastLimiter(), undefined);
+    await expect(resource.getByBarcodes(['B1'])).rejects.toThrow(/requires a sellerId/);
+  });
+
+  it('defaults `notFound` to an empty array when missing', async () => {
+    const transport = mockTransport({ barcodeCategories: { B1: { id: 1, displayName: 'X' } } });
+    const resource = new CategoriesResource(transport, fastLimiter(), 2738);
+    const result = await resource.getByBarcodes(['B1']);
+    expect(result.notFound).toEqual([]);
+  });
+});

@@ -1,6 +1,16 @@
-import { TokenBucketRateLimiter, type CursorPage, type CursorPaginationParams } from '@lonca/core';
+import {
+  TokenBucketRateLimiter,
+  ValidationError,
+  type CursorPage,
+  type CursorPaginationParams,
+} from '@lonca/core';
 import type { TrendyolTransport } from '../transport.js';
-import type { Category, CategoryAttribute, CategoryAttributeValue } from '../types/category.js';
+import type {
+  BarcodeCategoryLookup,
+  Category,
+  CategoryAttribute,
+  CategoryAttributeValue,
+} from '../types/category.js';
 
 interface TrendyolCategoryNode {
   id: number;
@@ -109,6 +119,12 @@ export class CategoriesResource {
   constructor(
     private readonly transport: TrendyolTransport,
     limiter?: TokenBucketRateLimiter,
+    /**
+     * Trendyol seller (supplier) ID — required only for the AutoFT-scoped
+     * `getByBarcodes` lookup. Other category endpoints don't need it.
+     * Provided automatically when constructed via `createTrendyolClient`.
+     */
+    private readonly sellerId?: number,
   ) {
     this.limiter = limiter ?? new TokenBucketRateLimiter({ capacity: 50, intervalMs: 60_000 });
   }
@@ -208,6 +224,50 @@ export class CategoriesResource {
       result.nextCursor = String(page + 1);
     }
     return result;
+  }
+
+  /**
+   * Look up category info for a list of barcodes (Trendyol Export Center
+   * / AutoFT endpoint).
+   *
+   * **Requires Export Center enrollment.** Sellers who have not joined
+   * Trendyol's "İhracat Merkezi" program will get an auth error on this
+   * endpoint even though their regular Marketplace credentials are valid.
+   *
+   * @param barcodes 1–N barcodes to look up.
+   * @throws {ValidationError} when `barcodes` is empty.
+   * @throws Error when the client was created without a `sellerId` and this
+   *   method is called directly (use `createTrendyolClient` to wire it).
+   */
+  async getByBarcodes(barcodes: string[]): Promise<BarcodeCategoryLookup> {
+    if (!Array.isArray(barcodes) || barcodes.length === 0) {
+      throw new ValidationError({ message: 'getByBarcodes: barcodes must not be empty' });
+    }
+    if (this.sellerId === undefined) {
+      throw new Error(
+        'CategoriesResource.getByBarcodes requires a sellerId; instantiate via createTrendyolClient',
+      );
+    }
+
+    interface WireResponse {
+      barcodeCategories?: Record<string, { id?: number | string; displayName?: string }>;
+      notFound?: string[];
+    }
+    const data = await this.transport.request<WireResponse>({
+      method: 'POST',
+      path: `/integration/ecgw/v1/${this.sellerId}/lookup/product-categories/by-barcodes`,
+      body: { barcodes },
+      rateLimiter: this.limiter,
+    });
+
+    const matches = Object.entries(data.barcodeCategories ?? {}).map(([barcode, cat]) => ({
+      barcode,
+      category: {
+        id: cat.id !== undefined ? String(cat.id) : '',
+        name: cat.displayName ?? '',
+      },
+    }));
+    return { matches, notFound: data.notFound ?? [] };
   }
 }
 
