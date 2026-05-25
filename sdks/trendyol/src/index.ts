@@ -15,6 +15,7 @@ export {
   type UnapprovedDateQueryType,
 } from './resources/products.js';
 export { SuppliersResource, type SuppliersResourceOptions } from './resources/suppliers.js';
+export { WebhooksResource } from './resources/webhooks.js';
 export type { Brand } from './types/brand.js';
 export type {
   BarcodeCategoryLookup,
@@ -89,3 +90,4 @@ export type {
   ListCompensationTicketsParams,
 } from './types/returns.js';
 export type { SupplierAddress, SupplierAddressType } from './types/supplier-address.js';
+export type { Webhook, WebhookAuthenticationType, WebhookInput } from './types/webhook.js';
