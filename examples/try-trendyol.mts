@@ -129,6 +129,33 @@ if (process.env.TY_SKIP_SUPPLIERS === '1') {
   }
 }
 
+// ── 5. Products: list a small page ───────────────────────────────────────
+console.log('\n── 5. products.list({ limit: 3 }) ────────────────────────');
+try {
+  const page = await client.products.list({ limit: 3 });
+  console.log(
+    `✓ Got ${page.items.length} product(s)${page.nextCursor ? ` (nextCursor: ${page.nextCursor.slice(0, 20)}…)` : ' (no more pages)'}`,
+  );
+  for (const p of page.items.slice(0, 3)) {
+    const title = p.title.length > 48 ? `${p.title.slice(0, 45)}…` : p.title;
+    const barcode = p.variants[0]?.barcode ?? '(no variant)';
+    console.log(`    ${barcode.padStart(16)}  ${title}  [${p.brand.name}, ${p.category.name}]`);
+  }
+} catch (err) {
+  console.error('✖ products.list failed:', formatError(err));
+}
+
+// ── 6. Products: batch status of a (non-existent) batchRequestId ─────────
+console.log('\n── 6. products.getBatchStatus("smoke-test-fake-id") ──────');
+try {
+  const result = await client.products.getBatchStatus('smoke-test-fake-id');
+  console.log(`✓ Batch status: ${result.status} (items: ${result.items.length})`);
+  console.log('  raw keys:', Object.keys(result.raw).join(', '));
+} catch (err) {
+  // 404 is the expected outcome here — a non-existent batchId.
+  console.log(`ℹ getBatchStatus errored as expected: ${formatError(err)}`);
+}
+
 console.log('\n✅ Done.');
 
 function findFirstLeaf(
