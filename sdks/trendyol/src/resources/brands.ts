@@ -64,4 +64,28 @@ export class BrandsResource {
 
     return nextCursor !== undefined ? { items, nextCursor } : { items };
   }
+
+  /**
+   * Search brands by name. Useful when you need a brand's numeric ID for
+   * `createProducts` and don't want to page through the full `list()`
+   * (1000 brands per page).
+   *
+   * **Discovery-first wire fact (verified STAGE 2026-05-25):** Trendyol's
+   * doc claims this is a case-sensitive *exact* match, but live behaviour
+   * is **substring + case-insensitive** — `search('Trendyol')` returns
+   * 17 hits including `TRENDYOLMILLA`, `trendyol vavist`, `Trendyol Üyelik`.
+   * Plan for ranking your results client-side if you need an exact match.
+   * The endpoint returns an empty array when nothing matches (no 404).
+   *
+   * @param name The brand name to search for.
+   */
+  async search(name: string): Promise<Brand[]> {
+    const data = await this.transport.request<Array<{ id: number; name: string }>>({
+      method: 'GET',
+      path: '/integration/product/brands/by-name',
+      query: { name },
+      rateLimiter: this.limiter,
+    });
+    return (data ?? []).map((b) => ({ id: String(b.id), name: b.name }));
+  }
 }

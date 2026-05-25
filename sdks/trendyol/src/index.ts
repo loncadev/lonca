@@ -15,7 +15,12 @@ export {
 } from './resources/products.js';
 export { SuppliersResource, type SuppliersResourceOptions } from './resources/suppliers.js';
 export type { Brand } from './types/brand.js';
-export type { Category, CategoryAttribute, CategoryAttributeValue } from './types/category.js';
+export type {
+  BarcodeCategoryLookup,
+  Category,
+  CategoryAttribute,
+  CategoryAttributeValue,
+} from './types/category.js';
 export type { PriceInventoryUpdate, UpdatePriceInventoryResponse } from './types/inventory.js';
 export type {
   OrderAddress,
