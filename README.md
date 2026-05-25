@@ -40,11 +40,11 @@ Lonca aims to fill this gap with a community-maintained open standard.
 
 ## Packages
 
-| Package              | Description                                                  | Status                                                                                                    |
-| -------------------- | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
-| `@lonca/core`        | Shared types, error hierarchy, retry / logger / rate-limiter | [![npm](https://img.shields.io/npm/v/@lonca/core.svg)](https://www.npmjs.com/package/@lonca/core)         |
-| `@lonca/trendyol`    | Trendyol Marketplace SDK — products surface feature-complete | [![npm](https://img.shields.io/npm/v/@lonca/trendyol.svg)](https://www.npmjs.com/package/@lonca/trendyol) |
-| `@lonca/hepsiburada` | Hepsiburada Marketplace API SDK                              | Planned                                                                                                   |
+| Package              | Description                                                                         | Status                                                                                                    |
+| -------------------- | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `@lonca/core`        | Shared types, error hierarchy, retry / logger / rate-limiter                        | [![npm](https://img.shields.io/npm/v/@lonca/core.svg)](https://www.npmjs.com/package/@lonca/core)         |
+| `@lonca/trendyol`    | Trendyol Marketplace SDK — full surface (14 resources, ~70 methods, webhook helper) | [![npm](https://img.shields.io/npm/v/@lonca/trendyol.svg)](https://www.npmjs.com/package/@lonca/trendyol) |
+| `@lonca/hepsiburada` | Hepsiburada Marketplace API SDK                                                     | Planned                                                                                                   |
 
 Need an SDK for another marketplace? Open a [marketplace request](https://github.com/loncadev/lonca/issues/new?template=marketplace_request.yml).
 
@@ -75,7 +75,7 @@ for await (const product of paginate((p) => client.products.list(p))) {
 }
 ```
 
-See [`sdks/trendyol/README.md`](./sdks/trendyol/README.md) for the full surface (brands · categories · suppliers · products read+write+lifecycle · inventory · orders) and an end-to-end "create a product" walkthrough.
+See [`sdks/trendyol/README.md`](./sdks/trendyol/README.md) for the full surface (brands · categories · suppliers · products read+write+lifecycle · inventory · orders read+write+split+cargo+ops+returns · claims · webhooks + `parseWebhookEvent` · questions · invoices · finance · labels · testOrders · locations) and end-to-end walkthroughs for product creation, webhook handling, returns/claims, and settlement reconciliation.
 
 ### Shared primitives
 
