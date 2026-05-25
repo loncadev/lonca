@@ -437,6 +437,19 @@ if (firstApprovedBarcode) {
   }
 }
 
+// ── 6.89 questions.list (Phase 6) ──────────────────────────────────────
+console.log('\n── 6.89 questions.list({ limit: 2 }) ──────────────────────');
+try {
+  const page = await client.questions.list({ limit: 2 });
+  console.log(`✓ Got ${page.items.length} question(s)`);
+  for (const q of page.items.slice(0, 2)) {
+    const text = (q.text ?? '').slice(0, 50);
+    console.log(`    Q#${q.id}  status=${q.status ?? '?'}  ${text}…`);
+  }
+} catch (err) {
+  console.log(`ℹ questions.list: ${formatError(err).slice(0, 100)}`);
+}
+
 // ── 6.88 webhooks.list (Phase 5 — read-only, safe to smoke) ─────────────
 console.log('\n── 6.88 webhooks.list() ──────────────────────────────────');
 try {
