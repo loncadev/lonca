@@ -1,5 +1,12 @@
 # @lonca/examples
 
+## 0.0.5
+
+### Patch Changes
+
+- Updated dependencies [[`68e9ce2`](https://github.com/loncadev/lonca/commit/68e9ce26733ca1a107b791f6e7aa75d6310c3362)]:
+  - @lonca/trendyol@0.6.0
+
 ## 0.0.4
 
 ### Patch Changes
