@@ -424,7 +424,9 @@ if (firstApprovedBarcode) {
     const lookup = await client.categories.getByBarcodes([firstApprovedBarcode]);
     console.log(`✓ matches: ${lookup.matches.length}  notFound: ${lookup.notFound.length}`);
     for (const m of lookup.matches.slice(0, 3)) {
-      console.log(`    ${m.barcode.padStart(16)}  → ${m.category.id.padStart(8)}  ${m.category.name}`);
+      console.log(
+        `    ${m.barcode.padStart(16)}  → ${m.category.id.padStart(8)}  ${m.category.name}`,
+      );
     }
     for (const nf of lookup.notFound.slice(0, 3)) {
       console.log(`    ✗ not found: ${nf}`);
