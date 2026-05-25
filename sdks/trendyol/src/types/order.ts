@@ -146,6 +146,27 @@ export interface CancelPackageItemInput {
 }
 
 /**
+ * Box / packaging metadata for `orders.updateBoxInfo`. Both fields are
+ * optional but at least one should be set for the call to be meaningful.
+ */
+export interface UpdateBoxInfoInput {
+  /** Desi value (volumetric weight used by Trendyol for shipping cost). */
+  deci?: number;
+  /** Number of physical boxes in the shipment. */
+  boxQuantity?: number;
+}
+
+/**
+ * Per-line labor cost for `orders.updateLaborCosts`. The Trendyol API
+ * accepts a raw array of these (no envelope) — the SDK forwards as-is.
+ */
+export interface LaborCostInput {
+  orderLineId: number;
+  /** Labor cost charged per single unit of this line. */
+  laborCostPerItem: number;
+}
+
+/**
  * Trendyol cargo provider codes accepted by `orders.changeCargoProvider`.
  * Use the string union for autocomplete; `(string & {})` keeps unknown
  * codes type-compatible so Trendyol can add providers without breaking

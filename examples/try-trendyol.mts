@@ -517,6 +517,19 @@ if (process.env.TY_SKIP_ORDER_WRITES === '1') {
       name: 'markDeliveredByService',
       call: () => client.orders.markDeliveredByService(fakePkg),
     },
+    {
+      name: 'updateBoxInfo',
+      call: () => client.orders.updateBoxInfo(fakePkg, { deci: 2, boxQuantity: 1 }),
+    },
+    {
+      name: 'updateLaborCosts',
+      call: () =>
+        client.orders.updateLaborCosts(fakePkg, [{ orderLineId: 1, laborCostPerItem: 10 }]),
+    },
+    {
+      name: 'updateWarehouse',
+      call: () => client.orders.updateWarehouse(fakePkg, 1),
+    },
   ];
 
   // Note: Trendyol returns 401 for unknown packageIds on these endpoints

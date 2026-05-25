@@ -7,12 +7,14 @@ import {
 import type { TrendyolTransport } from '../transport.js';
 import type {
   CancelPackageItemInput,
+  LaborCostInput,
   OrderAddress,
   OrderCustomer,
   OrderLine,
   PackageHistoryEntry,
   ProcessAlternativeDeliveryInput,
   QuantitySplit,
+  UpdateBoxInfoInput,
   ShipmentPackage,
   ShipmentPackageStatus,
   SplitGroup,
@@ -632,6 +634,52 @@ export class OrdersResource {
     await this.transport.request<unknown>({
       method: 'PUT',
       path: `${this.packagePath(packageId)}/delivered-by-service`,
+      rateLimiter: this.limiter,
+    });
+  }
+
+  /**
+   * Update box / packaging metadata on a shipment package (desi value
+   * and/or number of boxes). Either field can be sent alone.
+   */
+  async updateBoxInfo(packageId: string | number, input: UpdateBoxInfoInput): Promise<void> {
+    await this.transport.request<unknown>({
+      method: 'PUT',
+      path: `${this.packagePath(packageId)}/box-info`,
+      body: input,
+      rateLimiter: this.limiter,
+    });
+  }
+
+  /**
+   * Update labor costs for one or more order lines.
+   *
+   * **Wire note:** Trendyol's request body is a raw array (no envelope),
+   * not `{ items: [...] }`. The SDK forwards `items` verbatim.
+   *
+   * @throws {ValidationError} when `items` is empty.
+   */
+  async updateLaborCosts(packageId: string | number, items: LaborCostInput[]): Promise<void> {
+    if (!Array.isArray(items) || items.length === 0) {
+      throw new ValidationError({ message: 'updateLaborCosts: items must not be empty' });
+    }
+    await this.transport.request<unknown>({
+      method: 'PUT',
+      path: `${this.packagePath(packageId)}/labor-costs`,
+      body: items,
+      rateLimiter: this.limiter,
+    });
+  }
+
+  /**
+   * Reassign a shipment package to a different warehouse. `warehouseId`
+   * comes from `client.suppliers.getAddresses()` (filter by `isShipmentAddress`).
+   */
+  async updateWarehouse(packageId: string | number, warehouseId: number): Promise<void> {
+    await this.transport.request<unknown>({
+      method: 'PUT',
+      path: `${this.packagePath(packageId)}/warehouse`,
+      body: { warehouseId },
       rateLimiter: this.limiter,
     });
   }

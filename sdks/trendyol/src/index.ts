@@ -24,6 +24,7 @@ export type {
 export type { PriceInventoryUpdate, UpdatePriceInventoryResponse } from './types/inventory.js';
 export type {
   CancelPackageItemInput,
+  LaborCostInput,
   OrderAddress,
   OrderAddressLines,
   OrderCustomer,
@@ -39,6 +40,7 @@ export type {
   SplitGroup,
   SplitPackagePlan,
   TrendyolCargoProvider,
+  UpdateBoxInfoInput,
   UpdatePackageStatusInput,
 } from './types/order.js';
 export type {
