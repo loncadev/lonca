@@ -1,9 +1,10 @@
 # Lonca
 
 [![CI](https://github.com/loncadev/lonca/actions/workflows/ci.yml/badge.svg)](https://github.com/loncadev/lonca/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/@lonca/core.svg?label=%40lonca%2Fcore)](https://www.npmjs.com/package/@lonca/core)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
-[![pnpm](https://img.shields.io/badge/maintained%20with-pnpm-cc00ff.svg)](https://pnpm.io/)
 [![Node](https://img.shields.io/node/v/@lonca/core.svg)](https://nodejs.org/)
+[![pnpm](https://img.shields.io/badge/maintained%20with-pnpm-cc00ff.svg)](https://pnpm.io/)
 
 Open-source SDKs and tooling for Turkish e-commerce marketplaces.
 
@@ -17,6 +18,7 @@ Open-source SDKs and tooling for Turkish e-commerce marketplaces.
 - [Vision](#vision)
 - [Why?](#why)
 - [Packages](#packages)
+- [Quick start](#quick-start)
 - [Development](#development)
 - [Contributing](#contributing)
 - [Security](#security)
@@ -38,19 +40,46 @@ Lonca aims to fill this gap with a community-maintained open standard.
 
 ## Packages
 
-| Package              | Description                                                  | Status  |
-| -------------------- | ------------------------------------------------------------ | ------- |
-| `@lonca/core`        | Shared types, error hierarchy, retry / logger / rate-limiter | Planned |
-| `@lonca/trendyol`    | Trendyol Marketplace API SDK                                 | Planned |
-| `@lonca/hepsiburada` | Hepsiburada Marketplace API SDK                              | Planned |
+| Package              | Description                                                  | Status                                                                                            |
+| -------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------- |
+| `@lonca/core`        | Shared types, error hierarchy, retry / logger / rate-limiter | [![npm](https://img.shields.io/npm/v/@lonca/core.svg)](https://www.npmjs.com/package/@lonca/core) |
+| `@lonca/trendyol`    | Trendyol Marketplace API SDK                                 | Planned                                                                                           |
+| `@lonca/hepsiburada` | Hepsiburada Marketplace API SDK                              | Planned                                                                                           |
 
 Need an SDK for another marketplace? Open a [marketplace request](https://github.com/loncadev/lonca/issues/new?template=marketplace_request.yml).
+
+## Quick start
+
+Today you can install the shared primitives (used by every Lonca SDK once they land):
+
+```bash
+pnpm add @lonca/core
+# or: npm install @lonca/core / yarn add @lonca/core
+```
+
+```ts
+import { money, paginate, retry, RateLimitError, TokenBucketRateLimiter } from '@lonca/core';
+
+const price = money(12550, 'TRY'); // 125.50 TRY (integer minor units)
+
+const limiter = new TokenBucketRateLimiter({ capacity: 50, intervalMs: 60_000 });
+
+await retry(
+  async () => {
+    await limiter.acquire();
+    // ...call a marketplace API
+  },
+  { maxAttempts: 5 },
+);
+```
+
+See [`packages/core/README.md`](./packages/core/README.md) for the full surface (errors, pagination, logger, rate limiter).
 
 ## Development
 
 Requirements:
 
-- Node.js >= 20 (LTS) — pinned via `.nvmrc`
+- Node.js >= 22 (active LTS) — pinned to `24` via `.nvmrc`
 - pnpm >= 10 ([Corepack](https://nodejs.org/api/corepack.html) recommended)
 
 ```bash
@@ -67,13 +96,13 @@ pnpm lint           # ESLint
 pnpm format         # Prettier (write)
 pnpm test           # Vitest
 pnpm build          # Build all packages via Turborepo
-pnpm dev            # Parallel watch (once packages land)
+pnpm dev            # Parallel watch across packages
 ```
 
 Work on a single package:
 
 ```bash
-pnpm --filter @lonca/trendyol test
+pnpm --filter @lonca/core test
 ```
 
 ## Contributing
