@@ -60,8 +60,8 @@ console.log(`  total leaves: ${leaves.length}`);
 // populated. STAGE has many empty test cats AND free-text-only attributes;
 // we want to surface BOTH the empty shape and the populated shape.
 let leaf: TreeNode | null = null;
-let attrs: Awaited<ReturnType<typeof client.categories.getAttributes>> = [];
-let picked: (typeof attrs)[number] | null = null;
+type AttrItem = Awaited<ReturnType<typeof client.categories.getAttributes>>[number];
+let picked: AttrItem | null = null;
 const maxProbe = Math.min(leaves.length, 200);
 
 const base = env === 'prod' ? 'https://apigw.trendyol.com' : 'https://stageapigw.trendyol.com';
@@ -88,7 +88,6 @@ probe: for (let i = 0; i < maxProbe; i++) {
     const probeData = (await probeRes.json()) as { totalElements?: number };
     if ((probeData.totalElements ?? 0) > 0) {
       leaf = candidate;
-      attrs = list;
       picked = attr;
       console.log(
         `  probed ${i + 1} leaves — found populated attr after checking ${list.length} attrs under leaf`,

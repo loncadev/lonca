@@ -165,7 +165,6 @@ export class CategoriesResource {
     // or `attributes`. Verified via STAGE + PROD smoke tests on 2026-05-25.
     const list = extractAttributeList(data);
     if (!list) {
-      // eslint-disable-next-line no-console
       console.error(
         '[@lonca/trendyol] getCategoryAttributes: unexpected response shape:',
         JSON.stringify(data).slice(0, 800),
