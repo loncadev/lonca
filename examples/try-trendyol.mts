@@ -145,6 +145,36 @@ try {
   console.error('✖ products.list failed:', formatError(err));
 }
 
+// ── 6.5 inventory.update (safe smoke with a fake barcode) ───────────────
+// We use a unique fake barcode so the call cannot match any real product —
+// Trendyol still accepts it asynchronously and returns FAILED for that item.
+if (process.env.TY_SKIP_INVENTORY === '1') {
+  console.log('\n⏭  Skipping inventory.update (TY_SKIP_INVENTORY=1)');
+} else {
+  console.log('\n── 6.5 inventory.update + getBatchStatus chain (safe) ───');
+  try {
+    const fakeBarcode = `LONCA-SMOKE-${Date.now()}`;
+    console.log(`     fake barcode: ${fakeBarcode}`);
+    const { batchRequestId } = await client.inventory.update([
+      { barcode: fakeBarcode, quantity: 0 },
+    ]);
+    console.log(`✓ inventory.update accepted; batchRequestId=${batchRequestId}`);
+
+    // Trendyol processes async; give it ~3s then poll once.
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+    const status = await client.products.getBatchStatus(batchRequestId);
+    console.log(`✓ batch status after 3s: ${status.status} (items: ${status.items.length})`);
+    const item = status.items[0];
+    if (item) {
+      console.log(
+        `     first item: status=${item.status} reasons=${JSON.stringify(item.failureReasons)}`,
+      );
+    }
+  } catch (err) {
+    console.error('✖ inventory smoke failed:', formatError(err));
+  }
+}
+
 // ── 6. Products: batch status of a (non-existent) batchRequestId ─────────
 console.log('\n── 6. products.getBatchStatus("smoke-test-fake-id") ──────');
 try {

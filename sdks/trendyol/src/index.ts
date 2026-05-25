@@ -2,10 +2,12 @@ export { createTrendyolClient, type CreateClientOptions, type TrendyolClient } f
 export { type TrendyolEnvironment } from './transport.js';
 export { BrandsResource } from './resources/brands.js';
 export { CategoriesResource } from './resources/categories.js';
+export { InventoryResource } from './resources/inventory.js';
 export { ProductsResource, type ListProductsParams } from './resources/products.js';
 export { SuppliersResource, type SuppliersResourceOptions } from './resources/suppliers.js';
 export type { Brand } from './types/brand.js';
 export type { Category, CategoryAttribute, CategoryAttributeValue } from './types/category.js';
+export type { PriceInventoryUpdate, UpdatePriceInventoryResponse } from './types/inventory.js';
 export type {
   BatchRequestItemResult,
   BatchRequestResult,
