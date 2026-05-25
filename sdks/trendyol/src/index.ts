@@ -1,4 +1,6 @@
 export { createTrendyolClient, type CreateClientOptions, type TrendyolClient } from './client.js';
+export { parseWebhookEvent } from './parse-webhook-event.js';
+export { normalizeShipmentPackage } from './resources/orders.js';
 export { type TrendyolEnvironment } from './transport.js';
 export { BrandsResource } from './resources/brands.js';
 export {
@@ -103,14 +105,17 @@ export type {
   QuestionStatus,
 } from './types/question.js';
 export type { Webhook, WebhookAuthenticationType, WebhookInput } from './types/webhook.js';
+export type { PackageCreatedBy, WebhookEvent, WebhookEventStatus } from './types/webhook-event.js';
 export type {
   City,
   CommonLabel,
+  CommonLabelEntry,
   Country,
   CreateCommonLabelInput,
   CreateTestOrderInput,
   DeleteInvoiceLinkInput,
   District,
+  FinancialTransaction,
   ListFinanceParams,
   Neighborhood,
   OtherFinancialRow,

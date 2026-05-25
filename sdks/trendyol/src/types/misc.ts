@@ -41,16 +41,62 @@ export interface DeleteInvoiceLinkInput {
 // ─── Finance ──────────────────────────────────────────────────────────────
 
 /**
- * One row from `finance.getSettlements()` — loosely typed because the
- * settlement schema is broad. Drill into `raw` for any field.
+ * One row from Trendyol's current-account statement — returned by both
+ * `finance.getSettlements()` and `finance.getOtherFinancials()` (both
+ * endpoints share the `FinancialTransaction` wire schema).
+ *
+ * Field set verified against the spec on 2026-05-25. The SDK exposes the
+ * stable subset; anything Trendyol adds later remains accessible via `raw`.
  */
-export interface SettlementRow {
+export interface FinancialTransaction {
+  /** Transaction ID (string per Trendyol). */
+  id: string;
+  /** ISO 8601 UTC (from ms-epoch `transactionDate`). */
+  transactionDate?: string;
+  /** Product barcode when the transaction is tied to a SKU. */
+  barcode?: string | null;
+  /** Transaction category (e.g. `'Satış'`, `'Ödeme'`). */
+  transactionType?: string;
+  /** Receipt ID ("dekont no") when applicable. */
+  receiptId?: number | null;
+  description?: string | null;
+
+  /** Debit amount on the seller's account. */
+  debt?: number;
+  /** Credit amount on the seller's account. */
+  credit?: number;
+
+  paymentPeriod?: number | null;
+  commissionRate?: number | null;
+  commissionAmount?: number | null;
+  commissionInvoiceSerialNumber?: string | null;
+  /** Net seller revenue after Trendyol's cut. */
+  sellerRevenue?: number | null;
+
+  orderNumber?: string | null;
+  paymentOrderId?: number | null;
+  /** ISO 8601 UTC (from ms-epoch `paymentDate`). */
+  paymentDate?: string;
+
+  sellerId?: number;
+  storeId?: number | null;
+  storeName?: string | null;
+  storeAddress?: string | null;
+  country?: string | null;
+
+  /** Untouched raw row — pull any undocumented fields from here. */
   raw: Record<string, unknown>;
 }
 
-export interface OtherFinancialRow {
-  raw: Record<string, unknown>;
-}
+/**
+ * Aliases preserved for source-compatibility with `0.5.0`. Both legacy
+ * names now resolve to the unified `FinancialTransaction`.
+ *
+ * @deprecated since `0.5.1` — use `FinancialTransaction`.
+ */
+export type SettlementRow = FinancialTransaction;
+/** @deprecated since `0.5.1` — use `FinancialTransaction`. */
+export type OtherFinancialRow = FinancialTransaction;
 
 /**
  * Shared filter shape for both finance endpoints.
@@ -72,7 +118,20 @@ export interface CreateCommonLabelInput {
   volumetricHeight?: number;
 }
 
+/** One label entry inside a `CommonLabel` response. */
+export interface CommonLabelEntry {
+  /** Encoded label payload (e.g. ZPL string `^XA...^XZ`). */
+  label: string;
+  format: 'ZPL' | (string & {});
+}
+
+/**
+ * Response from `labels.getCommon()` — Trendyol's wire shape is
+ * `{ data: [{ label, format }] }`. SDK surfaces the array directly via
+ * `labels` for ergonomic access; `raw` is the untouched response.
+ */
 export interface CommonLabel {
+  labels: CommonLabelEntry[];
   raw: Record<string, unknown>;
 }
 

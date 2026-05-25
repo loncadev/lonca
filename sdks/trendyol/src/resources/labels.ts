@@ -1,6 +1,6 @@
 import { TokenBucketRateLimiter, ValidationError } from '@lonca/core';
 import type { TrendyolTransport } from '../transport.js';
-import type { CommonLabel, CreateCommonLabelInput } from '../types/misc.js';
+import type { CommonLabel, CommonLabelEntry, CreateCommonLabelInput } from '../types/misc.js';
 
 /**
  * Common-label (ortak etiket) endpoints — request and retrieve a
@@ -39,13 +39,29 @@ export class LabelsResource {
     });
   }
 
-  /** Retrieve the previously-created common label. */
+  /**
+   * Retrieve the previously-created common label. Trendyol returns
+   * `{ data: [{ label, format }] }`; the SDK surfaces the array as
+   * `labels[]` for ergonomic access.
+   *
+   * Typically `labels.length === 1` per tracking number, but kept as an
+   * array to match the wire shape.
+   */
   async getCommon(cargoTrackingNumber: string | number): Promise<CommonLabel> {
-    const data = await this.transport.request<unknown>({
+    interface WireResponse {
+      data?: Array<{ label?: string; format?: string }>;
+      [key: string]: unknown;
+    }
+    const raw = await this.transport.request<WireResponse>({
       method: 'GET',
       path: `/integration/sellers/${this.sellerId}/common-label/${encodeURIComponent(String(cargoTrackingNumber))}`,
       rateLimiter: this.limiter,
     });
-    return { raw: (data ?? {}) as Record<string, unknown> };
+
+    const labels: CommonLabelEntry[] = (raw?.data ?? []).map((row) => ({
+      label: row.label ?? '',
+      format: (row.format ?? 'ZPL') as CommonLabelEntry['format'],
+    }));
+    return { labels, raw: (raw ?? {}) as Record<string, unknown> };
   }
 }
