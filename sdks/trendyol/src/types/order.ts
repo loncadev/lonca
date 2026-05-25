@@ -114,6 +114,51 @@ export interface PackageHistoryEntry {
 }
 
 /**
+ * A package line update tuple used by `updatePackageStatus` and
+ * `cancelPackageItem`. `lineId` is the per-line ID from `ShipmentPackage.lines[].lineId`.
+ */
+export interface PackageLineUpdate {
+  lineId: number;
+  quantity: number;
+}
+
+/**
+ * Input for `orders.updatePackageStatus`. Trendyol restricts the seller-side
+ * status push to `Picking` (mark as being prepared) and `Invoiced`
+ * (invoice issued); other transitions are driven by Trendyol / the cargo
+ * provider. `lines` is optional and only used when transitioning subset of
+ * line items.
+ */
+export interface UpdatePackageStatusInput {
+  status: 'Picking' | 'Invoiced';
+  lines?: PackageLineUpdate[];
+}
+
+/**
+ * Input for `orders.cancelPackageItem` — Trendyol's "supply failure" notification.
+ * Marks specific line items as un-suppliable. `reasonId` is a numeric code
+ * Trendyol publishes separately (e.g. `577` = "tedarik edemiyorum"); consult
+ * Trendyol's seller panel or the "Tedarik Edememe" docs for current values.
+ */
+export interface CancelPackageItemInput {
+  lines: PackageLineUpdate[];
+  reasonId: number;
+}
+
+/**
+ * Input for `orders.processAlternativeDelivery`. Used when the seller is
+ * shipping via a non-Trendyol cargo provider — provide either a phone number
+ * (which Trendyol SMSes the tracking link to) or a direct tracking URL.
+ */
+export interface ProcessAlternativeDeliveryInput {
+  /** When true, `trackingInfo` is a phone number; when false, a tracking URL. */
+  isPhoneNumber: boolean;
+  trackingInfo: string;
+  /** Provider-specific extra parameters (Trendyol forwards verbatim). */
+  params: Record<string, string>;
+}
+
+/**
  * A Trendyol order — Trendyol models orders as "shipment packages". A single
  * customer order may produce multiple shipment packages (one per warehouse,
  * one per cancellation, etc.).
