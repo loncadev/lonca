@@ -12,8 +12,11 @@ import type {
   OrderLine,
   PackageHistoryEntry,
   ProcessAlternativeDeliveryInput,
+  QuantitySplit,
   ShipmentPackage,
   ShipmentPackageStatus,
+  SplitGroup,
+  SplitPackagePlan,
   UpdatePackageStatusInput,
 } from '../types/order.js';
 
@@ -478,6 +481,95 @@ export class OrdersResource {
       method: 'PUT',
       path: `${this.packagePath(packageId)}/alternative-delivery`,
       body: input,
+      rateLimiter: this.limiter,
+    });
+  }
+
+  /**
+   * Split a shipment package by moving a set of line IDs into a new
+   * package. The original package keeps the remaining lines.
+   *
+   * @param packageId    The package to split.
+   * @param orderLineIds Line IDs to move into the new package (1+).
+   * @throws {ValidationError} when `orderLineIds` is empty.
+   */
+  async splitPackage(packageId: string | number, orderLineIds: number[]): Promise<void> {
+    if (!Array.isArray(orderLineIds) || orderLineIds.length === 0) {
+      throw new ValidationError({ message: 'splitPackage: orderLineIds must not be empty' });
+    }
+    await this.transport.request<unknown>({
+      method: 'POST',
+      path: `${this.packagePath(packageId)}/split`,
+      body: { orderLineIds },
+      rateLimiter: this.limiter,
+    });
+  }
+
+  /**
+   * Split a shipment package by quantity. Each `QuantitySplit` entry
+   * carves a single line into multiple packages — e.g. `{ orderLineId: 100,
+   * quantities: [2, 2, 1] }` splits 5 units of line 100 into three packages
+   * of 2 + 2 + 1.
+   *
+   * @throws {ValidationError} when `quantitySplit` is empty.
+   */
+  async splitPackageByQuantity(
+    packageId: string | number,
+    quantitySplit: QuantitySplit[],
+  ): Promise<void> {
+    if (!Array.isArray(quantitySplit) || quantitySplit.length === 0) {
+      throw new ValidationError({
+        message: 'splitPackageByQuantity: quantitySplit must not be empty',
+      });
+    }
+    await this.transport.request<unknown>({
+      method: 'POST',
+      path: `${this.packagePath(packageId)}/quantity-split`,
+      body: { quantitySplit },
+      rateLimiter: this.limiter,
+    });
+  }
+
+  /**
+   * Split a shipment package into multiple new packages by grouping line
+   * IDs. Each `SplitGroup` becomes one new package containing the listed
+   * line IDs.
+   *
+   * @throws {ValidationError} when `splitGroups` is empty.
+   */
+  async multiSplitPackage(packageId: string | number, splitGroups: SplitGroup[]): Promise<void> {
+    if (!Array.isArray(splitGroups) || splitGroups.length === 0) {
+      throw new ValidationError({ message: 'multiSplitPackage: splitGroups must not be empty' });
+    }
+    await this.transport.request<unknown>({
+      method: 'POST',
+      path: `${this.packagePath(packageId)}/multi-split`,
+      body: { splitGroups },
+      rateLimiter: this.limiter,
+    });
+  }
+
+  /**
+   * Split a shipment package into multiple new packages, each containing a
+   * mix of line items at specific quantities. This is the most expressive
+   * split — use it when you need fine-grained control over which line IDs
+   * and how many of each end up in each new package.
+   *
+   * @throws {ValidationError} when `splitPackages` is empty.
+   */
+  async splitMultiPackagesByQuantity(
+    packageId: string | number,
+    splitPackages: SplitPackagePlan[],
+  ): Promise<void> {
+    if (!Array.isArray(splitPackages) || splitPackages.length === 0) {
+      throw new ValidationError({
+        message: 'splitMultiPackagesByQuantity: splitPackages must not be empty',
+      });
+    }
+    await this.transport.request<unknown>({
+      method: 'POST',
+      path: `${this.packagePath(packageId)}/split-packages`,
+      body: { splitPackages },
       rateLimiter: this.limiter,
     });
   }

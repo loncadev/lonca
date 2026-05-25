@@ -146,6 +146,44 @@ export interface CancelPackageItemInput {
 }
 
 /**
+ * Per-line quantity split for `orders.splitPackageByQuantity`. Each item
+ * in `quantities` becomes its own new package containing that many units
+ * of `orderLineId`.
+ *
+ * @example
+ * // splits 5 units of line 100 into 3 packages: 2 + 2 + 1
+ * { orderLineId: 100, quantities: [2, 2, 1] }
+ */
+export interface QuantitySplit {
+  orderLineId: number;
+  quantities: number[];
+}
+
+/**
+ * A group of line IDs that should become a new package together,
+ * for `orders.multiSplitPackage`.
+ */
+export interface SplitGroup {
+  orderLineIds: number[];
+}
+
+/**
+ * One package's contents for `orders.splitMultiPackagesByQuantity`. Each
+ * element of the outer array becomes a new package; each `packageDetails`
+ * entry carries an `orderLineId` and the **single** quantity assigned to
+ * that package (note: singular `quantities`, despite the field name).
+ */
+export interface PackageDetail {
+  orderLineId: number;
+  /** Quantity of this line to include in this package (singular integer). */
+  quantities: number;
+}
+
+export interface SplitPackagePlan {
+  packageDetails: PackageDetail[];
+}
+
+/**
  * Input for `orders.processAlternativeDelivery`. Used when the seller is
  * shipping via a non-Trendyol cargo provider — provide either a phone number
  * (which Trendyol SMSes the tracking link to) or a direct tracking URL.

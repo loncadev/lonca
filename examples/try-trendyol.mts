@@ -481,6 +481,26 @@ if (process.env.TY_SKIP_ORDER_WRITES === '1') {
           params: {},
         }),
     },
+    {
+      name: 'splitPackage',
+      call: () => client.orders.splitPackage(fakePkg, [1]),
+    },
+    {
+      name: 'splitPackageByQuantity',
+      call: () =>
+        client.orders.splitPackageByQuantity(fakePkg, [{ orderLineId: 1, quantities: [1] }]),
+    },
+    {
+      name: 'multiSplitPackage',
+      call: () => client.orders.multiSplitPackage(fakePkg, [{ orderLineIds: [1] }]),
+    },
+    {
+      name: 'splitMultiPackagesByQuantity',
+      call: () =>
+        client.orders.splitMultiPackagesByQuantity(fakePkg, [
+          { packageDetails: [{ orderLineId: 1, quantities: 1 }] },
+        ]),
+    },
   ];
 
   // Note: Trendyol returns 401 for unknown packageIds on these endpoints

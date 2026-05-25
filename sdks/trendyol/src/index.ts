@@ -29,11 +29,15 @@ export type {
   OrderCustomer,
   OrderLine,
   OrderLineDiscountDetail,
+  PackageDetail,
   PackageHistoryEntry,
   PackageLineUpdate,
   ProcessAlternativeDeliveryInput,
+  QuantitySplit,
   ShipmentPackage,
   ShipmentPackageStatus,
+  SplitGroup,
+  SplitPackagePlan,
   UpdatePackageStatusInput,
 } from './types/order.js';
 export type {
