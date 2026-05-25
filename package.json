@@ -28,6 +28,7 @@
     "format:check": "prettier --check .",
     "clean": "turbo run clean",
     "try:trendyol": "tsx --env-file=.env examples/try-trendyol.mts",
+    "try:inspect-orders": "tsx --env-file=.env examples/inspect-orders.mts",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "turbo run build && changeset publish"

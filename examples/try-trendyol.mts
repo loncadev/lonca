@@ -17,7 +17,6 @@
  *                          skip if you've already hit it recently)
  */
 
-import { paginate } from '@lonca/core';
 import { createTrendyolClient, type TrendyolEnvironment } from '@lonca/trendyol';
 
 function required(name: string): string {
@@ -217,6 +216,29 @@ if (process.env.TY_SKIP_INVENTORY === '1') {
       console.error('✖ inventory round-trip failed:', formatError(err));
     }
   }
+}
+
+// ── 6.7 Orders: list a small page ───────────────────────────────────────
+console.log('\n── 6.7 orders.list({ limit: 2 }) ────────────────────────');
+try {
+  const page = await client.orders.list({ limit: 2 });
+  console.log(
+    `✓ Got ${page.items.length} package(s)${page.nextCursor ? ` (nextCursor: ${page.nextCursor})` : ' (no more pages)'}`,
+  );
+  for (const pkg of page.items.slice(0, 2)) {
+    const customer = `${pkg.customer.firstName} ${pkg.customer.lastName}`.trim();
+    const lineCount = pkg.lines.length;
+    console.log(
+      `    pkg ${pkg.id.padStart(10)}  order ${pkg.orderNumber}  ${pkg.status.padEnd(10)}  ${pkg.packageTotalPrice} ${pkg.currencyCode}  ${customer}  (${lineCount} line${lineCount === 1 ? '' : 's'})`,
+    );
+    for (const line of pkg.lines.slice(0, 3)) {
+      const name =
+        line.productName.length > 40 ? `${line.productName.slice(0, 37)}…` : line.productName;
+      console.log(`      └ ${line.barcode.padStart(14)} × ${line.quantity}  ${name}`);
+    }
+  }
+} catch (err) {
+  console.error('✖ orders.list failed:', formatError(err));
 }
 
 // ── 6. Products: batch status of a (non-existent) batchRequestId ─────────
