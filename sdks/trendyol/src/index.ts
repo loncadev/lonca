@@ -1,7 +1,10 @@
 export { createTrendyolClient, type CreateClientOptions, type TrendyolClient } from './client.js';
 export { type TrendyolEnvironment } from './transport.js';
 export { BrandsResource } from './resources/brands.js';
-export { CategoriesResource } from './resources/categories.js';
+export {
+  CategoriesResource,
+  type ListCategoryAttributeValuesParams,
+} from './resources/categories.js';
 export { InventoryResource } from './resources/inventory.js';
 export { OrdersResource, type ListOrdersParams } from './resources/orders.js';
 export { ProductsResource, type ListProductsParams } from './resources/products.js';

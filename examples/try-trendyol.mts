@@ -78,11 +78,21 @@ try {
   }
   if (tree.length > 10) console.log(`    … and ${tree.length - 10} more`);
 
-  // ── 3. Category attributes (first leaf we can find) ────────────────────
-  const leaf = findFirstLeaf(tree);
+  // ── 3. Category attributes (first leaf we can find with attributes) ────
+  // STAGE has many empty test categories — walk a few until one has attrs.
+  const leaves = collectLeaves(tree);
+  let leaf: { id: string; name: string } | null = null;
+  let attrs: Awaited<ReturnType<typeof client.categories.getAttributes>> = [];
+  for (const candidate of leaves.slice(0, 20)) {
+    const list = await client.categories.getAttributes(candidate.id);
+    if (list.length > 0) {
+      leaf = candidate;
+      attrs = list;
+      break;
+    }
+  }
   if (leaf) {
     console.log(`\n── 3. categories.getAttributes(${leaf.id}) [${leaf.name}] ──`);
-    const attrs = await client.categories.getAttributes(leaf.id);
     console.log(`✓ Got ${attrs.length} attribute(s). First 3:`);
     for (const a of attrs.slice(0, 3)) {
       const flags = [
@@ -96,6 +106,33 @@ try {
       console.log(
         `    ${a.id.padStart(8)}  ${a.name}  [${flags || 'none'}]  ${a.values.length} value(s)`,
       );
+    }
+
+    // ── 3.5 Category attribute VALUES (V2) — fetch the catalog separately ──
+    // Prefer an attribute likely to have a value catalog (slicer/varianter
+    // or non-allowCustom). Free-text-only attributes return an empty page,
+    // which is correct but not interesting to look at.
+    const pickAttr =
+      attrs.find((a) => a.slicer || a.varianter) ??
+      attrs.find((a) => !a.allowCustom) ??
+      attrs[0];
+    if (pickAttr) {
+      console.log(
+        `\n── 3.5 categories.getAttributeValues(${leaf.id}, ${pickAttr.id}) [${pickAttr.name}] ──`,
+      );
+      try {
+        const valuesPage = await client.categories.getAttributeValues(leaf.id, pickAttr.id, {
+          limit: 5,
+        });
+        console.log(
+          `✓ Got ${valuesPage.items.length} value(s)${valuesPage.nextCursor ? ` (nextCursor: ${valuesPage.nextCursor})` : ' (no more pages)'}`,
+        );
+        for (const v of valuesPage.items.slice(0, 5)) {
+          console.log(`    ${v.id.padStart(8)}  ${v.name}`);
+        }
+      } catch (err) {
+        console.error('✖ getAttributeValues failed:', formatError(err));
+      }
     }
   } else {
     console.log('\n⚠ No leaf category found — skipping getAttributes');
@@ -254,19 +291,22 @@ try {
 
 console.log('\n✅ Done.');
 
-function findFirstLeaf(
+function collectLeaves(
   nodes: Array<{
     id: string;
     name: string;
     subCategories: Array<{ id: string; name: string; subCategories: unknown[] }>;
   }>,
-): { id: string; name: string } | null {
+): Array<{ id: string; name: string }> {
+  const out: Array<{ id: string; name: string }> = [];
   for (const n of nodes) {
-    if (n.subCategories.length === 0) return n;
-    const child = findFirstLeaf(n.subCategories as typeof nodes);
-    if (child) return child;
+    if (n.subCategories.length === 0) {
+      out.push({ id: n.id, name: n.name });
+    } else {
+      out.push(...collectLeaves(n.subCategories as typeof nodes));
+    }
   }
-  return null;
+  return out;
 }
 
 function formatError(err: unknown): string {

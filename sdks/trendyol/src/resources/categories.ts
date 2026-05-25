@@ -1,6 +1,6 @@
-import { TokenBucketRateLimiter } from '@lonca/core';
+import { TokenBucketRateLimiter, type CursorPage, type CursorPaginationParams } from '@lonca/core';
 import type { TrendyolTransport } from '../transport.js';
-import type { Category, CategoryAttribute } from '../types/category.js';
+import type { Category, CategoryAttribute, CategoryAttributeValue } from '../types/category.js';
 
 interface TrendyolCategoryNode {
   id: number;
@@ -20,6 +20,27 @@ type TrendyolCategoriesResponse = TrendyolCategoryNode[] | { categories: Trendyo
 interface TrendyolCategoryAttributeValue {
   id: number;
   name: string;
+}
+
+/**
+ * Wire shape of one item in the V2 `getCategoryAttributeValues` page.
+ *
+ * Important: the official OpenAPI spec calls this `attributeValueName`,
+ * but live STAGE responses (verified 2026-05-25) return `attributeValue`.
+ * We accept both defensively.
+ */
+interface TrendyolAttributeValueItem {
+  attributeValueId?: number | string;
+  attributeValue?: string;
+  attributeValueName?: string;
+}
+
+interface TrendyolAttributeValuesPage {
+  content?: TrendyolAttributeValueItem[];
+  page?: number;
+  size?: number;
+  totalPages?: number;
+  totalElements?: number;
 }
 
 interface TrendyolCategoryAttributeNode {
@@ -65,15 +86,22 @@ function normalizeAttribute(node: TrendyolCategoryAttributeNode): CategoryAttrib
   return out;
 }
 
+/** Trendyol caps `page` and `size` at 1000 for the values endpoint. */
+const MAX_ATTR_VALUES_PAGE_SIZE = 1000;
+const DEFAULT_ATTR_VALUES_PAGE_SIZE = 100;
+
+export type ListCategoryAttributeValuesParams = CursorPaginationParams;
+
 /**
  * Trendyol category-tree and category-attribute endpoints.
  *
  * Rate limits (per Trendyol service limits):
  * - Category list: 50 req/min
  * - Category attributes: 50 req/min
+ * - Category attribute values: 50 req/min (same service tier)
  *
- * Both rate counters live on the same Trendyol service, so we share one
- * limiter across both endpoints.
+ * All three counters live on the same Trendyol service, so we share one
+ * limiter across the endpoints.
  */
 export class CategoriesResource {
   private readonly limiter: TokenBucketRateLimiter;
@@ -129,6 +157,60 @@ export class CategoriesResource {
       return [];
     }
     return list.map(normalizeAttribute);
+  }
+
+  /**
+   * Fetch the allowed values for a single category attribute (paginated).
+   *
+   * `getCategoryAttributes` returns attribute metadata + flags but typically
+   * omits the value catalog. Use this method to fetch the catalog for an
+   * attribute when `allowCustom` is `false` and you need to map your data
+   * onto Trendyol's accepted values.
+   *
+   * @param categoryId  Trendyol numeric category ID; accepts `string` or `number`.
+   * @param attributeId Attribute ID returned by `getAttributes`.
+   * @param params      Cursor pagination (max page size 1000; default 100).
+   *
+   * @example
+   * ```ts
+   * import { paginate } from '@lonca/core';
+   * for await (const value of paginate((p) =>
+   *   client.categories.getAttributeValues(catId, attrId, p),
+   * )) {
+   *   console.log(value.id, value.name);
+   * }
+   * ```
+   */
+  async getAttributeValues(
+    categoryId: string | number,
+    attributeId: string | number,
+    params: ListCategoryAttributeValuesParams = {},
+  ): Promise<CursorPage<CategoryAttributeValue>> {
+    const catId = encodeURIComponent(String(categoryId));
+    const attrId = encodeURIComponent(String(attributeId));
+    const size = Math.min(
+      params.limit ?? DEFAULT_ATTR_VALUES_PAGE_SIZE,
+      MAX_ATTR_VALUES_PAGE_SIZE,
+    );
+    const page = params.cursor ? Number.parseInt(params.cursor, 10) : 0;
+
+    const data = await this.transport.request<TrendyolAttributeValuesPage>({
+      method: 'GET',
+      path: `/integration/product/categories/${catId}/attributes/${attrId}/values`,
+      query: { page, size },
+      rateLimiter: this.limiter,
+    });
+
+    const items: CategoryAttributeValue[] = (data.content ?? []).map((item) => ({
+      id: item.attributeValueId !== undefined ? String(item.attributeValueId) : '',
+      name: item.attributeValue ?? item.attributeValueName ?? '',
+    }));
+    const result: CursorPage<CategoryAttributeValue> = { items };
+    const totalPages = typeof data.totalPages === 'number' ? data.totalPages : 0;
+    if (page + 1 < totalPages) {
+      result.nextCursor = String(page + 1);
+    }
+    return result;
   }
 }
 

@@ -180,3 +180,110 @@ describe('CategoriesResource.getAttributes', () => {
     expect(attrs[0]).toMatchObject({ id: '0', name: '', required: true, values: [] });
   });
 });
+
+describe('CategoriesResource.getAttributeValues', () => {
+  it('hits the V2 values endpoint with page-based pagination', async () => {
+    const transport = mockTransport({
+      content: [{ attributeValueId: 1, attributeValue: 'Red' }],
+      page: 0,
+      size: 100,
+      totalPages: 1,
+      totalElements: 1,
+    });
+    const resource = new CategoriesResource(transport, fastLimiter());
+
+    await resource.getAttributeValues(387, 47);
+
+    expect(transport.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: 'GET',
+        path: '/integration/product/categories/387/attributes/47/values',
+        query: { page: 0, size: 100 },
+      }),
+    );
+  });
+
+  it('normalizes the live wire shape (attributeValueId + attributeValue) verified on STAGE', async () => {
+    // Verified against Trendyol STAGE on 2026-05-25 (cat=67302, attr=42737):
+    //   { attributeValueId, attributeValue } — NOT `attributeValueName` from the spec.
+    const transport = mockTransport({
+      content: [
+        { attributeValueId: 269969, attributeValue: 'berkay2' },
+        { attributeValueId: 269970, attributeValue: 'berkay3' },
+      ],
+      page: 0,
+      size: 10,
+      totalPages: 1,
+      totalElements: 2,
+    });
+    const resource = new CategoriesResource(transport, fastLimiter());
+
+    const page = await resource.getAttributeValues(67302, 42737, { limit: 10 });
+
+    expect(page.items).toEqual([
+      { id: '269969', name: 'berkay2' },
+      { id: '269970', name: 'berkay3' },
+    ]);
+    expect(page.nextCursor).toBeUndefined();
+  });
+
+  it('also accepts the spec-named `attributeValueName` field as a fallback', async () => {
+    const transport = mockTransport({
+      content: [{ attributeValueId: 5, attributeValueName: 'Large' }],
+      page: 0,
+      size: 100,
+      totalPages: 1,
+      totalElements: 1,
+    });
+    const resource = new CategoriesResource(transport, fastLimiter());
+
+    const page = await resource.getAttributeValues(1, 2);
+
+    expect(page.items).toEqual([{ id: '5', name: 'Large' }]);
+  });
+
+  it('emits nextCursor when more pages remain', async () => {
+    const transport = mockTransport({
+      content: [{ attributeValueId: 1, attributeValue: 'a' }],
+      page: 0,
+      size: 1,
+      totalPages: 3,
+      totalElements: 3,
+    });
+    const resource = new CategoriesResource(transport, fastLimiter());
+
+    const page = await resource.getAttributeValues(1, 2, { limit: 1 });
+
+    expect(page.nextCursor).toBe('1');
+  });
+
+  it('forwards the cursor as the next page index', async () => {
+    const transport = mockTransport({
+      content: [],
+      page: 2,
+      size: 100,
+      totalPages: 3,
+      totalElements: 250,
+    });
+    const resource = new CategoriesResource(transport, fastLimiter());
+
+    await resource.getAttributeValues(1, 2, { cursor: '2' });
+
+    expect(transport.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        query: { page: 2, size: 100 },
+      }),
+    );
+  });
+
+  it('caps size at Trendyol`s 1000 max', async () => {
+    const transport = mockTransport({ content: [], totalPages: 0 });
+    const resource = new CategoriesResource(transport, fastLimiter());
+
+    await resource.getAttributeValues(1, 2, { limit: 5000 });
+
+    expect(transport.request).toHaveBeenCalledWith(
+      expect.objectContaining({ query: { page: 0, size: 1000 } }),
+    );
+  });
+});
