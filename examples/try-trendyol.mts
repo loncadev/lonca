@@ -145,33 +145,77 @@ try {
   console.error('✖ products.list failed:', formatError(err));
 }
 
-// ── 6.5 inventory.update (safe smoke with a fake barcode) ───────────────
-// We use a unique fake barcode so the call cannot match any real product —
-// Trendyol still accepts it asynchronously and returns FAILED for that item.
+// ── 6.5 inventory.update — full round-trip with a REAL product ──────────
+// Fetches a real product, bumps its stock by +1, polls until the batch
+// completes, then re-fetches and verifies the change. STAGE-only by default.
+//
+// Set TY_SKIP_INVENTORY=1 to skip entirely.
 if (process.env.TY_SKIP_INVENTORY === '1') {
   console.log('\n⏭  Skipping inventory.update (TY_SKIP_INVENTORY=1)');
 } else {
-  console.log('\n── 6.5 inventory.update + getBatchStatus chain (safe) ───');
-  try {
-    const fakeBarcode = `LONCA-SMOKE-${Date.now()}`;
-    console.log(`     fake barcode: ${fakeBarcode}`);
-    const { batchRequestId } = await client.inventory.update([
-      { barcode: fakeBarcode, quantity: 0 },
-    ]);
-    console.log(`✓ inventory.update accepted; batchRequestId=${batchRequestId}`);
+  console.log('\n── 6.5 inventory.update — REAL round-trip ───────────────');
+  if (env === 'prod') {
+    console.log(
+      '⚠ TY_ENV=prod — refusing to mutate stock in PROD. Set TY_ENV=stage for this section, or TY_SKIP_INVENTORY=1.',
+    );
+  } else {
+    try {
+      // 1. Pick a real product + variant.
+      const probe = await client.products.list({ limit: 1 });
+      const product = probe.items[0];
+      const variant = product?.variants[0];
+      if (!product || !variant) {
+        console.log('⚠ No product/variant found to test against — skipping');
+      } else {
+        const currentStock = variant.stock ?? 0;
+        const newStock = currentStock + 1;
+        console.log(
+          `     variant: ${variant.barcode}  current stock: ${currentStock} → new: ${newStock}`,
+        );
 
-    // Trendyol processes async; give it ~3s then poll once.
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-    const status = await client.products.getBatchStatus(batchRequestId);
-    console.log(`✓ batch status after 3s: ${status.status} (items: ${status.items.length})`);
-    const item = status.items[0];
-    if (item) {
-      console.log(
-        `     first item: status=${item.status} reasons=${JSON.stringify(item.failureReasons)}`,
-      );
+        // 2. Submit the update.
+        const { batchRequestId } = await client.inventory.update([
+          { barcode: variant.barcode, quantity: newStock },
+        ]);
+        console.log(`✓ inventory.update accepted; batchRequestId=${batchRequestId}`);
+
+        // 3. Poll until the per-item status finalizes (not just overall — see note).
+        // Note: Trendyol's overall batch `status` can stay PROCESSING for tens
+        // of seconds even after `items[0].status` has settled. Trust the
+        // per-item status (or the verify step below) rather than overall.
+        const start = Date.now();
+        const timeoutMs = 30_000;
+        let status = await client.products.getBatchStatus(batchRequestId);
+        const itemSettled = (s: typeof status) => {
+          const first = s.items[0];
+          return first?.status !== undefined && first.status !== 'PROCESSING';
+        };
+        while (!itemSettled(status) && Date.now() - start < timeoutMs) {
+          await new Promise((res) => setTimeout(res, 1500));
+          status = await client.products.getBatchStatus(batchRequestId);
+        }
+        const elapsed = ((Date.now() - start) / 1000).toFixed(1);
+        console.log(
+          `✓ poll done after ${elapsed}s — overall: ${status.status}, items: ${status.items.length}`,
+        );
+        const item = status.items[0];
+        if (item) {
+          console.log(
+            `     first item: status=${item.status} reasons=${JSON.stringify(item.failureReasons)}`,
+          );
+        }
+
+        // 4. Verify via filter-by-barcode.
+        const verify = await client.products.list({ barcode: variant.barcode });
+        const updatedStock = verify.items[0]?.variants[0]?.stock;
+        const passed = updatedStock === newStock;
+        console.log(
+          `${passed ? '✓' : '✖'} verify via products.list(barcode): stock now ${updatedStock} (expected ${newStock})`,
+        );
+      }
+    } catch (err) {
+      console.error('✖ inventory round-trip failed:', formatError(err));
     }
-  } catch (err) {
-    console.error('✖ inventory smoke failed:', formatError(err));
   }
 }
 
