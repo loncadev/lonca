@@ -45,7 +45,7 @@ describe('SuppliersResource', () => {
     expect(transport.request).toHaveBeenCalledWith(
       expect.objectContaining({
         method: 'GET',
-        path: '/sapigw/suppliers/42/addresses',
+        path: '/integration/sellers/42/addresses',
       }),
     );
   });

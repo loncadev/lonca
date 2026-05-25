@@ -47,7 +47,7 @@ export class BrandsResource {
 
     const data = await this.transport.request<TrendyolBrandListResponse>({
       method: 'GET',
-      path: '/sapigw/brands',
+      path: '/integration/product/brands',
       query: { page, size },
       rateLimiter: this.limiter,
     });

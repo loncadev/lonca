@@ -24,7 +24,7 @@ describe('BrandsResource.list', () => {
     expect(transport.request).toHaveBeenCalledWith(
       expect.objectContaining({
         method: 'GET',
-        path: '/sapigw/brands',
+        path: '/integration/product/brands',
         query: { page: 0, size: 1000 },
       }),
     );

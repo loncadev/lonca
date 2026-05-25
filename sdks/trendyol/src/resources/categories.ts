@@ -9,9 +9,11 @@ interface TrendyolCategoryNode {
   subCategories?: TrendyolCategoryNode[];
 }
 
-interface TrendyolCategoriesResponse {
-  categories: TrendyolCategoryNode[];
-}
+/**
+ * Trendyol returns the category tree as a root-level JSON array.
+ * (Earlier internal naming had it wrapped in `{ categories }`; the public API does not.)
+ */
+type TrendyolCategoriesResponse = TrendyolCategoryNode[];
 
 interface TrendyolCategoryAttributeValue {
   id: number;
@@ -24,6 +26,8 @@ interface TrendyolCategoryAttributeNode {
   allowCustom: boolean;
   varianter: boolean;
   slicer: boolean;
+  /** V2-only: whether the attribute accepts multiple values at once. */
+  allowMultipleAttributeValues?: boolean;
   attributeValues: TrendyolCategoryAttributeValue[];
 }
 
@@ -42,7 +46,7 @@ function normalizeCategory(node: TrendyolCategoryNode): Category {
 }
 
 function normalizeAttribute(node: TrendyolCategoryAttributeNode): CategoryAttribute {
-  return {
+  const out: CategoryAttribute = {
     id: String(node.attribute.id),
     name: node.attribute.name,
     required: node.required,
@@ -51,6 +55,10 @@ function normalizeAttribute(node: TrendyolCategoryAttributeNode): CategoryAttrib
     slicer: node.slicer,
     values: node.attributeValues.map((v) => ({ id: String(v.id), name: v.name })),
   };
+  if (node.allowMultipleAttributeValues !== undefined) {
+    out.allowMultipleAttributeValues = node.allowMultipleAttributeValues;
+  }
+  return out;
 }
 
 /**
@@ -82,10 +90,10 @@ export class CategoriesResource {
   async list(): Promise<Category[]> {
     const data = await this.transport.request<TrendyolCategoriesResponse>({
       method: 'GET',
-      path: '/sapigw/product-categories',
+      path: '/integration/product/product-categories',
       rateLimiter: this.limiter,
     });
-    return data.categories.map(normalizeCategory);
+    return data.map(normalizeCategory);
   }
 
   /**
@@ -100,7 +108,7 @@ export class CategoriesResource {
     const id = encodeURIComponent(String(categoryId));
     const data = await this.transport.request<TrendyolCategoryAttributesResponse>({
       method: 'GET',
-      path: `/sapigw/product-categories/${id}/attributes`,
+      path: `/integration/product/categories/${id}/attributes`,
       rateLimiter: this.limiter,
     });
     return data.categoryAttributes.map(normalizeAttribute);

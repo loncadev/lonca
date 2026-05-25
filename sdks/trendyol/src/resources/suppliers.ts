@@ -125,7 +125,7 @@ export class SuppliersResource {
   private async fetchFresh(): Promise<SupplierAddress[]> {
     const data = await this.transport.request<TrendyolSupplierAddressesResponse>({
       method: 'GET',
-      path: `/sapigw/suppliers/${this.sellerId}/addresses`,
+      path: `/integration/sellers/${this.sellerId}/addresses`,
       rateLimiter: this.limiter,
     });
     const items = data.supplierAddresses.map(normalizeAddress);

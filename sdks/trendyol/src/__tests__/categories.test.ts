@@ -15,7 +15,7 @@ function fastLimiter() {
 
 describe('CategoriesResource.list', () => {
   it('hits the product-categories endpoint with no query', async () => {
-    const transport = mockTransport({ categories: [] });
+    const transport = mockTransport([]);
     const resource = new CategoriesResource(transport, fastLimiter());
 
     await resource.list();
@@ -23,7 +23,7 @@ describe('CategoriesResource.list', () => {
     expect(transport.request).toHaveBeenCalledWith(
       expect.objectContaining({
         method: 'GET',
-        path: '/sapigw/product-categories',
+        path: '/integration/product/product-categories',
       }),
     );
     expect((transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0]).not.toHaveProperty(
@@ -32,19 +32,17 @@ describe('CategoriesResource.list', () => {
   });
 
   it('normalizes IDs to strings and preserves the tree shape', async () => {
-    const transport = mockTransport({
-      categories: [
-        {
-          id: 1,
-          name: 'Clothing',
-          parentId: null,
-          subCategories: [
-            { id: 11, name: 'T-Shirts', parentId: 1, subCategories: [] },
-            { id: 12, name: 'Pants', parentId: 1 },
-          ],
-        },
-      ],
-    });
+    const transport = mockTransport([
+      {
+        id: 1,
+        name: 'Clothing',
+        parentId: null,
+        subCategories: [
+          { id: 11, name: 'T-Shirts', parentId: 1, subCategories: [] },
+          { id: 12, name: 'Pants', parentId: 1 },
+        ],
+      },
+    ]);
     const resource = new CategoriesResource(transport, fastLimiter());
 
     const tree = await resource.list();
@@ -63,9 +61,7 @@ describe('CategoriesResource.list', () => {
   });
 
   it('treats missing subCategories as an empty array', async () => {
-    const transport = mockTransport({
-      categories: [{ id: 5, name: 'Leaf', parentId: null }],
-    });
+    const transport = mockTransport([{ id: 5, name: 'Leaf', parentId: null }]);
     const resource = new CategoriesResource(transport, fastLimiter());
 
     const tree = await resource.list();
@@ -84,7 +80,7 @@ describe('CategoriesResource.getAttributes', () => {
     expect(transport.request).toHaveBeenCalledWith(
       expect.objectContaining({
         method: 'GET',
-        path: '/sapigw/product-categories/42/attributes',
+        path: '/integration/product/categories/42/attributes',
       }),
     );
   });
@@ -96,7 +92,7 @@ describe('CategoriesResource.getAttributes', () => {
     await resource.getAttributes('weird id');
 
     const call = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0];
-    expect(call.path).toBe('/sapigw/product-categories/weird%20id/attributes');
+    expect(call.path).toBe('/integration/product/categories/weird%20id/attributes');
   });
 
   it('flattens the attribute shape with string IDs and value lists', async () => {

@@ -34,5 +34,10 @@ export interface CategoryAttribute {
   varianter: boolean;
   /** Whether the attribute is used as a price slicer (e.g. size for shoes). */
   slicer: boolean;
+  /**
+   * V2-only: whether the attribute accepts multiple values at once.
+   * Present on responses from the V2 `getCategoryAttributes` endpoint; absent on V1.
+   */
+  allowMultipleAttributeValues?: boolean;
   values: CategoryAttributeValue[];
 }
