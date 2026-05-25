@@ -23,14 +23,18 @@ export type {
 } from './types/category.js';
 export type { PriceInventoryUpdate, UpdatePriceInventoryResponse } from './types/inventory.js';
 export type {
+  CancelPackageItemInput,
   OrderAddress,
   OrderAddressLines,
   OrderCustomer,
   OrderLine,
   OrderLineDiscountDetail,
   PackageHistoryEntry,
+  PackageLineUpdate,
+  ProcessAlternativeDeliveryInput,
   ShipmentPackage,
   ShipmentPackageStatus,
+  UpdatePackageStatusInput,
 } from './types/order.js';
 export type {
   BatchRequestItemResult,

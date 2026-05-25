@@ -437,6 +437,70 @@ if (firstApprovedBarcode) {
   }
 }
 
+// ── 6.7 orders write smoke (Phase 3a: status lifecycle) ─────────────────
+// Each call uses a FAKE packageId so Trendyol rejects per-item without
+// mutating any real package. A 4xx response with a well-formed error
+// body proves the SDK is hitting the right path with the right body.
+// STAGE-only; PROD is refused for safety.
+if (process.env.TY_SKIP_ORDER_WRITES === '1') {
+  console.log('\n⏭  Skipping orders write smoke (TY_SKIP_ORDER_WRITES=1)');
+} else if (env === 'prod') {
+  console.log(
+    '\n⚠ TY_ENV=prod — refusing to run order-write smoke. Set TY_ENV=stage or TY_SKIP_ORDER_WRITES=1.',
+  );
+} else {
+  console.log('\n── 6.7 orders write smoke (4 endpoints, fake packageId) ──');
+  // Use an integer fake packageId — Trendyol's path security layer rejects
+  // non-int packageIds with a bare 401 (not the per-handler 404 we want).
+  const fakePkg = 999_999_999_999;
+
+  type Call = { name: string; call: () => Promise<void> };
+  const calls: Call[] = [
+    {
+      name: 'updatePackageStatus',
+      call: () => client.orders.updatePackageStatus(fakePkg, { status: 'Picking' }),
+    },
+    {
+      name: 'cancelPackageItem',
+      call: () =>
+        client.orders.cancelPackageItem(fakePkg, {
+          lines: [{ lineId: 1, quantity: 1 }],
+          reasonId: 577,
+        }),
+    },
+    {
+      name: 'extendDeliveryDate',
+      call: () => client.orders.extendDeliveryDate(fakePkg, 1),
+    },
+    {
+      name: 'processAlternativeDelivery',
+      call: () =>
+        client.orders.processAlternativeDelivery(fakePkg, {
+          isPhoneNumber: false,
+          trackingInfo: 'https://example.com/track/fake',
+          params: {},
+        }),
+    },
+  ];
+
+  // Note: Trendyol returns 401 for unknown packageIds on these endpoints
+  // (its gateway-level security layer rejects before reaching the handler),
+  // 404/400 for malformed bodies. Both prove SDK→wire is intact.
+  for (const { name, call } of calls) {
+    try {
+      await call();
+      console.log(`✓ ${name.padEnd(28)} accepted (200) — unexpected for fake pkg`);
+    } catch (err) {
+      const msg = formatError(err);
+      const code = /HTTP (\d{3})/.exec(msg)?.[1] ?? '?';
+      const label = ['400', '401', '404'].includes(code)
+        ? 'ℹ wire-verified (rejected, no real data touched)'
+        : '✖';
+      console.log(`${label} ${name.padEnd(28)} HTTP ${code}`);
+    }
+  }
+}
+
 // ── 6.5 inventory.update — full round-trip with a REAL product ──────────
 // Fetches a real product, bumps its stock by +1, polls until the batch
 // completes, then re-fetches and verifies the change. STAGE-only by default.

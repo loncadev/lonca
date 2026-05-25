@@ -1,12 +1,20 @@
-import { TokenBucketRateLimiter, type CursorPage, type CursorPaginationParams } from '@lonca/core';
+import {
+  TokenBucketRateLimiter,
+  ValidationError,
+  type CursorPage,
+  type CursorPaginationParams,
+} from '@lonca/core';
 import type { TrendyolTransport } from '../transport.js';
 import type {
+  CancelPackageItemInput,
   OrderAddress,
   OrderCustomer,
   OrderLine,
   PackageHistoryEntry,
+  ProcessAlternativeDeliveryInput,
   ShipmentPackage,
   ShipmentPackageStatus,
+  UpdatePackageStatusInput,
 } from '../types/order.js';
 
 /** Trendyol caps `size` at 200; default 200. */
@@ -379,5 +387,102 @@ export class OrdersResource {
       result.nextCursor = String(page + 1);
     }
     return result;
+  }
+
+  /**
+   * Push a shipment-package status update.
+   *
+   * Trendyol restricts the seller-side push to two transitions:
+   * - `Picking`  — order picked up from the shelf / being prepared
+   * - `Invoiced` — invoice issued, ready for cargo handoff
+   *
+   * Other transitions (`Shipped`, `Delivered`, etc.) are driven by Trendyol
+   * or the cargo provider — call `processAlternativeDelivery` or
+   * `manualDeliverByPackageId` if you ship outside Trendyol's cargo
+   * network.
+   *
+   * Returns void; Trendyol responds with 200 + empty body on success.
+   */
+  async updatePackageStatus(
+    packageId: string | number,
+    input: UpdatePackageStatusInput,
+  ): Promise<void> {
+    await this.transport.request<unknown>({
+      method: 'PUT',
+      path: this.packagePath(packageId),
+      body: input,
+      rateLimiter: this.limiter,
+    });
+  }
+
+  /**
+   * Notify Trendyol that one or more line items cannot be supplied
+   * ("Tedarik Edememe Bildirimi"). Marks the listed line IDs as
+   * `UnSupplied`. Trendyol cancels those quantities and notifies the
+   * customer.
+   *
+   * `reasonId` is a numeric code Trendyol publishes separately — consult
+   * the seller panel or the "Tedarik Edememe" docs for current values.
+   *
+   * Returns void; Trendyol responds with 200 + empty body on success.
+   */
+  async cancelPackageItem(
+    packageId: string | number,
+    input: CancelPackageItemInput,
+  ): Promise<void> {
+    if (!Array.isArray(input?.lines) || input.lines.length === 0) {
+      throw new ValidationError({ message: 'cancelPackageItem: lines must not be empty' });
+    }
+    await this.transport.request<unknown>({
+      method: 'PUT',
+      path: `${this.packagePath(packageId)}/items/unsupplied`,
+      body: input,
+      rateLimiter: this.limiter,
+    });
+  }
+
+  /**
+   * Extend the agreed delivery date for a shipment package by 1, 2, or 3 days.
+   * Trendyol enforces the [1, 3] range server-side; the SDK validates client-side
+   * to fail fast.
+   *
+   * Returns void; Trendyol responds with 200 + empty body on success.
+   */
+  async extendDeliveryDate(packageId: string | number, extendedDayCount: 1 | 2 | 3): Promise<void> {
+    if (![1, 2, 3].includes(extendedDayCount)) {
+      throw new ValidationError({
+        message: `extendDeliveryDate: extendedDayCount must be 1, 2, or 3 (got ${extendedDayCount})`,
+      });
+    }
+    await this.transport.request<unknown>({
+      method: 'PUT',
+      path: `${this.packagePath(packageId)}/extended-agreed-delivery-date`,
+      body: { extendedDayCount },
+      rateLimiter: this.limiter,
+    });
+  }
+
+  /**
+   * Notify Trendyol of an alternative delivery channel — used when the
+   * seller is shipping via a non-Trendyol cargo provider. Trendyol then
+   * either SMSes the customer the tracking link (when `isPhoneNumber` is
+   * `true`) or stores the tracking URL on the package directly.
+   *
+   * Returns void; Trendyol responds with 200 + empty body on success.
+   */
+  async processAlternativeDelivery(
+    packageId: string | number,
+    input: ProcessAlternativeDeliveryInput,
+  ): Promise<void> {
+    await this.transport.request<unknown>({
+      method: 'PUT',
+      path: `${this.packagePath(packageId)}/alternative-delivery`,
+      body: input,
+      rateLimiter: this.limiter,
+    });
+  }
+
+  private packagePath(packageId: string | number): string {
+    return `/integration/order/sellers/${this.sellerId}/shipment-packages/${encodeURIComponent(String(packageId))}`;
   }
 }
