@@ -7,7 +7,9 @@ import {
 import type { TrendyolTransport } from '../transport.js';
 import type {
   CancelPackageItemInput,
+  CargoInvoiceItem,
   LaborCostInput,
+  ListOrdersStreamParams,
   OrderAddress,
   OrderCustomer,
   OrderLine,
@@ -96,7 +98,10 @@ interface TrendyolAddressNode {
 }
 
 interface TrendyolShipmentPackageNode {
+  /** Default field name on `getShipmentPackages` (orders.list). */
   shipmentPackageId?: number | string;
+  /** Field name used by `getShipmentPackagesStream` (orders.listStream). */
+  id?: number | string;
   orderNumber?: string;
   shipmentNumber?: number | string;
   originPackageIds?: Array<number | string> | null;
@@ -258,8 +263,9 @@ function normalizeCustomer(node: TrendyolShipmentPackageNode): OrderCustomer {
 }
 
 function normalizePackage(node: TrendyolShipmentPackageNode): ShipmentPackage {
+  const pkgId = node.shipmentPackageId ?? node.id;
   const out: ShipmentPackage = {
-    id: node.shipmentPackageId !== undefined ? String(node.shipmentPackageId) : '',
+    id: pkgId !== undefined ? String(pkgId) : '',
     orderNumber: node.orderNumber ?? '',
     status: (node.status as ShipmentPackageStatus) ?? '',
     customer: normalizeCustomer(node),
@@ -682,6 +688,116 @@ export class OrdersResource {
       body: { warehouseId },
       rateLimiter: this.limiter,
     });
+  }
+
+  /**
+   * Stream variant of `list()`. Trendyol's `getShipmentPackagesStream`
+   * returns the same `ShipmentPackage` shape but paginates with an opaque
+   * cursor — useful when the dataset is large and page-based pagination
+   * would hit the 10 000-record cap.
+   *
+   * @example
+   * ```ts
+   * import { paginate } from '@lonca/core';
+   * for await (const pkg of paginate((p) =>
+   *   client.orders.listStream({ ...p, packageItemStatuses: 'Created,Picking' }),
+   * )) {
+   *   console.log(pkg.id, pkg.status);
+   * }
+   * ```
+   */
+  async listStream(params: ListOrdersStreamParams = {}): Promise<CursorPage<ShipmentPackage>> {
+    const size = Math.min(params.limit ?? DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
+    const query: Record<string, string | number | undefined> = { size };
+    if (params.cursor) query.nextCursor = params.cursor;
+    if (params.packageItemStatuses) query.packageItemStatuses = params.packageItemStatuses;
+    if (params.lastModifiedStartDate) {
+      query.lastModifiedStartDate = params.lastModifiedStartDate.getTime();
+    }
+    if (params.lastModifiedEndDate) {
+      query.lastModifiedEndDate = params.lastModifiedEndDate.getTime();
+    }
+
+    interface StreamResponse {
+      content?: TrendyolShipmentPackageNode[];
+      size?: number;
+      hasMore?: boolean;
+      nextCursor?: string;
+    }
+    const data = await this.transport.request<StreamResponse>({
+      method: 'GET',
+      path: `/integration/order/sellers/${this.sellerId}/orders/stream`,
+      query,
+      rateLimiter: this.limiter,
+    });
+
+    const items = (data.content ?? []).map(normalizePackage);
+    const result: CursorPage<ShipmentPackage> = { items };
+    if (data.hasMore && data.nextCursor) {
+      result.nextCursor = data.nextCursor;
+    }
+    return result;
+  }
+
+  /**
+   * Fetch the per-parcel cargo-fee breakdown for a single cargo invoice
+   * (Trendyol's `getCargoInvoiceItems`). Useful for reconciling Trendyol's
+   * cargo deductions against your shipped packages.
+   *
+   * `invoiceSerialNumber` is sourced from the Current Account Statement
+   * ("Cari Hesap Ekstresi") with `transactionType=DeductionInvoices`.
+   *
+   * Page-based pagination internally (cursor encodes the page index).
+   */
+  async getCargoInvoiceItems(
+    invoiceSerialNumber: string,
+    params: CursorPaginationParams = {},
+  ): Promise<CursorPage<CargoInvoiceItem>> {
+    const size = Math.min(params.limit ?? 500, 500);
+    const page = params.cursor ? Number.parseInt(params.cursor, 10) : 0;
+
+    interface WireRow {
+      shipmentPackageType?: string;
+      parcelUniqueId?: number | string;
+      orderNumber?: string;
+      amount?: number;
+      desi?: number;
+      [key: string]: unknown;
+    }
+    interface WireResponse {
+      page?: number;
+      size?: number;
+      totalPages?: number;
+      totalElements?: number;
+      content?: WireRow[];
+    }
+
+    const data = await this.transport.request<WireResponse>({
+      method: 'GET',
+      path: `/integration/finance/che/sellers/${this.sellerId}/cargo-invoice/${encodeURIComponent(invoiceSerialNumber)}/items`,
+      query: { page, size },
+      rateLimiter: this.limiter,
+    });
+
+    const items: CargoInvoiceItem[] = (data.content ?? []).map((row) => {
+      const out: CargoInvoiceItem = { raw: row as Record<string, unknown> };
+      if (row.shipmentPackageType !== undefined) out.shipmentPackageType = row.shipmentPackageType;
+      if (row.parcelUniqueId !== undefined) {
+        out.parcelUniqueId =
+          typeof row.parcelUniqueId === 'string' ? row.parcelUniqueId : String(row.parcelUniqueId);
+      }
+      if (row.orderNumber !== undefined) out.orderNumber = row.orderNumber;
+      if (typeof row.amount === 'number') out.amount = row.amount;
+      if (typeof row.desi === 'number') out.desi = row.desi;
+      return out;
+    });
+
+    const totalPages = typeof data.totalPages === 'number' ? data.totalPages : 0;
+    const result: CursorPage<CargoInvoiceItem> = { items };
+    if (page + 1 < totalPages) {
+      result.nextCursor = String(page + 1);
+    }
+    return result;
   }
 
   private packagePath(packageId: string | number): string {

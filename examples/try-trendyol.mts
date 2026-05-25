@@ -437,6 +437,33 @@ if (firstApprovedBarcode) {
   }
 }
 
+// ── 6.8 orders.listStream (Phase 3e read variant) ──────────────────────
+console.log('\n── 6.8 orders.listStream({ limit: 2 }) ───────────────────');
+try {
+  const page = await client.orders.listStream({ limit: 2 });
+  console.log(
+    `✓ Got ${page.items.length} package(s)${page.nextCursor ? ` (nextCursor: ${page.nextCursor.slice(0, 24)}…)` : ' (no more)'}`,
+  );
+  for (const pkg of page.items.slice(0, 2)) {
+    console.log(
+      `    pkg ${pkg.id.padStart(10)}  order ${pkg.orderNumber}  ${pkg.status.padEnd(10)}  ${pkg.packageTotalPrice} ${pkg.currencyCode}`,
+    );
+  }
+} catch (err) {
+  console.error('✖ orders.listStream failed:', formatError(err));
+}
+
+// ── 6.9 orders.getCargoInvoiceItems (Phase 3e — fake serial) ───────────
+console.log('\n── 6.9 orders.getCargoInvoiceItems("LONCA-FAKE-INVOICE") ──');
+try {
+  const page = await client.orders.getCargoInvoiceItems('LONCA-FAKE-INVOICE');
+  console.log(`✓ Got ${page.items.length} item(s) — unexpected for fake serial`);
+} catch (err) {
+  const msg = formatError(err);
+  const code = /HTTP (\d{3})/.exec(msg)?.[1] ?? '?';
+  console.log(`ℹ getCargoInvoiceItems wire-verified: HTTP ${code} for fake serial`);
+}
+
 // ── 6.7 orders write smoke (Phase 3a: status lifecycle) ─────────────────
 // Each call uses a FAKE packageId so Trendyol rejects per-item without
 // mutating any real package. A 4xx response with a well-formed error

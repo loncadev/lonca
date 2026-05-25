@@ -24,7 +24,9 @@ export type {
 export type { PriceInventoryUpdate, UpdatePriceInventoryResponse } from './types/inventory.js';
 export type {
   CancelPackageItemInput,
+  CargoInvoiceItem,
   LaborCostInput,
+  ListOrdersStreamParams,
   OrderAddress,
   OrderAddressLines,
   OrderCustomer,

@@ -146,6 +146,46 @@ export interface CancelPackageItemInput {
 }
 
 /**
+ * One row from `orders.getCargoInvoiceItems` — a cargo invoice line item
+ * that ties a parcel ID to its cargo fee. Useful for reconciling Trendyol's
+ * cargo deductions against your shipped packages.
+ */
+export interface CargoInvoiceItem {
+  /** e.g. "Gönderi Kargo Bedeli" (outbound) or "İade Kargo Bedeli" (return). */
+  shipmentPackageType?: string;
+  /** Cargo parcel unique ID. */
+  parcelUniqueId?: number | string;
+  orderNumber?: string;
+  /** Fee charged in this row. */
+  amount?: number;
+  /** Desi value used to compute the fee. */
+  desi?: number;
+  /** Untouched raw row. */
+  raw: Record<string, unknown>;
+}
+
+/**
+ * Filter params for `orders.listStream` — the streaming alternative to
+ * `orders.list`. Uses Trendyol's opaque `nextCursor` (forwarded as the
+ * `@lonca/core` `CursorPaginationParams.cursor`) instead of page-index
+ * pagination.
+ */
+export interface ListOrdersStreamParams {
+  cursor?: string;
+  limit?: number;
+  /**
+   * CSV of package-item statuses to filter by (e.g.
+   * `'Created,Picking,Invoiced'`). Trendyol accepts the same status
+   * vocabulary as `ShipmentPackageStatus`.
+   */
+  packageItemStatuses?: string;
+  /** Lower bound for `lastModified` (Trendyol expects ms-epoch). */
+  lastModifiedStartDate?: Date;
+  /** Upper bound for `lastModified`. */
+  lastModifiedEndDate?: Date;
+}
+
+/**
  * Box / packaging metadata for `orders.updateBoxInfo`. Both fields are
  * optional but at least one should be set for the call to be meaningful.
  */
