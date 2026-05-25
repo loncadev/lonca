@@ -62,6 +62,10 @@ importers:
       '@lonca/trendyol':
         specifier: workspace:*
         version: link:../sdks/trendyol
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.12.4
 
   packages/core:
     devDependencies:
