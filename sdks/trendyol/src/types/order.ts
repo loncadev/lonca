@@ -146,6 +146,25 @@ export interface CancelPackageItemInput {
 }
 
 /**
+ * Trendyol cargo provider codes accepted by `orders.changeCargoProvider`.
+ * Use the string union for autocomplete; `(string & {})` keeps unknown
+ * codes type-compatible so Trendyol can add providers without breaking
+ * callers.
+ */
+export type TrendyolCargoProvider =
+  | 'YKMP'
+  | 'ARASMP'
+  | 'SURATMP'
+  | 'HOROZMP'
+  | 'DHLECOMMP'
+  | 'PTTMP'
+  | 'CEVAMP'
+  | 'TEXMP'
+  | 'KOLAYGELSINMP'
+  | 'CEVATEDARIK'
+  | (string & {});
+
+/**
  * Per-line quantity split for `orders.splitPackageByQuantity`. Each item
  * in `quantities` becomes its own new package containing that many units
  * of `orderLineId`.

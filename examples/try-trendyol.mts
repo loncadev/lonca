@@ -501,6 +501,22 @@ if (process.env.TY_SKIP_ORDER_WRITES === '1') {
           { packageDetails: [{ orderLineId: 1, quantities: 1 }] },
         ]),
     },
+    {
+      name: 'changeCargoProvider',
+      call: () => client.orders.changeCargoProvider(fakePkg, 'ARASMP'),
+    },
+    {
+      name: 'manualDeliverByPackageId',
+      call: () => client.orders.manualDeliverByPackageId(fakePkg),
+    },
+    {
+      name: 'manualDeliverByTrackingNumber',
+      call: () => client.orders.manualDeliverByTrackingNumber('LONCA-FAKE-TRK-999999'),
+    },
+    {
+      name: 'markDeliveredByService',
+      call: () => client.orders.markDeliveredByService(fakePkg),
+    },
   ];
 
   // Note: Trendyol returns 401 for unknown packageIds on these endpoints
