@@ -27,6 +27,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "clean": "turbo run clean",
+    "try:trendyol": "tsx --env-file=.env examples/try-trendyol.mts",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "turbo run build && changeset publish"
@@ -38,6 +39,7 @@
     "eslint": "^10.4.0",
     "globals": "^17.6.0",
     "prettier": "^3.3.3",
+    "tsx": "^4.20.4",
     "turbo": "^2.3.0",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.15.0"

@@ -131,4 +131,52 @@ describe('CategoriesResource.getAttributes', () => {
       },
     ]);
   });
+
+  it('handles the live Trendyol V2 wire format: attributeValues omitted, categoryId echoed', async () => {
+    // Verified against Trendyol PROD on 2026-05-25 (categoryId=387 "Saat").
+    const transport = mockTransport({
+      id: 387,
+      categoryAttributes: [
+        {
+          allowCustom: true,
+          attribute: { id: 47, name: 'Renk' },
+          categoryId: 387,
+          required: true,
+          varianter: false,
+          slicer: true,
+          allowMultipleAttributeValues: false,
+          // Note: live API omits `attributeValues` for many attributes.
+        },
+      ],
+    });
+    const resource = new CategoriesResource(transport, fastLimiter());
+
+    const attrs = await resource.getAttributes(387);
+
+    expect(attrs).toEqual([
+      {
+        id: '47',
+        name: 'Renk',
+        categoryId: '387',
+        required: true,
+        allowCustom: true,
+        varianter: false,
+        slicer: true,
+        allowMultipleAttributeValues: false,
+        values: [], // defensively defaulted when API omits the field
+      },
+    ]);
+  });
+
+  it('falls back to safe empty defaults when `attribute` is missing', async () => {
+    const transport = mockTransport({
+      id: 1,
+      categoryAttributes: [{ required: true }],
+    });
+    const resource = new CategoriesResource(transport, fastLimiter());
+
+    const attrs = await resource.getAttributes(1);
+
+    expect(attrs[0]).toMatchObject({ id: '0', name: '', required: true, values: [] });
+  });
 });

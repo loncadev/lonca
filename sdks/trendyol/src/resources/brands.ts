@@ -2,7 +2,14 @@ import { TokenBucketRateLimiter, type CursorPage, type CursorPaginationParams } 
 import type { TrendyolTransport } from '../transport.js';
 import type { Brand } from '../types/brand.js';
 
-/** Default page size when callers don't specify `limit`. Trendyol allows up to 1000. */
+/**
+ * Default page size when callers don't specify `limit`.
+ *
+ * NOTE: Trendyol's live API enforces a **minimum** page size of 1000 — any smaller
+ * `limit` value is silently ignored server-side and you still receive ~1000 brands
+ * per page. The `limit` parameter is kept on the SDK signature for forward
+ * compatibility, but in practice you'll always receive 1000 per request.
+ */
 const DEFAULT_PAGE_SIZE = 1000;
 
 interface TrendyolBrandListResponse {

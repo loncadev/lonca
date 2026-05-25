@@ -1,0 +1,11 @@
+{
+  "name": "@lonca/examples",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Smoke-test and demo scripts for Lonca SDKs (not published).",
+  "type": "module",
+  "dependencies": {
+    "@lonca/core": "workspace:*",
+    "@lonca/trendyol": "workspace:*"
+  }
+}

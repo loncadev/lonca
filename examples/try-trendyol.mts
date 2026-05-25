@@ -1,0 +1,156 @@
+/**
+ * Smoke-test the @lonca/trendyol SDK against the real Trendyol API.
+ *
+ * Run:
+ *   pnpm try:trendyol
+ *
+ * Required environment variables:
+ *   TY_SELLER_ID  — your numeric seller (supplier) ID
+ *   TY_API_KEY    — from Partner Panel → Account Info → Integration Information
+ *   TY_API_SECRET — same place; only master users can see these
+ *
+ * Optional:
+ *   TY_ENV               — 'prod' (default) or 'stage' (stage requires IP whitelist)
+ *   TY_INTEGRATOR_NAME   — defaults to 'LoncaSmokeTest'
+ *   TY_SKIP_SUPPLIERS    — set to '1' to skip the suppliers call
+ *                          (suppliers is rate-limited to 1 req/hour;
+ *                          skip if you've already hit it recently)
+ */
+
+import { paginate } from '@lonca/core';
+import { createTrendyolClient, type TrendyolEnvironment } from '@lonca/trendyol';
+
+function required(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    console.error(`✖ Missing required env var: ${name}`);
+    console.error('  See examples/try-trendyol.ts for the full list.');
+    process.exit(1);
+  }
+  return value;
+}
+
+const sellerId = Number(required('TY_SELLER_ID'));
+if (!Number.isFinite(sellerId)) {
+  console.error('✖ TY_SELLER_ID must be a number');
+  process.exit(1);
+}
+
+const env = (process.env.TY_ENV ?? 'prod') as TrendyolEnvironment;
+if (env !== 'prod' && env !== 'stage') {
+  console.error(`✖ TY_ENV must be 'prod' or 'stage' (got: ${env})`);
+  process.exit(1);
+}
+
+const client = createTrendyolClient({
+  sellerId,
+  apiKey: required('TY_API_KEY'),
+  apiSecret: required('TY_API_SECRET'),
+  env,
+  integratorName: process.env.TY_INTEGRATOR_NAME ?? 'LoncaSmokeTest',
+});
+
+console.log(`\n🚀 Hitting Trendyol ${env.toUpperCase()} as seller ${sellerId}\n`);
+
+// ── 1. Brands ────────────────────────────────────────────────────────────
+console.log('── 1. brands.list({ limit: 5 }) ──────────────────────────');
+try {
+  const page = await client.brands.list({ limit: 5 });
+  console.log(
+    `✓ Got ${page.items.length} brand(s)${page.nextCursor ? ` (nextCursor: ${page.nextCursor})` : ' (no more pages)'}`,
+  );
+  for (const b of page.items.slice(0, 5)) {
+    console.log(`    ${b.id.padStart(8)}  ${b.name}`);
+  }
+} catch (err) {
+  console.error('✖ brands.list failed:', formatError(err));
+}
+
+// ── 2. Categories tree ───────────────────────────────────────────────────
+console.log('\n── 2. categories.list() ──────────────────────────────────');
+try {
+  const tree = await client.categories.list();
+  console.log(`✓ Tree has ${tree.length} root categories. Top-level names:`);
+  for (const root of tree.slice(0, 10)) {
+    const childCount = root.subCategories.length;
+    console.log(
+      `    ${root.id.padStart(8)}  ${root.name}  (${childCount} subcategor${childCount === 1 ? 'y' : 'ies'})`,
+    );
+  }
+  if (tree.length > 10) console.log(`    … and ${tree.length - 10} more`);
+
+  // ── 3. Category attributes (first leaf we can find) ────────────────────
+  const leaf = findFirstLeaf(tree);
+  if (leaf) {
+    console.log(`\n── 3. categories.getAttributes(${leaf.id}) [${leaf.name}] ──`);
+    const attrs = await client.categories.getAttributes(leaf.id);
+    console.log(`✓ Got ${attrs.length} attribute(s). First 3:`);
+    for (const a of attrs.slice(0, 3)) {
+      const flags = [
+        a.required ? 'required' : null,
+        a.varianter ? 'variant' : null,
+        a.slicer ? 'slicer' : null,
+        a.allowCustom ? 'allowCustom' : null,
+      ]
+        .filter(Boolean)
+        .join(', ');
+      console.log(
+        `    ${a.id.padStart(8)}  ${a.name}  [${flags || 'none'}]  ${a.values.length} value(s)`,
+      );
+    }
+  } else {
+    console.log('\n⚠ No leaf category found — skipping getAttributes');
+  }
+} catch (err) {
+  console.error('✖ categories failed:', formatError(err));
+}
+
+// ── 4. Suppliers (1 req/hour rate limit; skippable) ──────────────────────
+if (process.env.TY_SKIP_SUPPLIERS === '1') {
+  console.log('\n⏭  Skipping suppliers.getAddresses (TY_SKIP_SUPPLIERS=1)');
+} else {
+  console.log('\n── 4. suppliers.getAddresses() ───────────────────────────');
+  try {
+    const addresses = await client.suppliers.getAddresses();
+    console.log(`✓ Got ${addresses.length} address(es):`);
+    for (const a of addresses.slice(0, 10)) {
+      const flags = [
+        a.isShipmentAddress ? 'shipment' : null,
+        a.isReturningAddress ? 'returning' : null,
+        a.isInvoiceAddress ? 'invoice' : null,
+        a.isDefault ? 'default' : null,
+      ]
+        .filter(Boolean)
+        .join(', ');
+      console.log(`    ${a.id.padStart(8)}  ${a.name ?? '(no name)'}  [${flags || 'none'}]`);
+    }
+  } catch (err) {
+    console.error('✖ suppliers.getAddresses failed:', formatError(err));
+  }
+}
+
+console.log('\n✅ Done.');
+
+function findFirstLeaf(
+  nodes: Array<{
+    id: string;
+    name: string;
+    subCategories: Array<{ id: string; name: string; subCategories: unknown[] }>;
+  }>,
+): { id: string; name: string } | null {
+  for (const n of nodes) {
+    if (n.subCategories.length === 0) return n;
+    const child = findFirstLeaf(n.subCategories as typeof nodes);
+    if (child) return child;
+  }
+  return null;
+}
+
+function formatError(err: unknown): string {
+  if (err instanceof Error) {
+    const code = (err as { code?: string }).code;
+    const status = (err as { status?: number }).status;
+    return `${err.name}${code ? ` [${code}]` : ''}${status ? ` (HTTP ${status})` : ''}: ${err.message}`;
+  }
+  return String(err);
+}

@@ -2,6 +2,7 @@ packages:
   - "sdks/*"
   - "packages/*"
   - "apps/*"
+  - "examples"
 
 # Shared dependency versions. Packages reference these with `"typescript": "catalog:"`.
 # https://pnpm.io/catalogs

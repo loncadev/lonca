@@ -27,6 +27,8 @@ export interface CategoryAttributeValue {
 export interface CategoryAttribute {
   id: string;
   name: string;
+  /** The category this attribute belongs to (echoed back by Trendyol). */
+  categoryId?: string;
   required: boolean;
   /** Whether the attribute accepts custom text values in addition to the listed ones. */
   allowCustom: boolean;
@@ -39,5 +41,15 @@ export interface CategoryAttribute {
    * Present on responses from the V2 `getCategoryAttributes` endpoint; absent on V1.
    */
   allowMultipleAttributeValues?: boolean;
+  /**
+   * Allowed values for this attribute.
+   *
+   * NOTE: Trendyol's live API often omits this field on the `getCategoryAttributes`
+   * response — the endpoint returns attribute metadata + flags, not the full value
+   * catalog. In that case `values` is an empty array. If `allowCustom` is `true`,
+   * any custom text is accepted; otherwise consult Trendyol's separate value
+   * lookup mechanisms (a dedicated `getAttributeValues` endpoint may land in a
+   * future release of this SDK).
+   */
   values: CategoryAttributeValue[];
 }

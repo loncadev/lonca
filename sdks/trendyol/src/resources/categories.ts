@@ -10,10 +10,12 @@ interface TrendyolCategoryNode {
 }
 
 /**
- * Trendyol returns the category tree as a root-level JSON array.
- * (Earlier internal naming had it wrapped in `{ categories }`; the public API does not.)
+ * Trendyol's category-tree response shape.
+ *
+ * The OpenAPI spec advertises a root-level array, but live PROD/STAGE responses
+ * may wrap it. We accept both shapes defensively.
  */
-type TrendyolCategoriesResponse = TrendyolCategoryNode[];
+type TrendyolCategoriesResponse = TrendyolCategoryNode[] | { categories: TrendyolCategoryNode[] };
 
 interface TrendyolCategoryAttributeValue {
   id: number;
@@ -21,19 +23,16 @@ interface TrendyolCategoryAttributeValue {
 }
 
 interface TrendyolCategoryAttributeNode {
-  attribute: { id: number; name: string };
-  required: boolean;
-  allowCustom: boolean;
-  varianter: boolean;
-  slicer: boolean;
+  attribute?: { id: number; name: string };
+  categoryId?: number;
+  required?: boolean;
+  allowCustom?: boolean;
+  varianter?: boolean;
+  slicer?: boolean;
   /** V2-only: whether the attribute accepts multiple values at once. */
   allowMultipleAttributeValues?: boolean;
-  attributeValues: TrendyolCategoryAttributeValue[];
-}
-
-interface TrendyolCategoryAttributesResponse {
-  id: number;
-  categoryAttributes: TrendyolCategoryAttributeNode[];
+  /** Often omitted by Trendyol's live API; treat as optional. */
+  attributeValues?: TrendyolCategoryAttributeValue[];
 }
 
 function normalizeCategory(node: TrendyolCategoryNode): Category {
@@ -46,15 +45,20 @@ function normalizeCategory(node: TrendyolCategoryNode): Category {
 }
 
 function normalizeAttribute(node: TrendyolCategoryAttributeNode): CategoryAttribute {
+  const attr = node.attribute ?? { id: 0, name: '' };
+  const rawValues = node.attributeValues ?? [];
   const out: CategoryAttribute = {
-    id: String(node.attribute.id),
-    name: node.attribute.name,
-    required: node.required,
-    allowCustom: node.allowCustom,
-    varianter: node.varianter,
-    slicer: node.slicer,
-    values: node.attributeValues.map((v) => ({ id: String(v.id), name: v.name })),
+    id: String(attr.id),
+    name: attr.name,
+    required: !!node.required,
+    allowCustom: !!node.allowCustom,
+    varianter: !!node.varianter,
+    slicer: !!node.slicer,
+    values: rawValues.map((v) => ({ id: String(v.id), name: v.name })),
   };
+  if (node.categoryId !== undefined) {
+    out.categoryId = String(node.categoryId);
+  }
   if (node.allowMultipleAttributeValues !== undefined) {
     out.allowMultipleAttributeValues = node.allowMultipleAttributeValues;
   }
@@ -93,7 +97,8 @@ export class CategoriesResource {
       path: '/integration/product/product-categories',
       rateLimiter: this.limiter,
     });
-    return data.map(normalizeCategory);
+    const list = Array.isArray(data) ? data : data.categories;
+    return list.map(normalizeCategory);
   }
 
   /**
@@ -106,11 +111,37 @@ export class CategoriesResource {
    */
   async getAttributes(categoryId: string | number): Promise<CategoryAttribute[]> {
     const id = encodeURIComponent(String(categoryId));
-    const data = await this.transport.request<TrendyolCategoryAttributesResponse>({
+    const data = await this.transport.request<unknown>({
       method: 'GET',
       path: `/integration/product/categories/${id}/attributes`,
       rateLimiter: this.limiter,
     });
-    return data.categoryAttributes.map(normalizeAttribute);
+
+    // Defensive: live API wraps the array as either a root array, `categoryAttributes`,
+    // or `attributes`. Verified via STAGE + PROD smoke tests on 2026-05-25.
+    const list = extractAttributeList(data);
+    if (!list) {
+      // eslint-disable-next-line no-console
+      console.error(
+        '[@lonca/trendyol] getCategoryAttributes: unexpected response shape:',
+        JSON.stringify(data).slice(0, 800),
+      );
+      return [];
+    }
+    return list.map(normalizeAttribute);
   }
+}
+
+function extractAttributeList(data: unknown): TrendyolCategoryAttributeNode[] | null {
+  if (Array.isArray(data)) return data as TrendyolCategoryAttributeNode[];
+  if (data && typeof data === 'object') {
+    const obj = data as Record<string, unknown>;
+    if (Array.isArray(obj.categoryAttributes)) {
+      return obj.categoryAttributes as TrendyolCategoryAttributeNode[];
+    }
+    if (Array.isArray(obj.attributes)) {
+      return obj.attributes as TrendyolCategoryAttributeNode[];
+    }
+  }
+  return null;
 }
