@@ -437,6 +437,22 @@ if (firstApprovedBarcode) {
   }
 }
 
+// ── 6.85 orders.getCompensationTickets (Phase 4a — TR Express claims) ──
+console.log('\n── 6.85 orders.getCompensationTickets({ limit: 2 }) ──────');
+try {
+  const page = await client.orders.getCompensationTickets({ limit: 2 });
+  console.log(
+    `✓ Got ${page.items.length} ticket(s)${page.nextCursor ? ` (nextCursor: ${page.nextCursor})` : ' (no more)'}`,
+  );
+  for (const t of page.items.slice(0, 2)) {
+    console.log(
+      `    order ${t.orderNumber ?? '-'}  state=${t.currentState ?? '?'}  amount=${t.totalItemsAmount ?? '-'}`,
+    );
+  }
+} catch (err) {
+  console.log(`ℹ getCompensationTickets: ${formatError(err).slice(0, 100)}`);
+}
+
 // ── 6.8 orders.listStream (Phase 3e read variant) ──────────────────────
 console.log('\n── 6.8 orders.listStream({ limit: 2 }) ───────────────────');
 try {
@@ -556,6 +572,14 @@ if (process.env.TY_SKIP_ORDER_WRITES === '1') {
     {
       name: 'updateWarehouse',
       call: () => client.orders.updateWarehouse(fakePkg, 1),
+    },
+    {
+      name: 'manualReturnByPackageId',
+      call: () => client.orders.manualReturnByPackageId(fakePkg),
+    },
+    {
+      name: 'manualReturnByTrackingNumber',
+      call: () => client.orders.manualReturnByTrackingNumber('LONCA-FAKE-RTRK-999999'),
     },
   ];
 

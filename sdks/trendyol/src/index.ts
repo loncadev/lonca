@@ -70,4 +70,10 @@ export type {
   UpdateUnapprovedInput,
   UpdateVariantInput,
 } from './types/product-write.js';
+export type {
+  CompensationItemDetail,
+  CompensationTicket,
+  CompensationTicketState,
+  ListCompensationTicketsParams,
+} from './types/returns.js';
 export type { SupplierAddress, SupplierAddressType } from './types/supplier-address.js';

@@ -24,6 +24,11 @@ import type {
   TrendyolCargoProvider,
   UpdatePackageStatusInput,
 } from '../types/order.js';
+import type {
+  CompensationItemDetail,
+  CompensationTicket,
+  ListCompensationTicketsParams,
+} from '../types/returns.js';
 
 /** Trendyol caps `size` at 200; default 200. */
 const MAX_PAGE_SIZE = 200;
@@ -795,6 +800,143 @@ export class OrdersResource {
     const totalPages = typeof data.totalPages === 'number' ? data.totalPages : 0;
     const result: CursorPage<CargoInvoiceItem> = { items };
     if (page + 1 < totalPages) {
+      result.nextCursor = String(page + 1);
+    }
+    return result;
+  }
+
+  /**
+   * Notify Trendyol that a shipped package was returned to you (manual
+   * return flow, e.g. customer dropped it at your address or you got the
+   * package back without going through Trendyol's return cargo).
+   *
+   * No body; Trendyol responds with 200 + empty body on success.
+   */
+  async manualReturnByPackageId(packageId: string | number): Promise<void> {
+    await this.transport.request<unknown>({
+      method: 'PUT',
+      path: `${this.packagePath(packageId)}/manual-return`,
+      rateLimiter: this.limiter,
+    });
+  }
+
+  /**
+   * Manual-return variant that takes the cargo tracking number instead of
+   * the package ID. Useful when the cargo provider's webhook only carries
+   * the tracking number.
+   *
+   * Sibling path (not under `/{packageId}/...`).
+   */
+  async manualReturnByTrackingNumber(cargoTrackingNumber: string | number): Promise<void> {
+    await this.transport.request<unknown>({
+      method: 'PUT',
+      path: `/integration/order/sellers/${this.sellerId}/shipment-packages/manual-return-by-tracking-number/${encodeURIComponent(String(cargoTrackingNumber))}`,
+      rateLimiter: this.limiter,
+    });
+  }
+
+  /**
+   * Fetch Trendyol Express compensation tickets (claims filed when a
+   * shipment is lost or damaged in transit). Page-based pagination
+   * internally; the SDK exposes the cursor convention.
+   *
+   * Note the different base path — `/integration/tex/compensation/...`,
+   * not the regular `/integration/order/...`.
+   *
+   * @example
+   * ```ts
+   * import { paginate } from '@lonca/core';
+   * const tickets = await client.orders.getCompensationTickets({
+   *   startDate: new Date('2026-01-01'),
+   *   endDate: new Date('2026-02-01'),
+   * });
+   * for (const t of tickets.items) {
+   *   console.log(t.orderNumber, t.currentState, t.stateMessage);
+   * }
+   * ```
+   */
+  async getCompensationTickets(
+    params: ListCompensationTicketsParams = {},
+  ): Promise<CursorPage<CompensationTicket>> {
+    const size = Math.min(params.limit ?? 200, 200);
+    const page = params.cursor ? Number.parseInt(params.cursor, 10) : 0;
+
+    const query: Record<string, string | number | undefined> = { page, size };
+    if (params.startDate) query.startDate = params.startDate.getTime();
+    if (params.endDate) query.endDate = params.endDate.getTime();
+
+    interface WireItem {
+      itemAmount?: number;
+      itemCode?: string;
+      itemCount?: number;
+      itemName?: string;
+    }
+    interface WireTicket {
+      cargoProvider?: string;
+      compensateReason?: string;
+      createDate?: number;
+      currentState?: string;
+      deliveryNumber?: string;
+      itemDetails?: WireItem[];
+      orderNumber?: string;
+      requestedBy?: string;
+      stateMessage?: string;
+      totalItemsAmount?: string;
+      [key: string]: unknown;
+    }
+    interface WireResponse {
+      totalCount?: number;
+      /**
+       * Trendyol's docs say `data: { items: [...] }` but typical Trendyol
+       * paginated responses use `content: [...]` — accept both defensively.
+       */
+      data?: { items?: WireTicket[]; content?: WireTicket[] } | WireTicket[];
+      content?: WireTicket[];
+    }
+
+    const res = await this.transport.request<WireResponse>({
+      method: 'GET',
+      path: `/integration/tex/compensation/sellers/${this.sellerId}/tickets`,
+      query,
+      rateLimiter: this.limiter,
+    });
+
+    const tickets: WireTicket[] = Array.isArray(res.data)
+      ? res.data
+      : (res.data?.items ?? res.data?.content ?? res.content ?? []);
+
+    const items: CompensationTicket[] = tickets.map((t) => {
+      const itemDetails: CompensationItemDetail[] = (t.itemDetails ?? []).map((d) => {
+        const out: CompensationItemDetail = {};
+        if (typeof d.itemAmount === 'number') out.itemAmount = d.itemAmount;
+        if (d.itemCode !== undefined) out.itemCode = d.itemCode;
+        if (typeof d.itemCount === 'number') out.itemCount = d.itemCount;
+        if (d.itemName !== undefined) out.itemName = d.itemName;
+        return out;
+      });
+      const out: CompensationTicket = {
+        itemDetails,
+        raw: t as Record<string, unknown>,
+      };
+      if (t.cargoProvider !== undefined) out.cargoProvider = t.cargoProvider;
+      if (t.compensateReason !== undefined) out.compensateReason = t.compensateReason;
+      const createdAt = toIso(t.createDate);
+      if (createdAt) out.createdAt = createdAt;
+      if (t.currentState !== undefined) {
+        out.currentState = t.currentState as CompensationTicket['currentState'];
+      }
+      if (t.deliveryNumber !== undefined) out.deliveryNumber = t.deliveryNumber;
+      if (t.orderNumber !== undefined) out.orderNumber = t.orderNumber;
+      if (t.requestedBy !== undefined) out.requestedBy = t.requestedBy;
+      if (t.stateMessage !== undefined) out.stateMessage = t.stateMessage;
+      if (t.totalItemsAmount !== undefined) out.totalItemsAmount = t.totalItemsAmount;
+      return out;
+    });
+
+    // Paging derived from totalCount vs page*size.
+    const result: CursorPage<CompensationTicket> = { items };
+    const total = typeof res.totalCount === 'number' ? res.totalCount : 0;
+    if ((page + 1) * size < total) {
       result.nextCursor = String(page + 1);
     }
     return result;
