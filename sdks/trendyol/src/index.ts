@@ -14,6 +14,7 @@ export {
   type ListUnapprovedProductsParams,
   type UnapprovedDateQueryType,
 } from './resources/products.js';
+export { QuestionsResource } from './resources/questions.js';
 export { SuppliersResource, type SuppliersResourceOptions } from './resources/suppliers.js';
 export { WebhooksResource } from './resources/webhooks.js';
 export type { Brand } from './types/brand.js';
@@ -90,4 +91,10 @@ export type {
   ListCompensationTicketsParams,
 } from './types/returns.js';
 export type { SupplierAddress, SupplierAddressType } from './types/supplier-address.js';
+export type {
+  ListQuestionsParams,
+  Question,
+  QuestionAnswer,
+  QuestionStatus,
+} from './types/question.js';
 export type { Webhook, WebhookAuthenticationType, WebhookInput } from './types/webhook.js';
