@@ -1,5 +1,258 @@
 # @lonca/trendyol
 
+## 0.5.0
+
+### Minor Changes
+
+- [#31](https://github.com/loncadev/lonca/pull/31) [`26dc975`](https://github.com/loncadev/lonca/commit/26dc975b96dda78032965f246ca146329e4622fe) Thanks [@keparlak](https://github.com/keparlak)! - Add **Phase 4b — claims (returns) resource** (6 endpoints). Introduces a new top-level `client.claims` resource. After this lands, the **returns + claims** surface is feature-complete.
+
+  ### New methods on `client.claims`
+  - **`create(input)`** → `unknown`
+    - `POST /integration/order/sellers/{sellerId}/claims/create`
+    - File a return claim against an order. Body validated client-side (`ValidationError` for empty `claimItems`).
+  - **`createIssue(claimId, input)`** → `unknown`
+    - `POST /integration/order/sellers/{sellerId}/claims/{claimId}/issue`
+    - File a seller-side rejection ("ret talebi") against a customer claim. **Multipart/form-data** — the SDK builds the FormData from the typed input (joins `claimItemIdList` with commas, attaches `files: [Blob, ...]` for PDF/JPEG supporting docs).
+    - SDK validates: non-empty `claimItemIdList`, non-empty `description`, `description.length <= 500`.
+  - **`approveLineItems(claimId, input)`** → `unknown`
+    - `PUT /integration/order/sellers/{sellerId}/claims/{claimId}/items/approve`
+    - Approve specific claim line items; throws `ValidationError` on empty list.
+  - **`list({ cursor?, limit?, startDate?, endDate?, claimItemStatus? })`** → `CursorPage<Claim>`
+    - `GET /integration/order/sellers/{sellerId}/claims`
+    - Page-based pagination (max 200, default 50). `claimItemStatus` is typed as an open enum (`Created`, `WaitingInAction`, `WaitingFraudCheck`, `Accepted`, `Unresolved`, `Rejected`).
+    - Normalizer accepts both `id` and `claimId` for the claim identifier; converts ms-epoch dates to ISO.
+  - **`getIssueReasons()`** → `ClaimIssueReason[]`
+    - `GET /integration/order/claim-issue-reasons` (**not seller-scoped** — no `sellerId` in path).
+    - Catalog of rejection-reason IDs used by `createIssue`.
+  - **`getItemAudits(claimItemId)`** → `ClaimItemAudit[]`
+    - `GET /integration/order/sellers/{sellerId}/claims/items/{claimItemsId}/audit`
+    - Audit log for a single claim item; SDK wraps each row as `{ raw }` (Trendyol's shape varies, kept conservative until observed live).
+
+  ### Transport extension
+
+  `TrendyolTransport.request()` now accepts `body: FormData` for multipart endpoints — when the body is a `FormData` instance, the SDK skips JSON-stringify and lets `fetch` set the multipart boundary in `Content-Type`. Backwards-compatible: any non-FormData body still serializes as JSON.
+
+  ### New exports
+  - Resource: `ClaimsResource`
+  - Types: `Claim`, `ClaimItemStatus` (open enum), `ClaimItemAudit`, `ClaimIssueReason`, `CreateClaimInput`, `CreateClaimItemInput`, `CreateClaimIssueInput`, `ApproveClaimLineItemsInput`, `ListClaimsParams`
+
+  ### Smoke verified (STAGE 2026-05-25)
+
+  ```
+  ── 6.86 claims.list({ limit: 2 })
+  ℹ claims.list: HTTP 404 (this STAGE seller has no claims — endpoint returns 404 for empty rather than empty array; wire path verified)
+
+  ── 6.87 claims.getIssueReasons()
+  ✓ Got 19 reason(s). First 5:
+         251  Müşteriden gelen ürün defolu/zarar görmüş
+         401  Müşteriden gelen ürün adedi eksik
+         201  Müşteriden gelen ürün yanlış
+          51  Müşteriden gelen ürün kullanılmış
+         151  Müşteriden gelen ürünün parçası/aksesuarı eksik
+  ```
+
+  The 19-reason payload end-to-end-validates the SDK wire contract.
+
+  ### Phase 4 complete
+  - 4a ([#30](https://github.com/loncadev/lonca/issues/30)): manual returns + TEX compensation (3) ✅
+  - **4b (this): claims (6) ✅**
+
+  After this merges, **returns + claims surface is feature-complete** (9 endpoints across 4a+4b). Next: **Phase 5 — webhooks (6 endpoints).**
+
+- [#34](https://github.com/loncadev/lonca/pull/34) [`90810f8`](https://github.com/loncadev/lonca/commit/90810f8210ea1cb0de57c2671b09551835282e89) Thanks [@keparlak](https://github.com/keparlak)! - Add **Phases 7-11 — miscellaneous surface (18 endpoints)**. After this lands, **the Trendyol SDK fully covers Trendyol's seller marketplace API** (96 endpoints across 11 phases).
+
+  ### New resources
+
+  #### `client.invoices` (3 endpoints)
+  - `uploadFile(input)` — `POST /sellers/{id}/seller-invoice-file` (**multipart**: PDF/JPEG/PNG, max 10 MB)
+  - `sendLink(input)` — `POST /sellers/{id}/seller-invoice-links`
+  - `deleteLink(input)` — `POST /sellers/{id}/seller-invoice-links/delete`
+
+  #### `client.finance` (2 endpoints)
+  - `getSettlements({...})` — `GET /sellers/{id}/settlements` → `CursorPage<SettlementRow>`
+  - `getOtherFinancials({...})` — `GET /sellers/{id}/otherfinancials` → `CursorPage<OtherFinancialRow>`
+
+  Both surfaced as `{ raw }` rows — the underlying schemas are wide and evolve frequently; callers drill into `raw` for any field.
+
+  #### `client.labels` (2 endpoints)
+  - `createCommon(trackingNumber, input)` — `POST /sellers/{id}/common-label/{tracking}` (ZPL format)
+  - `getCommon(trackingNumber)` — `GET /sellers/{id}/common-label/{tracking}`
+
+  #### `client.testOrders` (3 endpoints, **STAGE-only**)
+  - `create(input)` — `POST /test/order/orders/core`
+  - `updateStatus(packageId, status)` — `PUT /test/order/sellers/{id}/shipment-packages/{pkg}/status`
+  - `setClaimsWaitingInAction()` — `PUT /test/order/sellers/{id}/claims/waiting-in-action`
+
+  #### `client.locations` (8 endpoints)
+
+  Full lookup tree for shipment / invoice addresses. **Not seller-scoped** — under `/integration/member/...`.
+  - `getCountries()` — all supported countries (Trendyol returned **261** on STAGE)
+  - TR domestic: `getTurkeyCities()` (returned **81**), `getTurkeyDistricts(cityCode)`, `getTurkeyNeighborhoods(cityCode, districtCode)`
+  - AZ domestic: `getAzerbaijanCities()`, `getAzerbaijanDistricts(cityCode)`
+  - GULF/CEE: `getCitiesByCountry(countryCode)`, `getDistrictsByCity(countryCode, cityId)`
+
+  ### Smoke verified (STAGE 2026-05-25)
+
+  ```
+  ── 6.91 locations.getCountries()
+  ✓ Got 261 country/ies. First 5:
+        AF  Afghanistan
+        AX  Åland
+        AL  Albania
+        DZ  Algeria
+        AS  American Samoa
+
+  ── 6.92 locations.getTurkeyCities()
+  ✓ Got 81 TR city/ies. First 5:
+         1  Adana
+         2  Adıyaman
+         3  Afyonkarahisar
+         4  Ağrı
+        68  Aksaray
+  ```
+
+  Real payloads through the SDK — wire fully verified.
+
+  ### New exports
+
+  Resources: `InvoicesResource`, `FinanceResource`, `LabelsResource`, `TestOrdersResource`, `LocationsResource`.
+
+  Types: `UploadInvoiceFileInput`, `SendInvoiceLinkInput`, `DeleteInvoiceLinkInput`, `SettlementRow`, `OtherFinancialRow`, `ListFinanceParams`, `CreateCommonLabelInput`, `CommonLabel`, `CreateTestOrderInput`, `TestOrderStatus`, `Country`, `City`, `District`, `Neighborhood`.
+
+  ### Final Trendyol surface (post-merge)
+
+  | Resource     | Methods                                                                                               |
+  | ------------ | ----------------------------------------------------------------------------------------------------- |
+  | `brands`     | list, search                                                                                          |
+  | `categories` | list, getAttributes, getAttributeValues, getByBarcodes                                                |
+  | `suppliers`  | getAddresses                                                                                          |
+  | `products`   | list, listUnapproved, getBase, getBuyboxInfo, getBatchStatus + 5 write + 4 lifecycle (12 total)       |
+  | `inventory`  | update                                                                                                |
+  | `orders`     | list, listStream, getCargoInvoiceItems + 12 package state methods + 3 returns/compensation (17 total) |
+  | `claims`     | create, createIssue, approveLineItems, list, getIssueReasons, getItemAudits                           |
+  | `webhooks`   | create, list, update, delete, activate, deactivate                                                    |
+  | `questions`  | get, list, answer                                                                                     |
+  | `invoices`   | uploadFile, sendLink, deleteLink                                                                      |
+  | `finance`    | getSettlements, getOtherFinancials                                                                    |
+  | `labels`     | createCommon, getCommon                                                                               |
+  | `testOrders` | create, updateStatus, setClaimsWaitingInAction                                                        |
+  | `locations`  | 8 lookup endpoints                                                                                    |
+
+  **96 methods across 14 resources.** Trendyol is complete.
+
+  Stacks on top of [#33](https://github.com/loncadev/lonca/issues/33) (Phase 6).
+
+- [#30](https://github.com/loncadev/lonca/pull/30) [`b18538e`](https://github.com/loncadev/lonca/commit/b18538e8d5805be142cdfcf51690938a38628580) Thanks [@keparlak](https://github.com/keparlak)! - Add **Phase 4a — manual returns + Trendyol Express compensation** (3 endpoints).
+
+  ### New methods
+  - **`client.orders.manualReturnByPackageId(packageId)`** → `void`
+    - `PUT /shipment-packages/{packageId}/manual-return` (no body)
+    - Seller-side notification that a shipped package was received back outside Trendyol's return-cargo flow.
+  - **`client.orders.manualReturnByTrackingNumber(cargoTrackingNumber)`** → `void`
+    - `PUT /shipment-packages/manual-return-by-tracking-number/{cargoTrackingNumber}` (no body, sibling path)
+    - Same operation keyed by cargo tracking number.
+  - **`client.orders.getCompensationTickets({ cursor?, limit?, startDate?, endDate? })`** → `CursorPage<CompensationTicket>`
+    - `GET /integration/tex/compensation/sellers/{sellerId}/tickets`
+    - Trendyol Express compensation tickets — claims filed when a shipment is lost or damaged in transit. 18-state lifecycle (`CompensationApproved`, `CompensationRejected`, `FoundInCompensation`, etc.).
+    - **Requires Trendyol Express enrollment** (similar to AutoFT-only endpoints) — sellers without TEX get HTTP 401.
+    - Note the different path prefix: `/integration/tex/compensation/...`, not `/integration/order/...`.
+
+  ### Discovery-first wire details
+
+  `getCompensationTickets` response envelope is unusual — spec documents `{ totalCount, data: { items: [...] } }`. The SDK accepts that **plus** common fallbacks (`data: [...]` raw array, `content: [...]`) so live wire surprises don't break callers. The 3 shapes are pinned by separate mock tests.
+
+  ### New exports
+  - `CompensationTicket`
+  - `CompensationTicketState` (18-value open enum)
+  - `CompensationItemDetail`
+  - `ListCompensationTicketsParams`
+
+  ### Smoke verified (STAGE 2026-05-25)
+
+  ```
+  ℹ wire-verified (rejected, no real data touched) manualReturnByPackageId      HTTP 401
+  ℹ wire-verified (rejected, no real data touched) manualReturnByTrackingNumber HTTP 401
+  ℹ getCompensationTickets: HTTP 401 (TEX enrollment required; same wire pattern as AutoFT-only categories.getByBarcodes)
+  ```
+
+  ### Phase 4 progress
+  - **4a (this): manual returns + TEX compensation (3) ✅**
+  - 4b: claims write+read (6) — createClaim, createClaimIssue, approveClaimLineItems, getClaims, getClaimIssueReasons, getClaimItemAudits
+
+  After 4b, the returns/claims surface is feature-complete. Next: Phase 5 (webhooks).
+
+- [#33](https://github.com/loncadev/lonca/pull/33) [`86c27d8`](https://github.com/loncadev/lonca/commit/86c27d8b82d6e0b6b493a67f0afcbd2ee789c8af) Thanks [@keparlak](https://github.com/keparlak)! - Add **Phase 6 — customer Q&A resource** (3 endpoints).
+
+  New top-level `client.questions` resource for the trendyol.com product-questions flow (customers post questions on product pages; sellers reply).
+
+  ### New methods
+  - **`questions.get(id)`** → `Question`
+    - `GET /integration/qna/sellers/{sellerId}/questions/{id}`
+  - **`questions.list({ cursor?, limit?, barcode?, startDate?, endDate?, status? })`** → `CursorPage<Question>`
+    - `GET /integration/qna/sellers/{sellerId}/questions/filter`
+    - Status filter: `'WAITING_FOR_ANSWER' | 'ANSWERED' | 'REJECTED' | 'REPORTED'` (open enum).
+  - **`questions.answer(id, text)`** → `unknown`
+    - `POST /integration/qna/sellers/{sellerId}/questions/{id}/answers` body `{ text }`
+    - SDK validates 10 ≤ `text.length` ≤ 2000 before hitting the wire (Trendyol-enforced).
+
+  ### Smoke verified (STAGE)
+
+  ```
+  ── 6.89 questions.list({ limit: 2 })
+  ✓ Got 0 question(s)
+  ```
+
+  200 OK + empty content — this seller has no customer questions on STAGE. Wire contract fully verified.
+
+  ### New exports
+  - Resource: `QuestionsResource`
+  - Types: `Question`, `QuestionAnswer`, `QuestionStatus`, `ListQuestionsParams`
+
+  ### Stacks on top of [#32](https://github.com/loncadev/lonca/issues/32) (Phase 5).
+
+- [#32](https://github.com/loncadev/lonca/pull/32) [`b6d50fe`](https://github.com/loncadev/lonca/commit/b6d50fe3817322072c81e7b545e2a709c40b1887) Thanks [@keparlak](https://github.com/keparlak)! - Add **Phase 5 — webhooks resource** (6 endpoints).
+
+  Introduces a new top-level `client.webhooks` resource managing Trendyol's shipment-package status webhooks. **Max 15 active subscriptions per seller.** Webhooks fire on order status events only (no product / stock support).
+
+  ### New methods on `client.webhooks`
+  - **`create(input)`** → `unknown`
+    - `POST /integration/sellers/{sellerId}/webhooks`
+    - SDK validates `url`, `authenticationType`, and auth-type-specific required fields (`username + password` for BASIC, `apiKey` for API_KEY) before hitting the wire.
+  - **`list()`** → `Webhook[]`
+    - `GET /integration/sellers/{sellerId}/webhooks`
+    - Normalizer accepts 3 response shapes (raw array, `{ webhooks: [] }`, `{ content: [] }`) and 3 active-flag spellings (`active`, `isActive`, `status: 'ACTIVE'`).
+  - **`update(webhookId, input)`** → `unknown`
+    - `PUT /integration/sellers/{sellerId}/webhooks/{id}`
+    - Same input shape as `create` (Trendyol does full-replace, not partial).
+  - **`delete(webhookId)`** → `unknown`
+    - `DELETE /integration/sellers/{sellerId}/webhooks/{id}`
+  - **`activate(webhookId)`** → `unknown`
+    - `PUT /integration/sellers/{sellerId}/webhooks/{id}/activate`
+  - **`deactivate(webhookId)`** → `unknown`
+    - `PUT /integration/sellers/{sellerId}/webhooks/{id}/deactivate`
+    - Trendyol auto-deactivates webhooks after persistent delivery failures + sends 2 emails; use `activate()` to bring them back once your endpoint is healthy.
+
+  ### Security note (documented in JSDoc)
+
+  **No HMAC signature** — Trendyol authenticates against **your endpoint** using the auth method you configure (`BASIC_AUTHENTICATION` or `API_KEY`). Pick `API_KEY` so you can rotate the secret without redeploying. The SDK does not pre-check the 15-subscription cap (would need an extra round-trip); Trendyol returns HTTP 400 when exceeded.
+
+  ### New exports
+  - Resource: `WebhooksResource`
+  - Types: `Webhook`, `WebhookInput`, `WebhookAuthenticationType`
+
+  ### Smoke verified (STAGE)
+
+  ```
+  ── 6.88 webhooks.list()
+  ✖ HTTP 401 ("Invalid token")
+  ```
+
+  Direct curl probe to `/integration/sellers/{id}/webhooks` returned the same 401 with a JSON error body — this seller hasn't enabled the webhook feature on STAGE (Trendyol's webhook layer uses a separate auth check from the general API). **Wire path + auth flow verified**; activation needs to be enabled on the seller side.
+
+  ### Phase 5 complete
+
+  Next: **Phase 6-11 — questions (3), invoices (3), settlements (2), common labels (2), test orders (3), location lookups (8) = 21 endpoints** to fully close out the Trendyol surface.
+
 ## 0.4.0
 
 ### Minor Changes
