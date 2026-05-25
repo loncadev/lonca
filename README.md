@@ -40,28 +40,53 @@ Lonca aims to fill this gap with a community-maintained open standard.
 
 ## Packages
 
-| Package              | Description                                                  | Status                                                                                            |
-| -------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------- |
-| `@lonca/core`        | Shared types, error hierarchy, retry / logger / rate-limiter | [![npm](https://img.shields.io/npm/v/@lonca/core.svg)](https://www.npmjs.com/package/@lonca/core) |
-| `@lonca/trendyol`    | Trendyol Marketplace API SDK                                 | Planned                                                                                           |
-| `@lonca/hepsiburada` | Hepsiburada Marketplace API SDK                              | Planned                                                                                           |
+| Package              | Description                                                  | Status                                                                                                    |
+| -------------------- | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| `@lonca/core`        | Shared types, error hierarchy, retry / logger / rate-limiter | [![npm](https://img.shields.io/npm/v/@lonca/core.svg)](https://www.npmjs.com/package/@lonca/core)         |
+| `@lonca/trendyol`    | Trendyol Marketplace SDK — products surface feature-complete | [![npm](https://img.shields.io/npm/v/@lonca/trendyol.svg)](https://www.npmjs.com/package/@lonca/trendyol) |
+| `@lonca/hepsiburada` | Hepsiburada Marketplace API SDK                              | Planned                                                                                                   |
 
 Need an SDK for another marketplace? Open a [marketplace request](https://github.com/loncadev/lonca/issues/new?template=marketplace_request.yml).
 
 ## Quick start
 
-Today you can install the shared primitives (used by every Lonca SDK once they land):
+### Trendyol (live)
+
+```bash
+pnpm add @lonca/trendyol @lonca/core
+```
+
+```ts
+import { createTrendyolClient } from '@lonca/trendyol';
+import { paginate } from '@lonca/core';
+
+const client = createTrendyolClient({
+  sellerId: 12345,
+  apiKey: process.env.TRENDYOL_API_KEY!,
+  apiSecret: process.env.TRENDYOL_API_SECRET!,
+  env: 'prod', // or 'stage'
+});
+
+// Iterate every product page-by-page.
+for await (const product of paginate((p) => client.products.list(p))) {
+  for (const variant of product.variants) {
+    console.log(variant.barcode, product.title);
+  }
+}
+```
+
+See [`sdks/trendyol/README.md`](./sdks/trendyol/README.md) for the full surface (brands · categories · suppliers · products read+write+lifecycle · inventory · orders) and an end-to-end "create a product" walkthrough.
+
+### Shared primitives
 
 ```bash
 pnpm add @lonca/core
-# or: npm install @lonca/core / yarn add @lonca/core
 ```
 
 ```ts
 import { money, paginate, retry, RateLimitError, TokenBucketRateLimiter } from '@lonca/core';
 
 const price = money(12550, 'TRY'); // 125.50 TRY (integer minor units)
-
 const limiter = new TokenBucketRateLimiter({ capacity: 50, intervalMs: 60_000 });
 
 await retry(
@@ -73,7 +98,7 @@ await retry(
 );
 ```
 
-See [`packages/core/README.md`](./packages/core/README.md) for the full surface (errors, pagination, logger, rate limiter).
+See [`packages/core/README.md`](./packages/core/README.md) for the full surface.
 
 ## Development
 
