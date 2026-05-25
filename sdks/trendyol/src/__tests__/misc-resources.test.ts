@@ -118,10 +118,47 @@ describe('FinanceResource', () => {
     });
   });
 
-  it('wraps each row as { raw }', async () => {
-    const transport = mockTransport({ content: [{ id: 1, amount: 10 }] });
+  it('normalizes documented FinancialTransaction fields + ISO dates', async () => {
+    // Shape per Trendyol's FinancialTransaction schema (2026-05-25).
+    const transport = mockTransport({
+      content: [
+        {
+          id: 'TXN-1',
+          transactionDate: 1779363893000,
+          transactionType: 'Satış',
+          barcode: 'BC1',
+          debt: 0,
+          credit: 100.5,
+          commissionRate: 13,
+          commissionAmount: 13.07,
+          sellerRevenue: 87.43,
+          orderNumber: 'ORD-1',
+          paymentDate: 1779450293000,
+          sellerId: 2738,
+        },
+      ],
+    });
     const page = await r(transport).getSettlements();
-    expect(page.items[0]).toEqual({ raw: { id: 1, amount: 10 } });
+    expect(page.items[0]).toMatchObject({
+      id: 'TXN-1',
+      transactionDate: new Date(1779363893000).toISOString(),
+      transactionType: 'Satış',
+      barcode: 'BC1',
+      credit: 100.5,
+      commissionRate: 13,
+      sellerRevenue: 87.43,
+      orderNumber: 'ORD-1',
+      paymentDate: new Date(1779450293000).toISOString(),
+      sellerId: 2738,
+    });
+    expect(page.items[0]!.raw).toBeDefined();
+  });
+
+  it('numeric ID gets coerced to string for stability', async () => {
+    const transport = mockTransport({ content: [{ id: 12345, amount: 10 }] });
+    const page = await r(transport).getSettlements();
+    expect(page.items[0]!.id).toBe('12345');
+    expect(page.items[0]!.raw).toEqual({ id: 12345, amount: 10 });
   });
 });
 
@@ -149,8 +186,13 @@ describe('LabelsResource', () => {
     ).rejects.toThrow(/format is required/);
   });
 
-  it('getCommon GETs and returns { raw }', async () => {
-    const transport = mockTransport({ url: 'https://x/label.zpl' });
+  it('getCommon parses documented `{ data: [{ label, format }] }` shape', async () => {
+    const transport = mockTransport({
+      data: [
+        { label: '^XA...^XZ', format: 'ZPL' },
+        { label: '^XA-other^XZ', format: 'ZPL' },
+      ],
+    });
     const label = await r(transport).getCommon('TRK1');
     expect(transport.request).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -158,7 +200,22 @@ describe('LabelsResource', () => {
         path: '/integration/sellers/42/common-label/TRK1',
       }),
     );
-    expect(label.raw).toEqual({ url: 'https://x/label.zpl' });
+    expect(label.labels).toEqual([
+      { label: '^XA...^XZ', format: 'ZPL' },
+      { label: '^XA-other^XZ', format: 'ZPL' },
+    ]);
+    expect(label.raw).toEqual({
+      data: [
+        { label: '^XA...^XZ', format: 'ZPL' },
+        { label: '^XA-other^XZ', format: 'ZPL' },
+      ],
+    });
+  });
+
+  it('getCommon returns empty labels[] when data is missing', async () => {
+    const transport = mockTransport({});
+    const label = await r(transport).getCommon('TRK1');
+    expect(label.labels).toEqual([]);
   });
 });
 

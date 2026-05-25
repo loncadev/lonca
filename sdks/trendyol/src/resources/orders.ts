@@ -267,6 +267,19 @@ function normalizeCustomer(node: TrendyolShipmentPackageNode): OrderCustomer {
   return out;
 }
 
+/**
+ * Normalize one raw Trendyol shipment-package node into the public
+ * `ShipmentPackage` shape. Exported so consumers handling Trendyol
+ * webhooks can reuse the SDK's normalization logic on the event body
+ * (Trendyol POSTs the same shape it returns from `getShipmentPackages`).
+ *
+ * For full-webhook parsing use `parseWebhookEvent(rawBody)` from the
+ * top-level package, which calls this internally per item.
+ */
+export function normalizeShipmentPackage(rawNode: unknown): ShipmentPackage {
+  return normalizePackage((rawNode ?? {}) as TrendyolShipmentPackageNode);
+}
+
 function normalizePackage(node: TrendyolShipmentPackageNode): ShipmentPackage {
   const pkgId = node.shipmentPackageId ?? node.id;
   const out: ShipmentPackage = {

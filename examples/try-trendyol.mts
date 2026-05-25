@@ -437,6 +437,61 @@ if (firstApprovedBarcode) {
   }
 }
 
+// ── 6.93 finance.getSettlements (read-only, safe) ────────────────────
+console.log('\n── 6.93 finance.getSettlements({ limit: 2 }) ────────────');
+try {
+  const start = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // last 30 days
+  const end = new Date();
+  const page = await client.finance.getSettlements({ limit: 2, startDate: start, endDate: end });
+  console.log(`✓ Got ${page.items.length} settlement(s)${page.nextCursor ? ' (more)' : ''}`);
+  for (const t of page.items.slice(0, 2)) {
+    console.log(
+      `    ${t.id.padStart(10)}  ${t.transactionType ?? '?'}  debt=${t.debt ?? '-'}  credit=${t.credit ?? '-'}  ${t.orderNumber ?? ''}`,
+    );
+  }
+} catch (err) {
+  console.log(`ℹ finance.getSettlements: ${formatError(err).slice(0, 100)}`);
+}
+
+console.log('\n── 6.94 finance.getOtherFinancials({ limit: 2 }) ────────');
+try {
+  const start = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const end = new Date();
+  const page = await client.finance.getOtherFinancials({
+    limit: 2,
+    startDate: start,
+    endDate: end,
+  });
+  console.log(`✓ Got ${page.items.length} row(s)${page.nextCursor ? ' (more)' : ''}`);
+  for (const t of page.items.slice(0, 2)) {
+    console.log(`    ${t.id.padStart(10)}  ${t.transactionType ?? '?'}  ${t.description ?? ''}`);
+  }
+} catch (err) {
+  console.log(`ℹ finance.getOtherFinancials: ${formatError(err).slice(0, 100)}`);
+}
+
+// ── 6.95 labels.getCommon (fake tracking — wire-verify) ──────────────
+console.log('\n── 6.95 labels.getCommon("LONCA-FAKE-TRK") ──────────────');
+try {
+  const label = await client.labels.getCommon('LONCA-FAKE-TRK-999');
+  console.log(`✓ Got ${label.labels.length} label entries`);
+} catch (err) {
+  const msg = formatError(err);
+  const code = /HTTP (\d{3})/.exec(msg)?.[1] ?? '?';
+  console.log(`ℹ labels.getCommon HTTP ${code} (wire-verified, fake tracking)`);
+}
+
+// ── 6.96 claims.getItemAudits (fake id — wire-verify) ────────────────
+console.log('\n── 6.96 claims.getItemAudits("LONCA-FAKE-ITEM") ─────────');
+try {
+  const audits = await client.claims.getItemAudits('LONCA-FAKE-CLM-ITEM');
+  console.log(`✓ Got ${audits.length} audit entries`);
+} catch (err) {
+  const msg = formatError(err);
+  const code = /HTTP (\d{3})/.exec(msg)?.[1] ?? '?';
+  console.log(`ℹ claims.getItemAudits HTTP ${code} (wire-verified, fake id)`);
+}
+
 // ── 6.91 locations smoke (Phase 11 — read-only, safe) ─────────────────
 console.log('\n── 6.91 locations.getCountries() ─────────────────────────');
 try {
