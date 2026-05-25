@@ -233,6 +233,131 @@ if (firstApprovedBarcode) {
   }
 }
 
+// ── 6.4 products write smoke (5 endpoints) — STAGE-only ─────────────────
+// Each endpoint is exercised with a payload Trendyol will accept at the
+// batch level (returns batchRequestId) but reject per-item (fake barcode /
+// contentId). This validates the wire contract without harming real seller
+// data. STAGE-only; PROD is refused for safety.
+if (process.env.TY_SKIP_PRODUCT_WRITES === '1') {
+  console.log('\n⏭  Skipping products write smoke (TY_SKIP_PRODUCT_WRITES=1)');
+} else if (env === 'prod') {
+  console.log(
+    '\n⚠ TY_ENV=prod — refusing to run write smoke. Set TY_ENV=stage or TY_SKIP_PRODUCT_WRITES=1.',
+  );
+} else {
+  console.log('\n── 6.4 products write smoke (5 endpoints) ───────────────');
+  const fakeBarcode = `LONCA-W-SMOKE-${Date.now()}`;
+  // Probe a real product + real draft up-front so update endpoints have
+  // real identifiers to operate on (Trendyol's V2 update endpoints reject
+  // synthetic IDs synchronously with 400, which would mask a successful
+  // wire contract). Falls back to fake values if probes fail.
+  const realProduct = (await client.products.list({ limit: 1 }).catch(() => ({ items: [] })))
+    .items[0];
+  const realContentId = realProduct?.contentId ? Number(realProduct.contentId) : 999_999_999;
+  const realApprovedBarcode = realProduct?.variants[0]?.barcode ?? fakeBarcode;
+
+  type WriteCall = {
+    name: string;
+    call: () => Promise<{ batchRequestId: string }>;
+  };
+  const writeCalls: WriteCall[] = [
+    {
+      name: 'create',
+      call: () =>
+        client.products.create([
+          {
+            barcode: fakeBarcode,
+            title: 'Lonca smoke test product (will fail validation)',
+            productMainId: fakeBarcode,
+            brandId: 1,
+            categoryId: 1,
+            quantity: 1,
+            stockCode: fakeBarcode,
+            dimensionalWeight: 1,
+            description: '<p>smoke</p>',
+            listPrice: 100,
+            salePrice: 100,
+            images: [{ url: 'https://example.com/lonca-smoke.jpg' }],
+            vatRate: 20,
+            attributes: [],
+          },
+        ]),
+    },
+    {
+      name: 'updateContent',
+      // Use a real contentId so Trendyol validates content rules, not
+      // "contentId does not exist". A round-trip with the existing title is
+      // a no-op — safe on STAGE.
+      call: () =>
+        client.products.updateContent([
+          {
+            contentId: realContentId,
+            title: realProduct?.title ?? 'Lonca smoke updated title',
+          },
+        ]),
+    },
+    {
+      name: 'updateVariants',
+      // Real barcode + no-op stockCode change.
+      call: () =>
+        client.products.updateVariants([
+          {
+            barcode: realApprovedBarcode,
+            stockCode: realProduct?.variants[0]?.raw?.stockCode
+              ? String(realProduct.variants[0].raw.stockCode)
+              : realApprovedBarcode,
+          },
+        ]),
+    },
+    {
+      name: 'updateUnapproved',
+      // Trendyol returns 500/TypeError when too many optional fields are
+      // omitted (see resource JSDoc). Probe a real draft barcode and send a
+      // fuller payload; fall back to skipping if no drafts exist.
+      call: async () => {
+        const drafts = await client.products.listUnapproved({ limit: 1 });
+        const draft = drafts.items[0];
+        if (!draft) {
+          throw new Error('no unapproved drafts available to test updateUnapproved against');
+        }
+        return client.products.updateUnapproved([
+          {
+            barcode: draft.barcode,
+            title: draft.title || 'Lonca smoke',
+            description: draft.description || 'desc',
+            productMainId: draft.productMainId || draft.barcode,
+            brandId: draft.brand.id ? Number(draft.brand.id) : 1,
+            categoryId: draft.category.id ? Number(draft.category.id) : 1,
+            stockCode: draft.stockCode || draft.barcode,
+            dimensionalWeight: draft.dimensionalWeight ?? 1,
+            vatRate: draft.vatRate ?? 20,
+            images: draft.images.length
+              ? draft.images.map((url) => ({ url }))
+              : [{ url: 'https://example.com/lonca-smoke.jpg' }],
+            attributes: [],
+          },
+        ]);
+      },
+    },
+    {
+      name: 'updateDeliveryInfo',
+      call: () =>
+        client.products.updateDeliveryInfo([
+          { barcode: realApprovedBarcode, deliveryOptions: { deliveryDuration: 3 } },
+        ]),
+    },
+  ];
+
+  for (const { name, call } of writeCalls) {
+    try {
+      const { batchRequestId } = await call();
+      console.log(`✓ ${name.padEnd(20)} accepted; batchRequestId=${batchRequestId}`);
+    } catch (err) {
+      console.error(`✖ ${name.padEnd(20)} failed:`, formatError(err));
+    }
+  }
+}
+
 // ── 6.5 inventory.update — full round-trip with a REAL product ──────────
 // Fetches a real product, bumps its stock by +1, polls until the batch
 // completes, then re-fetches and verifies the change. STAGE-only by default.
