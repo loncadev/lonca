@@ -2,5 +2,7 @@ export { createTrendyolClient, type CreateClientOptions, type TrendyolClient } f
 export { type TrendyolEnvironment } from './transport.js';
 export { BrandsResource } from './resources/brands.js';
 export { CategoriesResource } from './resources/categories.js';
+export { SuppliersResource, type SuppliersResourceOptions } from './resources/suppliers.js';
 export type { Brand } from './types/brand.js';
 export type { Category, CategoryAttribute, CategoryAttributeValue } from './types/category.js';
+export type { SupplierAddress, SupplierAddressType } from './types/supplier-address.js';
