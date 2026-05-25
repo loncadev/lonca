@@ -437,6 +437,20 @@ if (firstApprovedBarcode) {
   }
 }
 
+// ── 6.88 webhooks.list (Phase 5 — read-only, safe to smoke) ─────────────
+console.log('\n── 6.88 webhooks.list() ──────────────────────────────────');
+try {
+  const list = await client.webhooks.list();
+  console.log(`✓ Got ${list.length} webhook(s)`);
+  for (const wh of list.slice(0, 5)) {
+    console.log(
+      `    ${wh.id.padStart(6)}  ${wh.url ?? '(no url)'}  auth=${wh.authenticationType ?? '?'}  active=${wh.active ?? '?'}`,
+    );
+  }
+} catch (err) {
+  console.error('✖ webhooks.list failed:', formatError(err));
+}
+
 // ── 6.86 claims smoke (Phase 4b) ───────────────────────────────────────
 console.log('\n── 6.86 claims.list({ limit: 2 }) ────────────────────────');
 try {

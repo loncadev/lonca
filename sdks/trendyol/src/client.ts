@@ -6,6 +6,7 @@ import { InventoryResource } from './resources/inventory.js';
 import { OrdersResource } from './resources/orders.js';
 import { ProductsResource } from './resources/products.js';
 import { SuppliersResource } from './resources/suppliers.js';
+import { WebhooksResource } from './resources/webhooks.js';
 import { TrendyolTransport, type TrendyolEnvironment } from './transport.js';
 
 export interface CreateClientOptions {
@@ -43,6 +44,7 @@ export interface TrendyolClient {
   inventory: InventoryResource;
   orders: OrdersResource;
   claims: ClaimsResource;
+  webhooks: WebhooksResource;
 }
 
 /**
@@ -82,5 +84,6 @@ export function createTrendyolClient(opts: CreateClientOptions): TrendyolClient 
     inventory: new InventoryResource(transport, opts.sellerId),
     orders: new OrdersResource(transport, opts.sellerId),
     claims: new ClaimsResource(transport, opts.sellerId),
+    webhooks: new WebhooksResource(transport, opts.sellerId),
   };
 }
