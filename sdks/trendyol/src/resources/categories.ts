@@ -188,10 +188,7 @@ export class CategoriesResource {
   ): Promise<CursorPage<CategoryAttributeValue>> {
     const catId = encodeURIComponent(String(categoryId));
     const attrId = encodeURIComponent(String(attributeId));
-    const size = Math.min(
-      params.limit ?? DEFAULT_ATTR_VALUES_PAGE_SIZE,
-      MAX_ATTR_VALUES_PAGE_SIZE,
-    );
+    const size = Math.min(params.limit ?? DEFAULT_ATTR_VALUES_PAGE_SIZE, MAX_ATTR_VALUES_PAGE_SIZE);
     const page = params.cursor ? Number.parseInt(params.cursor, 10) : 0;
 
     const data = await this.transport.request<TrendyolAttributeValuesPage>({

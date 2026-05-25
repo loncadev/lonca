@@ -113,9 +113,7 @@ try {
     // or non-allowCustom). Free-text-only attributes return an empty page,
     // which is correct but not interesting to look at.
     const pickAttr =
-      attrs.find((a) => a.slicer || a.varianter) ??
-      attrs.find((a) => !a.allowCustom) ??
-      attrs[0];
+      attrs.find((a) => a.slicer || a.varianter) ?? attrs.find((a) => !a.allowCustom) ?? attrs[0];
     if (pickAttr) {
       console.log(
         `\n── 3.5 categories.getAttributeValues(${leaf.id}, ${pickAttr.id}) [${pickAttr.name}] ──`,
