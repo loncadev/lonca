@@ -47,9 +47,8 @@ export interface CategoryAttribute {
    * NOTE: Trendyol's live API often omits this field on the `getCategoryAttributes`
    * response — the endpoint returns attribute metadata + flags, not the full value
    * catalog. In that case `values` is an empty array. If `allowCustom` is `true`,
-   * any custom text is accepted; otherwise consult Trendyol's separate value
-   * lookup mechanisms (a dedicated `getAttributeValues` endpoint may land in a
-   * future release of this SDK).
+   * any custom text is accepted; otherwise use `client.categories.getAttributeValues(categoryId, attributeId)`
+   * to fetch the catalog from the dedicated V2 endpoint.
    */
   values: CategoryAttributeValue[];
 }

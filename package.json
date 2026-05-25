@@ -29,6 +29,7 @@
     "clean": "turbo run clean",
     "try:trendyol": "tsx --env-file=.env examples/try-trendyol.mts",
     "try:inspect-orders": "tsx --env-file=.env examples/inspect-orders.mts",
+    "try:inspect-attribute-values": "tsx --env-file=.env examples/inspect-attribute-values.mts",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "turbo run build && changeset publish"
