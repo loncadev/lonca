@@ -392,21 +392,25 @@ function normalizeBatchResult(data: TrendyolBatchResultResponse): BatchRequestRe
 
 /** Trendyol caps `items[]` at 1000 for every async write endpoint. */
 const MAX_WRITE_ITEMS = 1000;
+/** Trendyol's documented service-limits cap delete at 100 req/min (separate bucket). */
+const DELETE_RATE_PER_MIN = 100;
 
 /**
- * Trendyol product read + write + batch-result endpoints.
+ * Trendyol product read + write + lifecycle + batch-result endpoints.
  *
  * Rate limits (per Trendyol service limits):
  * - filterProducts (approved + unapproved + getProductBase): 2000 req/min
  * - getBatchRequestResult: 1000 req/min
  * - getBuyboxInformation: 1000 req/min
- * - create/update product writes: 1000 req/min (shared bucket)
+ * - create/update/archive/unlock product writes: 1000 req/min (shared bucket)
+ * - delete: 100 req/min (separate bucket)
  */
 export class ProductsResource {
   private readonly filterLimiter: TokenBucketRateLimiter;
   private readonly batchLimiter: TokenBucketRateLimiter;
   private readonly buyboxLimiter: TokenBucketRateLimiter;
   private readonly writeLimiter: TokenBucketRateLimiter;
+  private readonly deleteLimiter: TokenBucketRateLimiter;
 
   constructor(
     private readonly transport: TrendyolTransport,
@@ -416,6 +420,7 @@ export class ProductsResource {
       batchLimiter?: TokenBucketRateLimiter;
       buyboxLimiter?: TokenBucketRateLimiter;
       writeLimiter?: TokenBucketRateLimiter;
+      deleteLimiter?: TokenBucketRateLimiter;
     } = {},
   ) {
     this.filterLimiter =
@@ -426,6 +431,20 @@ export class ProductsResource {
       options.buyboxLimiter ?? new TokenBucketRateLimiter({ capacity: 1000, intervalMs: 60_000 });
     this.writeLimiter =
       options.writeLimiter ?? new TokenBucketRateLimiter({ capacity: 1000, intervalMs: 60_000 });
+    this.deleteLimiter =
+      options.deleteLimiter ??
+      new TokenBucketRateLimiter({ capacity: DELETE_RATE_PER_MIN, intervalMs: 60_000 });
+  }
+
+  private validateBarcodes(barcodes: string[], methodLabel: string): void {
+    if (!Array.isArray(barcodes) || barcodes.length === 0) {
+      throw new ValidationError({ message: `${methodLabel}: barcodes must not be empty` });
+    }
+    if (barcodes.length > MAX_WRITE_ITEMS) {
+      throw new ValidationError({
+        message: `${methodLabel}: max ${MAX_WRITE_ITEMS} barcodes per call (got ${barcodes.length})`,
+      });
+    }
   }
 
   private async submitWrite<T>(
@@ -685,5 +704,85 @@ export class ProductsResource {
    */
   async updateDeliveryInfo(items: UpdateDeliveryInfoInput[]): Promise<BatchAcceptedResponse> {
     return this.submitWrite('/products/delivery-info-bulk-update', items, 'updateDeliveryInfo');
+  }
+
+  /**
+   * Delete products by barcode. Trendyol allows deletion of unapproved
+   * products and approved products that have been archived for more than a
+   * day (and have not been sales-stopped by Trendyol).
+   *
+   * Async batch — returns `{ batchRequestId }` to poll via `getBatchStatus`.
+   * Separately rate-limited at **100 req/min** (much tighter than create/update).
+   *
+   * @param barcodes 1–1000 barcodes.
+   * @throws {ValidationError} when `barcodes` is empty or longer than 1000.
+   */
+  async delete(barcodes: string[]): Promise<BatchAcceptedResponse> {
+    this.validateBarcodes(barcodes, 'delete');
+    const data = await this.transport.request<BatchAcceptedResponse>({
+      method: 'DELETE',
+      path: `/integration/product/sellers/${this.sellerId}/products`,
+      body: { items: barcodes.map((barcode) => ({ barcode })) },
+      rateLimiter: this.deleteLimiter,
+    });
+    return { batchRequestId: data?.batchRequestId ?? '' };
+  }
+
+  /**
+   * Archive products by barcode (Trendyol's `archived=true` state).
+   * Archived products are not visible to customers; pair with `delete`
+   * after the 24-hour archive cool-down to remove them entirely.
+   *
+   * Async batch — returns `{ batchRequestId }`.
+   *
+   * @throws {ValidationError} when `barcodes` is empty or longer than 1000.
+   */
+  async archive(barcodes: string[]): Promise<BatchAcceptedResponse> {
+    return this.setArchivedState(barcodes, true, 'archive');
+  }
+
+  /**
+   * Unarchive products by barcode (Trendyol's `archived=false` state).
+   * Restores visibility for previously-archived products.
+   *
+   * @throws {ValidationError} when `barcodes` is empty or longer than 1000.
+   */
+  async unarchive(barcodes: string[]): Promise<BatchAcceptedResponse> {
+    return this.setArchivedState(barcodes, false, 'unarchive');
+  }
+
+  private async setArchivedState(
+    barcodes: string[],
+    archived: boolean,
+    methodLabel: string,
+  ): Promise<BatchAcceptedResponse> {
+    this.validateBarcodes(barcodes, methodLabel);
+    const data = await this.transport.request<BatchAcceptedResponse>({
+      method: 'PUT',
+      path: `/integration/product/sellers/${this.sellerId}/products/archive-state`,
+      body: { items: barcodes.map((barcode) => ({ barcode, archived })) },
+      rateLimiter: this.writeLimiter,
+    });
+    return { batchRequestId: data?.batchRequestId ?? '' };
+  }
+
+  /**
+   * Unlock products whose sale was paused by Trendyol due to pricing
+   * issues (under/over-pricing, critical price error, supplier issues).
+   * Restores selling status for the listed barcodes.
+   *
+   * Async batch — returns `{ batchRequestId }`.
+   *
+   * @throws {ValidationError} when `barcodes` is empty or longer than 1000.
+   */
+  async unlock(barcodes: string[]): Promise<BatchAcceptedResponse> {
+    this.validateBarcodes(barcodes, 'unlock');
+    const data = await this.transport.request<BatchAcceptedResponse>({
+      method: 'PUT',
+      path: `/integration/product/sellers/${this.sellerId}/products/unlock`,
+      body: { items: barcodes.map((barcode) => ({ barcode })) },
+      rateLimiter: this.writeLimiter,
+    });
+    return { batchRequestId: data?.batchRequestId ?? '' };
   }
 }
