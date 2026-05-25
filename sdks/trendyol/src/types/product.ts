@@ -73,11 +73,7 @@ export interface Product {
  * Older docs also mention `waiting`. Treat as open-enum (`(string & {})`)
  * since Trendyol can add new statuses without notice.
  */
-export type UnapprovedProductStatus =
-  | 'pendingApproval'
-  | 'waiting'
-  | 'rejected'
-  | (string & {});
+export type UnapprovedProductStatus = 'pendingApproval' | 'waiting' | 'rejected' | (string & {});
 
 export interface UnapprovedProductRejectReason {
   /** Short title (e.g. "Kategori Bilgisi Eksik veya Yanlış"). */
