@@ -7,7 +7,12 @@ export {
 } from './resources/categories.js';
 export { InventoryResource } from './resources/inventory.js';
 export { OrdersResource, type ListOrdersParams } from './resources/orders.js';
-export { ProductsResource, type ListProductsParams } from './resources/products.js';
+export {
+  ProductsResource,
+  type ListProductsParams,
+  type ListUnapprovedProductsParams,
+  type UnapprovedDateQueryType,
+} from './resources/products.js';
 export { SuppliersResource, type SuppliersResourceOptions } from './resources/suppliers.js';
 export type { Brand } from './types/brand.js';
 export type { Category, CategoryAttribute, CategoryAttributeValue } from './types/category.js';
@@ -26,9 +31,14 @@ export type {
   BatchRequestItemResult,
   BatchRequestResult,
   BatchRequestStatus,
+  BuyboxInfo,
   NamedRef,
   Product,
   ProductAttribute,
+  ProductBase,
   ProductVariant,
+  UnapprovedProduct,
+  UnapprovedProductRejectReason,
+  UnapprovedProductStatus,
 } from './types/product.js';
 export type { SupplierAddress, SupplierAddressType } from './types/supplier-address.js';
