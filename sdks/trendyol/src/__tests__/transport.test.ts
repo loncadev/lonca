@@ -19,7 +19,7 @@ function fetchOkJson(body: unknown, init: ResponseInit = {}) {
   return vi.fn().mockImplementation(() => Promise.resolve(jsonResponse(body, init)));
 }
 
-function fetchStatus(status: number, body = '{}', headers: HeadersInit = {}) {
+function fetchStatus(status: number, body = '{}', headers: Record<string, string> = {}) {
   return vi.fn().mockImplementation(() => Promise.resolve(new Response(body, { status, headers })));
 }
 
