@@ -1,0 +1,63 @@
+{
+  "name": "@lonca/trendyol",
+  "version": "0.0.0",
+  "description": "Type-safe TypeScript SDK for the Trendyol Marketplace API",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/loncadev/lonca.git",
+    "directory": "sdks/trendyol"
+  },
+  "homepage": "https://github.com/loncadev/lonca/tree/main/sdks/trendyol#readme",
+  "bugs": "https://github.com/loncadev/lonca/issues",
+  "keywords": [
+    "trendyol",
+    "marketplace",
+    "e-commerce",
+    "turkey",
+    "sdk",
+    "api"
+  ],
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true});require('fs').rmSync('.turbo',{recursive:true,force:true})\""
+  },
+  "dependencies": {
+    "@lonca/core": "workspace:^"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsup": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
