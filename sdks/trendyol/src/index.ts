@@ -6,7 +6,11 @@ export {
   type ListCategoryAttributeValuesParams,
 } from './resources/categories.js';
 export { ClaimsResource } from './resources/claims.js';
+export { FinanceResource } from './resources/finance.js';
 export { InventoryResource } from './resources/inventory.js';
+export { InvoicesResource } from './resources/invoices.js';
+export { LabelsResource } from './resources/labels.js';
+export { LocationsResource } from './resources/locations.js';
 export { OrdersResource, type ListOrdersParams } from './resources/orders.js';
 export {
   ProductsResource,
@@ -15,6 +19,7 @@ export {
   type UnapprovedDateQueryType,
 } from './resources/products.js';
 export { QuestionsResource } from './resources/questions.js';
+export { TestOrdersResource } from './resources/test-orders.js';
 export { SuppliersResource, type SuppliersResourceOptions } from './resources/suppliers.js';
 export { WebhooksResource } from './resources/webhooks.js';
 export type { Brand } from './types/brand.js';
@@ -98,3 +103,19 @@ export type {
   QuestionStatus,
 } from './types/question.js';
 export type { Webhook, WebhookAuthenticationType, WebhookInput } from './types/webhook.js';
+export type {
+  City,
+  CommonLabel,
+  Country,
+  CreateCommonLabelInput,
+  CreateTestOrderInput,
+  DeleteInvoiceLinkInput,
+  District,
+  ListFinanceParams,
+  Neighborhood,
+  OtherFinancialRow,
+  SendInvoiceLinkInput,
+  SettlementRow,
+  TestOrderStatus,
+  UploadInvoiceFileInput,
+} from './types/misc.js';

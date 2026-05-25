@@ -2,11 +2,16 @@ import type { Logger } from '@lonca/core';
 import { BrandsResource } from './resources/brands.js';
 import { CategoriesResource } from './resources/categories.js';
 import { ClaimsResource } from './resources/claims.js';
+import { FinanceResource } from './resources/finance.js';
 import { InventoryResource } from './resources/inventory.js';
+import { InvoicesResource } from './resources/invoices.js';
+import { LabelsResource } from './resources/labels.js';
+import { LocationsResource } from './resources/locations.js';
 import { OrdersResource } from './resources/orders.js';
 import { ProductsResource } from './resources/products.js';
 import { QuestionsResource } from './resources/questions.js';
 import { SuppliersResource } from './resources/suppliers.js';
+import { TestOrdersResource } from './resources/test-orders.js';
 import { WebhooksResource } from './resources/webhooks.js';
 import { TrendyolTransport, type TrendyolEnvironment } from './transport.js';
 
@@ -47,6 +52,11 @@ export interface TrendyolClient {
   claims: ClaimsResource;
   webhooks: WebhooksResource;
   questions: QuestionsResource;
+  invoices: InvoicesResource;
+  finance: FinanceResource;
+  labels: LabelsResource;
+  testOrders: TestOrdersResource;
+  locations: LocationsResource;
 }
 
 /**
@@ -88,5 +98,10 @@ export function createTrendyolClient(opts: CreateClientOptions): TrendyolClient 
     claims: new ClaimsResource(transport, opts.sellerId),
     webhooks: new WebhooksResource(transport, opts.sellerId),
     questions: new QuestionsResource(transport, opts.sellerId),
+    invoices: new InvoicesResource(transport, opts.sellerId),
+    finance: new FinanceResource(transport, opts.sellerId),
+    labels: new LabelsResource(transport, opts.sellerId),
+    testOrders: new TestOrdersResource(transport, opts.sellerId),
+    locations: new LocationsResource(transport),
   };
 }

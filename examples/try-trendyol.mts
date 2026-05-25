@@ -437,6 +437,29 @@ if (firstApprovedBarcode) {
   }
 }
 
+// ── 6.91 locations smoke (Phase 11 — read-only, safe) ─────────────────
+console.log('\n── 6.91 locations.getCountries() ─────────────────────────');
+try {
+  const countries = await client.locations.getCountries();
+  console.log(`✓ Got ${countries.length} country/ies. First 5:`);
+  for (const c of countries.slice(0, 5)) {
+    console.log(`    ${c.code.padStart(4)}  ${c.name ?? ''}`);
+  }
+} catch (err) {
+  console.log(`ℹ getCountries: ${formatError(err).slice(0, 100)}`);
+}
+
+console.log('\n── 6.92 locations.getTurkeyCities() ──────────────────────');
+try {
+  const cities = await client.locations.getTurkeyCities();
+  console.log(`✓ Got ${cities.length} TR city/ies. First 5:`);
+  for (const c of cities.slice(0, 5)) {
+    console.log(`    ${c.code.padStart(4)}  ${c.name ?? ''}`);
+  }
+} catch (err) {
+  console.log(`ℹ getTurkeyCities: ${formatError(err).slice(0, 100)}`);
+}
+
 // ── 6.89 questions.list (Phase 6) ──────────────────────────────────────
 console.log('\n── 6.89 questions.list({ limit: 2 }) ──────────────────────');
 try {
