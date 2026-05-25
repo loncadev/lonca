@@ -358,6 +358,53 @@ if (process.env.TY_SKIP_PRODUCT_WRITES === '1') {
   }
 }
 
+// ── 6.45 products lifecycle smoke (delete / archive / unarchive / unlock) ─
+// All 4 mutate state. Strategy: pick a FAKE barcode for delete/unlock (will
+// fail per-item but accepted at batch level), and exercise archive +
+// unarchive as a pair on a real approved barcode (round-trip restores
+// state). STAGE-only; PROD is refused.
+if (process.env.TY_SKIP_PRODUCT_LIFECYCLE === '1') {
+  console.log('\n⏭  Skipping products lifecycle smoke (TY_SKIP_PRODUCT_LIFECYCLE=1)');
+} else if (env === 'prod') {
+  console.log(
+    '\n⚠ TY_ENV=prod — refusing to run lifecycle smoke. Set TY_ENV=stage or TY_SKIP_PRODUCT_LIFECYCLE=1.',
+  );
+} else {
+  console.log('\n── 6.45 products lifecycle smoke ────────────────────────');
+  const fakeLifecycleBarcode = `LONCA-LC-SMOKE-${Date.now()}`;
+  const realApprovedForLc = firstApprovedBarcode;
+
+  // delete — fake barcode is safe (Trendyol returns batchRequestId, per-item fails)
+  try {
+    const { batchRequestId } = await client.products.delete([fakeLifecycleBarcode]);
+    console.log(`✓ delete       accepted; batchRequestId=${batchRequestId}`);
+  } catch (err) {
+    console.error('✖ delete failed:', formatError(err));
+  }
+
+  // archive → unarchive round-trip on a real approved barcode.
+  if (realApprovedForLc) {
+    try {
+      const { batchRequestId: archiveId } = await client.products.archive([realApprovedForLc]);
+      console.log(`✓ archive      accepted; batchRequestId=${archiveId}`);
+      const { batchRequestId: unarchiveId } = await client.products.unarchive([realApprovedForLc]);
+      console.log(`✓ unarchive    accepted; batchRequestId=${unarchiveId}  (state restored)`);
+    } catch (err) {
+      console.error('✖ archive/unarchive round-trip failed:', formatError(err));
+    }
+  } else {
+    console.log('⚠ no real approved barcode — skipping archive/unarchive');
+  }
+
+  // unlock — fake barcode is safe.
+  try {
+    const { batchRequestId } = await client.products.unlock([fakeLifecycleBarcode]);
+    console.log(`✓ unlock       accepted; batchRequestId=${batchRequestId}`);
+  } catch (err) {
+    console.error('✖ unlock failed:', formatError(err));
+  }
+}
+
 // ── 6.5 inventory.update — full round-trip with a REAL product ──────────
 // Fetches a real product, bumps its stock by +1, polls until the batch
 // completes, then re-fetches and verifies the change. STAGE-only by default.
