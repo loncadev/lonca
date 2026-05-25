@@ -41,4 +41,15 @@ export type {
   UnapprovedProductRejectReason,
   UnapprovedProductStatus,
 } from './types/product.js';
+export type {
+  BatchAcceptedResponse,
+  CreateProductV2Input,
+  DeliveryOptionInput,
+  ProductAttributeV2Input,
+  ProductImageInput,
+  UpdateContentInput,
+  UpdateDeliveryInfoInput,
+  UpdateUnapprovedInput,
+  UpdateVariantInput,
+} from './types/product-write.js';
 export type { SupplierAddress, SupplierAddressType } from './types/supplier-address.js';

@@ -17,6 +17,14 @@ import type {
   UnapprovedProduct,
   UnapprovedProductRejectReason,
 } from '../types/product.js';
+import type {
+  BatchAcceptedResponse,
+  CreateProductV2Input,
+  UpdateContentInput,
+  UpdateDeliveryInfoInput,
+  UpdateUnapprovedInput,
+  UpdateVariantInput,
+} from '../types/product-write.js';
 
 const DEFAULT_PAGE_SIZE = 50;
 /** Trendyol caps `page × size` at 10,000; we cap `size` defensively. */
@@ -382,18 +390,23 @@ function normalizeBatchResult(data: TrendyolBatchResultResponse): BatchRequestRe
   return out;
 }
 
+/** Trendyol caps `items[]` at 1000 for every async write endpoint. */
+const MAX_WRITE_ITEMS = 1000;
+
 /**
- * Trendyol product read + batch-result endpoints.
+ * Trendyol product read + write + batch-result endpoints.
  *
  * Rate limits (per Trendyol service limits):
  * - filterProducts (approved + unapproved + getProductBase): 2000 req/min
  * - getBatchRequestResult: 1000 req/min
  * - getBuyboxInformation: 1000 req/min
+ * - create/update product writes: 1000 req/min (shared bucket)
  */
 export class ProductsResource {
   private readonly filterLimiter: TokenBucketRateLimiter;
   private readonly batchLimiter: TokenBucketRateLimiter;
   private readonly buyboxLimiter: TokenBucketRateLimiter;
+  private readonly writeLimiter: TokenBucketRateLimiter;
 
   constructor(
     private readonly transport: TrendyolTransport,
@@ -402,6 +415,7 @@ export class ProductsResource {
       filterLimiter?: TokenBucketRateLimiter;
       batchLimiter?: TokenBucketRateLimiter;
       buyboxLimiter?: TokenBucketRateLimiter;
+      writeLimiter?: TokenBucketRateLimiter;
     } = {},
   ) {
     this.filterLimiter =
@@ -410,6 +424,30 @@ export class ProductsResource {
       options.batchLimiter ?? new TokenBucketRateLimiter({ capacity: 1000, intervalMs: 60_000 });
     this.buyboxLimiter =
       options.buyboxLimiter ?? new TokenBucketRateLimiter({ capacity: 1000, intervalMs: 60_000 });
+    this.writeLimiter =
+      options.writeLimiter ?? new TokenBucketRateLimiter({ capacity: 1000, intervalMs: 60_000 });
+  }
+
+  private async submitWrite<T>(
+    endpoint: string,
+    items: T[],
+    methodLabel: string,
+  ): Promise<BatchAcceptedResponse> {
+    if (!Array.isArray(items) || items.length === 0) {
+      throw new ValidationError({ message: `${methodLabel}: items must not be empty` });
+    }
+    if (items.length > MAX_WRITE_ITEMS) {
+      throw new ValidationError({
+        message: `${methodLabel}: max ${MAX_WRITE_ITEMS} items per call (got ${items.length})`,
+      });
+    }
+    const data = await this.transport.request<BatchAcceptedResponse>({
+      method: 'POST',
+      path: `/integration/product/sellers/${this.sellerId}${endpoint}`,
+      body: { items },
+      rateLimiter: this.writeLimiter,
+    });
+    return { batchRequestId: data?.batchRequestId ?? '' };
   }
 
   /**
@@ -579,5 +617,73 @@ export class ProductsResource {
 
     const list = data.buyboxInfo ?? data.content ?? [];
     return list.map(normalizeBuyboxInfo);
+  }
+
+  /**
+   * Create products (V2). Async batch — returns a `batchRequestId` you can
+   * poll with `getBatchStatus`. Max 1000 items per call.
+   *
+   * Trendyol requires the full V2 attribute payload — fetch via
+   * `categories.getAttributes` (and `categories.getAttributeValues` for
+   * values when `allowCustom === false`). Shipment / returning warehouse
+   * IDs come from `suppliers.getAddresses`.
+   *
+   * @throws {ValidationError} when `items` is empty or longer than 1000.
+   */
+  async create(items: CreateProductV2Input[]): Promise<BatchAcceptedResponse> {
+    return this.submitWrite('/v2/products', items, 'createProducts');
+  }
+
+  /**
+   * Update **content** of approved products (title, description, images,
+   * attributes). Identified by `contentId`. Partial update is supported
+   * except for attributes — if you update ANY attribute, send ALL of them.
+   *
+   * @throws {ValidationError} when `items` is empty or longer than 1000.
+   */
+  async updateContent(items: UpdateContentInput[]): Promise<BatchAcceptedResponse> {
+    return this.submitWrite('/products/content-bulk-update', items, 'updateContent');
+  }
+
+  /**
+   * Update **variant** fields of approved products (stockCode, vatRate,
+   * dimensionalWeight, warehouse IDs, location-based delivery, lot). Identified
+   * by `barcode`. The barcode itself cannot be changed via this endpoint.
+   *
+   * @throws {ValidationError} when `items` is empty or longer than 1000.
+   */
+  async updateVariants(items: UpdateVariantInput[]): Promise<BatchAcceptedResponse> {
+    return this.submitWrite('/products/variant-bulk-update', items, 'updateVariants');
+  }
+
+  /**
+   * Update **unapproved** (draft) products. Identified by `barcode`. All
+   * other fields are optional partial updates. Use this to fix drafts that
+   * Trendyol rejected — `client.products.listUnapproved` surfaces the
+   * `rejectReasonDetails` you need to act on.
+   *
+   * **Gotcha (verified live STAGE 2026-05-25):** Trendyol's V2 spec claims
+   * only `barcode` is required, but the endpoint returns HTTP 500
+   * (`TrendyolSystemException` / `TypeError`) when too many optional fields
+   * are omitted. In practice, send at least `title`, `description`,
+   * `productMainId`, `brandId`, `categoryId`, `stockCode`,
+   * `dimensionalWeight`, `vatRate`, `images[]`, and `attributes[]` (an
+   * empty array is OK for the latter). The SDK forwards your payload
+   * as-is; trim fields only if you have verified the server accepts it.
+   *
+   * @throws {ValidationError} when `items` is empty or longer than 1000.
+   */
+  async updateUnapproved(items: UpdateUnapprovedInput[]): Promise<BatchAcceptedResponse> {
+    return this.submitWrite('/products/unapproved-bulk-update', items, 'updateUnapproved');
+  }
+
+  /**
+   * Update product **delivery information** (deliveryDuration,
+   * fastDeliveryType). Identified by `barcode`.
+   *
+   * @throws {ValidationError} when `items` is empty or longer than 1000.
+   */
+  async updateDeliveryInfo(items: UpdateDeliveryInfoInput[]): Promise<BatchAcceptedResponse> {
+    return this.submitWrite('/products/delivery-info-bulk-update', items, 'updateDeliveryInfo');
   }
 }
