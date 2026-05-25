@@ -38,6 +38,7 @@ export type {
   ShipmentPackageStatus,
   SplitGroup,
   SplitPackagePlan,
+  TrendyolCargoProvider,
   UpdatePackageStatusInput,
 } from './types/order.js';
 export type {

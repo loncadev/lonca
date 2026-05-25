@@ -17,6 +17,7 @@ import type {
   ShipmentPackageStatus,
   SplitGroup,
   SplitPackagePlan,
+  TrendyolCargoProvider,
   UpdatePackageStatusInput,
 } from '../types/order.js';
 
@@ -570,6 +571,67 @@ export class OrdersResource {
       method: 'POST',
       path: `${this.packagePath(packageId)}/split-packages`,
       body: { splitPackages },
+      rateLimiter: this.limiter,
+    });
+  }
+
+  /**
+   * Change the cargo provider on an existing shipment package. Use one of
+   * Trendyol's documented marketplace cargo codes (`'YKMP'`, `'ARASMP'`,
+   * `'SURATMP'`, etc.) — see `TrendyolCargoProvider` for the full list.
+   */
+  async changeCargoProvider(
+    packageId: string | number,
+    cargoProvider: TrendyolCargoProvider,
+  ): Promise<void> {
+    await this.transport.request<unknown>({
+      method: 'PUT',
+      path: `${this.packagePath(packageId)}/cargo-providers`,
+      body: { cargoProvider },
+      rateLimiter: this.limiter,
+    });
+  }
+
+  /**
+   * Mark a shipment package as manually delivered via its package ID.
+   * Used when the seller delivered the order outside Trendyol's cargo
+   * network and needs to flip the package to `Delivered` after handover.
+   *
+   * No request body; Trendyol responds with 200 + empty body on success.
+   */
+  async manualDeliverByPackageId(packageId: string | number): Promise<void> {
+    await this.transport.request<unknown>({
+      method: 'PUT',
+      path: `${this.packagePath(packageId)}/manual-invoice-delivery`,
+      rateLimiter: this.limiter,
+    });
+  }
+
+  /**
+   * Manual-deliver variant that takes the cargo tracking number instead
+   * of the package ID. Useful when you only have the tracking number on
+   * hand (e.g., from a cargo provider webhook).
+   *
+   * Note the path structure: tracking number sits at a sibling location,
+   * not under `/shipment-packages/{id}/...`.
+   */
+  async manualDeliverByTrackingNumber(cargoTrackingNumber: string | number): Promise<void> {
+    await this.transport.request<unknown>({
+      method: 'PUT',
+      path: `/integration/order/sellers/${this.sellerId}/shipment-packages/manual-invoice-delivery-by-tracking-number/${encodeURIComponent(String(cargoTrackingNumber))}`,
+      rateLimiter: this.limiter,
+    });
+  }
+
+  /**
+   * Mark a package as delivered through an authorized service ("yetkili
+   * servis"). For appliance / installation-required products that are
+   * delivered + installed by a third-party service partner.
+   */
+  async markDeliveredByService(packageId: string | number): Promise<void> {
+    await this.transport.request<unknown>({
+      method: 'PUT',
+      path: `${this.packagePath(packageId)}/delivered-by-service`,
       rateLimiter: this.limiter,
     });
   }
