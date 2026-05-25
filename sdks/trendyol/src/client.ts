@@ -1,6 +1,7 @@
 import type { Logger } from '@lonca/core';
 import { BrandsResource } from './resources/brands.js';
 import { CategoriesResource } from './resources/categories.js';
+import { ClaimsResource } from './resources/claims.js';
 import { InventoryResource } from './resources/inventory.js';
 import { OrdersResource } from './resources/orders.js';
 import { ProductsResource } from './resources/products.js';
@@ -41,6 +42,7 @@ export interface TrendyolClient {
   products: ProductsResource;
   inventory: InventoryResource;
   orders: OrdersResource;
+  claims: ClaimsResource;
 }
 
 /**
@@ -79,5 +81,6 @@ export function createTrendyolClient(opts: CreateClientOptions): TrendyolClient 
     products: new ProductsResource(transport, opts.sellerId),
     inventory: new InventoryResource(transport, opts.sellerId),
     orders: new OrdersResource(transport, opts.sellerId),
+    claims: new ClaimsResource(transport, opts.sellerId),
   };
 }

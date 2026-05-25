@@ -70,7 +70,13 @@ export class TrendyolTransport {
           signal: this.composeSignal(opts.signal),
         };
         if (opts.body !== undefined && opts.method !== 'GET') {
-          init.body = JSON.stringify(opts.body);
+          if (opts.body instanceof FormData) {
+            // multipart: let fetch set Content-Type (it includes the boundary).
+            init.body = opts.body;
+            delete (headers as Record<string, string>)['Content-Type'];
+          } else {
+            init.body = JSON.stringify(opts.body);
+          }
         }
 
         this.logger.debug('trendyol.request', {

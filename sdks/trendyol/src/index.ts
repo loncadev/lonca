@@ -5,6 +5,7 @@ export {
   CategoriesResource,
   type ListCategoryAttributeValuesParams,
 } from './resources/categories.js';
+export { ClaimsResource } from './resources/claims.js';
 export { InventoryResource } from './resources/inventory.js';
 export { OrdersResource, type ListOrdersParams } from './resources/orders.js';
 export {
@@ -70,6 +71,17 @@ export type {
   UpdateUnapprovedInput,
   UpdateVariantInput,
 } from './types/product-write.js';
+export type {
+  ApproveClaimLineItemsInput,
+  Claim,
+  ClaimItemAudit,
+  ClaimItemStatus,
+  ClaimIssueReason,
+  CreateClaimInput,
+  CreateClaimIssueInput,
+  CreateClaimItemInput,
+  ListClaimsParams,
+} from './types/claim.js';
 export type {
   CompensationItemDetail,
   CompensationTicket,
