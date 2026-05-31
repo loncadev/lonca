@@ -18,3 +18,4 @@ coverage/
 *.tgz
 .eslintcache
 eslint-results.sarif
+hb-phase2b-*.json

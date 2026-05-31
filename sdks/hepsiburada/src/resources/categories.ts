@@ -5,25 +5,22 @@ import type {
   CatalogResult,
   Category,
   CategoryAttribute,
+  CategoryAttributeValue,
+  GetAttributesParams,
   ListCategoriesParams,
 } from '../types/category.js';
 
 const SERVICE = 'mpop' as const;
+const BASE_PATH = '/product/api/categories';
 
 /**
- * Hepsiburada Catalog Categories (`katalog-urun-entegrasyonu` —
- * category surface).
+ * Hepsiburada Categories (`katalog-urun-entegrasyonu` — category surface).
  *
- * **Service base URL**: `mpop[-sit].hepsiburada.com`. The catalog API
- * lives under the `mpop` (Merchant Platform Operations) umbrella, NOT
- * under one of the dedicated `*-external` hosts.
+ * **Service base URL**: `mpop[-sit].hepsiburada.com` with `/product/api/`
+ * prefix routed to the catalog category microservice.
  *
- * The catalog API uses a Spring-style envelope
- * (`{ success, code, totalElements, totalPages, data }`) — distinct from
- * the OMS / listings shapes.
- *
- * Hepsiburada doesn't publish an OpenAPI for this surface — endpoint
- * shapes were verified discovery-first against the SIT sandbox.
+ * Three operations: list categories, list attributes (leaf-only), list
+ * attribute values (for enum-style attributes).
  */
 export class CategoriesResource {
   private readonly limiter: TokenBucketRateLimiter;
@@ -35,25 +32,18 @@ export class CategoriesResource {
     this.limiter = limiter ?? new TokenBucketRateLimiter({ capacity: 600, intervalMs: 60_000 });
   }
 
-  /**
-   * List the Hepsiburada category tree. Set `leaf: true` to restrict to
-   * leaf categories (the ones that accept product listings).
-   *
-   * @example
-   * ```ts
-   * const page = await client.categories.list({ leaf: true, page: 0, size: 100 });
-   * for (const c of page.data) console.log(c.categoryId, c.paths.join(' > '));
-   * ```
-   */
+  /** List the category tree. ~27,000 categories total — use `leaf: true` to filter to listable ones. */
   async list(params: ListCategoriesParams = {}): Promise<CatalogPage<Category>> {
     const data = await this.transport.request<unknown>({
       method: 'GET',
       service: SERVICE,
-      path: '/product/api/categories/get-all-categories',
+      path: `${BASE_PATH}/get-all-categories`,
       query: {
         page: params.page,
         size: params.size,
         leaf: params.leaf,
+        status: params.status,
+        available: params.available,
       },
       rateLimiter: this.limiter,
     });
@@ -61,31 +51,23 @@ export class CategoriesResource {
   }
 
   /**
-   * Get the attribute definitions for a leaf category.
-   *
-   * Hepsiburada only exposes attributes for **leaf** categories — calling
-   * this against a non-leaf returns `code: 1003` which the SDK surfaces
-   * as a `ValidationError`.
+   * Get attribute definitions for a leaf category.
    *
    * @throws {ValidationError} when `categoryId` is missing, or when
-   *   Hepsiburada returns `success: false` (e.g. non-leaf category).
-   *
-   * @example
-   * ```ts
-   * const attrs = await client.categories.getAttributes(60123456);
-   * for (const a of attrs) console.log(a.name, a.mandatory ? '(req)' : '');
-   * ```
+   *   Hepsiburada returns `success: false` (e.g. non-leaf category, code 1003).
    */
-  async getAttributes(categoryId: number | string): Promise<CategoryAttribute[]> {
+  async getAttributes(
+    categoryId: number | string,
+    params: GetAttributesParams = {},
+  ): Promise<CategoryAttribute[]> {
     if (categoryId === undefined || categoryId === null || categoryId === '') {
-      throw new ValidationError({
-        message: 'categories.getAttributes: categoryId is required',
-      });
+      throw new ValidationError({ message: 'categories.getAttributes: categoryId is required' });
     }
     const data = await this.transport.request<unknown>({
       method: 'GET',
       service: SERVICE,
-      path: `/product/api/categories/${encodeURIComponent(String(categoryId))}/attributes`,
+      path: `${BASE_PATH}/${encodeURIComponent(String(categoryId))}/attributes`,
+      query: { modifiedAtSince: params.modifiedAtSince },
       rateLimiter: this.limiter,
     });
     const result = normalizeCatalogResult<unknown>(data);
@@ -96,6 +78,42 @@ export class CategoriesResource {
     }
     const rows = Array.isArray(result.data) ? result.data : [];
     return rows.map(normalizeAttribute);
+  }
+
+  /**
+   * Get the allowed values for an enum-style attribute on a leaf category.
+   *
+   * @throws {ValidationError} when either id is missing or when Hepsiburada
+   *   rejects (success: false).
+   */
+  async getAttributeValues(
+    categoryId: number | string,
+    attributeId: number | string,
+  ): Promise<CategoryAttributeValue[]> {
+    if (categoryId === undefined || categoryId === null || categoryId === '') {
+      throw new ValidationError({
+        message: 'categories.getAttributeValues: categoryId is required',
+      });
+    }
+    if (attributeId === undefined || attributeId === null || attributeId === '') {
+      throw new ValidationError({
+        message: 'categories.getAttributeValues: attributeId is required',
+      });
+    }
+    const data = await this.transport.request<unknown>({
+      method: 'GET',
+      service: SERVICE,
+      path: `${BASE_PATH}/${encodeURIComponent(String(categoryId))}/attribute/${encodeURIComponent(String(attributeId))}/values`,
+      rateLimiter: this.limiter,
+    });
+    const result = normalizeCatalogResult<unknown>(data);
+    if (!result.success) {
+      throw new ValidationError({
+        message: `categories.getAttributeValues: ${result.message ?? 'request rejected'} (code=${result.code})`,
+      });
+    }
+    const rows = Array.isArray(result.data) ? result.data : [];
+    return rows.map(normalizeAttributeValue);
   }
 }
 
@@ -152,5 +170,14 @@ function normalizeAttribute(row: unknown): CategoryAttribute {
   if (typeof r.externalName === 'string') out.externalName = r.externalName;
   if (typeof r.mandatory === 'boolean') out.mandatory = r.mandatory;
   if (Array.isArray(r.values)) out.values = r.values;
+  return out;
+}
+
+function normalizeAttributeValue(row: unknown): CategoryAttributeValue {
+  const r = (row && typeof row === 'object' ? row : {}) as Record<string, unknown>;
+  const out: CategoryAttributeValue = { raw: r };
+  if (typeof r.id === 'number' || typeof r.id === 'string') out.id = r.id;
+  if (typeof r.name === 'string') out.name = r.name;
+  if (typeof r.externalName === 'string') out.externalName = r.externalName;
   return out;
 }

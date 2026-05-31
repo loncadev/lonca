@@ -1,40 +1,37 @@
 /**
  * Hepsiburada Catalog Product (merchant SKU rows) types.
  *
- * Source: discovery-first against
- * `mpop-sit.hepsiburada.com/product/api/products?merchantId=…` (2026-05).
+ * Source: `katalog-urun-entegrasyonu` v1.0 (developers.hepsiburada.com) +
+ * discovery-first against `mpop[-sit].hepsiburada.com/product/api/products/*`.
  *
- * This is the **catalog** view of a merchant's SKUs — distinct from the
- * `listings` surface (which is stock/price/buybox-oriented). The catalog
- * tracks per-field revision history, validation status, matching state,
- * and product-quality scoring.
- *
- * Hepsiburada's raw shape is wide and undocumented (45+ top-level fields,
- * deeply nested `fields.{Barcode,price,tax_vat_rate,Image1,…}` with
- * per-field `value/history/detail/mandatory`). The SDK exposes a small
- * strict surface and keeps the full row available as `raw`.
+ * The catalog tracks per-field revision history, validation state,
+ * matching state, and product-quality scoring per merchant SKU.
  */
 
 /** Query parameters for `catalog.listProducts()`. */
 export interface ListCatalogProductsParams {
-  /** Zero-based page index. Default: 0. */
   page?: number;
-  /** Page size. Default: 100. */
+  size?: number;
+}
+
+/** Query parameters for `catalog.listProductsByStatus()`. */
+export interface ListProductsByStatusParams {
+  /** Hepsiburada lifecycle status (e.g. `Active`, `WaitingApproval`, `Rejected`). */
+  status?: string;
+  /** ISO timestamp. */
+  modifiedAtSince?: string;
+  page?: number;
   size?: number;
 }
 
 /** One field on a catalog product (value + revision history). */
 export interface CatalogField<V = string> {
-  /** Current value as last revised. */
   value: V;
-  /** `true` if Hepsiburada considers this field mandatory. */
   mandatory?: boolean;
-  /** Audit detail for the latest revision. */
   detail?: {
     revisedBy?: string;
     revisionDate?: string;
   };
-  /** Full revision history (most-recent-last). */
   history?: Array<{
     revisedBy?: string;
     revisionDate?: string;
@@ -44,52 +41,72 @@ export interface CatalogField<V = string> {
 
 /** One row in the merchant's catalog. */
 export interface CatalogProduct {
-  /** Mongo-style document ID. */
   id: string;
-  /** ISO timestamp the product was first created. */
   createdAt?: string;
-  /** Merchant user / system that created the product. */
   createdBy?: string;
-  /** ISO timestamp of the most recent modification. */
   modifiedAt?: string;
-  /** Merchant user / system that last modified the product. */
   modifiedBy?: string;
-  /** Merchant SKU (the merchant's external identifier). */
   merchantSku?: string;
-  /** Hepsiburada SKU, once Hepsiburada has matched / created it. */
   preMatchedSku?: string;
-  /** Sibling SKU group (variants of the same base product). */
   siblingSku?: string;
-  /**
-   * Product lifecycle status (`Draft`, `WaitingMatching`, `Active`,
-   * `Rejected`, `Suspended`, …).
-   */
   status?: string;
-  /**
-   * Listing creation flow status (`Created`, `Failed`, `Pending`, …).
-   * Captured separately from `status` because Hepsiburada distinguishes
-   * catalog-level lifecycle from listing-creation lifecycle.
-   */
   listingStatus?: string;
-  /** Last failure reason when `listingStatus === 'Failed'`. */
   listingFailureReason?: string;
-  /** Validation phase outcome. */
   validationStatus?: string;
-  /** Catalog Type Affinity (CTA) flag. */
   productType?: string;
-  /** ISO timestamp the row was uploaded. */
   uploadDate?: string;
-  /** Numeric product-quality score, when Hepsiburada has computed one. */
   productQuality?: number;
-  /** Score from Hepsiburada's category-mapping model. */
   categoryScore?: number;
-  /**
-   * Per-field state map — keys are field names (Barcode, price,
-   * Image1, …) and values are `CatalogField<…>` records carrying the
-   * current value + revision history. Values are loosely typed as
-   * `unknown` because Hepsiburada has hundreds of possible fields.
-   */
   fields?: Record<string, CatalogField<unknown>>;
-  /** Untouched raw row — every undocumented field lives here. */
+  /** Untouched raw row. */
   raw: Record<string, unknown>;
 }
+
+/**
+ * Receipt returned by upload endpoints — Hepsiburada synchronously returns
+ * an opaque `trackingId` you can poll via `catalog.getProductStatus()`.
+ */
+export interface CatalogTrackingReceipt {
+  trackingId: string;
+  /** Untouched raw response. */
+  raw: Record<string, unknown>;
+}
+
+/** Status check result for a tracking-id. */
+export interface CatalogProductStatus {
+  trackingId?: string;
+  status?: string;
+  message?: string;
+  /** Per-row results when the upload contained multiple products. */
+  rows?: Array<Record<string, unknown>>;
+  /** Untouched raw response. */
+  raw: Record<string, unknown>;
+}
+
+/** One tracking-id history entry. */
+export interface TrackingIdHistoryEntry {
+  trackingId?: string;
+  createdAt?: string;
+  status?: string;
+  /** Untouched raw row. */
+  raw: Record<string, unknown>;
+}
+
+/**
+ * Body for `catalog.uploadProductViaFile()` — an array of product objects
+ * (one per SKU). Hepsiburada's portal documents the per-field rules
+ * under "Ürün Bilgisi Gönderme".
+ */
+export type UploadProductsInput = unknown[];
+
+/** Body for `catalog.uploadFastListing()`. */
+export type FastListingInput = unknown[] | Record<string, unknown>;
+
+/** Body for `catalog.approvePreMatch()` / `catalog.rejectPreMatch()`. */
+export type PreMatchActionInput = Record<string, unknown>;
+
+/** Body for `catalog.deleteByMerchantSkuList()` — Hepsiburada wants an SKU list. */
+export type DeleteBySkuInput = { merchantSkuList?: string[]; [key: string]: unknown };
+
+/** Body for `catalog.checkProductStatus()` — `{ trackingIds?: string[] }`. */
+export type CheckProductStatusInput = Record<string, unknown>;
