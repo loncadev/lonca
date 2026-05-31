@@ -34,7 +34,7 @@ describe('OrdersResource — Phase 2b status-bucketed + actions', () => {
       pageCount: 0,
       items: [],
     });
-    await (r(transport) as unknown as Record<string, (p?: unknown) => Promise<unknown>>)[method](
+    await (r(transport) as unknown as Record<string, (p?: unknown) => Promise<unknown>>)[method]!(
       {},
     );
     expect(transport.request).toHaveBeenCalledWith(
@@ -56,7 +56,7 @@ describe('OrdersResource — Phase 2b status-bucketed + actions', () => {
       pageCount: 0,
       items: [],
     });
-    await (r(transport) as unknown as Record<string, (p?: unknown) => Promise<unknown>>)[method](
+    await (r(transport) as unknown as Record<string, (p?: unknown) => Promise<unknown>>)[method]!(
       {},
     );
     expect(transport.request).toHaveBeenCalledWith(
@@ -101,7 +101,7 @@ describe('OrdersResource — Phase 2b status-bucketed + actions', () => {
     const transport = mockTransport();
     await (r(transport) as unknown as Record<string, (a: string, b?: unknown) => Promise<unknown>>)[
       method
-    ]('HBP-1', { reason: 'demo' });
+    ]!('HBP-1', { reason: 'demo' });
     expect(transport.request).toHaveBeenCalledWith(
       expect.objectContaining({
         method: 'POST',
@@ -120,7 +120,7 @@ describe('OrdersResource — Phase 2b status-bucketed + actions', () => {
     'getPackageLabel',
   ] as const)('%s throws ValidationError on empty packageNumber', async (method) => {
     await expect(
-      (r(mockTransport()) as unknown as Record<string, (a: string) => Promise<unknown>>)[method](
+      (r(mockTransport()) as unknown as Record<string, (a: string) => Promise<unknown>>)[method]!(
         '',
       ),
     ).rejects.toThrow(ValidationError);
@@ -154,31 +154,21 @@ describe('OrdersResource — Phase 2b status-bucketed + actions', () => {
     const transport = mockTransport();
     await (
       r(transport) as unknown as Record<string, (n: string, body: unknown) => Promise<unknown>>
-    )[method]('HBP-1', { foo: 'bar' });
+    )[method]!('HBP-1', { foo: 'bar' });
     expect(transport.request).toHaveBeenCalledWith(
       expect.objectContaining({ method: verb, service: 'oms', path, body: { foo: 'bar' } }),
     );
   });
 
   it.each([
-    ['cancelLineItem', 'POST', '/lineitems/merchantid/M-2b/id/L1/cancelbymerchant', 'lineId'],
-    [
-      'updateLineItemCargoCompany',
-      'PUT',
-      '/lineitems/merchantid/M-2b/orderlineid/L1/cargocompany',
-      'orderLineId',
-    ],
-    [
-      'updateLineItemLaborCost',
-      'PUT',
-      '/lineitems/merchantid/M-2b/orderlineid/L1/laborcost',
-      'orderLineId',
-    ],
+    ['cancelLineItem', 'POST', '/lineitems/merchantid/M-2b/id/L1/cancelbymerchant'],
+    ['updateLineItemCargoCompany', 'PUT', '/lineitems/merchantid/M-2b/orderlineid/L1/cargocompany'],
+    ['updateLineItemLaborCost', 'PUT', '/lineitems/merchantid/M-2b/orderlineid/L1/laborcost'],
   ] as const)('%s sends %s to %s', async (method, verb, path) => {
     const transport = mockTransport();
     await (
       r(transport) as unknown as Record<string, (id: string, body: unknown) => Promise<unknown>>
-    )[method]('L1', { foo: 'bar' });
+    )[method]!('L1', { foo: 'bar' });
     expect(transport.request).toHaveBeenCalledWith(
       expect.objectContaining({ method: verb, service: 'oms', path, body: { foo: 'bar' } }),
     );
@@ -246,7 +236,7 @@ describe('CatalogResource — Phase 2b mutations + tracking', () => {
     ['checkProductStatus', '/product/api/products/check-product-status'],
   ] as const)('%s POSTs to %s', async (method, path) => {
     const transport = mockTransport({});
-    await (r(transport) as unknown as Record<string, (body: unknown) => Promise<unknown>>)[method]({
+    await (r(transport) as unknown as Record<string, (body: unknown) => Promise<unknown>>)[method]!({
       foo: 'bar',
     });
     expect(transport.request).toHaveBeenCalledWith(
@@ -356,7 +346,7 @@ describe('SuppliersResource', () => {
     ['createListingUpdateRequest', 'POST', '/suppliers/M-2b/listingUpdateRequests'],
   ] as const)('%s sends %s to %s', async (method, verb, path) => {
     const transport = mockTransport({});
-    await (r(transport) as unknown as Record<string, (body: unknown) => Promise<unknown>>)[method]({
+    await (r(transport) as unknown as Record<string, (body: unknown) => Promise<unknown>>)[method]!({
       pageNumber: 0,
     });
     expect(transport.request).toHaveBeenCalledWith(
@@ -423,7 +413,7 @@ describe('QuestionsResource', () => {
     ['getCountByStatus', 'GET', '/api/v1.0/issues/count'],
   ] as const)('%s sends %s to %s on oms', async (method, verb, path) => {
     const transport = mockTransport({ items: [] });
-    await (r(transport) as unknown as Record<string, () => Promise<unknown>>)[method]();
+    await (r(transport) as unknown as Record<string, () => Promise<unknown>>)[method]!();
     expect(transport.request).toHaveBeenCalledWith(
       expect.objectContaining({ method: verb, service: 'oms', path }),
     );
@@ -445,7 +435,7 @@ describe('QuestionsResource', () => {
     const transport = mockTransport({});
     await (
       r(transport) as unknown as Record<string, (id: string, body: unknown) => Promise<unknown>>
-    )[method]('Q-1', { reason: 'spam' });
+    )[method]!('Q-1', { reason: 'spam' });
     expect((transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0].path).toBe(path);
   });
 
@@ -470,7 +460,7 @@ describe('PromotionsResource', () => {
     ['listDiscounts', 'GET', '/self-campaign/M-2b/discounts'],
   ] as const)('%s sends %s to %s on oms', async (method, verb, path) => {
     const transport = mockTransport({});
-    await (r(transport) as unknown as Record<string, () => Promise<unknown>>)[method]();
+    await (r(transport) as unknown as Record<string, () => Promise<unknown>>)[method]!();
     expect(transport.request).toHaveBeenCalledWith(
       expect.objectContaining({ method: verb, service: 'oms', path }),
     );
@@ -492,7 +482,7 @@ describe('PromotionsResource', () => {
     ['cancelDiscount', '/self-campaign/M-2b/cancel-discount'],
   ] as const)('%s POSTs to %s', async (method, path) => {
     const transport = mockTransport({});
-    await (r(transport) as unknown as Record<string, (body: unknown) => Promise<unknown>>)[method]({
+    await (r(transport) as unknown as Record<string, (body: unknown) => Promise<unknown>>)[method]!({
       foo: 'bar',
     });
     expect(transport.request).toHaveBeenCalledWith(
