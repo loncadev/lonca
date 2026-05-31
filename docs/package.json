@@ -1,0 +1,23 @@
+{
+  "name": "@lonca/docs",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Documentation site for the Lonca SDKs (Astro + Starlight).",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "^0.39.0",
+    "@lonca/core": "workspace:*",
+    "@lonca/hepsiburada": "workspace:*",
+    "@lonca/trendyol": "workspace:*",
+    "astro": "^6.0.0",
+    "sharp": "^0.34.0",
+    "starlight-typedoc": "^0.22.0",
+    "typedoc": "^0.28.19",
+    "typedoc-plugin-markdown": "^4.9.0"
+  }
+}

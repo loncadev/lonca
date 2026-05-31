@@ -1,0 +1,87 @@
+---
+title: Authentication
+description: How each SDK authenticates against its marketplace.
+---
+
+Each marketplace uses a different auth scheme. The SDK handles the headers and signing for you — you just supply the credentials at client construction.
+
+## Trendyol
+
+HTTP Basic Auth + a custom `User-Agent`.
+
+```ts
+import { createTrendyolClient } from '@lonca/trendyol';
+
+const client = createTrendyolClient({
+  sellerId: 12345, // numeric supplier ID
+  apiKey: process.env.TY_API_KEY!, // from Partner Panel → Account Info → Integration Information
+  apiSecret: process.env.TY_API_SECRET!, // same place — only master users can see these
+  env: 'prod', // 'prod' (no IP whitelist) or 'stage' (IP whitelist required)
+  integratorName: 'MyCompany', // sent in User-Agent
+});
+```
+
+Get credentials from the [Trendyol Partner Panel](https://partner.trendyol.com) → Account Info → Integration Information. Only the master user account can view them.
+
+## Hepsiburada
+
+HTTP Basic Auth + a **required** `User-Agent`.
+
+```ts
+import { createHepsiburadaClient } from '@lonca/hepsiburada';
+
+const client = createHepsiburadaClient({
+  merchantId: process.env.HB_MERCHANT_ID!, // UUID-shaped
+  username: process.env.HB_API_USER!, // from Merchant Portal → Settings → Integrations
+  password: process.env.HB_API_PASS!,
+  env: 'sit', // 'sit' (sandbox) or 'prod'
+  integratorName: 'MyCompany', // bare name; Hepsiburada rejects requests without UA
+});
+```
+
+Get credentials from the [Hepsiburada Merchant Portal](https://merchant.hepsiburada.com) → Settings → Integrations.
+
+:::caution[User-Agent matters]
+Hepsiburada rejects requests without a meaningful `User-Agent`. Use a recognizable bare integrator name (e.g. your company slug). **Do not** include the merchant ID — `0.1.0` / `0.2.0` did this and returned 401 on every call.
+:::
+
+## Environment variables (recommended)
+
+Both clients accept secret strings directly, but storing them in `.env` is the typical pattern. The repo's [`examples/`](https://github.com/loncadev/lonca/tree/main/examples) folder shows two read-only smoke scripts you can run against your credentials to verify everything works end-to-end.
+
+```bash
+# .env
+TY_API_KEY=...
+TY_API_SECRET=...
+TY_SELLER_ID=...
+
+HB_MERCHANT_ID=...
+HB_API_USER=...
+HB_API_PASS=...
+HB_ENV=sit
+HB_INTEGRATOR_NAME=MyCompany
+
+# In your project, then:
+pnpm try:trendyol
+pnpm try:hepsiburada
+```
+
+## Error handling
+
+All authentication failures surface as `AuthError` from `@lonca/core`:
+
+```ts
+import { AuthError } from '@lonca/core';
+
+try {
+  await client.listings.list({ offset: 0, limit: 100 });
+} catch (err) {
+  if (err instanceof AuthError) {
+    console.error('Credentials rejected:', err.message);
+  } else {
+    throw err;
+  }
+}
+```
+
+See the [`@lonca/core` API reference](/lonca/api/) for the full error hierarchy.

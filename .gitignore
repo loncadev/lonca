@@ -19,4 +19,6 @@ coverage/
 .eslintcache
 eslint-results.sarif
 hb-phase2b-*.json
-docs/api/
+docs/.astro/
+docs/dist/
+docs/src/content/docs/api/
