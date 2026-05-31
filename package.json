@@ -27,6 +27,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "clean": "turbo run clean",
+    "docs": "typedoc",
+    "docs:serve": "typedoc && npx --yes http-server docs/api -p 4321 -o",
     "try:trendyol": "tsx --env-file=.env examples/try-trendyol.mts",
     "try:hepsiburada": "tsx --env-file=.env examples/try-hepsiburada.mts",
     "try:inspect-orders": "tsx --env-file=.env examples/inspect-orders.mts",
@@ -46,6 +48,7 @@
     "prettier": "^3.3.3",
     "tsx": "^4.20.4",
     "turbo": "^2.3.0",
+    "typedoc": "^0.28.19",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.60.0"
   }

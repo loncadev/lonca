@@ -46,6 +46,8 @@ Lonca aims to fill this gap with a community-maintained open standard.
 | `@lonca/trendyol`    | Trendyol Marketplace SDK — full surface (14 resources, ~70 methods, webhook helper) | [![npm](https://img.shields.io/npm/v/@lonca/trendyol.svg)](https://www.npmjs.com/package/@lonca/trendyol)       |
 | `@lonca/hepsiburada` | Hepsiburada Marketplace SDK — full dev-portal coverage (12 resources, 95 methods)   | [![npm](https://img.shields.io/npm/v/@lonca/hepsiburada.svg)](https://www.npmjs.com/package/@lonca/hepsiburada) |
 
+📚 **API reference**: [loncadev.github.io/lonca](https://loncadev.github.io/lonca) — every public export, regenerated on each push to `main`.
+
 Need an SDK for another marketplace? Open a [marketplace request](https://github.com/loncadev/lonca/issues/new?template=marketplace_request.yml).
 
 ## Quick start
