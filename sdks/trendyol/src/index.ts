@@ -8,6 +8,7 @@ export {
   type ListCategoryAttributeValuesParams,
 } from './resources/categories.js';
 export { ClaimsResource } from './resources/claims.js';
+export { ExportCenterResource } from './resources/export-center.js';
 export { FinanceResource } from './resources/finance.js';
 export { InventoryResource } from './resources/inventory.js';
 export { InvoicesResource } from './resources/invoices.js';
@@ -23,6 +24,7 @@ export {
 export { QuestionsResource } from './resources/questions.js';
 export { TestOrdersResource } from './resources/test-orders.js';
 export { SuppliersResource, type SuppliersResourceOptions } from './resources/suppliers.js';
+export { VideosResource } from './resources/videos.js';
 export { WebhooksResource } from './resources/webhooks.js';
 export type { Brand } from './types/brand.js';
 export type {
@@ -32,6 +34,31 @@ export type {
   CategoryAttributeValue,
 } from './types/category.js';
 export type { PriceInventoryUpdate, UpdatePriceInventoryResponse } from './types/inventory.js';
+export type {
+  CareInstruction,
+  ExportBatchAcceptedResponse,
+  ExportBatchStatus,
+  ExportCategoryAttribute,
+  ExportPackage,
+  ExportPackageItem,
+  ExportPackageStatus,
+  ExportPriceUpdateInput,
+  ExportProduct,
+  ExportProductInput,
+  ExportStockUpdateInput,
+  GetExportPackageItemsParams,
+  ListExportPackagesV2Params,
+  ListExportPackagesV3Params,
+  ListExportProductsParams,
+  ProductComposition,
+  ProductOrigin,
+} from './types/export-center.js';
+export type {
+  CreateVideoInput,
+  ListVideosParams,
+  SellerIntegrationStatus,
+  SellerVideo,
+} from './types/video.js';
 export type {
   CancelPackageItemInput,
   CargoInvoiceItem,

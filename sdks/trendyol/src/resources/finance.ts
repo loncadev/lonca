@@ -92,14 +92,17 @@ export class FinanceResource {
   }
 
   async getSettlements(params: ListFinanceParams = {}): Promise<CursorPage<FinancialTransaction>> {
-    return this.queryPage(`/integration/sellers/${this.transport.sellerId}/settlements`, params);
+    return this.queryPage(
+      `/integration/finance/che/sellers/${this.transport.sellerId}/settlements`,
+      params,
+    );
   }
 
   async getOtherFinancials(
     params: ListFinanceParams = {},
   ): Promise<CursorPage<FinancialTransaction>> {
     return this.queryPage(
-      `/integration/sellers/${this.transport.sellerId}/otherfinancials`,
+      `/integration/finance/che/sellers/${this.transport.sellerId}/otherfinancials`,
       params,
     );
   }

@@ -2,6 +2,7 @@ import type { Logger } from '@lonca/core';
 import { BrandsResource } from './resources/brands.js';
 import { CategoriesResource } from './resources/categories.js';
 import { ClaimsResource } from './resources/claims.js';
+import { ExportCenterResource } from './resources/export-center.js';
 import { FinanceResource } from './resources/finance.js';
 import { InventoryResource } from './resources/inventory.js';
 import { InvoicesResource } from './resources/invoices.js';
@@ -12,6 +13,7 @@ import { ProductsResource } from './resources/products.js';
 import { QuestionsResource } from './resources/questions.js';
 import { SuppliersResource } from './resources/suppliers.js';
 import { TestOrdersResource } from './resources/test-orders.js';
+import { VideosResource } from './resources/videos.js';
 import { WebhooksResource } from './resources/webhooks.js';
 import { TrendyolTransport, type TrendyolEnvironment } from './transport.js';
 
@@ -58,6 +60,8 @@ export interface TrendyolClient {
   labels: LabelsResource;
   testOrders: TestOrdersResource;
   locations: LocationsResource;
+  exportCenter: ExportCenterResource;
+  videos: VideosResource;
 }
 
 /**
@@ -104,5 +108,7 @@ export function createTrendyolClient(opts: CreateClientOptions): TrendyolClient 
     labels: new LabelsResource(transport),
     testOrders: new TestOrdersResource(transport),
     locations: new LocationsResource(transport),
+    exportCenter: new ExportCenterResource(transport),
+    videos: new VideosResource(transport),
   };
 }
