@@ -5,14 +5,15 @@ import type { TrendyolTransport } from '../transport.js';
 
 function mockTransport(response: unknown = undefined) {
   return {
+    sellerId: 42,
     request: vi.fn().mockResolvedValue(response),
   } as unknown as TrendyolTransport;
 }
 
 const fastLimiter = () => new TokenBucketRateLimiter({ capacity: 1000, intervalMs: 1 });
 
-function newResource(transport: TrendyolTransport, sellerId = 42) {
-  return new OrdersResource(transport, sellerId, fastLimiter());
+function newResource(transport: TrendyolTransport) {
+  return new OrdersResource(transport, fastLimiter());
 }
 
 describe('OrdersResource.updatePackageStatus', () => {

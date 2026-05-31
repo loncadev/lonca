@@ -89,7 +89,6 @@ export class SuppliersResource {
 
   constructor(
     private readonly transport: TrendyolTransport,
-    private readonly sellerId: number,
     options: SuppliersResourceOptions = {},
   ) {
     this.cacheTtlMs = options.cacheTtlMs ?? DEFAULT_CACHE_TTL_MS;
@@ -125,7 +124,7 @@ export class SuppliersResource {
   private async fetchFresh(): Promise<SupplierAddress[]> {
     const data = await this.transport.request<TrendyolSupplierAddressesResponse>({
       method: 'GET',
-      path: `/integration/sellers/${this.sellerId}/addresses`,
+      path: `/integration/sellers/${this.transport.sellerId}/addresses`,
       rateLimiter: this.limiter,
     });
     const items = data.supplierAddresses.map(normalizeAddress);

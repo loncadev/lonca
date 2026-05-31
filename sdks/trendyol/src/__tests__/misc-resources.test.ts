@@ -8,14 +8,17 @@ import { TestOrdersResource } from '../resources/test-orders.js';
 import type { TrendyolTransport } from '../transport.js';
 
 function mockTransport(response: unknown = undefined) {
-  return { request: vi.fn().mockResolvedValue(response) } as unknown as TrendyolTransport;
+  return {
+    sellerId: 42,
+    request: vi.fn().mockResolvedValue(response),
+  } as unknown as TrendyolTransport;
 }
 const fastLimiter = () => new TokenBucketRateLimiter({ capacity: 1000, intervalMs: 1 });
 
 // ─── Invoices ────────────────────────────────────────────────────────────
 
 describe('InvoicesResource', () => {
-  const r = (t: TrendyolTransport) => new InvoicesResource(t, 42, fastLimiter());
+  const r = (t: TrendyolTransport) => new InvoicesResource(t, fastLimiter());
 
   it('uploadFile builds FormData with required + optional fields', async () => {
     const transport = mockTransport();
@@ -85,7 +88,7 @@ describe('InvoicesResource', () => {
 // ─── Finance ─────────────────────────────────────────────────────────────
 
 describe('FinanceResource', () => {
-  const r = (t: TrendyolTransport) => new FinanceResource(t, 42, fastLimiter());
+  const r = (t: TrendyolTransport) => new FinanceResource(t, fastLimiter());
 
   it('getSettlements GETs /settlements with default paging', async () => {
     const transport = mockTransport({ content: [], totalPages: 0 });
@@ -165,7 +168,7 @@ describe('FinanceResource', () => {
 // ─── Labels ──────────────────────────────────────────────────────────────
 
 describe('LabelsResource', () => {
-  const r = (t: TrendyolTransport) => new LabelsResource(t, 42, fastLimiter());
+  const r = (t: TrendyolTransport) => new LabelsResource(t, fastLimiter());
 
   it('createCommon POSTs to /common-label/{tracking} with input body', async () => {
     const transport = mockTransport();
@@ -222,7 +225,7 @@ describe('LabelsResource', () => {
 // ─── Test orders ─────────────────────────────────────────────────────────
 
 describe('TestOrdersResource', () => {
-  const r = (t: TrendyolTransport) => new TestOrdersResource(t, 42, fastLimiter());
+  const r = (t: TrendyolTransport) => new TestOrdersResource(t, fastLimiter());
   const minimal = {
     customer: { customerFirstName: 'a', customerLastName: 'b' },
     invoiceAddress: {},

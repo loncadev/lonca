@@ -54,7 +54,6 @@ export class ClaimsResource {
 
   constructor(
     private readonly transport: TrendyolTransport,
-    private readonly sellerId: number,
     limiter?: TokenBucketRateLimiter,
   ) {
     this.limiter = limiter ?? new TokenBucketRateLimiter({ capacity: 1000, intervalMs: 60_000 });
@@ -76,7 +75,7 @@ export class ClaimsResource {
     }
     return this.transport.request<unknown>({
       method: 'POST',
-      path: `/integration/order/sellers/${this.sellerId}/claims/create`,
+      path: `/integration/order/sellers/${this.transport.sellerId}/claims/create`,
       body: input,
       rateLimiter: this.limiter,
     });
@@ -117,7 +116,7 @@ export class ClaimsResource {
 
     return this.transport.request<unknown>({
       method: 'POST',
-      path: `/integration/order/sellers/${this.sellerId}/claims/${encodeURIComponent(claimId)}/issue`,
+      path: `/integration/order/sellers/${this.transport.sellerId}/claims/${encodeURIComponent(claimId)}/issue`,
       body: form,
       rateLimiter: this.limiter,
     });
@@ -137,7 +136,7 @@ export class ClaimsResource {
     }
     return this.transport.request<unknown>({
       method: 'PUT',
-      path: `/integration/order/sellers/${this.sellerId}/claims/${encodeURIComponent(claimId)}/items/approve`,
+      path: `/integration/order/sellers/${this.transport.sellerId}/claims/${encodeURIComponent(claimId)}/items/approve`,
       body: input,
       rateLimiter: this.limiter,
     });
@@ -174,7 +173,7 @@ export class ClaimsResource {
     }
     const data = await this.transport.request<WireResponse>({
       method: 'GET',
-      path: `/integration/order/sellers/${this.sellerId}/claims`,
+      path: `/integration/order/sellers/${this.transport.sellerId}/claims`,
       query,
       rateLimiter: this.limiter,
     });
@@ -215,7 +214,7 @@ export class ClaimsResource {
   async getItemAudits(claimItemId: string): Promise<ClaimItemAudit[]> {
     const data = await this.transport.request<unknown>({
       method: 'GET',
-      path: `/integration/order/sellers/${this.sellerId}/claims/items/${encodeURIComponent(claimItemId)}/audit`,
+      path: `/integration/order/sellers/${this.transport.sellerId}/claims/items/${encodeURIComponent(claimItemId)}/audit`,
       rateLimiter: this.limiter,
     });
     const rows = Array.isArray(data)

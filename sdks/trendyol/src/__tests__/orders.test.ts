@@ -5,14 +5,15 @@ import type { TrendyolTransport } from '../transport.js';
 
 function mockTransport(response: unknown) {
   return {
+    sellerId: 42,
     request: vi.fn().mockResolvedValue(response),
   } as unknown as TrendyolTransport;
 }
 
 const fastLimiter = () => new TokenBucketRateLimiter({ capacity: 1000, intervalMs: 1 });
 
-function newResource(transport: TrendyolTransport, sellerId = 2738) {
-  return new OrdersResource(transport, sellerId, fastLimiter());
+function newResource(transport: TrendyolTransport) {
+  return new OrdersResource(transport, fastLimiter());
 }
 
 /**
@@ -114,7 +115,7 @@ describe('OrdersResource.list', () => {
     expect(transport.request).toHaveBeenCalledWith(
       expect.objectContaining({
         method: 'GET',
-        path: '/integration/order/sellers/2738/orders',
+        path: '/integration/order/sellers/42/orders',
         query: { page: 0, size: 50 },
       }),
     );

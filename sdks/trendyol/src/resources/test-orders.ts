@@ -12,7 +12,6 @@ export class TestOrdersResource {
 
   constructor(
     private readonly transport: TrendyolTransport,
-    private readonly sellerId: number,
     limiter?: TokenBucketRateLimiter,
   ) {
     this.limiter = limiter ?? new TokenBucketRateLimiter({ capacity: 60, intervalMs: 60_000 });
@@ -43,7 +42,7 @@ export class TestOrdersResource {
   async updateStatus(packageId: string | number, status: TestOrderStatus): Promise<unknown> {
     return this.transport.request<unknown>({
       method: 'PUT',
-      path: `/integration/test/order/sellers/${this.sellerId}/shipment-packages/${encodeURIComponent(String(packageId))}/status`,
+      path: `/integration/test/order/sellers/${this.transport.sellerId}/shipment-packages/${encodeURIComponent(String(packageId))}/status`,
       body: { status },
       rateLimiter: this.limiter,
     });
@@ -53,7 +52,7 @@ export class TestOrdersResource {
   async setClaimsWaitingInAction(): Promise<unknown> {
     return this.transport.request<unknown>({
       method: 'PUT',
-      path: `/integration/test/order/sellers/${this.sellerId}/claims/waiting-in-action`,
+      path: `/integration/test/order/sellers/${this.transport.sellerId}/claims/waiting-in-action`,
       rateLimiter: this.limiter,
     });
   }

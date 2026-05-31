@@ -5,14 +5,15 @@ import type { TrendyolTransport } from '../transport.js';
 
 function mockTransport(response: unknown) {
   return {
+    sellerId: 42,
     request: vi.fn().mockResolvedValue(response),
   } as unknown as TrendyolTransport;
 }
 
 const fastLimiter = () => new TokenBucketRateLimiter({ capacity: 1000, intervalMs: 1 });
 
-function newResource(transport: TrendyolTransport, sellerId = 42) {
-  return new ProductsResource(transport, sellerId, {
+function newResource(transport: TrendyolTransport) {
+  return new ProductsResource(transport, {
     filterLimiter: fastLimiter(),
     batchLimiter: fastLimiter(),
     buyboxLimiter: fastLimiter(),
@@ -198,14 +199,14 @@ describe('ProductsResource.list', () => {
 describe('ProductsResource.getBatchStatus', () => {
   it('hits /products/batch-requests/{id} with the sellerId in the path', async () => {
     const transport = mockTransport({ batchRequestId: 'b1', status: 'COMPLETED', items: [] });
-    const resource = newResource(transport, 7);
+    const resource = newResource(transport);
 
     await resource.getBatchStatus('b1');
 
     expect(transport.request).toHaveBeenCalledWith(
       expect.objectContaining({
         method: 'GET',
-        path: '/integration/product/sellers/7/products/batch-requests/b1',
+        path: '/integration/product/sellers/42/products/batch-requests/b1',
       }),
     );
   });

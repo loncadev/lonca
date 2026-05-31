@@ -22,10 +22,7 @@ interface TrendyolBatchRequestResponse {
  * Trendyol retains the result for 4 hours.
  */
 export class InventoryResource {
-  constructor(
-    private readonly transport: TrendyolTransport,
-    private readonly sellerId: number,
-  ) {}
+  constructor(private readonly transport: TrendyolTransport) {}
 
   /**
    * Update price and/or stock for one or more SKUs (by barcode).
@@ -53,7 +50,7 @@ export class InventoryResource {
 
     const data = await this.transport.request<TrendyolBatchRequestResponse>({
       method: 'POST',
-      path: `/integration/inventory/sellers/${this.sellerId}/products/price-and-inventory`,
+      path: `/integration/inventory/sellers/${this.transport.sellerId}/products/price-and-inventory`,
       body: { items },
     });
 

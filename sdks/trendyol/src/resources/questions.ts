@@ -93,7 +93,6 @@ export class QuestionsResource {
 
   constructor(
     private readonly transport: TrendyolTransport,
-    private readonly sellerId: number,
     limiter?: TokenBucketRateLimiter,
   ) {
     this.limiter = limiter ?? new TokenBucketRateLimiter({ capacity: 500, intervalMs: 60_000 });
@@ -103,7 +102,7 @@ export class QuestionsResource {
   async get(questionId: string | number): Promise<Question> {
     const data = await this.transport.request<WireQuestion>({
       method: 'GET',
-      path: `/integration/qna/sellers/${this.sellerId}/questions/${encodeURIComponent(String(questionId))}`,
+      path: `/integration/qna/sellers/${this.transport.sellerId}/questions/${encodeURIComponent(String(questionId))}`,
       rateLimiter: this.limiter,
     });
     return normalizeQuestion(data);
@@ -130,7 +129,7 @@ export class QuestionsResource {
     }
     const data = await this.transport.request<WireResponse>({
       method: 'GET',
-      path: `/integration/qna/sellers/${this.sellerId}/questions/filter`,
+      path: `/integration/qna/sellers/${this.transport.sellerId}/questions/filter`,
       query,
       rateLimiter: this.limiter,
     });
@@ -163,7 +162,7 @@ export class QuestionsResource {
     }
     return this.transport.request<unknown>({
       method: 'POST',
-      path: `/integration/qna/sellers/${this.sellerId}/questions/${encodeURIComponent(String(questionId))}/answers`,
+      path: `/integration/qna/sellers/${this.transport.sellerId}/questions/${encodeURIComponent(String(questionId))}/answers`,
       body: { text },
       rateLimiter: this.limiter,
     });

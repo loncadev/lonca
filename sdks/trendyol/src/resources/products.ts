@@ -414,7 +414,6 @@ export class ProductsResource {
 
   constructor(
     private readonly transport: TrendyolTransport,
-    private readonly sellerId: number,
     options: {
       filterLimiter?: TokenBucketRateLimiter;
       batchLimiter?: TokenBucketRateLimiter;
@@ -462,7 +461,7 @@ export class ProductsResource {
     }
     const data = await this.transport.request<BatchAcceptedResponse>({
       method: 'POST',
-      path: `/integration/product/sellers/${this.sellerId}${endpoint}`,
+      path: `/integration/product/sellers/${this.transport.sellerId}${endpoint}`,
       body: { items },
       rateLimiter: this.writeLimiter,
     });
@@ -502,7 +501,7 @@ export class ProductsResource {
 
     const data = await this.transport.request<TrendyolFilterResponse>({
       method: 'GET',
-      path: `/integration/product/sellers/${this.sellerId}/products/approved`,
+      path: `/integration/product/sellers/${this.transport.sellerId}/products/approved`,
       query,
       rateLimiter: this.filterLimiter,
     });
@@ -528,7 +527,7 @@ export class ProductsResource {
     const id = encodeURIComponent(batchRequestId);
     const data = await this.transport.request<TrendyolBatchResultResponse>({
       method: 'GET',
-      path: `/integration/product/sellers/${this.sellerId}/products/batch-requests/${id}`,
+      path: `/integration/product/sellers/${this.transport.sellerId}/products/batch-requests/${id}`,
       rateLimiter: this.batchLimiter,
     });
     return normalizeBatchResult(data);
@@ -573,7 +572,7 @@ export class ProductsResource {
 
     const data = await this.transport.request<TrendyolUnapprovedResponse>({
       method: 'GET',
-      path: `/integration/product/sellers/${this.sellerId}/products/unapproved`,
+      path: `/integration/product/sellers/${this.transport.sellerId}/products/unapproved`,
       query,
       rateLimiter: this.filterLimiter,
     });
@@ -599,7 +598,7 @@ export class ProductsResource {
     const code = encodeURIComponent(barcode);
     const data = await this.transport.request<TrendyolProductBaseResponse>({
       method: 'GET',
-      path: `/integration/product/sellers/${this.sellerId}/product/${code}`,
+      path: `/integration/product/sellers/${this.transport.sellerId}/product/${code}`,
       rateLimiter: this.filterLimiter,
     });
     return normalizeProductBase(data);
@@ -629,7 +628,7 @@ export class ProductsResource {
 
     const data = await this.transport.request<TrendyolBuyboxResponse>({
       method: 'POST',
-      path: `/integration/product/sellers/${this.sellerId}/products/buybox-information`,
+      path: `/integration/product/sellers/${this.transport.sellerId}/products/buybox-information`,
       body: { barcodes },
       rateLimiter: this.buyboxLimiter,
     });
@@ -721,7 +720,7 @@ export class ProductsResource {
     this.validateBarcodes(barcodes, 'delete');
     const data = await this.transport.request<BatchAcceptedResponse>({
       method: 'DELETE',
-      path: `/integration/product/sellers/${this.sellerId}/products`,
+      path: `/integration/product/sellers/${this.transport.sellerId}/products`,
       body: { items: barcodes.map((barcode) => ({ barcode })) },
       rateLimiter: this.deleteLimiter,
     });
@@ -759,7 +758,7 @@ export class ProductsResource {
     this.validateBarcodes(barcodes, methodLabel);
     const data = await this.transport.request<BatchAcceptedResponse>({
       method: 'PUT',
-      path: `/integration/product/sellers/${this.sellerId}/products/archive-state`,
+      path: `/integration/product/sellers/${this.transport.sellerId}/products/archive-state`,
       body: { items: barcodes.map((barcode) => ({ barcode, archived })) },
       rateLimiter: this.writeLimiter,
     });
@@ -779,7 +778,7 @@ export class ProductsResource {
     this.validateBarcodes(barcodes, 'unlock');
     const data = await this.transport.request<BatchAcceptedResponse>({
       method: 'PUT',
-      path: `/integration/product/sellers/${this.sellerId}/products/unlock`,
+      path: `/integration/product/sellers/${this.transport.sellerId}/products/unlock`,
       body: { items: barcodes.map((barcode) => ({ barcode })) },
       rateLimiter: this.writeLimiter,
     });

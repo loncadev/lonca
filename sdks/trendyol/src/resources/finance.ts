@@ -86,20 +86,22 @@ export class FinanceResource {
 
   constructor(
     private readonly transport: TrendyolTransport,
-    private readonly sellerId: number,
     limiter?: TokenBucketRateLimiter,
   ) {
     this.limiter = limiter ?? new TokenBucketRateLimiter({ capacity: 100, intervalMs: 60_000 });
   }
 
   async getSettlements(params: ListFinanceParams = {}): Promise<CursorPage<FinancialTransaction>> {
-    return this.queryPage(`/integration/sellers/${this.sellerId}/settlements`, params);
+    return this.queryPage(`/integration/sellers/${this.transport.sellerId}/settlements`, params);
   }
 
   async getOtherFinancials(
     params: ListFinanceParams = {},
   ): Promise<CursorPage<FinancialTransaction>> {
-    return this.queryPage(`/integration/sellers/${this.sellerId}/otherfinancials`, params);
+    return this.queryPage(
+      `/integration/sellers/${this.transport.sellerId}/otherfinancials`,
+      params,
+    );
   }
 
   private async queryPage(
