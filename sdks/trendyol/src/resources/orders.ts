@@ -376,7 +376,6 @@ export class OrdersResource {
 
   constructor(
     private readonly transport: TrendyolTransport,
-    private readonly sellerId: number,
     limiter?: TokenBucketRateLimiter,
   ) {
     this.limiter = limiter ?? new TokenBucketRateLimiter({ capacity: 1000, intervalMs: 60_000 });
@@ -405,7 +404,7 @@ export class OrdersResource {
 
     const data = await this.transport.request<TrendyolGetOrdersResponse>({
       method: 'GET',
-      path: `/integration/order/sellers/${this.sellerId}/orders`,
+      path: `/integration/order/sellers/${this.transport.sellerId}/orders`,
       query,
       rateLimiter: this.limiter,
     });
@@ -644,7 +643,7 @@ export class OrdersResource {
   async manualDeliverByTrackingNumber(cargoTrackingNumber: string | number): Promise<void> {
     await this.transport.request<unknown>({
       method: 'PUT',
-      path: `/integration/order/sellers/${this.sellerId}/shipment-packages/manual-invoice-delivery-by-tracking-number/${encodeURIComponent(String(cargoTrackingNumber))}`,
+      path: `/integration/order/sellers/${this.transport.sellerId}/shipment-packages/manual-invoice-delivery-by-tracking-number/${encodeURIComponent(String(cargoTrackingNumber))}`,
       rateLimiter: this.limiter,
     });
   }
@@ -744,7 +743,7 @@ export class OrdersResource {
     }
     const data = await this.transport.request<StreamResponse>({
       method: 'GET',
-      path: `/integration/order/sellers/${this.sellerId}/orders/stream`,
+      path: `/integration/order/sellers/${this.transport.sellerId}/orders/stream`,
       query,
       rateLimiter: this.limiter,
     });
@@ -792,7 +791,7 @@ export class OrdersResource {
 
     const data = await this.transport.request<WireResponse>({
       method: 'GET',
-      path: `/integration/finance/che/sellers/${this.sellerId}/cargo-invoice/${encodeURIComponent(invoiceSerialNumber)}/items`,
+      path: `/integration/finance/che/sellers/${this.transport.sellerId}/cargo-invoice/${encodeURIComponent(invoiceSerialNumber)}/items`,
       query: { page, size },
       rateLimiter: this.limiter,
     });
@@ -843,7 +842,7 @@ export class OrdersResource {
   async manualReturnByTrackingNumber(cargoTrackingNumber: string | number): Promise<void> {
     await this.transport.request<unknown>({
       method: 'PUT',
-      path: `/integration/order/sellers/${this.sellerId}/shipment-packages/manual-return-by-tracking-number/${encodeURIComponent(String(cargoTrackingNumber))}`,
+      path: `/integration/order/sellers/${this.transport.sellerId}/shipment-packages/manual-return-by-tracking-number/${encodeURIComponent(String(cargoTrackingNumber))}`,
       rateLimiter: this.limiter,
     });
   }
@@ -909,7 +908,7 @@ export class OrdersResource {
 
     const res = await this.transport.request<WireResponse>({
       method: 'GET',
-      path: `/integration/tex/compensation/sellers/${this.sellerId}/tickets`,
+      path: `/integration/tex/compensation/sellers/${this.transport.sellerId}/tickets`,
       query,
       rateLimiter: this.limiter,
     });
@@ -956,6 +955,6 @@ export class OrdersResource {
   }
 
   private packagePath(packageId: string | number): string {
-    return `/integration/order/sellers/${this.sellerId}/shipment-packages/${encodeURIComponent(String(packageId))}`;
+    return `/integration/order/sellers/${this.transport.sellerId}/shipment-packages/${encodeURIComponent(String(packageId))}`;
   }
 }

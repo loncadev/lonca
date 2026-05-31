@@ -11,7 +11,6 @@ export class LabelsResource {
 
   constructor(
     private readonly transport: TrendyolTransport,
-    private readonly sellerId: number,
     limiter?: TokenBucketRateLimiter,
   ) {
     this.limiter = limiter ?? new TokenBucketRateLimiter({ capacity: 100, intervalMs: 60_000 });
@@ -33,7 +32,7 @@ export class LabelsResource {
     }
     return this.transport.request<unknown>({
       method: 'POST',
-      path: `/integration/sellers/${this.sellerId}/common-label/${encodeURIComponent(String(cargoTrackingNumber))}`,
+      path: `/integration/sellers/${this.transport.sellerId}/common-label/${encodeURIComponent(String(cargoTrackingNumber))}`,
       body: input,
       rateLimiter: this.limiter,
     });
@@ -54,7 +53,7 @@ export class LabelsResource {
     }
     const raw = await this.transport.request<WireResponse>({
       method: 'GET',
-      path: `/integration/sellers/${this.sellerId}/common-label/${encodeURIComponent(String(cargoTrackingNumber))}`,
+      path: `/integration/sellers/${this.transport.sellerId}/common-label/${encodeURIComponent(String(cargoTrackingNumber))}`,
       rateLimiter: this.limiter,
     });
 

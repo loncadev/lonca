@@ -5,6 +5,7 @@ import type { TrendyolTransport } from '../transport.js';
 
 function mockTransport(response: unknown) {
   return {
+    sellerId: 42,
     request: vi.fn().mockResolvedValue(response),
   } as unknown as TrendyolTransport;
 }
@@ -291,14 +292,14 @@ describe('CategoriesResource.getAttributeValues', () => {
 describe('CategoriesResource.getByBarcodes', () => {
   it('POSTs to the AutoFT lookup endpoint with body { barcodes }', async () => {
     const transport = mockTransport({ barcodeCategories: {}, notFound: [] });
-    const resource = new CategoriesResource(transport, fastLimiter(), 2738);
+    const resource = new CategoriesResource(transport, fastLimiter());
 
     await resource.getByBarcodes(['B1', 'B2']);
 
     expect(transport.request).toHaveBeenCalledWith(
       expect.objectContaining({
         method: 'POST',
-        path: '/integration/ecgw/v1/2738/lookup/product-categories/by-barcodes',
+        path: '/integration/ecgw/v1/42/lookup/product-categories/by-barcodes',
         body: { barcodes: ['B1', 'B2'] },
       }),
     );
@@ -312,7 +313,7 @@ describe('CategoriesResource.getByBarcodes', () => {
       },
       notFound: ['barcode-4'],
     });
-    const resource = new CategoriesResource(transport, fastLimiter(), 2738);
+    const resource = new CategoriesResource(transport, fastLimiter());
 
     const result = await resource.getByBarcodes(['barcode-1', 'barcode-2', 'barcode-4']);
 
@@ -327,20 +328,17 @@ describe('CategoriesResource.getByBarcodes', () => {
 
   it('throws ValidationError on empty input', async () => {
     const transport = mockTransport({});
-    const resource = new CategoriesResource(transport, fastLimiter(), 2738);
+    const resource = new CategoriesResource(transport, fastLimiter());
     await expect(resource.getByBarcodes([])).rejects.toThrow(/must not be empty/);
     expect(transport.request).not.toHaveBeenCalled();
   });
 
-  it('throws when constructed without a sellerId', async () => {
-    const transport = mockTransport({ barcodeCategories: {} });
-    const resource = new CategoriesResource(transport, fastLimiter(), undefined);
-    await expect(resource.getByBarcodes(['B1'])).rejects.toThrow(/requires a sellerId/);
-  });
+  // The "no sellerId" error case was removed when CategoriesResource stopped
+  // accepting an optional sellerId — sellerId now always comes from the transport.
 
   it('defaults `notFound` to an empty array when missing', async () => {
     const transport = mockTransport({ barcodeCategories: { B1: { id: 1, displayName: 'X' } } });
-    const resource = new CategoriesResource(transport, fastLimiter(), 2738);
+    const resource = new CategoriesResource(transport, fastLimiter());
     const result = await resource.getByBarcodes(['B1']);
     expect(result.notFound).toEqual([]);
   });

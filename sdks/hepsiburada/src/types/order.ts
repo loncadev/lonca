@@ -4,21 +4,25 @@
  * Source: `siparis-olusturma-entegrasyonu` v1.0 (developers.hepsiburada.com)
  * + discovery-first against `oms-external-sit.hepsiburada.com` (2026-05).
  *
- * - Most list endpoints return `{ totalCount, limit, offset, pageCount, items }`.
+ * - Most list endpoints return `{ totalCount, limit, offset, pageCount, items }` —
+ *   the shared `OffsetPage<T>` shape from `@lonca/core`.
  * - The unfiltered `/packages` list returns a **raw array** (no envelope).
  * - Action endpoints (deliver, intransit, undeliver, cancel, etc.) accept
  *   loose `Record<string, unknown>` bodies — Hepsiburada's portal docs the
  *   exact field set per endpoint; the SDK passes payloads through unchanged.
  */
 
-/** Wrapper for the orders / packages list endpoints. */
-export interface OrdersPage<T = Order> {
-  totalCount: number;
-  limit: number;
-  offset: number;
-  pageCount: number;
-  items: T[];
-}
+import type { OffsetPage } from '@lonca/core';
+
+/**
+ * Wrapper for the orders / packages list endpoints. Equivalent to
+ * `OffsetPage<T>` from `@lonca/core` — kept as a named export for
+ * back-compat and discoverability.
+ *
+ * @deprecated Prefer importing `OffsetPage` from `@lonca/core` directly.
+ *   This alias will stay exported for the lifetime of the `0.x` line.
+ */
+export type OrdersPage<T = Order> = OffsetPage<T>;
 
 /** Query parameters shared across all list endpoints. */
 export interface ListOrdersParams {

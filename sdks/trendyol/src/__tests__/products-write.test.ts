@@ -12,14 +12,15 @@ import type {
 
 function mockTransport(response: unknown) {
   return {
+    sellerId: 42,
     request: vi.fn().mockResolvedValue(response),
   } as unknown as TrendyolTransport;
 }
 
 const fastLimiter = () => new TokenBucketRateLimiter({ capacity: 1000, intervalMs: 1 });
 
-function newResource(transport: TrendyolTransport, sellerId = 42) {
-  return new ProductsResource(transport, sellerId, {
+function newResource(transport: TrendyolTransport) {
+  return new ProductsResource(transport, {
     filterLimiter: fastLimiter(),
     batchLimiter: fastLimiter(),
     buyboxLimiter: fastLimiter(),

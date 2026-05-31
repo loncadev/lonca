@@ -124,7 +124,6 @@ export class CategoriesResource {
      * `getByBarcodes` lookup. Other category endpoints don't need it.
      * Provided automatically when constructed via `createTrendyolClient`.
      */
-    private readonly sellerId?: number,
   ) {
     this.limiter = limiter ?? new TokenBucketRateLimiter({ capacity: 50, intervalMs: 60_000 });
   }
@@ -235,17 +234,10 @@ export class CategoriesResource {
    *
    * @param barcodes 1–N barcodes to look up.
    * @throws {ValidationError} when `barcodes` is empty.
-   * @throws Error when the client was created without a `sellerId` and this
-   *   method is called directly (use `createTrendyolClient` to wire it).
    */
   async getByBarcodes(barcodes: string[]): Promise<BarcodeCategoryLookup> {
     if (!Array.isArray(barcodes) || barcodes.length === 0) {
       throw new ValidationError({ message: 'getByBarcodes: barcodes must not be empty' });
-    }
-    if (this.sellerId === undefined) {
-      throw new Error(
-        'CategoriesResource.getByBarcodes requires a sellerId; instantiate via createTrendyolClient',
-      );
     }
 
     interface WireResponse {
@@ -254,7 +246,7 @@ export class CategoriesResource {
     }
     const data = await this.transport.request<WireResponse>({
       method: 'POST',
-      path: `/integration/ecgw/v1/${this.sellerId}/lookup/product-categories/by-barcodes`,
+      path: `/integration/ecgw/v1/${this.transport.sellerId}/lookup/product-categories/by-barcodes`,
       body: { barcodes },
       rateLimiter: this.limiter,
     });
