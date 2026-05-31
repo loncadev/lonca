@@ -1,3 +1,10 @@
+<p align="left">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/loncadev/lonca/main/assets/brand/lonca-icon-light.svg">
+    <img src="https://raw.githubusercontent.com/loncadev/lonca/main/assets/brand/lonca-icon.svg" alt="Lonca" height="32">
+  </picture>
+</p>
+
 # @lonca/hepsiburada
 
 [![npm version](https://img.shields.io/npm/v/@lonca/hepsiburada.svg)](https://www.npmjs.com/package/@lonca/hepsiburada)

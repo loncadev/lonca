@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./assets/brand/lonca-logomark-light.svg">
+    <img src="./assets/brand/lonca-logomark.svg" alt="Lonca" height="48">
+  </picture>
+</p>
+
 # Lonca
 
 [![CI](https://github.com/loncadev/lonca/actions/workflows/ci.yml/badge.svg)](https://github.com/loncadev/lonca/actions/workflows/ci.yml)
