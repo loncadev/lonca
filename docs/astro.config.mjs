@@ -12,6 +12,15 @@ export default defineConfig({
       title: 'Lonca SDKs',
       description:
         'Type-safe TypeScript SDKs for Turkish e-commerce marketplaces (Trendyol, Hepsiburada).',
+      logo: {
+        // Source-of-truth: assets/brand/. Mirrored into docs/public/brand/
+        // via `pnpm docs:sync-brand` (run automatically before docs:build).
+        // The SVG carries its own `prefers-color-scheme` rule, so a single
+        // file adapts to Starlight's light/dark themes without a `dark` pair.
+        src: './public/brand/logomark.svg',
+        replacesTitle: true,
+      },
+      favicon: '/brand/icon.svg',
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/loncadev/lonca' }],
       editLink: {
         baseUrl: 'https://github.com/loncadev/lonca/edit/main/docs/',

@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./assets/brand/logomark.svg" alt="Lonca" height="48">
+</p>
+
 # Lonca
 
 [![CI](https://github.com/loncadev/lonca/actions/workflows/ci.yml/badge.svg)](https://github.com/loncadev/lonca/actions/workflows/ci.yml)

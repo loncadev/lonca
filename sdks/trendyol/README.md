@@ -1,3 +1,7 @@
+<p align="left">
+  <img src="https://raw.githubusercontent.com/loncadev/lonca/main/assets/brand/icon.svg" alt="Lonca" height="32">
+</p>
+
 # @lonca/trendyol
 
 [![npm version](https://img.shields.io/npm/v/@lonca/trendyol.svg)](https://www.npmjs.com/package/@lonca/trendyol)

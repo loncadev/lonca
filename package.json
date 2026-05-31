@@ -30,6 +30,7 @@
     "docs:dev": "pnpm --filter @lonca/docs dev",
     "docs:build": "pnpm --filter @lonca/docs build",
     "docs:preview": "pnpm --filter @lonca/docs preview",
+    "docs:sync-brand": "pnpm --filter @lonca/docs sync-brand",
     "try:trendyol": "tsx --env-file=.env examples/try-trendyol.mts",
     "try:hepsiburada": "tsx --env-file=.env examples/try-hepsiburada.mts",
     "try:inspect-hb-categories": "tsx --env-file=.env examples/inspect-hb-categories.mts",

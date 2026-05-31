@@ -5,6 +5,9 @@
   "description": "Documentation site for the Lonca SDKs (Astro + Starlight).",
   "type": "module",
   "scripts": {
+    "sync-brand": "node scripts/sync-brand.mjs",
+    "predev": "pnpm run sync-brand",
+    "prebuild": "pnpm run sync-brand",
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview"
