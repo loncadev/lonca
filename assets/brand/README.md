@@ -1,28 +1,42 @@
 # Lonca brand assets
 
-Canonical brand files for the Lonca project. Source of truth: this directory. Every other use (docs site, READMEs, package metadata) references files from here.
+Canonical brand files. Source of truth: this directory. Every other use (docs site, READMEs, package metadata) references files from here.
 
 ## Files
 
-| File                                         | Use                                                                    | Size baseline  |
-| -------------------------------------------- | ---------------------------------------------------------------------- | -------------- |
-| [`lonca-icon.svg`](./lonca-icon.svg)         | Symbol mark alone (avatars, favicons, square containers, app icons)    | 24×24, scales  |
-| [`lonca-wordmark.svg`](./lonca-wordmark.svg) | Word "lonca" alone (footers, tight inline contexts)                    | 83×24, scales  |
-| [`lonca-logomark.svg`](./lonca-logomark.svg) | Full lockup: symbol + word (primary lockup, README headers, site logo) | 114×24, scales |
+| File                                         | Use                                                                 | Size baseline  |
+| -------------------------------------------- | ------------------------------------------------------------------- | -------------- |
+| [`icon.svg`](./icon.svg)                     | Symbol mark alone (avatars, favicons, square containers, app icons) | 24×24, scales  |
+| [`wordmark.svg`](./wordmark.svg)             | Word "lonca" alone (footers, tight inline contexts)                 | 83×24, scales  |
+| [`logomark.svg`](./logomark.svg)             | Full lockup: symbol + word (primary lockup, README hero, site logo) | 114×24, scales |
+| [`social-preview.png`](./social-preview.png) | GitHub repo Social Preview (1280×640)                               | —              |
 
-Each file ships in three flavors:
+## One file, both themes
 
-- **`*.svg`** — explicit brand color (`#2A272C`, near-black). Use on light backgrounds; do not invert.
-- **`*-light.svg`** — off-white (`#FAFAF9`). For dark backgrounds — pair with `<picture>` + `prefers-color-scheme: dark` for adaptive READMEs / Starlight logos.
-- **`*-mono.svg`** — `currentColor` fill, inherits the surrounding text color. Use where the surface theme can flip via CSS (inline SVG, Starlight components that propagate text color, terminal-style mixed contexts). Note: most `<img>` elements **don't** propagate `currentColor` from outside the SVG document — use the `-light.svg` variant for `<img>` in dark mode.
+Each SVG carries its own contrast logic. The mark is drawn with `fill="currentColor"` and the SVG ships an inline `<style>` block that sets `color` based on `prefers-color-scheme`:
+
+```svg
+<style>
+  svg { color: #2A272C; }                                  /* light: ink */
+  @media (prefers-color-scheme: dark) { svg { color: #FAFAF9; } }
+</style>
+```
+
+This means a single file works everywhere:
+
+- **`<img src="...">`** in READMEs — browsers (GitHub, npm) honor `prefers-color-scheme` inside the SVG document, so the mark flips on dark mode automatically.
+- **Inline SVG / Starlight theming** — outside CSS (`.starlight svg { color: ... }`) overrides the inline rule because CSS specificity favors the consuming document, so the host theme wins.
+- **Favicons** — modern browsers apply the same media query when rendering the tab icon.
+
+We scope the rule to `svg` (rather than `:root`) so that if someone inlines the SVG into HTML the rule doesn't leak onto the host page's `color`. No `*-light.svg` / `*-mono.svg` companions. No `<picture>` markup. One file, one URL.
 
 ## Color tokens
 
-| Token                 | Hex       | Use                                                             |
-| --------------------- | --------- | --------------------------------------------------------------- |
-| `brand.ink`           | `#2A272C` | Default mark color. Body-text adjacent — readable on white.     |
-| `brand.surface-light` | `#FFFFFF` | Mark on white.                                                  |
-| `brand.surface-dark`  | `#0F0E10` | Mark inverted on dark (use `*-mono.svg` with `color: #FFFFFF`). |
+| Token                 | Hex       | Use                                                         |
+| --------------------- | --------- | ----------------------------------------------------------- |
+| `brand.ink`           | `#2A272C` | Default mark color. Body-text adjacent — readable on white. |
+| `brand.surface-light` | `#FFFFFF` | Mark on white.                                              |
+| `brand.surface-dark`  | `#0F0E10` | Mark inverted on dark — paired with `#FAFAF9` ink.          |
 
 For accents and palette extension, defer to the docs site stylesheet (`docs/src/styles/custom.css`).
 
@@ -33,28 +47,28 @@ Minimum padding around the mark = the height of the **bullet** (the small square
 ## Do's and don'ts
 
 - ✅ Scale uniformly (SVG handles this).
-- ✅ Use `*-mono.svg` whenever the surface has a theme switch.
-- ✅ Combine the icon with type in your own UI — just respect clearspace.
-- ❌ Don't recolor the explicit-color files (`lonca-*.svg`). Use `*-mono.svg` and CSS instead.
+- ✅ Use the icon with type in your own UI — just respect clearspace.
+- ✅ Override the inline color via consuming CSS when you need a non-default tint.
+- ❌ Don't strip the `<style>` block — it's what makes adaptive contrast work.
 - ❌ Don't stretch non-uniformly.
 - ❌ Don't add drop-shadows, glows, or borders. The mark is intentionally flat.
 
 ## Where these are wired
 
-| Surface                             | File                                                     | Where                                                             |
-| ----------------------------------- | -------------------------------------------------------- | ----------------------------------------------------------------- |
-| Docs site logo                      | `lonca-logomark.svg` (+ `-light` for dark theme)         | `docs/astro.config.mjs` → `starlight.logo`                        |
-| Docs site favicon                   | `lonca-icon.svg`                                         | `docs/public/brand/lonca-icon.svg` + `astro.config.mjs` `favicon` |
-| Root [README](../../README.md) hero | `lonca-logomark.svg` + `lonca-logomark-light.svg`        | `<picture>` with `prefers-color-scheme`                           |
-| Per-package READMEs                 | `lonca-icon.svg` + `lonca-icon-light.svg`                | Top of file, height 32px                                          |
-| GitHub repo social preview          | [`lonca-social-preview.png`](./lonca-social-preview.png) | Upload via Repo Settings → Social preview (manual one-time)       |
+| Surface                             | File                 | Where                                                |
+| ----------------------------------- | -------------------- | ---------------------------------------------------- |
+| Docs site logo                      | `logomark.svg`       | `docs/astro.config.mjs` → `starlight.logo.src`       |
+| Docs site favicon                   | `icon.svg`           | `docs/astro.config.mjs` → `favicon`                  |
+| Root [README](../../README.md) hero | `logomark.svg`       | `<img>` (height 48)                                  |
+| Per-package READMEs                 | `icon.svg`           | `<img>` (height 32) — uses GitHub raw URL            |
+| GitHub repo social preview          | `social-preview.png` | Upload via Repo Settings → Social preview (one-time) |
 
 ## Updating
 
-Update the canonical files here, then run:
+Edit the canonical files here, then run:
 
 ```bash
 pnpm docs:sync-brand   # copies assets/brand/* → docs/public/brand/
 ```
 
-(or just re-copy the files manually — the doc site needs them under `docs/public/brand/` to serve at the right URL.)
+(Run automatically before `pnpm dev` / `pnpm build` in `docs/`.)

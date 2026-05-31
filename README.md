@@ -1,8 +1,5 @@
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./assets/brand/lonca-logomark-light.svg">
-    <img src="./assets/brand/lonca-logomark.svg" alt="Lonca" height="48">
-  </picture>
+  <img src="./assets/brand/logomark.svg" alt="Lonca" height="48">
 </p>
 
 # Lonca

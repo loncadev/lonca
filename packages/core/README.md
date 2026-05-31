@@ -1,8 +1,5 @@
 <p align="left">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/loncadev/lonca/main/assets/brand/lonca-icon-light.svg">
-    <img src="https://raw.githubusercontent.com/loncadev/lonca/main/assets/brand/lonca-icon.svg" alt="Lonca" height="32">
-  </picture>
+  <img src="https://raw.githubusercontent.com/loncadev/lonca/main/assets/brand/icon.svg" alt="Lonca" height="32">
 </p>
 
 # @lonca/core

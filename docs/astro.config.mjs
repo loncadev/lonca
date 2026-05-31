@@ -15,19 +15,12 @@ export default defineConfig({
       logo: {
         // Source-of-truth: assets/brand/. Mirrored into docs/public/brand/
         // via `pnpm docs:sync-brand` (run automatically before docs:build).
-        light: './public/brand/lonca-logomark.svg',
-        dark: './public/brand/lonca-logomark-light.svg',
+        // The SVG carries its own `prefers-color-scheme` rule, so a single
+        // file adapts to Starlight's light/dark themes without a `dark` pair.
+        src: './public/brand/logomark.svg',
         replacesTitle: true,
       },
-      favicon: '/brand/lonca-icon.svg',
-      head: [
-        // PNG fallback for the favicon in case the SVG isn't supported (older Safari).
-        // Add `lonca-icon-32.png` to assets/brand/ to enable.
-        // {
-        //   tag: 'link',
-        //   attrs: { rel: 'icon', type: 'image/png', href: '/brand/lonca-icon-32.png' },
-        // },
-      ],
+      favicon: '/brand/icon.svg',
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/loncadev/lonca' }],
       editLink: {
         baseUrl: 'https://github.com/loncadev/lonca/edit/main/docs/',
