@@ -23,6 +23,7 @@ const BASE_URLS = {
     shipping: 'https://shipping-external.hepsiburada.com',
     'claim-stub': 'https://claim-stub-external.hepsiburada.com',
     'oms-stub': 'https://oms-stub-external.hepsiburada.com',
+    mpop: 'https://mpop.hepsiburada.com',
   },
   sit: {
     listing: 'https://listing-external-sit.hepsiburada.com',
@@ -30,6 +31,7 @@ const BASE_URLS = {
     shipping: 'https://shipping-external-sit.hepsiburada.com',
     'claim-stub': 'https://claim-stub-external-sit.hepsiburada.com',
     'oms-stub': 'https://oms-stub-external-sit.hepsiburada.com',
+    mpop: 'https://mpop-sit.hepsiburada.com',
   },
 } as const satisfies Record<string, Record<string, string>>;
 
@@ -191,7 +193,12 @@ export class HepsiburadaTransport {
       Authorization: this.authHeader,
       'Content-Type': 'application/json',
       Accept: 'application/json',
-      'User-Agent': `${this.config.merchantId} - ${this.config.integratorName}`,
+      // Hepsiburada requires a `User-Agent` on every request and rejects the
+      // common `merchantId - integratorName` template with 401/403 on several
+      // services (verified against SIT mpop/listings/oms in 2026-05). Use the
+      // bare integrator name — what merchants configure server-side in their
+      // Hepsiburada Merchant Portal.
+      'User-Agent': this.config.integratorName,
     };
   }
 
