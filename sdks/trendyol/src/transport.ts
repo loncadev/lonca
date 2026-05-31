@@ -23,7 +23,7 @@ export interface TransportConfig {
   apiKey: string;
   apiSecret: string;
   env: TrendyolEnvironment;
-  integratorName?: string;
+  integratorName: string;
   clientIp?: string;
   logger?: Logger;
   /** Request timeout in ms. Default: 30_000. */
@@ -153,13 +153,12 @@ export class TrendyolTransport {
   }
 
   private buildHeaders(correlationId: string): Record<string, string> {
-    const integratorName = this.config.integratorName ?? 'SelfIntegration';
     return {
       Authorization: buildAuthHeader(this.config.apiKey, this.config.apiSecret),
       'x-clientip': this.config.clientIp ?? '127.0.0.1',
       'x-correlationid': correlationId,
-      'x-agentname': integratorName,
-      'User-Agent': buildUserAgent(this.config.sellerId, integratorName),
+      'x-agentname': this.config.integratorName,
+      'User-Agent': buildUserAgent(this.config.sellerId, this.config.integratorName),
       'Content-Type': 'application/json',
       Accept: 'application/json',
     };

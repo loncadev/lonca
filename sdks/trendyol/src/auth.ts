@@ -13,6 +13,6 @@ export function buildAuthHeader(apiKey: string, apiSecret: string): string {
  *
  * A missing or malformed `User-Agent` triggers HTTP 403.
  */
-export function buildUserAgent(sellerId: number, integratorName = 'SelfIntegration'): string {
+export function buildUserAgent(sellerId: number, integratorName: string): string {
   return `${sellerId} - ${integratorName}`;
 }

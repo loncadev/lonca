@@ -79,6 +79,16 @@ export function parseHepsiburadaWebhookEvent<E extends HepsiburadaWebhookEvent>(
   return { event, body, raw: body };
 }
 
+/**
+ * Short alias for {@link parseHepsiburadaWebhookEvent}. The Trendyol SDK
+ * exports the same name, so each SDK's `parseWebhookEvent` is the
+ * canonical entry point when callers import the helper via the
+ * marketplace-specific package.
+ *
+ * Use whichever name reads better. The two are referentially identical.
+ */
+export const parseWebhookEvent = parseHepsiburadaWebhookEvent;
+
 function isKnownEvent(value: unknown): value is HepsiburadaWebhookEvent {
   return (
     typeof value === 'string' && (HEPSIBURADA_WEBHOOK_EVENTS as readonly string[]).includes(value)

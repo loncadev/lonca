@@ -25,11 +25,12 @@ export interface CreateClientOptions {
   /** Which Trendyol environment to target. */
   env: TrendyolEnvironment;
   /**
-   * Integrator company name to send in `User-Agent` / `x-agentname`.
-   * Defaults to `'SelfIntegration'` if the seller owns the integration code.
+   * Integrator company name to send in `User-Agent` / `x-agentname`. Required —
+   * Trendyol uses this to attribute API traffic. Use `'SelfIntegration'` if
+   * the seller owns the integration code, otherwise your company / product name.
    * Trendyol caps this at 30 alphanumeric characters.
    */
-  integratorName?: string;
+  integratorName: string;
   /**
    * IPv4 address to send in `x-clientip`.
    * Defaults to `'127.0.0.1'` — Trendyol does not validate this against the

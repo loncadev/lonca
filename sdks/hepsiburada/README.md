@@ -496,11 +496,41 @@ if (env === 'sit') {
 ## Built-in robustness
 
 - **Retry with exponential backoff** on 429 (respects `Retry-After`) and 5xx
-- **Per-resource rate limiting** (token bucket) — defaults from 30–600 req/min depending on the surface; override per resource
+- **Per-resource rate limiting** (token bucket) — see defaults below; override per resource via constructor
+- **Per-request correlation ID** — every call gets a UUID surfaced in log messages and an `x-correlationid` request header for downstream tracing
 - **Structured errors** via `@lonca/core` (`AuthError`, `RateLimitError`, `NotFoundError`, `ServerError`, `ValidationError`, `NetworkError`, `TimeoutError`)
 - **Client-side validation** — empty / >1000-item bulk uploads, required `skuList` on buybox/commissions, strict `ClaimStatus` union, every action's `claimNumber` / `packageNumber` / `trackingId` checked before the request leaves the process
 - **Multi-host routing** — each resource tags its target host (`listing`, `oms`, `shipping`, `claim-stub`, `oms-stub`, `mpop`); auto-resolved per env
 - **`AbortSignal` support** throughout
+
+### Rate-limiter defaults
+
+| Resource         | Default capacity | Interval |
+| ---------------- | :--------------: | :------: |
+| `listings`       |       600        |   60 s   |
+| `categories`     |       600        |   60 s   |
+| `orders`         |       120        |   60 s   |
+| `claims`         |       120        |   60 s   |
+| `catalog`        |       120        |   60 s   |
+| `productUpdates` |       120        |   60 s   |
+| `questions`      |       120        |   60 s   |
+| `shipping`       |        60        |   60 s   |
+| `suppliers`      |        60        |   60 s   |
+| `accounting`     |        60        |   60 s   |
+| `promotions`     |        60        |   60 s   |
+| `testOrders`     |        30        |   60 s   |
+
+Override per resource by passing a `TokenBucketRateLimiter` from `@lonca/core`:
+
+```ts
+import { TokenBucketRateLimiter } from '@lonca/core';
+import { OrdersResource } from '@lonca/hepsiburada';
+
+const orders = new OrdersResource(
+  client.orders.transport, // not exposed; build manually if you need this
+  new TokenBucketRateLimiter({ capacity: 300, intervalMs: 60_000 }),
+);
+```
 
 ## Wire-shape notes
 

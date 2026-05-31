@@ -17,8 +17,8 @@ describe('buildAuthHeader', () => {
 });
 
 describe('buildUserAgent', () => {
-  it('defaults integratorName to SelfIntegration', () => {
-    expect(buildUserAgent(1234)).toBe('1234 - SelfIntegration');
+  it('formats sellerId and integratorName per Trendyol docs', () => {
+    expect(buildUserAgent(1234, 'SelfIntegration')).toBe('1234 - SelfIntegration');
   });
 
   it('uses the provided integratorName', () => {

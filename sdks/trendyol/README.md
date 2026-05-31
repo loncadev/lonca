@@ -57,7 +57,7 @@ const client = createTrendyolClient({
   apiKey: process.env.TRENDYOL_API_KEY!,
   apiSecret: process.env.TRENDYOL_API_SECRET!,
   env: 'stage', // or 'prod'
-  integratorName: 'MyCompany', // optional; defaults to 'SelfIntegration'
+  integratorName: 'MyCompany', // required; use 'SelfIntegration' if the seller owns the integration code
 });
 
 for await (const product of paginate((p) => client.products.list(p))) {
@@ -408,12 +408,27 @@ Trendyol uses HTTP Basic Auth. Get your `sellerId`, `apiKey`, and `apiSecret` fr
 ## Built-in robustness
 
 - **Retry with exponential backoff** on 429 (respects `Retry-After`) and 5xx
-- **Per-endpoint rate limiting** (token bucket) sized to Trendyol's documented limits — separate buckets for filter (2000/min), batch read (1000/min), buybox (1000/min), writes (1000/min), and delete (100/min)
+- **Per-endpoint rate limiting** (token bucket) sized to Trendyol's documented limits — see defaults below; override per resource
+- **Per-request correlation ID** — every call gets a UUID surfaced in log messages and the `x-correlationid` header for Trendyol-side log tracing
 - **Structured errors** via `@lonca/core` (`AuthError`, `RateLimitError`, `NotFoundError`, `ServerError`, `ValidationError`, `NetworkError`, `TimeoutError`)
 - **Client-side validation** before the network: empty batches, oversized batches (>1000 items), >10 buybox barcodes, ≤500-char claim descriptions, 10–2000-char Q&A answers — all throw `ValidationError`
 - **Multipart upload support** — `claims.createIssue` and `invoices.uploadFile` build `FormData` internally and the transport handles `Content-Type` correctly
-- **Correlation ID** auto-generated per request for Trendyol-side log tracing
 - **`AbortSignal` support** throughout
+
+### Rate-limiter defaults
+
+| Bucket       | Default capacity | Interval | Used by                                       |
+| ------------ | :--------------: | :------: | --------------------------------------------- |
+| `filter`     |       2000       |   60 s   | products filter / list                        |
+| `batch read` |       1000       |   60 s   | products batch read, orders list, finance     |
+| `buybox`     |       1000       |   60 s   | buybox lookups                                |
+| `writes`     |       1000       |   60 s   | most write endpoints (create / update)        |
+| `delete`     |       100        |   60 s   | DELETE endpoints                              |
+| `categories` |        50        |   60 s   | categories list (cached by callers)           |
+| `webhooks`   |        50        |   60 s   | webhook config CRUD                           |
+| `suppliers`  |        1         |   1 h    | suppliers list (Trendyol caps this at 1/hour) |
+
+Override per resource by passing a `TokenBucketRateLimiter` from `@lonca/core` when constructing the resource directly.
 
 ## Stability
 

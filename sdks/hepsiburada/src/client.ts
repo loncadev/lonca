@@ -20,7 +20,10 @@ export interface CreateClientOptions {
   username: string;
   /** Hepsiburada API password / secret. */
   password: string;
-  /** Which Hepsiburada environment to target — `'prod'` or `'sit'` (sandbox). */
+  /**
+   * Which Hepsiburada environment to target — `'prod'` (production) or
+   * `'sit'` (sandbox). No default — explicit is safer than implicit.
+   */
   env: HepsiburadaEnvironment;
   /**
    * Integrator company name sent in `User-Agent`. Hepsiburada rejects requests
