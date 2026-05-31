@@ -27,8 +27,12 @@ describe('VideosResource.create', () => {
   });
 
   it('throws ValidationError on falsy input', async () => {
+    const resource = r(mockTransport());
     await expect(
-      r(mockTransport()).create(null as unknown as Record<string, unknown>),
+      resource.create(null as unknown as Record<string, unknown>),
+    ).rejects.toBeInstanceOf(ValidationError);
+    await expect(
+      resource.create(null as unknown as Record<string, unknown>),
     ).rejects.toThrow(/input is required/);
   });
 });
