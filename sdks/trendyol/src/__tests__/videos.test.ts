@@ -31,9 +31,9 @@ describe('VideosResource.create', () => {
     await expect(
       resource.create(null as unknown as Record<string, unknown>),
     ).rejects.toBeInstanceOf(ValidationError);
-    await expect(
-      resource.create(null as unknown as Record<string, unknown>),
-    ).rejects.toThrow(/input is required/);
+    await expect(resource.create(null as unknown as Record<string, unknown>)).rejects.toThrow(
+      /input is required/,
+    );
   });
 });
 
