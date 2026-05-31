@@ -40,11 +40,11 @@ Lonca aims to fill this gap with a community-maintained open standard.
 
 ## Packages
 
-| Package              | Description                                                                         | Status                                                                                                    |
-| -------------------- | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `@lonca/core`        | Shared types, error hierarchy, retry / logger / rate-limiter                        | [![npm](https://img.shields.io/npm/v/@lonca/core.svg)](https://www.npmjs.com/package/@lonca/core)         |
-| `@lonca/trendyol`    | Trendyol Marketplace SDK — full surface (14 resources, ~70 methods, webhook helper) | [![npm](https://img.shields.io/npm/v/@lonca/trendyol.svg)](https://www.npmjs.com/package/@lonca/trendyol) |
-| `@lonca/hepsiburada` | Hepsiburada Marketplace API SDK                                                     | Planned                                                                                                   |
+| Package              | Description                                                                         | Status                                                                                                          |
+| -------------------- | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `@lonca/core`        | Shared types, error hierarchy, retry / logger / rate-limiter                        | [![npm](https://img.shields.io/npm/v/@lonca/core.svg)](https://www.npmjs.com/package/@lonca/core)               |
+| `@lonca/trendyol`    | Trendyol Marketplace SDK — full surface (14 resources, ~70 methods, webhook helper) | [![npm](https://img.shields.io/npm/v/@lonca/trendyol.svg)](https://www.npmjs.com/package/@lonca/trendyol)       |
+| `@lonca/hepsiburada` | Hepsiburada Marketplace SDK — Listings surface (Phase 1a)                           | [![npm](https://img.shields.io/npm/v/@lonca/hepsiburada.svg)](https://www.npmjs.com/package/@lonca/hepsiburada) |
 
 Need an SDK for another marketplace? Open a [marketplace request](https://github.com/loncadev/lonca/issues/new?template=marketplace_request.yml).
 
