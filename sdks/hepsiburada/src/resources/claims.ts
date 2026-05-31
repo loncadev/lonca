@@ -1,0 +1,181 @@
+import { TokenBucketRateLimiter, ValidationError } from '@lonca/core';
+import type { HepsiburadaTransport } from '../transport.js';
+import type {
+  Claim,
+  ClaimActionInput,
+  CreateClaimInput,
+  ListClaimsByStatusParams,
+  ListClaimsParams,
+} from '../types/claim.js';
+
+const SERVICE_LIST = 'oms' as const;
+const SERVICE_CREATE = 'claim-stub' as const;
+
+interface WireClaim {
+  claimNumber?: string;
+  status?: string;
+  createdAt?: string;
+  [key: string]: unknown;
+}
+
+function normalizeClaim(node: WireClaim): Claim {
+  const out: Claim = { raw: node as Record<string, unknown> };
+  if (node.claimNumber !== undefined) out.claimNumber = node.claimNumber;
+  if (node.status !== undefined) out.status = node.status;
+  if (node.createdAt !== undefined) out.createdAt = node.createdAt;
+  return out;
+}
+
+function unwrapClaims(data: unknown): WireClaim[] {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray((data as { items?: unknown[] })?.items)) {
+    return (data as { items: WireClaim[] }).items;
+  }
+  if (Array.isArray((data as { data?: unknown[] })?.data)) {
+    return (data as { data: WireClaim[] }).data;
+  }
+  if (Array.isArray((data as { claims?: unknown[] })?.claims)) {
+    return (data as { claims: WireClaim[] }).claims;
+  }
+  return [];
+}
+
+/**
+ * Hepsiburada Claims (Talep) — list, status-based filtering, and
+ * accept/reject/preApproval actions plus claim creation.
+ *
+ * **Two backend services** back this surface (the SDK routes
+ * automatically; callers don't pick):
+ *
+ *   - List + actions: `oms-external[-sit].hepsiburada.com` (`talep-listeleme`)
+ *   - Create: `claim-stub-external[-sit].hepsiburada.com` (`talep-olusturma`)
+ *
+ * Body shapes for `accept`, `reject`, `preApprovalConfirm`, and `create`
+ * are documented on the developer portal — the SDK passes them through
+ * as `Record<string, unknown>` so future field additions don't break callers.
+ */
+export class ClaimsResource {
+  private readonly limiter: TokenBucketRateLimiter;
+
+  constructor(
+    private readonly transport: HepsiburadaTransport,
+    limiter?: TokenBucketRateLimiter,
+  ) {
+    this.limiter = limiter ?? new TokenBucketRateLimiter({ capacity: 120, intervalMs: 60_000 });
+  }
+
+  /** List all claims (date-range / pagination filters optional). */
+  async list(params: ListClaimsParams = {}): Promise<Claim[]> {
+    const query: Record<string, string | number | undefined> = {};
+    if (params.beginDate) query.beginDate = params.beginDate;
+    if (params.endDate) query.endDate = params.endDate;
+    if (params.offset !== undefined) query.offset = params.offset;
+    if (params.limit !== undefined) query.limit = params.limit;
+
+    const data = await this.transport.request<unknown>({
+      method: 'GET',
+      service: SERVICE_LIST,
+      path: `/claims/merchantId/${encodeURIComponent(this.transport.merchantId)}`,
+      query: Object.keys(query).length ? query : undefined,
+      rateLimiter: this.limiter,
+    });
+    return unwrapClaims(data).map(normalizeClaim);
+  }
+
+  /**
+   * List claims filtered to a specific status (e.g. `'Open'`,
+   * `'AwaitingAction'`, …). See the Hepsiburada portal for the current
+   * status vocabulary.
+   *
+   * @throws {ValidationError} when `status` is empty.
+   */
+  async listByStatus(status: string, params: ListClaimsByStatusParams = {}): Promise<Claim[]> {
+    if (!status || typeof status !== 'string') {
+      throw new ValidationError({ message: 'claims.listByStatus: status is required' });
+    }
+    const query: Record<string, string | number | undefined> = {};
+    if (params.beginDate) query.beginDate = params.beginDate;
+    if (params.endDate) query.endDate = params.endDate;
+    if (params.statusBeginDate) query.statusBeginDate = params.statusBeginDate;
+    if (params.statusEndDate) query.statusEndDate = params.statusEndDate;
+    if (params.offset !== undefined) query.offset = params.offset;
+    if (params.limit !== undefined) query.limit = params.limit;
+
+    const data = await this.transport.request<unknown>({
+      method: 'GET',
+      service: SERVICE_LIST,
+      path: `/claims/merchantId/${encodeURIComponent(this.transport.merchantId)}/status/${encodeURIComponent(status)}`,
+      query: Object.keys(query).length ? query : undefined,
+      rateLimiter: this.limiter,
+    });
+    return unwrapClaims(data).map(normalizeClaim);
+  }
+
+  /**
+   * Accept (approve) a customer claim. Hepsiburada expects a body —
+   * pass the documented `c` payload via `input`.
+   */
+  async accept(claimNumber: string, input: ClaimActionInput = {}): Promise<unknown> {
+    if (!claimNumber) {
+      throw new ValidationError({ message: 'claims.accept: claimNumber is required' });
+    }
+    return this.transport.request<unknown>({
+      method: 'POST',
+      service: SERVICE_LIST,
+      path: `/claims/number/${encodeURIComponent(claimNumber)}/accept`,
+      body: input,
+      rateLimiter: this.limiter,
+    });
+  }
+
+  /** Reject a customer claim. */
+  async reject(claimNumber: string, input: ClaimActionInput = {}): Promise<unknown> {
+    if (!claimNumber) {
+      throw new ValidationError({ message: 'claims.reject: claimNumber is required' });
+    }
+    return this.transport.request<unknown>({
+      method: 'POST',
+      service: SERVICE_LIST,
+      path: `/claims/number/${encodeURIComponent(claimNumber)}/reject`,
+      body: input,
+      rateLimiter: this.limiter,
+    });
+  }
+
+  /**
+   * Confirm a "pre-approval" — a Hepsiburada-specific second-step
+   * approval flow for certain claim categories.
+   */
+  async preApprovalConfirm(claimNumber: string, input: ClaimActionInput = {}): Promise<unknown> {
+    if (!claimNumber) {
+      throw new ValidationError({
+        message: 'claims.preApprovalConfirm: claimNumber is required',
+      });
+    }
+    return this.transport.request<unknown>({
+      method: 'POST',
+      service: SERVICE_LIST,
+      path: `/claims/number/${encodeURIComponent(claimNumber)}/preapprovalconfirm`,
+      body: input,
+      rateLimiter: this.limiter,
+    });
+  }
+
+  /**
+   * Create a new claim against an order. Routes to the `claim-stub`
+   * backend service (lowercase `merchantid` segment matches Hepsiburada's
+   * documented path).
+   */
+  async create(input: CreateClaimInput): Promise<unknown> {
+    if (!input || typeof input !== 'object') {
+      throw new ValidationError({ message: 'claims.create: input is required' });
+    }
+    return this.transport.request<unknown>({
+      method: 'POST',
+      service: SERVICE_CREATE,
+      path: `/claims/merchant/${encodeURIComponent(this.transport.merchantId)}/create`,
+      body: input,
+      rateLimiter: this.limiter,
+    });
+  }
+}

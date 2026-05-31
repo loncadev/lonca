@@ -4,7 +4,7 @@
 
 Type-safe TypeScript SDK for the [Hepsiburada Marketplace API](https://developers.hepsiburada.com).
 
-> **`0.1.0` — Phase 1a: Listings.** First slice of Hepsiburada coverage: the `listeleme` (Listings) surface with 18 typed endpoints — stock / price / shipping / additional-info bulk uploads, buybox + commission lookups, single-SKU mutations, bulk unlock.
+> **`0.2.0` — Phase 1b: Shipping + Claims + Test Orders.** All five OpenAPI-spec-backed surfaces now covered: listings (18), shipping (4), claims (6), test orders (1) = **29 endpoints across 4 resources**.
 
 ## Coverage
 
@@ -12,8 +12,11 @@ Type-safe TypeScript SDK for the [Hepsiburada Marketplace API](https://developer
 | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `listings`       | `list({...})`, `getBuyboxOrder(skuList?)`, `getCommissions(skuList?)`, `activate(sku)`, `deactivate(sku)`, `updateSingle(hbSku, mSku, {...})`, `deleteSingle(hbSku, mSku)`, `bulkUnlock({hbSkuList})`                                                                   |
 | `listings` async | `uploadInventory(items)` / `getInventoryUpload(id)`, `uploadStock(items)` / `getStockUpload(id)`, `uploadPrice(items)` / `getPriceUpload(id)`, `uploadShippingInfo(items)` / `getShippingInfoUpload(id)`, `uploadAdditionalInfo(items)` / `getAdditionalInfoUpload(id)` |
+| `shipping`       | `getCargoFirms()`, `listProfiles()`, `createProfile(input)`, `updateProfile(input)`                                                                                                                                                                                     |
+| `claims`         | `list({...})`, `listByStatus(status, {...})`, `accept(claimNumber, input)`, `reject(claimNumber, input)`, `preApprovalConfirm(claimNumber, input)`, `create(input)`                                                                                                     |
+| `testOrders`     | `create(input)` _(SIT sandbox only)_                                                                                                                                                                                                                                    |
 
-5 of Hepsiburada's 20 API products currently have machine-readable OpenAPI specs. Listings (`listeleme`) is the largest of those at 18 endpoints. Follow-up phases will cover shipping (`shipping-entegrasyonu`, 4 endpoints), claims (`talep-listeleme` + `talep-olusturma`, 6 endpoints), and the test-order utility (`test-siparisi-olusturma`, 1 endpoint). Catalog / product creation / orders need their specs to be published — or seller-portal credentials for discovery-first probing — before they land here.
+5 of Hepsiburada's 20 API products currently have machine-readable OpenAPI specs — all 5 are now covered. Catalog / product creation / orders need their specs to be published — or seller-portal credentials for discovery-first probing — before they land here.
 
 ## Install
 
@@ -113,16 +116,54 @@ await client.listings.deleteSingle('HB-1', 'M-1');
 await client.listings.bulkUnlock({ hbSkuList: ['HB-1', 'HB-2'] });
 ```
 
+```ts
+// Shipping
+const firms = await client.shipping.getCargoFirms();
+const profiles = await client.shipping.listProfiles();
+await client.shipping.createProfile({ profileName: 'Express', cargoFirms: 'ARAS,MNG' });
+await client.shipping.updateProfile({ profileName: 'Express', cargoFirms: 'ARAS' });
+
+// Claims (returns / cancellations)
+const open = await client.claims.list({
+  beginDate: '2026-01-01 00:00',
+  endDate: '2026-02-01 00:00',
+  offset: 0,
+  limit: 50,
+});
+const byStatus = await client.claims.listByStatus('Open', { offset: 0, limit: 50 });
+await client.claims.accept('CLM-1', { reasonCode: 'APPROVED' });
+await client.claims.reject('CLM-1', { reasonCode: 'NOT_ELIGIBLE' });
+await client.claims.preApprovalConfirm('CLM-1', { confirmed: true });
+await client.claims.create({
+  orderNumber: 'O-1',
+  lines: [
+    /* ... */
+  ],
+});
+
+// Test orders — SIT sandbox only
+await client.testOrders.create({
+  customer: {
+    /* ... */
+  },
+  lines: [
+    /* ... */
+  ],
+});
+```
+
+> **Claims body shapes** — Hepsiburada's published OpenAPI lists the paths but leaves request/response schemas empty. The SDK types the path params and known query params strictly, and accepts `Record<string, unknown>` for bodies — see the developer-portal doc pages for the documented field set. Dates use `yyyy-MM-dd HH:mm` format.
+
 ## Authentication + environments
 
 Hepsiburada uses HTTP Basic Auth. Get your `merchantId`, `username`, and `password` from the [Hepsiburada Merchant Portal](https://merchant.hepsiburada.com) → Settings → Integrations.
 
-| Env    | Service hostnames (listing service shown)        |
-| ------ | ------------------------------------------------ |
-| `prod` | `listing-external.hepsiburada.com`               |
-| `sit`  | `listing-external-sit.hepsiburada.com` (sandbox) |
+| Env    | Service hostnames                                                                                                                                                                                          |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `prod` | `listing-external` (listings) / `oms-external` (claims list/actions) / `shipping-external` (shipping) / `claim-stub-external` (claims create) / `oms-stub-external` (test orders) — all `.hepsiburada.com` |
+| `sit`  | same hostnames with `-sit` suffix — sandbox                                                                                                                                                                |
 
-The SDK auto-resolves the matching `*-external[-sit]` hostname per service.
+The SDK auto-resolves the matching `*-external[-sit]` hostname per service — each resource tags which service it belongs to.
 
 **`User-Agent` is required** — Hepsiburada rejects requests without one. The SDK builds it from `{merchantId} - {integratorName}` automatically (matches Trendyol's convention).
 
@@ -137,7 +178,7 @@ The SDK auto-resolves the matching `*-external[-sit]` hostname per service.
 
 ## Stability
 
-`0.x` — alpha. Only the Listings surface (Phase 1a) is implemented; expect new resources to land minor-by-minor as Hepsiburada publishes more OpenAPI specs / we secure sandbox credentials for the spec-less ones.
+`0.x` — alpha. All 5 OpenAPI-spec-backed surfaces are covered (Phase 1a + 1b = 29 endpoints). Catalog / product creation / orders need their specs to be published — or seller-portal credentials for discovery-first probing — before they land here.
 
 ## License
 
