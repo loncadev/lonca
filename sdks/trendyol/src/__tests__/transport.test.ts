@@ -32,6 +32,7 @@ function makeTransport(
     apiKey: 'k',
     apiSecret: 's',
     env: 'stage',
+    integratorName: 'TestIntegrator',
     fetch: fetchImpl,
     ...overrides,
   });
@@ -50,8 +51,8 @@ describe('TrendyolTransport', () => {
     expect(headers.Authorization).toMatch(/^Basic /);
     expect(headers['x-clientip']).toBe('127.0.0.1');
     expect(headers['x-correlationid']).toMatch(/^[0-9a-f-]{36}$/);
-    expect(headers['x-agentname']).toBe('SelfIntegration');
-    expect(headers['User-Agent']).toBe('1234 - SelfIntegration');
+    expect(headers['x-agentname']).toBe('TestIntegrator');
+    expect(headers['User-Agent']).toBe('1234 - TestIntegrator');
     expect(headers['Content-Type']).toBe('application/json');
     expect(headers.Accept).toBe('application/json');
   });

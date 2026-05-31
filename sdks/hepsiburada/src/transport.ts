@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import {
   LoncaError,
   NetworkError,
@@ -98,8 +99,9 @@ export class HepsiburadaTransport {
       async (attempt) => {
         if (opts.rateLimiter) await opts.rateLimiter.acquire(opts.signal);
 
+        const correlationId = randomUUID();
         const url = this.buildUrl(opts.service, opts.path, opts.query);
-        const headers = this.buildHeaders();
+        const headers = this.buildHeaders(correlationId);
         const init: RequestInit = {
           method: opts.method,
           headers,
@@ -119,6 +121,7 @@ export class HepsiburadaTransport {
           service: opts.service,
           url,
           attempt,
+          correlationId,
         });
 
         let response: Response;
@@ -148,11 +151,15 @@ export class HepsiburadaTransport {
             status: response.status,
             code: error.code,
             retryable: error.retryable,
+            correlationId,
           });
           throw error;
         }
 
-        this.logger.debug('hepsiburada.response', { status: response.status });
+        this.logger.debug('hepsiburada.response', {
+          status: response.status,
+          correlationId,
+        });
 
         if (response.status === 204) return undefined as T;
         return (await safeJson(response)) as T;
@@ -188,11 +195,15 @@ export class HepsiburadaTransport {
     return url.toString();
   }
 
-  private buildHeaders(): Record<string, string> {
+  private buildHeaders(correlationId: string): Record<string, string> {
     return {
       Authorization: this.authHeader,
       'Content-Type': 'application/json',
       Accept: 'application/json',
+      // Echo the SDK-generated correlation ID. Hepsiburada doesn't currently
+      // surface it back, but sending it makes downstream log correlation work
+      // identically to the `@lonca/trendyol` SDK.
+      'x-correlationid': correlationId,
       // Hepsiburada requires a `User-Agent` on every request and rejects the
       // common `merchantId - integratorName` template with 401/403 on several
       // services (verified against SIT mpop/listings/oms in 2026-05). Use the

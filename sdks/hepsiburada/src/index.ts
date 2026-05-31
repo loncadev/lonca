@@ -3,7 +3,12 @@ export {
   type CreateClientOptions,
   type HepsiburadaClient,
 } from './client.js';
-export { parseHepsiburadaWebhookEvent } from './parse-webhook-event.js';
+export {
+  parseWebhookEvent,
+  /** @deprecated Use `parseWebhookEvent` instead. The legacy name will be
+   * removed in a future minor release. */
+  parseHepsiburadaWebhookEvent,
+} from './parse-webhook-event.js';
 export {
   CLAIM_WEBHOOK_EVENTS,
   HEPSIBURADA_WEBHOOK_EVENTS,
@@ -13,13 +18,7 @@ export {
   type OrderWebhookEvent,
   type ParsedHepsiburadaWebhookEvent,
 } from './types/webhook-event.js';
-export {
-  HepsiburadaTransport,
-  type HepsiburadaEnvironment,
-  type HepsiburadaService,
-  type RequestOptions,
-  type TransportConfig,
-} from './transport.js';
+export { type HepsiburadaEnvironment } from './transport.js';
 export { ListingsResource } from './resources/listings.js';
 export { ShippingResource } from './resources/shipping.js';
 export { ClaimsResource } from './resources/claims.js';
