@@ -236,9 +236,11 @@ describe('CatalogResource — Phase 2b mutations + tracking', () => {
     ['checkProductStatus', '/product/api/products/check-product-status'],
   ] as const)('%s POSTs to %s', async (method, path) => {
     const transport = mockTransport({});
-    await (r(transport) as unknown as Record<string, (body: unknown) => Promise<unknown>>)[method]!({
-      foo: 'bar',
-    });
+    await (r(transport) as unknown as Record<string, (body: unknown) => Promise<unknown>>)[method]!(
+      {
+        foo: 'bar',
+      },
+    );
     expect(transport.request).toHaveBeenCalledWith(
       expect.objectContaining({ method: 'POST', service: 'mpop', path, body: { foo: 'bar' } }),
     );
@@ -346,9 +348,11 @@ describe('SuppliersResource', () => {
     ['createListingUpdateRequest', 'POST', '/suppliers/M-2b/listingUpdateRequests'],
   ] as const)('%s sends %s to %s', async (method, verb, path) => {
     const transport = mockTransport({});
-    await (r(transport) as unknown as Record<string, (body: unknown) => Promise<unknown>>)[method]!({
-      pageNumber: 0,
-    });
+    await (r(transport) as unknown as Record<string, (body: unknown) => Promise<unknown>>)[method]!(
+      {
+        pageNumber: 0,
+      },
+    );
     expect(transport.request).toHaveBeenCalledWith(
       expect.objectContaining({ method: verb, service: 'oms', path, body: { pageNumber: 0 } }),
     );
@@ -482,9 +486,11 @@ describe('PromotionsResource', () => {
     ['cancelDiscount', '/self-campaign/M-2b/cancel-discount'],
   ] as const)('%s POSTs to %s', async (method, path) => {
     const transport = mockTransport({});
-    await (r(transport) as unknown as Record<string, (body: unknown) => Promise<unknown>>)[method]!({
-      foo: 'bar',
-    });
+    await (r(transport) as unknown as Record<string, (body: unknown) => Promise<unknown>>)[method]!(
+      {
+        foo: 'bar',
+      },
+    );
     expect(transport.request).toHaveBeenCalledWith(
       expect.objectContaining({ method: 'POST', service: 'oms', path, body: { foo: 'bar' } }),
     );
