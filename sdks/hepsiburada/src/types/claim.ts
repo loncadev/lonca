@@ -11,10 +11,32 @@
  * envelope + a `raw` escape hatch.
  */
 
+/**
+ * Allowed values for `claims.listByStatus(status)`. The published OpenAPI
+ * spec types this as a string enum:
+ * `NewRequest | Accepted | AwaitingAction | InDispute | Rejected |
+ * Refunded | Cancelled | AwaitingPreApproval`. Trendyol's `Open` / `Closed`
+ * naming does **not** apply — Hepsiburada returns
+ * `400 "Wrong Claim Status"` for any other value.
+ *
+ * Open-ended to allow forward-compatibility if Hepsiburada adds a new
+ * status without an SDK release; explicit literals are intellisense-friendly.
+ */
+export type ClaimStatus =
+  | 'NewRequest'
+  | 'Accepted'
+  | 'AwaitingAction'
+  | 'InDispute'
+  | 'Rejected'
+  | 'Refunded'
+  | 'Cancelled'
+  | 'AwaitingPreApproval'
+  | (string & {});
+
 /** A single claim row surfaced by `claims.list*()`. */
 export interface Claim {
   claimNumber?: string;
-  status?: string;
+  status?: ClaimStatus;
   /** ISO 8601-ish; Hepsiburada returns a server-local string. */
   createdAt?: string;
   /** Untouched raw row — pull full claim fields from here. */

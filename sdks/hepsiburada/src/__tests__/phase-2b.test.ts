@@ -24,8 +24,8 @@ describe('OrdersResource — Phase 2b status-bucketed + actions', () => {
   const r = (t: HepsiburadaTransport) => new OrdersResource(t, fastLimiter());
 
   it.each([
-    ['listCancelled', '/orders/merchantid/M-2b/cancelled'],
-    ['listPaymentAwaiting', '/orders/merchantid/M-2b/paymentawaiting'],
+    ['listCancelled', '/orders/merchantId/M-2b/cancelled'],
+    ['listPaymentAwaiting', '/orders/merchantId/M-2b/paymentawaiting'],
   ] as const)('%s GETs %s', async (method, path) => {
     const transport = mockTransport({
       totalCount: 0,
@@ -43,11 +43,11 @@ describe('OrdersResource — Phase 2b status-bucketed + actions', () => {
   });
 
   it.each([
-    ['listShippedPackages', '/packages/merchantid/M-2b/shipped'],
-    ['listDeliveredPackages', '/packages/merchantid/M-2b/delivered'],
-    ['listUndeliveredPackages', '/packages/merchantid/M-2b/undelivered'],
-    ['listUnpackedPackages', '/packages/merchantid/M-2b/status/unpacked'],
-    ['listMissingInvoicePackages', '/packages/merchantid/M-2b/missing-invoice'],
+    ['listShippedPackages', '/packages/merchantId/M-2b/shipped'],
+    ['listDeliveredPackages', '/packages/merchantId/M-2b/delivered'],
+    ['listUndeliveredPackages', '/packages/merchantId/M-2b/undelivered'],
+    ['listUnpackedPackages', '/packages/merchantId/M-2b/status/unpacked'],
+    ['listMissingInvoicePackages', '/packages/merchantId/M-2b/missing-invoice'],
   ] as const)('%s GETs %s', async (method, path) => {
     const transport = mockTransport({
       totalCount: 0,
@@ -64,14 +64,14 @@ describe('OrdersResource — Phase 2b status-bucketed + actions', () => {
     );
   });
 
-  it('getByOrderNumber GETs /orders/merchantid/{id}/ordernumber/{n}', async () => {
+  it('getByOrderNumber GETs /orders/merchantId/{id}/ordernumber/{n}', async () => {
     const transport = mockTransport({ orderNumber: 'HBO-1', status: 'Open' });
     const order = await r(transport).getByOrderNumber('HBO-1');
     expect(transport.request).toHaveBeenCalledWith(
       expect.objectContaining({
         method: 'GET',
         service: 'oms',
-        path: '/orders/merchantid/M-2b/ordernumber/HBO-1',
+        path: '/orders/merchantId/M-2b/ordernumber/HBO-1',
       }),
     );
     expect(order.orderNumber).toBe('HBO-1');
@@ -81,13 +81,13 @@ describe('OrdersResource — Phase 2b status-bucketed + actions', () => {
     const t1 = mockTransport({ packageNumber: 'HBP-1', status: 'Open' });
     await r(t1).getPackage('HBP-1');
     expect((t1.request as ReturnType<typeof vi.fn>).mock.calls[0]![0].path).toBe(
-      '/packages/merchantid/M-2b/packagenumber/HBP-1',
+      '/packages/merchantId/M-2b/packagenumber/HBP-1',
     );
 
     const t2 = mockTransport({ url: 'https://hb.example/label.pdf', format: 'PDF' });
     const label = await r(t2).getPackageLabel('HBP-1');
     expect((t2.request as ReturnType<typeof vi.fn>).mock.calls[0]![0].path).toBe(
-      '/packages/merchantid/M-2b/packagenumber/HBP-1/labels',
+      '/packages/merchantId/M-2b/packagenumber/HBP-1/labels',
     );
     expect(label.url).toBe('https://hb.example/label.pdf');
     expect(label.format).toBe('PDF');
@@ -106,7 +106,7 @@ describe('OrdersResource — Phase 2b status-bucketed + actions', () => {
       expect.objectContaining({
         method: 'POST',
         service: 'oms',
-        path: `/packages/merchantid/M-2b/packagenumber/HBP-1/${action}`,
+        path: `/packages/merchantId/M-2b/packagenumber/HBP-1/${action}`,
         body: { reason: 'demo' },
       }),
     );
@@ -126,30 +126,30 @@ describe('OrdersResource — Phase 2b status-bucketed + actions', () => {
     ).rejects.toThrow(ValidationError);
   });
 
-  it('createPackages POSTs body to /packages/merchantid/{id}', async () => {
+  it('createPackages POSTs body to /packages/merchantId/{id}', async () => {
     const transport = mockTransport({ packageNumber: 'HBP-2' });
     await r(transport).createPackages({ lineItems: ['L1', 'L2'] });
     expect(transport.request).toHaveBeenCalledWith(
       expect.objectContaining({
         method: 'POST',
         service: 'oms',
-        path: '/packages/merchantid/M-2b',
+        path: '/packages/merchantId/M-2b',
         body: { lineItems: ['L1', 'L2'] },
       }),
     );
   });
 
   it.each([
-    ['splitPackage', 'POST', '/packages/merchantid/M-2b/packagenumber/HBP-1/split'],
-    ['unpackPackage', 'POST', '/packages/merchantid/M-2b/packagenumber/HBP-1/unpack'],
+    ['splitPackage', 'POST', '/packages/merchantId/M-2b/packagenumber/HBP-1/split'],
+    ['unpackPackage', 'POST', '/packages/merchantId/M-2b/packagenumber/HBP-1/unpack'],
     [
       'updatePackageCargoCompany',
       'PUT',
-      '/packages/merchantid/M-2b/packagenumber/HBP-1/changecargocompany',
+      '/packages/merchantId/M-2b/packagenumber/HBP-1/changecargocompany',
     ],
-    ['sendInvoiceLink', 'PUT', '/packages/merchantid/M-2b/packagenumber/HBP-1/invoice'],
-    ['updateParcelInfo', 'PUT', '/packages/merchantid/M-2b/packagenumber/HBP-1/parcel-info'],
-    ['updatePackageWarehouse', 'PUT', '/packages/merchantid/M-2b/packagenumber/HBP-1/warehouse'],
+    ['sendInvoiceLink', 'PUT', '/packages/merchantId/M-2b/packagenumber/HBP-1/invoice'],
+    ['updateParcelInfo', 'PUT', '/packages/merchantId/M-2b/packagenumber/HBP-1/parcel-info'],
+    ['updatePackageWarehouse', 'PUT', '/packages/merchantId/M-2b/packagenumber/HBP-1/warehouse'],
   ] as const)('%s sends %s to %s', async (method, verb, path) => {
     const transport = mockTransport();
     await (
@@ -161,9 +161,9 @@ describe('OrdersResource — Phase 2b status-bucketed + actions', () => {
   });
 
   it.each([
-    ['cancelLineItem', 'POST', '/lineitems/merchantid/M-2b/id/L1/cancelbymerchant'],
-    ['updateLineItemCargoCompany', 'PUT', '/lineitems/merchantid/M-2b/orderlineid/L1/cargocompany'],
-    ['updateLineItemLaborCost', 'PUT', '/lineitems/merchantid/M-2b/orderlineid/L1/laborcost'],
+    ['cancelLineItem', 'POST', '/lineitems/merchantId/M-2b/id/L1/cancelbymerchant'],
+    ['updateLineItemCargoCompany', 'PUT', '/lineitems/merchantId/M-2b/orderlineid/L1/cargocompany'],
+    ['updateLineItemLaborCost', 'PUT', '/lineitems/merchantId/M-2b/orderlineid/L1/laborcost'],
   ] as const)('%s sends %s to %s', async (method, verb, path) => {
     const transport = mockTransport();
     await (
@@ -178,7 +178,7 @@ describe('OrdersResource — Phase 2b status-bucketed + actions', () => {
     const transport = mockTransport([{ code: 'ARAS', name: 'Aras' }]);
     const out = await r(transport).getChangeableCargoCompaniesForLineItem('L1');
     expect((transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0].path).toBe(
-      '/delivery/changeablecargocompanies/merchantid/M-2b/orderlineid/L1',
+      '/delivery/changeablecargocompanies/merchantId/M-2b/orderlineid/L1',
     );
     expect(out[0]).toMatchObject({ code: 'ARAS', name: 'Aras' });
   });
@@ -187,12 +187,12 @@ describe('OrdersResource — Phase 2b status-bucketed + actions', () => {
     const t1 = mockTransport([]);
     await r(t1).getChangeableCargoCompaniesForPackage('HBP-1');
     expect((t1.request as ReturnType<typeof vi.fn>).mock.calls[0]![0].path).toBe(
-      '/packages/merchantid/M-2b/packagenumber/HBP-1/changablecargocompanies',
+      '/packages/merchantId/M-2b/packagenumber/HBP-1/changablecargocompanies',
     );
     const t2 = mockTransport([]);
     await r(t2).getPackageableLineItems('L1');
     expect((t2.request as ReturnType<typeof vi.fn>).mock.calls[0]![0].path).toBe(
-      '/lineitems/merchantid/M-2b/packageablewith/lineitemid/L1',
+      '/lineitems/merchantId/M-2b/packageablewith/lineitemid/L1',
     );
   });
 });
@@ -381,7 +381,7 @@ describe('SuppliersResource', () => {
 describe('AccountingResource', () => {
   const r = (t: HepsiburadaTransport) => new AccountingResource(t, fastLimiter());
 
-  it('listTransactions GETs /transactions/merchantid/{id} on oms', async () => {
+  it('listTransactions GETs /transactions/merchantId/{id} on oms', async () => {
     const transport = mockTransport([{ transactionId: 'T-1', amount: 99.9, currency: 'TRY' }]);
     const rows = await r(transport).listTransactions({
       beginDate: '2026-01-01',
@@ -390,7 +390,7 @@ describe('AccountingResource', () => {
     const call = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0];
     expect(call.method).toBe('GET');
     expect(call.service).toBe('oms');
-    expect(call.path).toBe('/transactions/merchantid/M-2b');
+    expect(call.path).toBe('/transactions/merchantId/M-2b');
     expect(call.query).toMatchObject({ beginDate: '2026-01-01', endDate: '2026-02-01' });
     expect(rows[0]).toMatchObject({ transactionId: 'T-1', amount: 99.9, currency: 'TRY' });
   });

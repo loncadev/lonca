@@ -48,6 +48,7 @@ export type { CargoFirm, ShippingProfile, ShippingProfileInput } from './types/s
 export type {
   Claim,
   ClaimActionInput,
+  ClaimStatus,
   CreateClaimInput,
   ListClaimsByStatusParams,
   ListClaimsParams,

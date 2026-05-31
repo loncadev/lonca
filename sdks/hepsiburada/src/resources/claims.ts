@@ -3,6 +3,7 @@ import type { HepsiburadaTransport } from '../transport.js';
 import type {
   Claim,
   ClaimActionInput,
+  ClaimStatus,
   CreateClaimInput,
   ListClaimsByStatusParams,
   ListClaimsParams,
@@ -83,13 +84,16 @@ export class ClaimsResource {
   }
 
   /**
-   * List claims filtered to a specific status (e.g. `'Open'`,
-   * `'AwaitingAction'`, …). See the Hepsiburada portal for the current
-   * status vocabulary.
+   * List claims filtered to a specific status.
+   *
+   * Allowed values (per the published OpenAPI spec, verified live):
+   * `NewRequest | Accepted | AwaitingAction | InDispute | Rejected |
+   * Refunded | Cancelled | AwaitingPreApproval`. Any other value returns
+   * `400 "Wrong Claim Status"` from Hepsiburada.
    *
    * @throws {ValidationError} when `status` is empty.
    */
-  async listByStatus(status: string, params: ListClaimsByStatusParams = {}): Promise<Claim[]> {
+  async listByStatus(status: ClaimStatus, params: ListClaimsByStatusParams = {}): Promise<Claim[]> {
     if (!status || typeof status !== 'string') {
       throw new ValidationError({ message: 'claims.listByStatus: status is required' });
     }
@@ -163,8 +167,7 @@ export class ClaimsResource {
 
   /**
    * Create a new claim against an order. Routes to the `claim-stub`
-   * backend service (lowercase `merchantid` segment matches Hepsiburada's
-   * documented path).
+   * backend service.
    */
   async create(input: CreateClaimInput): Promise<unknown> {
     if (!input || typeof input !== 'object') {

@@ -129,16 +129,17 @@ describe('ListingsResource.getBuyboxOrder', () => {
     expect(rows[0]!.raw).toBeDefined();
   });
 
-  it('omits skuList query when absent', async () => {
+  it('throws ValidationError when skuList is empty/missing', async () => {
     const transport = mockTransport([]);
-    await r(transport).getBuyboxOrder();
-    const call = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0];
-    expect(call.query).toBeUndefined();
+    await expect(r(transport).getBuyboxOrder('')).rejects.toThrow(/skuList is required/);
+    await expect(r(transport).getBuyboxOrder(undefined as unknown as string)).rejects.toThrow(
+      /skuList is required/,
+    );
   });
 
   it('also unwraps { items: [...] } envelope defensively', async () => {
     const transport = mockTransport({ items: [{ buyboxOrder: 2 }] });
-    const rows = await r(transport).getBuyboxOrder();
+    const rows = await r(transport).getBuyboxOrder('HB-1');
     expect(rows).toHaveLength(1);
     expect(rows[0]!.buyboxOrder).toBe(2);
   });
