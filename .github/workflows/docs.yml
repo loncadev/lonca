@@ -34,6 +34,12 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Build packages
+        # TypeDoc resolves workspace imports through each package's "types"
+        # field, which points at dist/index.d.ts — so we need to build
+        # first or @lonca/core won't resolve from sdk packages.
+        run: pnpm build
+
       - name: Generate API reference
         run: pnpm docs:build
 
