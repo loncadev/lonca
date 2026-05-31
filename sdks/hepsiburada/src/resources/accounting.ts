@@ -11,7 +11,7 @@ const SERVICE = 'oms' as const;
  *
  * One unique endpoint here — the per-record transactions feed. The
  * "Performans Servisi" endpoint Hepsiburada documents under this product
- * is the same `/orders/merchantid/{id}` already covered by `orders.list()`.
+ * is the same `/orders/merchantId/{id}` already covered by `orders.list()`.
  *
  * NOTE: Sandbox `beekod_dev` merchant doesn't have permission for this
  * surface; SIT calls return `404` (no transactions). Endpoint typed from
@@ -37,7 +37,7 @@ export class AccountingResource {
     const data = await this.transport.request<unknown>({
       method: 'GET',
       service: SERVICE,
-      path: `/transactions/merchantid/${encodeURIComponent(this.transport.merchantId)}`,
+      path: `/transactions/merchantId/${encodeURIComponent(this.transport.merchantId)}`,
       query: {
         beginDate: params.beginDate,
         endDate: params.endDate,

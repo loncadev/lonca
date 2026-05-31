@@ -4,9 +4,9 @@
 
 Type-safe TypeScript SDK for the [Hepsiburada Marketplace API](https://developers.hepsiburada.com).
 
-> **`0.4.0` — Phase 2b: full dev-portal coverage.** Every operation documented on [developers.hepsiburada.com](https://developers.hepsiburada.com) — across 13 API products — is now typed and shipped. **95 methods across 12 resources.**
+> **`0.5.0` — Phase 2c: ergonomics + strict types.** Three targeted hardening fixes after live-SIT verification of every read endpoint, no behavior regressions: `listings.getBuyboxOrder` / `getCommissions` now require `skuList` (live API rejects empty); `claims.listByStatus` accepts a strict `ClaimStatus` union (`NewRequest|Accepted|AwaitingAction|InDispute|Rejected|Refunded|Cancelled|AwaitingPreApproval`); `orders` + `claims` + `accounting` path segments use the spec-aligned `merchantId` casing (listings stays `merchantid` — that host is case-sensitive and rejects the camelCase variant with 400).
 >
-> Discovery method: the dev portal SPA exposes a hidden `/api/v1/public/docs/{co}/{slug}/{ver}/operations[/{opId}]` API that returns full OpenAPI-shape detail for every operation (method, path, parameters, requestBody, responses) even when the product's `versions` endpoint reports as empty. Phase 2b enumerated all 67 doc-only operations and merged them with the 29 spec-backed + 5 Phase 2a discovery-first endpoints.
+> Still **95 methods across 12 resources** — Phase 2c tightens contracts; doesn't add or remove surface.
 
 ## Coverage
 

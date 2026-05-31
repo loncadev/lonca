@@ -18,7 +18,7 @@ const fastLimiter = () => new TokenBucketRateLimiter({ capacity: 1000, intervalM
 describe('OrdersResource', () => {
   const r = (t: HepsiburadaTransport) => new OrdersResource(t, fastLimiter());
 
-  it('list GETs /orders/merchantid/{id} on oms service', async () => {
+  it('list GETs /orders/merchantId/{id} on oms service', async () => {
     const transport = mockTransport({
       totalCount: 2,
       limit: 100,
@@ -34,7 +34,7 @@ describe('OrdersResource', () => {
       expect.objectContaining({
         method: 'GET',
         service: 'oms',
-        path: '/orders/merchantid/M-2a',
+        path: '/orders/merchantId/M-2a',
         query: expect.objectContaining({ status: 'Open', limit: 100, offset: 0 }),
       }),
     );
@@ -61,7 +61,7 @@ describe('OrdersResource', () => {
     });
   });
 
-  it('listPackages GETs /packages/merchantid/{id} and unwraps raw array', async () => {
+  it('listPackages GETs /packages/merchantId/{id} and unwraps raw array', async () => {
     const transport = mockTransport([
       { packageNumber: 'HBP-1', orderNumber: 'HBO-1', status: 'Open', cargoCompany: 'ARAS' },
     ]);
@@ -70,7 +70,7 @@ describe('OrdersResource', () => {
       expect.objectContaining({
         method: 'GET',
         service: 'oms',
-        path: '/packages/merchantid/M-2a',
+        path: '/packages/merchantId/M-2a',
       }),
     );
     expect(pkgs[0]).toMatchObject({

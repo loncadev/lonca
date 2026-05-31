@@ -189,14 +189,25 @@ export class ListingsResource {
 
   /**
    * Buybox-rank info for one or more SKUs. Pass a comma-separated string
-   * via `skuList`; Hepsiburada accepts both Hepsiburada SKUs and merchant SKUs.
+   * via `skuList` — Hepsiburada accepts both Hepsiburada SKUs and merchant
+   * SKUs. **Required** despite what the published OpenAPI spec suggests:
+   * the live API rejects empty/missing `skuList` with `400 "skuList cannot
+   * be empty"`. The SDK validates client-side so the bad request never
+   * leaves the process.
+   *
+   * @throws {ValidationError} when `skuList` is empty / not a string.
    */
-  async getBuyboxOrder(skuList?: string): Promise<BuyboxOrderRow[]> {
+  async getBuyboxOrder(skuList: string): Promise<BuyboxOrderRow[]> {
+    if (typeof skuList !== 'string' || skuList.trim() === '') {
+      throw new ValidationError({
+        message: 'listings.getBuyboxOrder: skuList is required (non-empty)',
+      });
+    }
     const data = await this.transport.request<unknown>({
       method: 'GET',
       service: SERVICE,
       path: `/buybox-orders/merchantid/${encodeURIComponent(this.transport.merchantId)}`,
-      query: skuList ? { skuList } : undefined,
+      query: { skuList },
       rateLimiter: this.limiter,
     });
     const rows = Array.isArray(data)
@@ -215,13 +226,25 @@ export class ListingsResource {
     });
   }
 
-  /** Commission rates for one or more SKUs (`skuList` as CSV). */
-  async getCommissions(skuList?: string): Promise<CommissionRow[]> {
+  /**
+   * Commission rates for one or more SKUs (`skuList` as CSV).
+   *
+   * **Required** despite what the published OpenAPI spec suggests: the live
+   * API rejects empty/missing `skuList` with `400 "skuList cannot be empty"`.
+   *
+   * @throws {ValidationError} when `skuList` is empty / not a string.
+   */
+  async getCommissions(skuList: string): Promise<CommissionRow[]> {
+    if (typeof skuList !== 'string' || skuList.trim() === '') {
+      throw new ValidationError({
+        message: 'listings.getCommissions: skuList is required (non-empty)',
+      });
+    }
     const data = await this.transport.request<unknown>({
       method: 'GET',
       service: SERVICE,
       path: `/commissions/merchantid/${encodeURIComponent(this.transport.merchantId)}`,
-      query: skuList ? { skuList } : undefined,
+      query: { skuList },
       rateLimiter: this.limiter,
     });
     const rows = Array.isArray(data)

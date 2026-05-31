@@ -49,18 +49,18 @@ export class OrdersResource {
 
   /** List orders whose payment is complete (status: order received). */
   async list(params: ListOrdersParams = {}): Promise<OrdersPage> {
-    return this.getOrdersPage(`/orders/merchantid/${this.merchantSegment()}`, params);
+    return this.getOrdersPage(`/orders/merchantId/${this.merchantSegment()}`, params);
   }
 
   /** List cancelled orders. */
   async listCancelled(params: ListOrdersParams = {}): Promise<OrdersPage> {
-    return this.getOrdersPage(`/orders/merchantid/${this.merchantSegment()}/cancelled`, params);
+    return this.getOrdersPage(`/orders/merchantId/${this.merchantSegment()}/cancelled`, params);
   }
 
   /** List orders awaiting payment. */
   async listPaymentAwaiting(params: ListOrdersParams = {}): Promise<OrdersPage> {
     return this.getOrdersPage(
-      `/orders/merchantid/${this.merchantSegment()}/paymentawaiting`,
+      `/orders/merchantId/${this.merchantSegment()}/paymentawaiting`,
       params,
     );
   }
@@ -77,7 +77,7 @@ export class OrdersResource {
     const data = await this.transport.request<unknown>({
       method: 'GET',
       service: SERVICE,
-      path: `/orders/merchantid/${this.merchantSegment()}/ordernumber/${encodeURIComponent(orderNumber)}`,
+      path: `/orders/merchantId/${this.merchantSegment()}/ordernumber/${encodeURIComponent(orderNumber)}`,
       rateLimiter: this.limiter,
     });
     return normalizeOrder(data);
@@ -90,19 +90,19 @@ export class OrdersResource {
    * `totalCount` envelope on this specific endpoint).
    */
   async listPackages(params: ListPackagesParams = {}): Promise<ShippingPackage[]> {
-    return this.getPackagesArray(`/packages/merchantid/${this.merchantSegment()}`, params);
+    return this.getPackagesArray(`/packages/merchantId/${this.merchantSegment()}`, params);
   }
 
   /** List packages already shipped (cargo handover complete). */
   async listShippedPackages(params: ListPackagesParams = {}): Promise<OrdersPage<ShippingPackage>> {
-    return this.getPackagesPage(`/packages/merchantid/${this.merchantSegment()}/shipped`, params);
+    return this.getPackagesPage(`/packages/merchantId/${this.merchantSegment()}/shipped`, params);
   }
 
   /** List packages already delivered to the buyer. */
   async listDeliveredPackages(
     params: ListPackagesParams = {},
   ): Promise<OrdersPage<ShippingPackage>> {
-    return this.getPackagesPage(`/packages/merchantid/${this.merchantSegment()}/delivered`, params);
+    return this.getPackagesPage(`/packages/merchantId/${this.merchantSegment()}/delivered`, params);
   }
 
   /** List packages that failed delivery. */
@@ -110,7 +110,7 @@ export class OrdersResource {
     params: ListPackagesParams = {},
   ): Promise<OrdersPage<ShippingPackage>> {
     return this.getPackagesPage(
-      `/packages/merchantid/${this.merchantSegment()}/undelivered`,
+      `/packages/merchantId/${this.merchantSegment()}/undelivered`,
       params,
     );
   }
@@ -120,7 +120,7 @@ export class OrdersResource {
     params: ListPackagesParams = {},
   ): Promise<OrdersPage<ShippingPackage>> {
     return this.getPackagesPage(
-      `/packages/merchantid/${this.merchantSegment()}/status/unpacked`,
+      `/packages/merchantId/${this.merchantSegment()}/status/unpacked`,
       params,
     );
   }
@@ -130,7 +130,7 @@ export class OrdersResource {
     params: ListPackagesParams = {},
   ): Promise<OrdersPage<ShippingPackage>> {
     return this.getPackagesPage(
-      `/packages/merchantid/${this.merchantSegment()}/missing-invoice`,
+      `/packages/merchantId/${this.merchantSegment()}/missing-invoice`,
       params,
     );
   }
@@ -147,7 +147,7 @@ export class OrdersResource {
     const data = await this.transport.request<unknown>({
       method: 'GET',
       service: SERVICE,
-      path: `/packages/merchantid/${this.merchantSegment()}/packagenumber/${encodeURIComponent(packageNumber)}`,
+      path: `/packages/merchantId/${this.merchantSegment()}/packagenumber/${encodeURIComponent(packageNumber)}`,
       rateLimiter: this.limiter,
     });
     return normalizePackage(data);
@@ -165,7 +165,7 @@ export class OrdersResource {
     const data = await this.transport.request<unknown>({
       method: 'GET',
       service: SERVICE,
-      path: `/packages/merchantid/${this.merchantSegment()}/packagenumber/${encodeURIComponent(packageNumber)}/labels`,
+      path: `/packages/merchantId/${this.merchantSegment()}/packagenumber/${encodeURIComponent(packageNumber)}/labels`,
       rateLimiter: this.limiter,
     });
     const obj = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>;
@@ -192,7 +192,7 @@ export class OrdersResource {
     const data = await this.transport.request<unknown>({
       method: 'GET',
       service: SERVICE,
-      path: `/delivery/changeablecargocompanies/merchantid/${this.merchantSegment()}/orderlineid/${encodeURIComponent(orderLineId)}`,
+      path: `/delivery/changeablecargocompanies/merchantId/${this.merchantSegment()}/orderlineid/${encodeURIComponent(orderLineId)}`,
       rateLimiter: this.limiter,
     });
     return normalizeCargoCompanyOptions(data);
@@ -214,7 +214,7 @@ export class OrdersResource {
     const data = await this.transport.request<unknown>({
       method: 'GET',
       service: SERVICE,
-      path: `/packages/merchantid/${this.merchantSegment()}/packagenumber/${encodeURIComponent(packageNumber)}/changablecargocompanies`,
+      path: `/packages/merchantId/${this.merchantSegment()}/packagenumber/${encodeURIComponent(packageNumber)}/changablecargocompanies`,
       rateLimiter: this.limiter,
     });
     return normalizeCargoCompanyOptions(data);
@@ -236,7 +236,7 @@ export class OrdersResource {
     const data = await this.transport.request<unknown>({
       method: 'GET',
       service: SERVICE,
-      path: `/lineitems/merchantid/${this.merchantSegment()}/packageablewith/lineitemid/${encodeURIComponent(lineItemId)}`,
+      path: `/lineitems/merchantId/${this.merchantSegment()}/packageablewith/lineitemid/${encodeURIComponent(lineItemId)}`,
       rateLimiter: this.limiter,
     });
     return Array.isArray(data) ? data : [];
@@ -254,7 +254,7 @@ export class OrdersResource {
     return this.transport.request<unknown>({
       method: 'POST',
       service: SERVICE,
-      path: `/packages/merchantid/${this.merchantSegment()}`,
+      path: `/packages/merchantId/${this.merchantSegment()}`,
       body: input,
       rateLimiter: this.limiter,
     });
@@ -269,7 +269,7 @@ export class OrdersResource {
     return this.transport.request<unknown>({
       method: 'POST',
       service: SERVICE,
-      path: `/packages/merchantid/${this.merchantSegment()}/packagenumber/${encodeURIComponent(packageNumber)}/split`,
+      path: `/packages/merchantId/${this.merchantSegment()}/packagenumber/${encodeURIComponent(packageNumber)}/split`,
       body: input,
       rateLimiter: this.limiter,
     });
@@ -286,7 +286,7 @@ export class OrdersResource {
     return this.transport.request<unknown>({
       method: 'POST',
       service: SERVICE,
-      path: `/packages/merchantid/${this.merchantSegment()}/packagenumber/${encodeURIComponent(packageNumber)}/unpack`,
+      path: `/packages/merchantId/${this.merchantSegment()}/packagenumber/${encodeURIComponent(packageNumber)}/unpack`,
       body: input,
       rateLimiter: this.limiter,
     });
@@ -329,7 +329,7 @@ export class OrdersResource {
     return this.transport.request<unknown>({
       method: 'POST',
       service: SERVICE,
-      path: `/lineitems/merchantid/${this.merchantSegment()}/id/${encodeURIComponent(lineId)}/cancelbymerchant`,
+      path: `/lineitems/merchantId/${this.merchantSegment()}/id/${encodeURIComponent(lineId)}/cancelbymerchant`,
       body: input,
       rateLimiter: this.limiter,
     });
@@ -349,7 +349,7 @@ export class OrdersResource {
     return this.transport.request<unknown>({
       method: 'PUT',
       service: SERVICE,
-      path: `/lineitems/merchantid/${this.merchantSegment()}/orderlineid/${encodeURIComponent(orderLineId)}/cargocompany`,
+      path: `/lineitems/merchantId/${this.merchantSegment()}/orderlineid/${encodeURIComponent(orderLineId)}/cargocompany`,
       body: input,
       rateLimiter: this.limiter,
     });
@@ -366,7 +366,7 @@ export class OrdersResource {
     return this.transport.request<unknown>({
       method: 'PUT',
       service: SERVICE,
-      path: `/lineitems/merchantid/${this.merchantSegment()}/orderlineid/${encodeURIComponent(orderLineId)}/laborcost`,
+      path: `/lineitems/merchantId/${this.merchantSegment()}/orderlineid/${encodeURIComponent(orderLineId)}/laborcost`,
       body: input,
       rateLimiter: this.limiter,
     });
@@ -388,7 +388,7 @@ export class OrdersResource {
     return this.transport.request<unknown>({
       method: 'PUT',
       service: SERVICE,
-      path: `/packages/merchantid/${this.merchantSegment()}/packagenumber/${encodeURIComponent(packageNumber)}/changecargocompany`,
+      path: `/packages/merchantId/${this.merchantSegment()}/packagenumber/${encodeURIComponent(packageNumber)}/changecargocompany`,
       body: input,
       rateLimiter: this.limiter,
     });
@@ -403,7 +403,7 @@ export class OrdersResource {
     return this.transport.request<unknown>({
       method: 'PUT',
       service: SERVICE,
-      path: `/packages/merchantid/${this.merchantSegment()}/packagenumber/${encodeURIComponent(packageNumber)}/invoice`,
+      path: `/packages/merchantId/${this.merchantSegment()}/packagenumber/${encodeURIComponent(packageNumber)}/invoice`,
       body: input,
       rateLimiter: this.limiter,
     });
@@ -418,7 +418,7 @@ export class OrdersResource {
     return this.transport.request<unknown>({
       method: 'PUT',
       service: SERVICE,
-      path: `/packages/merchantid/${this.merchantSegment()}/packagenumber/${encodeURIComponent(packageNumber)}/parcel-info`,
+      path: `/packages/merchantId/${this.merchantSegment()}/packagenumber/${encodeURIComponent(packageNumber)}/parcel-info`,
       body: input,
       rateLimiter: this.limiter,
     });
@@ -435,7 +435,7 @@ export class OrdersResource {
     return this.transport.request<unknown>({
       method: 'PUT',
       service: SERVICE,
-      path: `/packages/merchantid/${this.merchantSegment()}/packagenumber/${encodeURIComponent(packageNumber)}/warehouse`,
+      path: `/packages/merchantId/${this.merchantSegment()}/packagenumber/${encodeURIComponent(packageNumber)}/warehouse`,
       body: input,
       rateLimiter: this.limiter,
     });
@@ -511,7 +511,7 @@ export class OrdersResource {
     return this.transport.request<unknown>({
       method: 'POST',
       service: SERVICE,
-      path: `/packages/merchantid/${this.merchantSegment()}/packagenumber/${encodeURIComponent(packageNumber)}/${action}`,
+      path: `/packages/merchantId/${this.merchantSegment()}/packagenumber/${encodeURIComponent(packageNumber)}/${action}`,
       body: input,
       rateLimiter: this.limiter,
     });
