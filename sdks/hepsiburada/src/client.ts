@@ -1,6 +1,9 @@
 import type { Logger } from '@lonca/core';
+import { CatalogResource } from './resources/catalog.js';
+import { CategoriesResource } from './resources/categories.js';
 import { ClaimsResource } from './resources/claims.js';
 import { ListingsResource } from './resources/listings.js';
+import { OrdersResource } from './resources/orders.js';
 import { ShippingResource } from './resources/shipping.js';
 import { TestOrdersResource } from './resources/test-orders.js';
 import { HepsiburadaTransport, type HepsiburadaEnvironment } from './transport.js';
@@ -30,6 +33,9 @@ export interface HepsiburadaClient {
   shipping: ShippingResource;
   claims: ClaimsResource;
   testOrders: TestOrdersResource;
+  orders: OrdersResource;
+  categories: CategoriesResource;
+  catalog: CatalogResource;
 }
 
 /**
@@ -66,5 +72,8 @@ export function createHepsiburadaClient(opts: CreateClientOptions): HepsiburadaC
     shipping: new ShippingResource(transport),
     claims: new ClaimsResource(transport),
     testOrders: new TestOrdersResource(transport),
+    orders: new OrdersResource(transport),
+    categories: new CategoriesResource(transport),
+    catalog: new CatalogResource(transport),
   };
 }

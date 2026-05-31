@@ -14,6 +14,9 @@ export { ListingsResource } from './resources/listings.js';
 export { ShippingResource } from './resources/shipping.js';
 export { ClaimsResource } from './resources/claims.js';
 export { TestOrdersResource, type CreateTestOrderInput } from './resources/test-orders.js';
+export { OrdersResource } from './resources/orders.js';
+export { CategoriesResource } from './resources/categories.js';
+export { CatalogResource } from './resources/catalog.js';
 export type {
   AdditionalInfoUploadItem,
   BulkUnlockInput,
@@ -44,3 +47,22 @@ export type {
   ListClaimsByStatusParams,
   ListClaimsParams,
 } from './types/claim.js';
+export type {
+  ListOrdersParams,
+  ListPackagesParams,
+  Order,
+  OrdersPage,
+  ShippingPackage,
+} from './types/order.js';
+export type {
+  CatalogPage,
+  CatalogResult,
+  Category,
+  CategoryAttribute,
+  ListCategoriesParams,
+} from './types/category.js';
+export type {
+  CatalogField,
+  CatalogProduct,
+  ListCatalogProductsParams,
+} from './types/catalog-product.js';
