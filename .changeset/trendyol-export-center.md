@@ -2,7 +2,7 @@
 '@lonca/trendyol': minor
 ---
 
-feat(trendyol): Export Center (İhracat Merkezi / AutoFT) — 12 endpoints, new `exportCenter` resource
+feat(trendyol): Export Center + Videos + finance path correction (15 total endpoints across audit)
 
 Adds full coverage of Trendyol's Export Center program — Türkiye-based
 sellers shipping to Trendyol's international platforms. The Export Center
@@ -38,11 +38,24 @@ flagged for August 2026) is N/A — Trendyol's V2 docs reuse the V1 paths,
 and the SDK already emits the V2 response shape (`nextPageToken`
 pagination, content-based variants).
 
+New `videos` resource (2 methods) — Trendyol's `seller-integration-video-api`:
+
+- `create({ contentId, url, ... })` — `POST /integration/video/sellers/{id}/videos` (200 req/min)
+- `list({ id?, sellerIntegrationStatus?, offset?, limit? })` — `GET …/videos` (1000 req/min)
+
+Two separate token buckets so list polling doesn't starve the create budget.
+
+Finance path correction — `finance.getSettlements` and `getOtherFinancials`
+now hit `/integration/finance/che/sellers/…` per the **Cari Hesap Ekstresi
+Entegrasyonu** docs. The previous shorter path `/integration/sellers/…`
+was an older spec; the documented (current) path is the `/finance/che/`
+form. Wire shape unchanged.
+
 Body / response shapes are typed loosely (`Record<string, unknown>` per
 the developer-portal HTML-table docs) with `raw` accessors on every row
 for forward-compat field access. Per-endpoint limits and constraints are
 documented in JSDoc.
 
 Verification:
-- 283 mock tests pass (26 new in `export-center.test.ts`)
+- 288 mock tests pass (26 new in `export-center.test.ts`, 5 new in `videos.test.ts`)
 - typecheck + ESM/CJS/DTS build green

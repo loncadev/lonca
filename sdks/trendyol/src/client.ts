@@ -13,6 +13,7 @@ import { ProductsResource } from './resources/products.js';
 import { QuestionsResource } from './resources/questions.js';
 import { SuppliersResource } from './resources/suppliers.js';
 import { TestOrdersResource } from './resources/test-orders.js';
+import { VideosResource } from './resources/videos.js';
 import { WebhooksResource } from './resources/webhooks.js';
 import { TrendyolTransport, type TrendyolEnvironment } from './transport.js';
 
@@ -60,6 +61,7 @@ export interface TrendyolClient {
   testOrders: TestOrdersResource;
   locations: LocationsResource;
   exportCenter: ExportCenterResource;
+  videos: VideosResource;
 }
 
 /**
@@ -107,5 +109,6 @@ export function createTrendyolClient(opts: CreateClientOptions): TrendyolClient 
     testOrders: new TestOrdersResource(transport),
     locations: new LocationsResource(transport),
     exportCenter: new ExportCenterResource(transport),
+    videos: new VideosResource(transport),
   };
 }

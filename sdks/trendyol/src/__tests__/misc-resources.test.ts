@@ -96,7 +96,7 @@ describe('FinanceResource', () => {
     expect(transport.request).toHaveBeenCalledWith(
       expect.objectContaining({
         method: 'GET',
-        path: '/integration/sellers/42/settlements',
+        path: '/integration/finance/che/sellers/42/settlements',
         query: { page: 0, size: 50 },
       }),
     );

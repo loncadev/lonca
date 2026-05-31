@@ -24,6 +24,7 @@ export {
 export { QuestionsResource } from './resources/questions.js';
 export { TestOrdersResource } from './resources/test-orders.js';
 export { SuppliersResource, type SuppliersResourceOptions } from './resources/suppliers.js';
+export { VideosResource } from './resources/videos.js';
 export { WebhooksResource } from './resources/webhooks.js';
 export type { Brand } from './types/brand.js';
 export type {
@@ -52,6 +53,12 @@ export type {
   ProductComposition,
   ProductOrigin,
 } from './types/export-center.js';
+export type {
+  CreateVideoInput,
+  ListVideosParams,
+  SellerIntegrationStatus,
+  SellerVideo,
+} from './types/video.js';
 export type {
   CancelPackageItemInput,
   CargoInvoiceItem,
