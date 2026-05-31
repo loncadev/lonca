@@ -1,0 +1,223 @@
+import { describe, expect, it, vi } from 'vitest';
+import { TokenBucketRateLimiter } from '@lonca/core';
+import { ClaimsResource } from '../resources/claims.js';
+import { ShippingResource } from '../resources/shipping.js';
+import { TestOrdersResource } from '../resources/test-orders.js';
+import type { HepsiburadaTransport } from '../transport.js';
+
+function mockTransport(response: unknown = undefined, merchantId = 'M-42') {
+  return {
+    merchantId,
+    request: vi.fn().mockResolvedValue(response),
+  } as unknown as HepsiburadaTransport;
+}
+const fastLimiter = () => new TokenBucketRateLimiter({ capacity: 1000, intervalMs: 1 });
+
+// ─── Shipping ────────────────────────────────────────────────────────────
+
+describe('ShippingResource', () => {
+  const r = (t: HepsiburadaTransport) => new ShippingResource(t, fastLimiter());
+
+  it('getCargoFirms GETs /cargoFirms/{merchantId} on shipping service', async () => {
+    const transport = mockTransport([{ id: 1, name: 'Aras', code: 'ARAS' }]);
+    const firms = await r(transport).getCargoFirms();
+    expect(transport.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: 'GET',
+        service: 'shipping',
+        path: '/cargoFirms/M-42',
+      }),
+    );
+    expect(firms[0]).toMatchObject({ id: 1, name: 'Aras', code: 'ARAS' });
+    expect(firms[0]!.raw).toBeDefined();
+  });
+
+  it('getCargoFirms unwraps { items: [] } / { data: [] } envelopes too', async () => {
+    const fromItems = await r(mockTransport({ items: [{ name: 'X' }] })).getCargoFirms();
+    expect(fromItems[0]!.name).toBe('X');
+    const fromData = await r(mockTransport({ data: [{ name: 'Y' }] })).getCargoFirms();
+    expect(fromData[0]!.name).toBe('Y');
+  });
+
+  it('listProfiles GETs /profiles/{merchantId}', async () => {
+    const transport = mockTransport([{ profileName: 'P1' }]);
+    const profiles = await r(transport).listProfiles();
+    expect(transport.request).toHaveBeenCalledWith(
+      expect.objectContaining({ path: '/profiles/M-42', service: 'shipping' }),
+    );
+    expect(profiles[0]!.profileName).toBe('P1');
+  });
+
+  it('createProfile POSTs to /profile/createByMerchantId with body', async () => {
+    const transport = mockTransport({ ok: true });
+    await r(transport).createProfile({ profileName: 'New', cargoFirms: 'ARAS,MNG' });
+    expect(transport.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: 'POST',
+        service: 'shipping',
+        path: '/profile/createByMerchantId',
+        body: { profileName: 'New', cargoFirms: 'ARAS,MNG' },
+      }),
+    );
+  });
+
+  it('updateProfile PUTs to /profile/updateByMerchantId', async () => {
+    const transport = mockTransport();
+    await r(transport).updateProfile({ profileName: 'Existing' });
+    expect(transport.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: 'PUT',
+        service: 'shipping',
+        path: '/profile/updateByMerchantId',
+      }),
+    );
+  });
+
+  it('createProfile / updateProfile throw on falsy input', async () => {
+    const transport = mockTransport();
+    await expect(
+      r(transport).createProfile(null as unknown as Record<string, unknown>),
+    ).rejects.toThrow(/input is required/);
+    await expect(
+      r(transport).updateProfile(undefined as unknown as Record<string, unknown>),
+    ).rejects.toThrow(/input is required/);
+  });
+});
+
+// ─── Claims ──────────────────────────────────────────────────────────────
+
+describe('ClaimsResource', () => {
+  const r = (t: HepsiburadaTransport) => new ClaimsResource(t, fastLimiter());
+
+  it('list GETs /claims/merchantId/{id} on oms service with no query by default', async () => {
+    const transport = mockTransport([]);
+    await r(transport).list();
+    const call = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0];
+    expect(call.method).toBe('GET');
+    expect(call.service).toBe('oms');
+    expect(call.path).toBe('/claims/merchantId/M-42');
+    expect(call.query).toBeUndefined();
+  });
+
+  it('list forwards beginDate / endDate / offset / limit', async () => {
+    const transport = mockTransport([]);
+    await r(transport).list({
+      beginDate: '2026-01-01 00:00',
+      endDate: '2026-02-01 00:00',
+      offset: 0,
+      limit: 50,
+    });
+    const call = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0];
+    expect(call.query).toEqual({
+      beginDate: '2026-01-01 00:00',
+      endDate: '2026-02-01 00:00',
+      offset: 0,
+      limit: 50,
+    });
+  });
+
+  it('listByStatus GETs /claims/merchantId/{id}/status/{status} with extra date filters', async () => {
+    const transport = mockTransport([{ claimNumber: 'C-1', status: 'Open' }]);
+    const rows = await r(transport).listByStatus('Open', {
+      offset: 10,
+      limit: 5,
+      statusBeginDate: '2026-02-01 00:00',
+    });
+    const call = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0];
+    expect(call.path).toBe('/claims/merchantId/M-42/status/Open');
+    expect(call.query).toEqual({
+      offset: 10,
+      limit: 5,
+      statusBeginDate: '2026-02-01 00:00',
+    });
+    expect(rows[0]).toMatchObject({ claimNumber: 'C-1', status: 'Open' });
+  });
+
+  it('listByStatus throws on empty status', async () => {
+    const transport = mockTransport([]);
+    await expect(r(transport).listByStatus('' as unknown as string)).rejects.toThrow(
+      /status is required/,
+    );
+  });
+
+  it.each(['accept', 'reject', 'preApprovalConfirm'] as const)(
+    '%s POSTs to /claims/number/{number}/<action> on oms service',
+    async (action) => {
+      const transport = mockTransport();
+      const resource = r(transport);
+      const path = {
+        accept: '/claims/number/CLM-1/accept',
+        reject: '/claims/number/CLM-1/reject',
+        preApprovalConfirm: '/claims/number/CLM-1/preapprovalconfirm',
+      }[action];
+      await resource[action]('CLM-1', { foo: 'bar' });
+      expect(transport.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: 'POST',
+          service: 'oms',
+          path,
+          body: { foo: 'bar' },
+        }),
+      );
+    },
+  );
+
+  it.each(['accept', 'reject', 'preApprovalConfirm'] as const)(
+    '%s throws on empty claimNumber',
+    async (action) => {
+      const transport = mockTransport();
+      const resource = r(transport);
+      await expect(resource[action]('' as unknown as string)).rejects.toThrow(
+        /claimNumber is required/,
+      );
+    },
+  );
+
+  it('create POSTs to /claims/merchant/{id}/create on claim-stub service', async () => {
+    const transport = mockTransport({ claimNumber: 'CLM-2' });
+    const out = await r(transport).create({ orderNumber: 'O-1', lines: [] });
+    expect(transport.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: 'POST',
+        service: 'claim-stub',
+        path: '/claims/merchant/M-42/create',
+        body: { orderNumber: 'O-1', lines: [] },
+      }),
+    );
+    expect(out).toEqual({ claimNumber: 'CLM-2' });
+  });
+
+  it('create throws on falsy input', async () => {
+    const transport = mockTransport();
+    await expect(
+      r(transport).create(undefined as unknown as Record<string, unknown>),
+    ).rejects.toThrow(/input is required/);
+  });
+});
+
+// ─── Test orders ─────────────────────────────────────────────────────────
+
+describe('TestOrdersResource', () => {
+  const r = (t: HepsiburadaTransport) => new TestOrdersResource(t, fastLimiter());
+
+  it('create POSTs to /orders/merchantId/{id} on oms-stub service', async () => {
+    const transport = mockTransport({ orderNumber: 'TO-1' });
+    const out = await r(transport).create({ customer: {}, lines: [] });
+    expect(transport.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: 'POST',
+        service: 'oms-stub',
+        path: '/orders/merchantId/M-42',
+        body: { customer: {}, lines: [] },
+      }),
+    );
+    expect(out).toEqual({ orderNumber: 'TO-1' });
+  });
+
+  it('create throws on falsy input', async () => {
+    const transport = mockTransport();
+    await expect(
+      r(transport).create(undefined as unknown as Record<string, unknown>),
+    ).rejects.toThrow(/input is required/);
+  });
+});
