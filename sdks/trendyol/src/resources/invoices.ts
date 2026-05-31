@@ -16,7 +16,6 @@ export class InvoicesResource {
 
   constructor(
     private readonly transport: TrendyolTransport,
-    private readonly sellerId: number,
     limiter?: TokenBucketRateLimiter,
   ) {
     this.limiter = limiter ?? new TokenBucketRateLimiter({ capacity: 500, intervalMs: 60_000 });
@@ -46,7 +45,7 @@ export class InvoicesResource {
     }
     return this.transport.request<unknown>({
       method: 'POST',
-      path: `/integration/sellers/${this.sellerId}/seller-invoice-file`,
+      path: `/integration/sellers/${this.transport.sellerId}/seller-invoice-file`,
       body: form,
       rateLimiter: this.limiter,
     });
@@ -59,7 +58,7 @@ export class InvoicesResource {
     }
     return this.transport.request<unknown>({
       method: 'POST',
-      path: `/integration/sellers/${this.sellerId}/seller-invoice-links`,
+      path: `/integration/sellers/${this.transport.sellerId}/seller-invoice-links`,
       body: input,
       rateLimiter: this.limiter,
     });
@@ -69,7 +68,7 @@ export class InvoicesResource {
   async deleteLink(input: DeleteInvoiceLinkInput): Promise<unknown> {
     return this.transport.request<unknown>({
       method: 'POST',
-      path: `/integration/sellers/${this.sellerId}/seller-invoice-links/delete`,
+      path: `/integration/sellers/${this.transport.sellerId}/seller-invoice-links/delete`,
       body: input,
       rateLimiter: this.limiter,
     });

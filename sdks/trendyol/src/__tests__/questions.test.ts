@@ -4,11 +4,13 @@ import { QuestionsResource } from '../resources/questions.js';
 import type { TrendyolTransport } from '../transport.js';
 
 function mockTransport(response: unknown = undefined) {
-  return { request: vi.fn().mockResolvedValue(response) } as unknown as TrendyolTransport;
+  return {
+    sellerId: 42,
+    request: vi.fn().mockResolvedValue(response),
+  } as unknown as TrendyolTransport;
 }
 const fastLimiter = () => new TokenBucketRateLimiter({ capacity: 1000, intervalMs: 1 });
-const r = (t: TrendyolTransport, sellerId = 42) =>
-  new QuestionsResource(t, sellerId, fastLimiter());
+const r = (t: TrendyolTransport) => new QuestionsResource(t, fastLimiter());
 
 describe('QuestionsResource.get', () => {
   it('GETs /qna/sellers/{id}/questions/{questionId}', async () => {

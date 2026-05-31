@@ -4,6 +4,7 @@ import type { TrendyolTransport } from '../transport.js';
 
 function mockTransport(response: unknown) {
   return {
+    sellerId: 42,
     request: vi.fn().mockResolvedValue(response),
   } as unknown as TrendyolTransport;
 }
@@ -38,7 +39,7 @@ describe('SuppliersResource', () => {
 
   it('hits the supplier-addresses endpoint with the configured sellerId', async () => {
     const transport = mockTransport(sampleResponse);
-    const resource = new SuppliersResource(transport, 42);
+    const resource = new SuppliersResource(transport);
 
     await resource.getAddresses();
 
@@ -52,7 +53,7 @@ describe('SuppliersResource', () => {
 
   it('normalizes IDs to strings and flags to booleans', async () => {
     const transport = mockTransport(sampleResponse);
-    const resource = new SuppliersResource(transport, 42);
+    const resource = new SuppliersResource(transport);
 
     const addresses = await resource.getAddresses();
 
@@ -78,7 +79,7 @@ describe('SuppliersResource', () => {
     const transport = mockTransport({
       supplierAddresses: [{ id: 1, addressType: 'RETURNING_ADDRESS' }],
     });
-    const resource = new SuppliersResource(transport, 42);
+    const resource = new SuppliersResource(transport);
 
     const addresses = await resource.getAddresses();
 
@@ -89,7 +90,7 @@ describe('SuppliersResource', () => {
     const transport = mockTransport({
       supplierAddresses: [{ id: 1, addressType: 'INVENTED_TYPE' }],
     });
-    const resource = new SuppliersResource(transport, 42);
+    const resource = new SuppliersResource(transport);
 
     const addresses = await resource.getAddresses();
 
@@ -98,7 +99,7 @@ describe('SuppliersResource', () => {
 
   it('caches the response for the default TTL (1 hour) and skips the API on the second call', async () => {
     const transport = mockTransport(sampleResponse);
-    const resource = new SuppliersResource(transport, 42);
+    const resource = new SuppliersResource(transport);
 
     await resource.getAddresses();
     await resource.getAddresses();
@@ -109,7 +110,7 @@ describe('SuppliersResource', () => {
 
   it('refetches once the cache TTL has elapsed', async () => {
     const transport = mockTransport(sampleResponse);
-    const resource = new SuppliersResource(transport, 42);
+    const resource = new SuppliersResource(transport);
 
     await resource.getAddresses();
 
@@ -122,7 +123,7 @@ describe('SuppliersResource', () => {
 
   it('refetches when forceRefresh: true is passed', async () => {
     const transport = mockTransport(sampleResponse);
-    const resource = new SuppliersResource(transport, 42);
+    const resource = new SuppliersResource(transport);
 
     await resource.getAddresses();
     await resource.getAddresses({ forceRefresh: true });
@@ -132,7 +133,7 @@ describe('SuppliersResource', () => {
 
   it('invalidateCache() forces the next call to hit the API', async () => {
     const transport = mockTransport(sampleResponse);
-    const resource = new SuppliersResource(transport, 42);
+    const resource = new SuppliersResource(transport);
 
     await resource.getAddresses();
     resource.invalidateCache();
@@ -148,7 +149,7 @@ describe('SuppliersResource', () => {
         .fn()
         .mockImplementation(() => new Promise<typeof sampleResponse>((res) => (resolve = res))),
     } as unknown as TrendyolTransport;
-    const resource = new SuppliersResource(transport, 42);
+    const resource = new SuppliersResource(transport);
 
     const p1 = resource.getAddresses();
     const p2 = resource.getAddresses();
@@ -164,7 +165,7 @@ describe('SuppliersResource', () => {
 
   it('honors a custom cacheTtlMs override', async () => {
     const transport = mockTransport(sampleResponse);
-    const resource = new SuppliersResource(transport, 42, { cacheTtlMs: 1000 });
+    const resource = new SuppliersResource(transport, { cacheTtlMs: 1000 });
 
     await resource.getAddresses();
     vi.setSystemTime(new Date('2026-01-01T00:00:02Z')); // 2 seconds later, past 1s TTL

@@ -5,6 +5,7 @@ import type { TrendyolTransport } from '../transport.js';
 
 function mockTransport(response: unknown) {
   return {
+    sellerId: 42,
     request: vi.fn().mockResolvedValue(response),
   } as unknown as TrendyolTransport;
 }

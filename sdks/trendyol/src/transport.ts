@@ -56,6 +56,11 @@ export class TrendyolTransport {
     this.fetchImpl = config.fetch ?? fetch;
   }
 
+  /** Seller ID this transport is configured with. Resources read it for path-building. */
+  get sellerId(): number {
+    return this.config.sellerId;
+  }
+
   async request<T>(opts: RequestOptions): Promise<T> {
     return retry(
       async (attempt) => {

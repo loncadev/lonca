@@ -5,12 +5,13 @@ import type { TrendyolTransport } from '../transport.js';
 
 function mockTransport(response: unknown) {
   return {
+    sellerId: 42,
     request: vi.fn().mockResolvedValue(response),
   } as unknown as TrendyolTransport;
 }
 
 const fastLimiter = () => new TokenBucketRateLimiter({ capacity: 1000, intervalMs: 1 });
-const r = (t: TrendyolTransport, sellerId = 42) => new OrdersResource(t, sellerId, fastLimiter());
+const r = (t: TrendyolTransport) => new OrdersResource(t, fastLimiter());
 
 describe('OrdersResource.listStream', () => {
   it('GETs /orders/stream with default page-size and no cursor', async () => {
