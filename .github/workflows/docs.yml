@@ -34,20 +34,20 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Build packages
-        # TypeDoc resolves workspace imports through each package's "types"
-        # field, which points at dist/index.d.ts — so we need to build
-        # first or @lonca/core won't resolve from sdk packages.
+      - name: Build SDK packages
+        # starlight-typedoc resolves workspace imports through each
+        # package's "types" field (dist/index.d.ts) — build first so
+        # @lonca/core resolves from the sdk packages during typedoc gen.
         run: pnpm build
 
-      - name: Generate API reference
+      - name: Build docs site
         run: pnpm docs:build
 
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: docs/api
+          path: docs/dist
 
   deploy:
     name: Deploy to GitHub Pages

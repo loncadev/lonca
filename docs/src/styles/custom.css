@@ -1,0 +1,17 @@
+/* Slight accent tuning — keep the default Starlight palette but lean blue/teal */
+:root {
+  --sl-color-accent-low: #14334a;
+  --sl-color-accent: #0a87b9;
+  --sl-color-accent-high: #b9e0ed;
+}
+
+:root[data-theme='light'] {
+  --sl-color-accent-low: #c5e6f2;
+  --sl-color-accent: #0a87b9;
+  --sl-color-accent-high: #074466;
+}
+
+/* Code blocks: slightly tighter line height for readability */
+.expressive-code .frame pre {
+  line-height: 1.5;
+}

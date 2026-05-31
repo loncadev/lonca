@@ -1,0 +1,67 @@
+// @ts-check
+import { defineConfig } from 'astro/config';
+import starlight from '@astrojs/starlight';
+import starlightTypeDoc, { typeDocSidebarGroup } from 'starlight-typedoc';
+
+// https://astro.build/config
+export default defineConfig({
+  site: 'https://loncadev.github.io',
+  base: '/lonca',
+  integrations: [
+    starlight({
+      title: 'Lonca SDKs',
+      description:
+        'Type-safe TypeScript SDKs for Turkish e-commerce marketplaces (Trendyol, Hepsiburada).',
+      social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/loncadev/lonca' }],
+      editLink: {
+        baseUrl: 'https://github.com/loncadev/lonca/edit/main/docs/',
+      },
+      lastUpdated: true,
+      pagination: true,
+      tableOfContents: { minHeadingLevel: 2, maxHeadingLevel: 4 },
+      plugins: [
+        starlightTypeDoc({
+          entryPoints: [
+            '../packages/core/src/index.ts',
+            '../sdks/trendyol/src/index.ts',
+            '../sdks/hepsiburada/src/index.ts',
+          ],
+          tsconfig: '../tsconfig.base.json',
+          typeDoc: {
+            entryPointStrategy: 'expand',
+            excludeInternal: true,
+            excludePrivate: true,
+            includeVersion: false,
+            skipErrorChecking: true,
+            sort: ['kind', 'alphabetical'],
+            groupOrder: ['Classes', 'Functions', 'Interfaces', 'Type Aliases', 'Variables', '*'],
+          },
+          sidebar: {
+            label: 'API Reference',
+            collapsed: false,
+          },
+        }),
+      ],
+      sidebar: [
+        {
+          label: 'Get started',
+          items: [
+            { label: 'Overview', slug: 'overview' },
+            { label: 'Installation', slug: 'installation' },
+            { label: 'Authentication', slug: 'authentication' },
+          ],
+        },
+        {
+          label: 'Guides',
+          items: [
+            { label: 'Trendyol', slug: 'guides/trendyol' },
+            { label: 'Hepsiburada', slug: 'guides/hepsiburada' },
+            { label: 'Webhook events', slug: 'guides/webhook-events' },
+          ],
+        },
+        typeDocSidebarGroup,
+      ],
+      customCss: ['/src/styles/custom.css'],
+    }),
+  ],
+});

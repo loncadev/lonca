@@ -3,6 +3,7 @@ packages:
   - "packages/*"
   - "apps/*"
   - "examples"
+  - "docs"
 
 # Shared dependency versions. Packages reference these with `"typescript": "catalog:"`.
 # https://pnpm.io/catalogs
@@ -16,3 +17,15 @@ catalog:
 # Entries below are trusted, build-time native modules.
 onlyBuiltDependencies:
   - esbuild
+  - sharp
+
+# Allow Astro's deeper deps (tsconfck, zod-to-ts) to accept TypeScript 6 even
+# though their published peer range maxes out at ^5 — the only reason they pin
+# to 5 is `parsers` API compat, which the SDK doesn't exercise.
+packageExtensions:
+  tsconfck:
+    peerDependencies:
+      typescript: ">=5"
+  zod-to-ts:
+    peerDependencies:
+      typescript: ">=4.9.4"
