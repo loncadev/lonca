@@ -27,7 +27,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "clean": "turbo run clean",
-    "docs": "typedoc",
+    "docs:build": "typedoc",
     "docs:serve": "typedoc && npx --yes http-server docs/api -p 4321 -o",
     "try:trendyol": "tsx --env-file=.env examples/try-trendyol.mts",
     "try:hepsiburada": "tsx --env-file=.env examples/try-hepsiburada.mts",
