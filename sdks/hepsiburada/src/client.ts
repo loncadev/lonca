@@ -1,10 +1,15 @@
 import type { Logger } from '@lonca/core';
+import { AccountingResource } from './resources/accounting.js';
 import { CatalogResource } from './resources/catalog.js';
 import { CategoriesResource } from './resources/categories.js';
 import { ClaimsResource } from './resources/claims.js';
 import { ListingsResource } from './resources/listings.js';
 import { OrdersResource } from './resources/orders.js';
+import { ProductUpdatesResource } from './resources/product-updates.js';
+import { PromotionsResource } from './resources/promotions.js';
+import { QuestionsResource } from './resources/questions.js';
 import { ShippingResource } from './resources/shipping.js';
+import { SuppliersResource } from './resources/suppliers.js';
 import { TestOrdersResource } from './resources/test-orders.js';
 import { HepsiburadaTransport, type HepsiburadaEnvironment } from './transport.js';
 
@@ -18,8 +23,9 @@ export interface CreateClientOptions {
   /** Which Hepsiburada environment to target — `'prod'` or `'sit'` (sandbox). */
   env: HepsiburadaEnvironment;
   /**
-   * Integrator company name to send in `User-Agent`. Required: Hepsiburada
-   * rejects requests without a meaningful User-Agent string.
+   * Integrator company name sent in `User-Agent`. Hepsiburada rejects requests
+   * without a meaningful User-Agent. Use the bare integrator name configured
+   * server-side in the Merchant Portal (e.g. `beekod_dev`).
    */
   integratorName: string;
   /** Optional structured logger (`@lonca/core` `Logger`). Defaults to no-op. */
@@ -36,6 +42,11 @@ export interface HepsiburadaClient {
   orders: OrdersResource;
   categories: CategoriesResource;
   catalog: CatalogResource;
+  productUpdates: ProductUpdatesResource;
+  suppliers: SuppliersResource;
+  accounting: AccountingResource;
+  questions: QuestionsResource;
+  promotions: PromotionsResource;
 }
 
 /**
@@ -75,5 +86,10 @@ export function createHepsiburadaClient(opts: CreateClientOptions): HepsiburadaC
     orders: new OrdersResource(transport),
     categories: new CategoriesResource(transport),
     catalog: new CatalogResource(transport),
+    productUpdates: new ProductUpdatesResource(transport),
+    suppliers: new SuppliersResource(transport),
+    accounting: new AccountingResource(transport),
+    questions: new QuestionsResource(transport),
+    promotions: new PromotionsResource(transport),
   };
 }

@@ -209,7 +209,7 @@ describe('CategoriesResource', () => {
 describe('CatalogResource', () => {
   const r = (t: HepsiburadaTransport) => new CatalogResource(t, fastLimiter());
 
-  it('listProducts GETs /product/api/products?merchantId on mpop service', async () => {
+  it('listProducts GETs /product/api/products/all-products-of-merchant/{id} on mpop service', async () => {
     const transport = mockTransport([
       {
         id: 'cat-1',
@@ -225,8 +225,8 @@ describe('CatalogResource', () => {
       expect.objectContaining({
         method: 'GET',
         service: 'mpop',
-        path: '/product/api/products',
-        query: { merchantId: 'M-2a', page: 0, size: 100 },
+        path: '/product/api/products/all-products-of-merchant/M-2a',
+        query: { page: 0, size: 100 },
       }),
     );
     expect(rows[0]).toMatchObject({
@@ -244,10 +244,10 @@ describe('CatalogResource', () => {
     expect(rows).toEqual([]);
   });
 
-  it('listProducts always sends merchantId from transport (not caller-supplied)', async () => {
-    const transport = mockTransport([]);
+  it('listProducts URL-encodes the merchantId path segment', async () => {
+    const transport = mockTransport([], 'M/with slashes');
     await r(transport).listProducts();
     const call = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0];
-    expect(call.query.merchantId).toBe('M-2a');
+    expect(call.path).toBe('/product/api/products/all-products-of-merchant/M%2Fwith%20slashes');
   });
 });
