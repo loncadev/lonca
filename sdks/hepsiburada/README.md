@@ -191,6 +191,64 @@ for (const claim of awaiting) {
 }
 ```
 
+### 5) Webhook handlers (orders + claims)
+
+Hepsiburada's webhook model is **endpoint-per-event** — you register one base URL and Hepsiburada `PUT`s to `<baseUrl>/<eventName>` for each event. Eight order events + four claim events = **12 webhook events** total.
+
+```ts
+import express from 'express';
+import {
+  parseHepsiburadaWebhookEvent,
+  ORDER_WEBHOOK_EVENTS,
+  CLAIM_WEBHOOK_EVENTS,
+  type OrderWebhookEvent,
+} from '@lonca/hepsiburada';
+
+const app = express();
+app.use(express.json());
+
+// One PUT route per event. Hepsiburada expects 2xx ack within ~5s; the
+// receiver must be idempotent (HB may retry).
+for (const event of ORDER_WEBHOOK_EVENTS) {
+  app.put(`/hb/${event}`, (req, res) => {
+    const { body } = parseHepsiburadaWebhookEvent(event, req.body);
+    handleOrderEvent(event, body); // your business logic
+    res.status(204).end();
+  });
+}
+
+for (const event of CLAIM_WEBHOOK_EVENTS) {
+  app.put(`/hb/${event}`, (req, res) => {
+    const { body } = parseHepsiburadaWebhookEvent(event, req.body);
+    handleClaimEvent(event, body);
+    res.status(204).end();
+  });
+}
+
+function handleOrderEvent(event: OrderWebhookEvent, body: Record<string, unknown>) {
+  switch (event) {
+    case 'createOrder':
+      /* new paid order */ break;
+    case 'createPackages':
+      /* HB packaged your line items */ break;
+    case 'orderCancel':
+      /* buyer cancelled */ break;
+    case 'unpack':
+      /* package unpacked */ break;
+    case 'intransit':
+      /* handed to cargo */ break;
+    case 'deliver':
+      /* delivered */ break;
+    case 'undeliver':
+      /* delivery failed */ break;
+    case 'changeShippingAddressOrder':
+      /* address updated */ break;
+  }
+}
+```
+
+The parser validates the JSON, throws `ValidationError` on bad input, and returns `{ event, body, raw }` — `body` is `Record<string, unknown>` (Hepsiburada documents fields in HTML tables; consult the developer portal for the documented set per event; use `raw` for forward-compat access to undocumented fields).
+
 ## Per-resource reference
 
 ### `listings` — stock / price / buybox / single-SKU mutations (18 methods)
@@ -468,10 +526,22 @@ Live verification revealed `merchantId` path-segment casing tolerance differs pe
 
 The SDK picks the casing each host actually serves — you don't need to think about it.
 
+## Verify your integration: live smoke script
+
+The monorepo ships a read-only smoke script you can run against your sandbox or production credentials to confirm the SDK reaches every resource:
+
+```bash
+# Put your creds in .env (see examples/try-hepsiburada.mts for variable names)
+pnpm try:hepsiburada
+```
+
+The script calls one read endpoint per resource and reports `✓` for `200 OK`, `🔒` for `401`/`403` (sandbox merchant lacks scope — production should work), and `✖` for unexpected errors. It never mutates state — no POST / PUT / DELETE.
+
 ## Stability
 
 `0.x` — alpha. Surface is stable; the only changes between minor versions are new resources or stricter types backed by live observation.
 
+- **`0.6.0`** (Phase 2d) — webhook event parser + casing regression tests + smoke script
 - **`0.5.0`** (Phase 2c) — ergonomics + strict types: `ClaimStatus` union, `skuList` required, per-host path casing
 - **`0.4.0`** (Phase 2b) — full dev-portal coverage: +5 resources, +56 methods
 - **`0.3.0`** (Phase 2a) — discovery-first: `orders`, `categories`, `catalog`

@@ -62,6 +62,9 @@ importers:
       '@lonca/core':
         specifier: workspace:*
         version: link:../packages/core
+      '@lonca/hepsiburada':
+        specifier: workspace:*
+        version: link:../sdks/hepsiburada
       '@lonca/trendyol':
         specifier: workspace:*
         version: link:../sdks/trendyol

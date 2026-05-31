@@ -6,6 +6,7 @@
   "type": "module",
   "dependencies": {
     "@lonca/core": "workspace:*",
+    "@lonca/hepsiburada": "workspace:*",
     "@lonca/trendyol": "workspace:*"
   },
   "devDependencies": {
