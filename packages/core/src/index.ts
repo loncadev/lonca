@@ -1,3 +1,4 @@
+export * from './capabilities.js';
 export * from './currency.js';
 export * from './money.js';
 export * from './pagination.js';

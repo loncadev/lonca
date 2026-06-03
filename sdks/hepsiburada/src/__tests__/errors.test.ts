@@ -9,6 +9,18 @@ describe('hepsiburada mapHttpError', () => {
     expect(err.data).toEqual({ body: { message: 'bad creds' } });
   });
 
+  it('maps 403 to AuthError with a fixed message, never echoing the raw body', () => {
+    const err = mapHttpError(403, { message: 'merchant 12345 not allowed on /oms/orders' });
+    expect(err).toBeInstanceOf(AuthError);
+    // The raw 403 body can echo request context — it must not land in `message`.
+    expect(err.message).not.toContain('12345');
+    expect(err.message).toBe(
+      'Hepsiburada forbidden (check credentials, permissions, or User-Agent header)',
+    );
+    // …but stays available for debugging.
+    expect(err.data).toEqual({ body: { message: 'merchant 12345 not allowed on /oms/orders' } });
+  });
+
   it('normalizes { errors: [{ message, code }] } into issues', () => {
     const err = mapHttpError(400, { errors: [{ code: 'E1', message: 'sku invalid' }] });
     expect(err).toBeInstanceOf(ValidationError);

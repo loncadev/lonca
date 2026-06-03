@@ -28,8 +28,14 @@ export function mapHttpError(status: number, body: unknown, retryAfterMs?: numbe
   const issues = normalizeErrorIssues(body);
 
   if (status === 401 || status === 403) {
+    // Use fixed, safe messages rather than the raw server `message`: Hepsiburada's
+    // 403 body varies by service and can echo request context, so it stays on
+    // `error.data` / `cause` for debugging instead of the user-facing message.
     return new AuthError({
-      message: status === 401 ? 'Hepsiburada authentication failed' : message,
+      message:
+        status === 401
+          ? 'Hepsiburada authentication failed (check username / password)'
+          : 'Hepsiburada forbidden (check credentials, permissions, or User-Agent header)',
       status,
       cause,
       data,

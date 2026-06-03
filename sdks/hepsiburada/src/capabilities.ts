@@ -1,10 +1,14 @@
+import type { MarketplaceCapabilities } from '@lonca/core';
+
 /**
  * Static feature-capability flags for the Hepsiburada marketplace, so consumers
- * can feature-detect instead of hard-coding marketplace quirks.
- *
- * Intentionally a per-SDK literal constant (not a shared `@lonca/core` type):
- * the flags are marketplace-specific and the set is still small. Read them off
+ * can feature-detect instead of hard-coding marketplace quirks. Read them off
  * a client as `client.capabilities`.
+ *
+ * The flag *values* are marketplace-specific, but the const `satisfies` the
+ * shared {@link MarketplaceCapabilities} contract so the key set can't drift
+ * from the Trendyol SDK without a compile error. Kept `as const` so the literal
+ * `true`/`false` values stay narrowed.
  */
 export const hepsiburadaCapabilities = {
   /** Listings support time-bounded pricing windows (`ListingPricing.startDate/endDate`). */
@@ -17,7 +21,7 @@ export const hepsiburadaCapabilities = {
    * depend on it.
    */
   listingUpdatedAt: false,
-} as const;
+} as const satisfies MarketplaceCapabilities;
 
 /** Shape of {@link hepsiburadaCapabilities}. */
 export type HepsiburadaCapabilities = typeof hepsiburadaCapabilities;
