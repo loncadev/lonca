@@ -1,5 +1,18 @@
 # @lonca/core
 
+## 0.6.0
+
+### Minor Changes
+
+- [#78](https://github.com/loncadev/lonca/pull/78) [`c80e1f7`](https://github.com/loncadev/lonca/commit/c80e1f7430f5919570b9642300fe89ec82294d94) Thanks [@keparlak](https://github.com/keparlak)! - Add `normalizeIssueEntries` to `@lonca/core` and use it from both SDKs.
+
+  The PII-safe error-issue mapping (copy only `message`/`field`/`code` from each
+  raw entry, never the raw payload) was duplicated verbatim in the Trendyol and
+  Hepsiburada `normalizeErrorIssues`. It's now a single `@lonca/core` export; each
+  SDK keeps only its own body-shape extraction and delegates the entry mapping.
+  No behavior change — both SDKs produce identical issues — but the
+  security-sensitive redaction logic now lives in one place.
+
 ## 0.5.0
 
 ### Minor Changes
