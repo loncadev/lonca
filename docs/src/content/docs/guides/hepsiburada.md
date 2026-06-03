@@ -5,6 +5,10 @@ description: End-to-end usage of the @lonca/hepsiburada SDK — full dev-portal 
 
 `@lonca/hepsiburada` covers every operation documented on [developers.hepsiburada.com](https://developers.hepsiburada.com) — 12 resources / 95 methods / live-verified against SIT. The repo's [`sdks/hepsiburada/README.md`](https://github.com/loncadev/lonca/blob/main/sdks/hepsiburada/README.md) keeps the most up-to-date per-resource cheat sheet; this guide hits the highlights.
 
+:::caution[Unofficial]
+`@lonca/hepsiburada` is an independent, community-maintained SDK. It is not affiliated with, endorsed by, or supported by Hepsiburada. "Hepsiburada" and related names are trademarks of their respective owners.
+:::
+
 ## Resources at a glance
 
 | Resource         |        Methods | Source                         |

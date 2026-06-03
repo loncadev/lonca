@@ -8,6 +8,9 @@ Shared primitives for Lonca marketplace SDKs.
 
 > Type-safe building blocks reused across every `@lonca/<marketplace>` SDK: money, errors, pagination, retry, logger, rate limiter.
 
+> [!IMPORTANT]
+> **Unofficial.** Part of Lonca, an independent, community-maintained project — not affiliated with, endorsed by, or supported by any marketplace. All marketplace names and trademarks belong to their respective owners.
+
 ## Install
 
 ```bash

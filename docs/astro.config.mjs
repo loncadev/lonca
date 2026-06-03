@@ -27,6 +27,10 @@ export default defineConfig({
       },
       lastUpdated: true,
       pagination: true,
+      components: {
+        // Append a site-wide "unofficial / not affiliated" disclaimer to every page.
+        Footer: './src/components/Footer.astro',
+      },
       tableOfContents: { minHeadingLevel: 2, maxHeadingLevel: 4 },
       plugins: [
         starlightTypeDoc({

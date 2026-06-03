@@ -5,6 +5,10 @@ description: End-to-end usage of the @lonca/trendyol SDK — product catalog, or
 
 `@lonca/trendyol` ships full coverage of Trendyol's published API surface. The repo's [`sdks/trendyol/README.md`](https://github.com/loncadev/lonca/blob/main/sdks/trendyol/README.md) keeps the most up-to-date per-resource cheat sheet; this guide hits the highlights and points you at the most useful sections.
 
+:::caution[Unofficial]
+`@lonca/trendyol` is an independent, community-maintained SDK. It is not affiliated with, endorsed by, or supported by Trendyol. "Trendyol" and related names are trademarks of their respective owners.
+:::
+
 ## Resources at a glance
 
 | Resource       | What it covers                                                                   |

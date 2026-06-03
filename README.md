@@ -14,6 +14,9 @@ Open-source SDKs and tooling for Turkish e-commerce marketplaces.
 
 > Type-safe TypeScript SDKs, curated OpenAPI specs, and integration utilities for Trendyol, Hepsiburada, n11, Amazon TR, Pazarama, Çiçeksepeti, and more.
 
+> [!IMPORTANT]
+> **Unofficial & independent.** Lonca is a community-maintained project. It is **not** an official SDK and is not affiliated with, endorsed by, or supported by Trendyol, Hepsiburada, or any other marketplace named here. All product names, logos, and trademarks are the property of their respective owners.
+
 > [!WARNING]
 > 🚧 **Alpha** — APIs are not stable. Do not use in production. Minor versions may contain breaking changes until `1.0.0`.
 
