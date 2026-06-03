@@ -1,6 +1,7 @@
 import {
   AuthError,
   LoncaError,
+  type LoncaErrorIssue,
   NotFoundError,
   RateLimitError,
   ServerError,
@@ -18,19 +19,23 @@ import {
 export function mapHttpError(status: number, body: unknown, retryAfterMs?: number): LoncaError {
   const message = extractMessage(body) ?? `Hepsiburada HTTP ${status}`;
   const cause = body as Error | undefined;
+  const data = { body } as Record<string, unknown>;
+  const issues = normalizeErrorIssues(body);
 
   if (status === 401 || status === 403) {
     return new AuthError({
       message: status === 401 ? 'Hepsiburada authentication failed' : message,
       status,
       cause,
+      data,
+      issues,
     });
   }
   if (status === 404) {
-    return new NotFoundError({ message, status, cause });
+    return new NotFoundError({ message, status, cause, data, issues });
   }
   if (status === 422 || status === 400) {
-    return new ValidationError({ message, status, cause });
+    return new ValidationError({ message, status, cause, data, issues });
   }
   if (status === 429) {
     return new RateLimitError({
@@ -38,6 +43,8 @@ export function mapHttpError(status: number, body: unknown, retryAfterMs?: numbe
       status,
       retryAfterMs,
       cause,
+      data,
+      issues,
     });
   }
   if (status >= 500) {
@@ -45,9 +52,44 @@ export function mapHttpError(status: number, body: unknown, retryAfterMs?: numbe
       message: `Hepsiburada server error (${status})`,
       status,
       cause,
+      data,
+      issues,
     });
   }
-  return new LoncaError({ message, status, cause, code: 'UNKNOWN' });
+  return new LoncaError({ message, status, cause, data, issues, code: 'UNKNOWN' });
+}
+
+/**
+ * Normalize Hepsiburada's (inconsistent) error body into `LoncaErrorIssue[]`:
+ * `{ errors: [{ message, code }] }`, `{ errors: [string] }`, a flat
+ * `{ message }`, or `{ title }`. Only `{ field, code, message }` are copied —
+ * never the raw payload, which can carry PII. The untouched body stays on
+ * `error.data` for debugging.
+ */
+function normalizeErrorIssues(body: unknown): LoncaErrorIssue[] {
+  if (!body || typeof body !== 'object') return [];
+  const b = body as Record<string, unknown>;
+  if (Array.isArray(b.errors)) {
+    const issues: LoncaErrorIssue[] = [];
+    for (const entry of b.errors) {
+      if (typeof entry === 'string') {
+        issues.push({ message: entry });
+        continue;
+      }
+      if (entry && typeof entry === 'object') {
+        const e = entry as Record<string, unknown>;
+        if (typeof e.message !== 'string') continue;
+        const issue: LoncaErrorIssue = { message: e.message };
+        if (typeof e.field === 'string') issue.field = e.field;
+        if (typeof e.code === 'string') issue.code = e.code;
+        issues.push(issue);
+      }
+    }
+    return issues;
+  }
+  if (typeof b.message === 'string') return [{ message: b.message }];
+  if (typeof b.title === 'string') return [{ message: b.title }];
+  return [];
 }
 
 function extractMessage(body: unknown): string | undefined {

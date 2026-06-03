@@ -55,7 +55,7 @@ type Outcome =
   | { kind: 'restricted'; reason: string }
   | { kind: 'error'; reason: string };
 
-function formatError(err: unknown): Outcome {
+function formatError(err: unknown): Exclude<Outcome, { kind: 'ok' }> {
   if (err instanceof LoncaError) {
     if (err.status === 401 || err.status === 403) {
       return { kind: 'restricted', reason: `${err.code} (${err.status})` };
@@ -87,8 +87,8 @@ async function section(title: string, fn: () => Promise<string>): Promise<void> 
 
 await section('1.1 listings.list({ offset: 0, limit: 2 })', async () => {
   const page = await client.listings.list({ offset: 0, limit: 2 });
-  return `${page.listings.length}/${page.totalCount} listings on page; first: ${
-    page.listings[0]?.hepsiburadaSku ?? '(empty)'
+  return `${page.items.length}/${page.totalCount} listings on page; first: ${
+    page.items[0]?.hepsiburadaSku ?? '(empty)'
   }`;
 });
 

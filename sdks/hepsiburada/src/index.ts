@@ -3,6 +3,8 @@ export {
   type CreateClientOptions,
   type HepsiburadaClient,
 } from './client.js';
+export { statusMap, normalizeStatus, type KnownHepsiburadaOrderStatus } from './status.js';
+export { hepsiburadaCapabilities, type HepsiburadaCapabilities } from './capabilities.js';
 export {
   parseWebhookEvent,
   /** @deprecated Use `parseWebhookEvent` instead. The legacy name will be

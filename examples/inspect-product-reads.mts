@@ -122,7 +122,13 @@ if (unapprovedRes) {
 // ── 2. getProductBase ────────────────────────────────────────────────────
 console.log('\n── 2. getProductBase (need a real barcode) ──────────────');
 // Pull one barcode from approved products to test against.
-const client = createTrendyolClient({ sellerId, apiKey, apiSecret, env });
+const client = createTrendyolClient({
+  sellerId,
+  apiKey,
+  apiSecret,
+  env,
+  integratorName: process.env.TY_INTEGRATOR_NAME ?? 'LoncaInspect',
+});
 const probe = await client.products.list({ limit: 1 });
 const probeBarcode = probe.items[0]?.variants[0]?.barcode;
 if (!probeBarcode) {

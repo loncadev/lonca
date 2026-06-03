@@ -562,12 +562,29 @@ function normalizeOrder(row: unknown): Order {
   if (typeof r.orderNumber === 'string') out.orderNumber = r.orderNumber;
   if (typeof r.externalOrderNumber === 'string') out.externalOrderNumber = r.externalOrderNumber;
   if (typeof r.status === 'string') out.status = r.status;
+  out.customerName = extractCustomerName(r);
   if (typeof r.createdDate === 'string') out.createdDate = r.createdDate;
   if (typeof r.modifiedDate === 'string') out.modifiedDate = r.modifiedDate;
   if (r.total !== undefined && (typeof r.total === 'number' || typeof r.total === 'string')) {
     out.total = r.total;
   }
   return out;
+}
+
+/** Pull a customer display name from Hepsiburada's varying row shapes; `null` if absent. */
+function extractCustomerName(r: Record<string, unknown>): string | null {
+  if (typeof r.customerName === 'string' && r.customerName) return r.customerName;
+  const customer = r.customer;
+  if (customer && typeof customer === 'object') {
+    const c = customer as Record<string, unknown>;
+    if (typeof c.name === 'string' && c.name) return c.name;
+    const first = typeof c.firstName === 'string' ? c.firstName : '';
+    const last = typeof c.lastName === 'string' ? c.lastName : '';
+    const full = `${first} ${last}`.trim();
+    if (full) return full;
+  }
+  if (typeof r.recipientName === 'string' && r.recipientName) return r.recipientName;
+  return null;
 }
 
 function normalizePackage(row: unknown): ShippingPackage {

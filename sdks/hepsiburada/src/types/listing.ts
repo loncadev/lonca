@@ -6,6 +6,8 @@
  * (HEPSIBURADA - LISTELEME ENTEGRASYONU v1, 17 operations / 25 schemas).
  */
 
+import type { OffsetPage } from '@lonca/core';
+
 /** Pricing window for a listing (date-bounded promo, contract pricing, etc.). */
 export interface ListingPricing {
   finalPrice: number;
@@ -58,15 +60,25 @@ export interface Listing {
   skuAfterSuspension?: string;
   productId?: string;
   hasVariant: boolean;
+  /**
+   * Last-update timestamp surfaced from the raw row (ISO 8601), or `null` when
+   * Hepsiburada's listing row doesn't carry one — so last-write-wins guards can
+   * check for `null` instead of silently no-op'ing. (Hepsiburada exposes update
+   * *filters* but doesn't reliably return the timestamp on each row.)
+   */
+  updatedAt?: string | null;
 }
 
-/** Paged response wrapping `Listing[]`. */
-export interface ListingsPage {
-  listings: Listing[];
-  totalCount: number;
-  limit: number;
-  offset: number;
-}
+/**
+ * Paged response wrapping `Listing[]` — the shared `OffsetPage<T>` shape from
+ * `@lonca/core`, so `paginateOffset((p) => client.listings.list(p))` works and
+ * the page shape matches every other list endpoint (`.items`, `.pageCount`).
+ *
+ * @deprecated Prefer importing `OffsetPage` from `@lonca/core` directly. This
+ *   alias stays exported for the lifetime of the `0.x` line. Note: the shape
+ *   changed in 0.9.0 — `.listings` is now `.items`, and `.pageCount` was added.
+ */
+export type ListingsPage = OffsetPage<Listing>;
 
 /** Filter / pagination params for `listings.list()`. */
 export interface ListListingsParams {

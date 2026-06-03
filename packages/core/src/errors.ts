@@ -8,6 +8,20 @@ export type LoncaErrorCode =
   | 'TIMEOUT'
   | 'UNKNOWN';
 
+/**
+ * A single normalized, field-level error detail extracted from a marketplace's
+ * raw error body. Each SDK maps its own (inconsistent) error JSON into this
+ * shape so consumers don't have to sniff marketplace-specific payloads.
+ */
+export interface LoncaErrorIssue {
+  /** The offending field/path, when the marketplace reports one. */
+  field?: string;
+  /** Marketplace-specific error code, when present. */
+  code?: string;
+  /** Human-readable message — always present. */
+  message: string;
+}
+
 export interface LoncaErrorOptions {
   code: LoncaErrorCode;
   message: string;
@@ -16,6 +30,8 @@ export interface LoncaErrorOptions {
   status?: number;
   retryAfterMs?: number;
   data?: Record<string, unknown>;
+  /** Normalized, field-level error details. Defaults to `[]` when omitted. */
+  issues?: LoncaErrorIssue[];
 }
 
 /**
@@ -30,6 +46,12 @@ export class LoncaError extends Error {
   readonly status?: number;
   readonly retryAfterMs?: number;
   readonly data?: Record<string, unknown>;
+  /**
+   * Normalized, field-level error details mapped from the marketplace's raw
+   * error body by the SDK. Always an array (never `undefined`) so callers can
+   * iterate without a presence check; empty when nothing was parseable.
+   */
+  readonly issues: LoncaErrorIssue[];
 
   constructor(opts: LoncaErrorOptions) {
     super(opts.message, opts.cause !== undefined ? { cause: opts.cause } : undefined);
@@ -39,6 +61,7 @@ export class LoncaError extends Error {
     this.status = opts.status;
     this.retryAfterMs = opts.retryAfterMs;
     this.data = opts.data;
+    this.issues = opts.issues ?? [];
   }
 }
 

@@ -11,6 +11,7 @@ import { QuestionsResource } from './resources/questions.js';
 import { ShippingResource } from './resources/shipping.js';
 import { SuppliersResource } from './resources/suppliers.js';
 import { TestOrdersResource } from './resources/test-orders.js';
+import { hepsiburadaCapabilities, type HepsiburadaCapabilities } from './capabilities.js';
 import { HepsiburadaTransport, type HepsiburadaEnvironment } from './transport.js';
 
 export interface CreateClientOptions {
@@ -50,6 +51,8 @@ export interface HepsiburadaClient {
   accounting: AccountingResource;
   questions: QuestionsResource;
   promotions: PromotionsResource;
+  /** Static feature-capability flags for feature detection. */
+  capabilities: HepsiburadaCapabilities;
 }
 
 /**
@@ -81,6 +84,17 @@ export function createHepsiburadaClient(opts: CreateClientOptions): HepsiburadaC
     timeoutMs: opts.timeoutMs,
   });
 
+  return buildClient(transport);
+}
+
+/**
+ * Wire the full resource graph over a transport. Shared by
+ * {@link createHepsiburadaClient} and the `@lonca/hepsiburada/testing` fake
+ * client so both stay structurally identical. Not re-exported from the entry.
+ *
+ * @internal
+ */
+export function buildClient(transport: HepsiburadaTransport): HepsiburadaClient {
   return {
     listings: new ListingsResource(transport),
     shipping: new ShippingResource(transport),
@@ -94,5 +108,6 @@ export function createHepsiburadaClient(opts: CreateClientOptions): HepsiburadaC
     accounting: new AccountingResource(transport),
     questions: new QuestionsResource(transport),
     promotions: new PromotionsResource(transport),
+    capabilities: hepsiburadaCapabilities,
   };
 }

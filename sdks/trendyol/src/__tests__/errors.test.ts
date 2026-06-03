@@ -49,6 +49,36 @@ describe('mapHttpError', () => {
     expect(err.retryable).toBe(false);
     expect(err.data).toEqual({ body: { foo: 'bar' } });
   });
+
+  it('issues defaults to [] when the body has no errors array', () => {
+    expect(mapHttpError(400, { foo: 'bar' }).issues).toEqual([]);
+    expect(mapHttpError(400, null).issues).toEqual([]);
+  });
+
+  it('normalizes { errors: [{ field, message }] } into issues', () => {
+    const err = mapHttpError(400, {
+      errors: [{ field: 'barcode', message: 'barcode is required' }],
+    });
+    expect(err.issues).toEqual([{ field: 'barcode', message: 'barcode is required' }]);
+  });
+
+  it('normalizes { errors: [string] } into issues', () => {
+    const err = mapHttpError(400, { errors: ['something went wrong'] });
+    expect(err.issues).toEqual([{ message: 'something went wrong' }]);
+  });
+
+  it('reads errors nested under { body: { errors } }', () => {
+    const err = mapHttpError(400, { body: { errors: [{ message: 'nested' }] } });
+    expect(err.issues).toEqual([{ message: 'nested' }]);
+  });
+
+  it('copies only field/code/message into issues, never extra (PII) fields', () => {
+    const err = mapHttpError(400, {
+      errors: [{ field: 'x', code: 'E1', message: 'bad', identityNumber: '12345678901' }],
+    });
+    expect(err.issues).toEqual([{ field: 'x', code: 'E1', message: 'bad' }]);
+    expect(JSON.stringify(err.issues)).not.toContain('12345678901');
+  });
 });
 
 describe('parseRetryAfter', () => {
