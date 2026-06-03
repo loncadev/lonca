@@ -58,7 +58,9 @@ const results: Outcome[] = [];
 
 for (const [label, fn] of pages) {
   try {
-    const r = (await fn()) as
+    // Fetchers return heterogeneous shapes (OffsetPage<Order|ShippingPackage>
+    // or a raw array); view items uniformly as plain records for the dump.
+    const r = (await fn()) as unknown as
       | { totalCount: number; items: Array<Record<string, unknown>> }
       | Array<Record<string, unknown>>;
     const items = Array.isArray(r) ? r : r.items;

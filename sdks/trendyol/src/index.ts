@@ -1,6 +1,8 @@
 export { createTrendyolClient, type CreateClientOptions, type TrendyolClient } from './client.js';
 export { parseWebhookEvent } from './parse-webhook-event.js';
 export { normalizeShipmentPackage } from './resources/orders.js';
+export { statusMap, normalizeStatus } from './status.js';
+export { trendyolCapabilities, type TrendyolCapabilities } from './capabilities.js';
 export { type TrendyolEnvironment } from './transport.js';
 export { BrandsResource } from './resources/brands.js';
 export {
@@ -10,7 +12,11 @@ export {
 export { ClaimsResource } from './resources/claims.js';
 export { ExportCenterResource } from './resources/export-center.js';
 export { FinanceResource } from './resources/finance.js';
-export { InventoryResource } from './resources/inventory.js';
+export {
+  InventoryResource,
+  pollBatchStatus,
+  type BatchPollOptions,
+} from './resources/inventory.js';
 export { InvoicesResource } from './resources/invoices.js';
 export { LabelsResource } from './resources/labels.js';
 export { LocationsResource } from './resources/locations.js';
@@ -72,6 +78,7 @@ export type {
   PackageDetail,
   PackageHistoryEntry,
   PackageLineUpdate,
+  KnownShipmentPackageStatus,
   ProcessAlternativeDeliveryInput,
   QuantitySplit,
   ShipmentPackage,

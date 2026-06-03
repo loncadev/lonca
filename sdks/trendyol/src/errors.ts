@@ -1,6 +1,7 @@
 import {
   AuthError,
   LoncaError,
+  type LoncaErrorIssue,
   NotFoundError,
   RateLimitError,
   ServerError,
@@ -19,27 +20,31 @@ import {
  */
 export function mapHttpError(status: number, body: unknown, retryAfterMs?: number): LoncaError {
   const data = { body } as Record<string, unknown>;
+  const issues = normalizeErrorIssues(body);
   switch (status) {
     case 401:
       return new AuthError({
         message: 'Trendyol authentication failed (check apiKey / apiSecret)',
         status,
         data,
+        issues,
       });
     case 403:
       return new ValidationError({
         message: 'Trendyol forbidden (check User-Agent header or endpoint path)',
         status,
         data,
+        issues,
       });
     case 404:
-      return new NotFoundError({ message: 'Trendyol resource not found', status, data });
+      return new NotFoundError({ message: 'Trendyol resource not found', status, data, issues });
     case 429:
       return new RateLimitError({
         message: 'Trendyol rate limit exceeded',
         status,
         retryAfterMs,
         data,
+        issues,
       });
     case 500:
     case 502:
@@ -49,6 +54,7 @@ export function mapHttpError(status: number, body: unknown, retryAfterMs?: numbe
         message: `Trendyol server error (${status})`,
         status,
         data,
+        issues,
       });
     default:
       return new LoncaError({
@@ -56,9 +62,51 @@ export function mapHttpError(status: number, body: unknown, retryAfterMs?: numbe
         message: `Trendyol unexpected response (${status})`,
         status,
         data,
+        issues,
         retryable: false,
       });
   }
+}
+
+/**
+ * Normalize Trendyol's (inconsistent) error body into `LoncaErrorIssue[]`.
+ * Trendyol returns either `{ errors: [{ field?, message }] }` or
+ * `{ errors: [string] }`, sometimes nested under `{ body: { errors } }`.
+ *
+ * Only `{ field, code, message }` are copied — never the raw payload, which can
+ * carry PII. The untouched body stays on `error.data` for debugging.
+ */
+function normalizeErrorIssues(body: unknown): LoncaErrorIssue[] {
+  const errors = extractErrorsArray(body);
+  if (!errors) return [];
+  const issues: LoncaErrorIssue[] = [];
+  for (const entry of errors) {
+    if (typeof entry === 'string') {
+      issues.push({ message: entry });
+      continue;
+    }
+    if (entry && typeof entry === 'object') {
+      const e = entry as Record<string, unknown>;
+      if (typeof e.message !== 'string') continue;
+      const issue: LoncaErrorIssue = { message: e.message };
+      if (typeof e.field === 'string') issue.field = e.field;
+      if (typeof e.code === 'string') issue.code = e.code;
+      issues.push(issue);
+    }
+  }
+  return issues;
+}
+
+function extractErrorsArray(body: unknown): unknown[] | undefined {
+  if (!body || typeof body !== 'object') return undefined;
+  const b = body as Record<string, unknown>;
+  if (Array.isArray(b.errors)) return b.errors;
+  const nested = b.body;
+  if (nested && typeof nested === 'object') {
+    const n = nested as Record<string, unknown>;
+    if (Array.isArray(n.errors)) return n.errors;
+  }
+  return undefined;
 }
 
 /** Parse a `Retry-After` header value (seconds OR HTTP-date) into milliseconds. */

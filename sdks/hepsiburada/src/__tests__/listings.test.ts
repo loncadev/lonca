@@ -98,7 +98,8 @@ describe('ListingsResource.list', () => {
     const page = await r(transport).list({ offset: 0, limit: 100 });
 
     expect(page.totalCount).toBe(1);
-    expect(page.listings[0]).toMatchObject({
+    expect(page.pageCount).toBe(1);
+    expect(page.items[0]).toMatchObject({
       listingId: 'L-1',
       hepsiburadaSku: 'HB-1',
       merchantSku: 'M-1',
@@ -106,6 +107,19 @@ describe('ListingsResource.list', () => {
       availableStock: 10,
       isSalable: true,
     });
+    // updatedAt is surfaced as null when the wire row carries no timestamp.
+    expect(page.items[0]!.updatedAt).toBeNull();
+  });
+
+  it('surfaces updatedAt from the wire row when present', async () => {
+    const transport = mockTransport({
+      listings: [{ listingId: 'L-2', lastUpdateDate: '2026-05-01T08:00:00Z' }],
+      totalCount: 1,
+      limit: 100,
+      offset: 0,
+    });
+    const page = await r(transport).list({ offset: 0, limit: 100 });
+    expect(page.items[0]!.updatedAt).toBe('2026-05-01T08:00:00Z');
   });
 });
 

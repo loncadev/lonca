@@ -1,4 +1,4 @@
-import { TokenBucketRateLimiter, ValidationError } from '@lonca/core';
+import { TokenBucketRateLimiter, ValidationError, type OffsetPage } from '@lonca/core';
 import type { HepsiburadaTransport } from '../transport.js';
 import type {
   AdditionalInfoUploadItem,
@@ -8,7 +8,6 @@ import type {
   InventoryUploadItem,
   ListListingsParams,
   Listing,
-  ListingsPage,
   PriceUploadItem,
   PriceUploadResult,
   ShippingInfoUploadItem,
@@ -79,7 +78,18 @@ interface WireListing {
 function normalizeListing(node: WireListing): Listing {
   // Listing shape is 1:1 with the wire today — keep the typed copy explicit
   // so future field changes show up here, not in an `as unknown` cast.
-  return { ...node } as Listing;
+  const listing = { ...node } as Listing;
+  listing.updatedAt = extractUpdatedAt(node);
+  return listing;
+}
+
+/** Best-effort last-update timestamp from a listing row; `null` when absent. */
+function extractUpdatedAt(node: Record<string, unknown>): string | null {
+  for (const key of ['updatedAt', 'lastUpdateDate', 'lastModifiedDate', 'modifiedDate']) {
+    const value = node[key];
+    if (typeof value === 'string' && value) return value;
+  }
+  return null;
 }
 
 interface WireUploadResult {
@@ -149,7 +159,7 @@ export class ListingsResource {
    *
    * @throws {ValidationError} when `limit < 1` or `offset < 0`.
    */
-  async list(params: ListListingsParams): Promise<ListingsPage> {
+  async list(params: ListListingsParams): Promise<OffsetPage<Listing>> {
     if (!params || typeof params.offset !== 'number' || params.offset < 0) {
       throw new ValidationError({ message: 'listings.list: offset must be ≥ 0' });
     }
@@ -179,11 +189,14 @@ export class ListingsResource {
       rateLimiter: this.limiter,
     });
 
+    const totalCount = typeof data.totalCount === 'number' ? data.totalCount : 0;
+    const limit = typeof data.limit === 'number' ? data.limit : params.limit;
     return {
-      listings: (data.listings ?? []).map(normalizeListing),
-      totalCount: typeof data.totalCount === 'number' ? data.totalCount : 0,
-      limit: typeof data.limit === 'number' ? data.limit : params.limit,
+      totalCount,
+      limit,
       offset: typeof data.offset === 'number' ? data.offset : params.offset,
+      pageCount: limit > 0 ? Math.ceil(totalCount / limit) : 0,
+      items: (data.listings ?? []).map(normalizeListing),
     };
   }
 

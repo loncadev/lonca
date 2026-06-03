@@ -50,6 +50,13 @@ export interface Order {
   orderNumber?: string;
   externalOrderNumber?: string;
   status?: string;
+  /**
+   * Customer display name, surfaced from the raw row's candidate fields
+   * (`customerName`, `customer.name`, `customer.firstName/lastName`,
+   * `recipientName`). `null` when Hepsiburada omits all of them — so callers
+   * stop guessing from `raw`.
+   */
+  customerName?: string | null;
   createdDate?: string;
   modifiedDate?: string;
   total?: number | string;

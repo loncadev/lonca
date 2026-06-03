@@ -15,6 +15,7 @@ import { SuppliersResource } from './resources/suppliers.js';
 import { TestOrdersResource } from './resources/test-orders.js';
 import { VideosResource } from './resources/videos.js';
 import { WebhooksResource } from './resources/webhooks.js';
+import { trendyolCapabilities, type TrendyolCapabilities } from './capabilities.js';
 import { TrendyolTransport, type TrendyolEnvironment } from './transport.js';
 
 export interface CreateClientOptions {
@@ -62,6 +63,8 @@ export interface TrendyolClient {
   locations: LocationsResource;
   exportCenter: ExportCenterResource;
   videos: VideosResource;
+  /** Static feature-capability flags for feature detection. */
+  capabilities: TrendyolCapabilities;
 }
 
 /**
@@ -93,12 +96,25 @@ export function createTrendyolClient(opts: CreateClientOptions): TrendyolClient 
     timeoutMs: opts.timeoutMs,
   });
 
+  return buildClient(transport);
+}
+
+/**
+ * Wire the full resource graph over a transport. Shared by
+ * {@link createTrendyolClient} and the `@lonca/trendyol/testing` fake client so
+ * both stay structurally identical. Not re-exported from the package entry.
+ *
+ * @internal
+ */
+export function buildClient(transport: TrendyolTransport): TrendyolClient {
+  const products = new ProductsResource(transport);
+
   return {
     brands: new BrandsResource(transport),
     categories: new CategoriesResource(transport),
     suppliers: new SuppliersResource(transport),
-    products: new ProductsResource(transport),
-    inventory: new InventoryResource(transport),
+    products,
+    inventory: new InventoryResource(transport, (id) => products.getBatchStatus(id)),
     orders: new OrdersResource(transport),
     claims: new ClaimsResource(transport),
     webhooks: new WebhooksResource(transport),
@@ -110,5 +126,6 @@ export function createTrendyolClient(opts: CreateClientOptions): TrendyolClient 
     locations: new LocationsResource(transport),
     exportCenter: new ExportCenterResource(transport),
     videos: new VideosResource(transport),
+    capabilities: trendyolCapabilities,
   };
 }

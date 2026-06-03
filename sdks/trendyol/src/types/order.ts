@@ -1,12 +1,10 @@
 /**
- * Trendyol shipment-package status.
- *
- * Trendyol uses ~13 distinct values (Created, Picking, Invoiced, Shipped,
- * Cancelled, Delivered, UnDelivered, Returned, UnSupplied, Awaiting,
- * UnPacked, AtCollectionPoint, Verified). Typed as a union with an open
- * escape so unknown values still type-check.
+ * The closed set of Trendyol shipment-package statuses the SDK maps
+ * exhaustively (see `statusMap` / `normalizeStatus`). Kept separate from the
+ * open wire type {@link ShipmentPackageStatus} so the status map stays
+ * exhaustive at compile time while unknown wire values stay representable.
  */
-export type ShipmentPackageStatus =
+export type KnownShipmentPackageStatus =
   | 'Created'
   | 'Picking'
   | 'Invoiced'
@@ -19,8 +17,16 @@ export type ShipmentPackageStatus =
   | 'Awaiting'
   | 'UnPacked'
   | 'AtCollectionPoint'
-  | 'Verified'
-  | (string & {});
+  | 'Verified';
+
+/**
+ * Trendyol shipment-package status as it appears on the wire.
+ *
+ * Trendyol uses ~13 distinct values (see {@link KnownShipmentPackageStatus}).
+ * Open (`string & {}`) so a status Trendyol adds later still type-checks; fold
+ * it into the closed `NormalizedOrderStatus` vocab with `normalizeStatus`.
+ */
+export type ShipmentPackageStatus = KnownShipmentPackageStatus | (string & {});
 
 export interface OrderAddressLines {
   addressLine1?: string;

@@ -38,6 +38,29 @@ describe('errors', () => {
     expect(err.cause).toBe(cause);
   });
 
+  it('issues defaults to an empty array so callers never branch on presence', () => {
+    const err = new LoncaError({ code: 'UNKNOWN', message: 'boom' });
+    expect(err.issues).toEqual([]);
+    expect(err.issues.map((i) => i.message)).toEqual([]);
+  });
+
+  it('carries normalized issues when provided', () => {
+    const err = new ValidationError({
+      message: 'invalid',
+      issues: [
+        { field: 'barcode', code: 'REQUIRED', message: 'barcode is required' },
+        { message: 'price too low' },
+      ],
+    });
+    expect(err.issues).toHaveLength(2);
+    expect(err.issues[0]).toEqual({
+      field: 'barcode',
+      code: 'REQUIRED',
+      message: 'barcode is required',
+    });
+    expect(err.issues[1]).toEqual({ message: 'price too low' });
+  });
+
   it.each([
     ['AuthError', new AuthError({ message: 'x' }), 'AUTH_FAILED', false],
     ['RateLimitError', new RateLimitError({ message: 'x' }), 'RATE_LIMITED', true],

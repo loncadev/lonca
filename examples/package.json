@@ -4,6 +4,9 @@
   "private": true,
   "description": "Smoke-test and demo scripts for Lonca SDKs (not published).",
   "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
   "dependencies": {
     "@lonca/core": "workspace:*",
     "@lonca/hepsiburada": "workspace:*",
