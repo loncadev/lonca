@@ -8,35 +8,35 @@
 
 Type-safe TypeScript SDK for the [Trendyol Marketplace API](https://developers.trendyol.com).
 
-> **`0.6.0` — Trendyol surface complete.** 14 resources, ~70 typed methods, plus a `parseWebhookEvent` helper for inbound event handling. Every endpoint a non-AutoFT non-V1 seller can hit is covered.
+> **Trendyol surface complete.** 16 resources spanning catalog, orders, claims, finance, webhooks, and Export Center, plus a `parseWebhookEvent` helper for inbound event handling. Every endpoint a non-AutoFT non-V1 seller can hit is covered. See the [npm badge](https://www.npmjs.com/package/@lonca/trendyol) above for the current release.
 
 ## Coverage
 
-Each entry is a method on the client. Endpoints marked `★` are discovery-first wire-verified against live Trendyol STAGE — the SDK normalizes any spec/wire mismatch.
+Each entry is a method on the client.
 
 | Resource         | Methods                                                                                                                                                                                                                                                                                                                            |
 | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `brands`         | `list()`, `search(name)` ★                                                                                                                                                                                                                                                                                                         |
-| `categories`     | `list()`, `getAttributes(id)`, `getAttributeValues(catId, attrId)` ★, `getByBarcodes(barcodes)` (AutoFT)                                                                                                                                                                                                                           |
+| `brands`         | `list()`, `search(name)`                                                                                                                                                                                                                                                                                                           |
+| `categories`     | `list()`, `getAttributes(id)`, `getAttributeValues(catId, attrId)`, `getByBarcodes(barcodes)` (AutoFT)                                                                                                                                                                                                                             |
 | `suppliers`      | `getAddresses({forceRefresh?})` (1-hour cache; rate-limited 1 req/hour on Trendyol)                                                                                                                                                                                                                                                |
-| `products` read  | `list({...})` ★, `listUnapproved({...})` ★, `getBase(barcode)` ★, `getBuyboxInfo(barcodes)` ★, `getBatchStatus(id)` ★                                                                                                                                                                                                              |
-| `products` write | `create(items)`, `updateContent(items)`, `updateVariants(items)`, `updateUnapproved(items)` ★, `updateDeliveryInfo(items)`                                                                                                                                                                                                         |
+| `products` read  | `list({...})`, `listInventoryAndPrice({...})` (lightweight stock + price), `listUnapproved({...})`, `getBase(barcode)`, `getBuyboxInfo(barcodes)`, `getBatchStatus(id)`                                                                                                                                                            |
+| `products` write | `create(items)`, `updateContent(items)`, `updateVariants(items)`, `updateUnapproved(items)`, `updateDeliveryInfo(items)`                                                                                                                                                                                                           |
 | `products` life  | `delete(barcodes)`, `archive(barcodes)`, `unarchive(barcodes)`, `unlock(barcodes)`                                                                                                                                                                                                                                                 |
-| `inventory`      | `update(items)` ★ (stock + price, async batch)                                                                                                                                                                                                                                                                                     |
-| `orders` read    | `list({...})` ★, `listStream({...})` ★ (opaque cursor for >10K), `getCargoInvoiceItems(serial, {...})`                                                                                                                                                                                                                             |
+| `inventory`      | `update(items)` (stock + price, async batch)                                                                                                                                                                                                                                                                                       |
+| `orders` read    | `list({...})`, `listStream({...})` (opaque cursor for >10K), `getCargoInvoiceItems(serial, {...})`                                                                                                                                                                                                                                 |
 | `orders` write   | `updatePackageStatus(id, {...})`, `cancelPackageItem(id, {...})`, `extendDeliveryDate(id, 1\|2\|3)`, `processAlternativeDelivery(id, {...})`                                                                                                                                                                                       |
 | `orders` split   | `splitPackage`, `splitPackageByQuantity`, `multiSplitPackage`, `splitMultiPackagesByQuantity` (4 variants)                                                                                                                                                                                                                         |
 | `orders` cargo   | `changeCargoProvider(id, code)`, `manualDeliverByPackageId(id)`, `manualDeliverByTrackingNumber(trk)`, `markDeliveredByService(id)`                                                                                                                                                                                                |
 | `orders` ops     | `updateBoxInfo(id, {...})`, `updateLaborCosts(id, items)`, `updateWarehouse(id, warehouseId)`                                                                                                                                                                                                                                      |
 | `orders` returns | `manualReturnByPackageId(id)`, `manualReturnByTrackingNumber(trk)`, `getCompensationTickets({...})` (TEX)                                                                                                                                                                                                                          |
-| `claims`         | `create({...})`, `createIssue(id, {...})` (multipart), `approveLineItems(id, {...})`, `list({...})`, `getIssueReasons()` ★, `getItemAudits(itemId)` ★                                                                                                                                                                              |
+| `claims`         | `create({...})`, `createIssue(id, {...})` (multipart), `approveLineItems(id, {...})`, `list({...})`, `getIssueReasons()`, `getItemAudits(itemId)`                                                                                                                                                                                  |
 | `webhooks`       | `create({...})`, `list()`, `update(id, {...})`, `delete(id)`, `activate(id)`, `deactivate(id)`                                                                                                                                                                                                                                     |
-| `questions`      | `get(id)`, `list({...})` ★, `answer(id, text)`                                                                                                                                                                                                                                                                                     |
+| `questions`      | `get(id)`, `list({...})`, `answer(id, text)`                                                                                                                                                                                                                                                                                       |
 | `invoices`       | `uploadFile({shipmentPackageId, file, ...})` (multipart), `sendLink({...})`, `deleteLink({...})`                                                                                                                                                                                                                                   |
-| `finance`        | `getSettlements({...})`, `getOtherFinancials({...})` — both return typed `FinancialTransaction[]` ★                                                                                                                                                                                                                                |
-| `labels`         | `createCommon(trackingNumber, {format: 'ZPL', ...})`, `getCommon(trackingNumber)` ★                                                                                                                                                                                                                                                |
+| `finance`        | `getSettlements({...})`, `getOtherFinancials({...})` — both return typed `FinancialTransaction[]`                                                                                                                                                                                                                                  |
+| `labels`         | `createCommon(trackingNumber, {format: 'ZPL', ...})`, `getCommon(trackingNumber)`                                                                                                                                                                                                                                                  |
 | `testOrders`     | `create({...})`, `updateStatus(id, status)`, `setClaimsWaitingInAction()` — **STAGE-only utility**                                                                                                                                                                                                                                 |
-| `locations`      | `getCountries()` ★, `getTurkeyCities()` ★, `getTurkeyDistricts(cityCode)`, `getTurkeyNeighborhoods(cityCode, districtCode)`, `getAzerbaijanCities()`, `getAzerbaijanDistricts(...)`, `getCitiesByCountry/getDistrictsByCity(...)`                                                                                                  |
+| `locations`      | `getCountries()`, `getTurkeyCities()`, `getTurkeyDistricts(cityCode)`, `getTurkeyNeighborhoods(cityCode, districtCode)`, `getAzerbaijanCities()`, `getAzerbaijanDistricts(...)`, `getCitiesByCountry/getDistrictsByCity(...)`                                                                                                      |
 | `exportCenter`   | `listProducts({...})`, `createProducts(items)`, `updatePrices(items)`, `updateStocks(items)`, `getBatchStatus(batchId)`, `listPackagesV2/V3({...})`, `getPackageItems({packageId, ...})`, `getCategoryAttributes(id)`, `getCareInstructions()`, `getCompositions()`, `getOrigins()` — **Trendyol Export Center / İhracat Merkezi** |
 | `videos`         | `create({contentId, url, ...})`, `list({id?, sellerIntegrationStatus?, ...})` — product-page video upload + status                                                                                                                                                                                                                 |
 | **top-level**    | `parseWebhookEvent(rawBody)`, `normalizeShipmentPackage(rawNode)` — for inbound webhook handlers                                                                                                                                                                                                                                   |
@@ -238,6 +238,7 @@ await client.suppliers.getAddresses({ forceRefresh: true });
 
 // products — read
 await client.products.list({ barcode: 'BC1' });
+await client.products.listInventoryAndPrice({ status: 'onSale', limit: 100 }); // stock + price only
 await client.products.listUnapproved({ limit: 50 });
 await client.products.getBase('BC1');
 await client.products.getBuyboxInfo(['BC1', 'BC2']); // max 10 per call
@@ -378,25 +379,6 @@ const status = await client.products.getBatchStatus(batchRequestId);
 ```
 
 **Important:** Trendyol's overall batch `status` can lag at `PROCESSING` even after each `items[].status` has settled. Trust the per-item status, or re-read the affected products via `list({ barcode })` / `getBase(barcode)` to verify the change landed. Batch results are retained for **4 hours** on Trendyol's side.
-
-## Discovery-first wire fixes
-
-`@lonca/trendyol` was built by hitting the live Trendyol STAGE for every endpoint before writing types. Places where the official OpenAPI spec disagrees with the live wire are normalized automatically:
-
-- `categories.getAttributeValues`: spec says `attributeValueName`, wire returns `attributeValue` → SDK normalizes to `{ id, name }`
-- `products.listUnapproved`: spec says `media: [{url}]`, wire returns `images: [{url}]` → SDK exposes `images: string[]`
-- `products.getBuyboxInfo`: wire returns extra `secondBuyboxPrice` / `thirdBuyboxPrice` fields beyond spec → both surfaced
-- `products.updateUnapproved`: spec marks only `barcode` required, but live endpoint returns HTTP 500 (`TypeError`) when too many optional fields are omitted → documented in JSDoc
-- `brands.search`: docs claim case-sensitive exact match, live is substring + case-insensitive → documented in JSDoc
-- `getBatchRequestResult`: returns `PROCESSING + empty items` for unknown batch IDs (not 404)
-- `orders.listStream` returns package ID as `id`, regular `orders.list` returns it as `shipmentPackageId` → normalizer accepts both
-- `orders.updateLaborCosts`: body is a **raw array** (no `{ items: [...] }` envelope) — only endpoint in the surface that does this
-- `getCompensationTickets`: spec says `{ data: { items: [] } }`, but SDK also accepts `{ data: [] }` and `{ content: [] }` defensively
-- `labels.getCommon`: response is `{ data: [{ label, format }] }` → SDK surfaces `labels[]` for ergonomic access
-- `finance.*`: both `getSettlements` and `getOtherFinancials` share the same `FinancialTransaction` wire schema → unified typed surface
-- `webhooks.list`: SDK accepts 3 envelope shapes (`[]` raw, `{ webhooks: [] }`, `{ content: [] }`) and 3 active-flag spellings (`active`, `isActive`, `status: 'ACTIVE'`)
-
-Each fix is pinned by a regression mock test using the exact STAGE shape.
 
 ## Authentication
 

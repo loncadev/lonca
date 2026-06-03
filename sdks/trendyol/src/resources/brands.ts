@@ -70,7 +70,7 @@ export class BrandsResource {
    * `createProducts` and don't want to page through the full `list()`
    * (1000 brands per page).
    *
-   * **Discovery-first wire fact (verified STAGE 2026-05-25):** Trendyol's
+   * **Wire fact (verified STAGE 2026-05-25):** Trendyol's
    * doc claims this is a case-sensitive *exact* match, but live behaviour
    * is **substring + case-insensitive** — `search('Trendyol')` returns
    * 17 hits including `TRENDYOLMILLA`, `trendyol vavist`, `Trendyol Üyelik`.
