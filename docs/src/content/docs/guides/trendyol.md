@@ -7,22 +7,24 @@ description: End-to-end usage of the @lonca/trendyol SDK — product catalog, or
 
 ## Resources at a glance
 
-| Resource     | What it covers                                                   |
-| ------------ | ---------------------------------------------------------------- |
-| `brands`     | List all brands; resolve brand IDs by name.                      |
-| `categories` | Category tree + per-category attributes.                         |
-| `suppliers`  | Seller-info read (rate-limited to 1 req/hour).                   |
-| `products`   | Read + create + update merchant products.                        |
-| `inventory`  | Stock/price update + status polling.                             |
-| `orders`     | Order list, status transitions, package management.              |
-| `claims`     | Customer returns — list + accept/reject.                         |
-| `questions`  | Product questions on storefront — answer / reject.               |
-| `finance`    | Settlements + other financial transactions.                      |
-| `invoices`   | E-invoice flows.                                                 |
-| `labels`     | Shared cargo labels / barcodes.                                  |
-| `testOrders` | Sandbox test order creation.                                     |
-| `locations`  | Country/city/district lookup.                                    |
-| `webhooks`   | CRUD over webhook configurations + `parseWebhookEvent()` helper. |
+| Resource       | What it covers                                                                   |
+| -------------- | -------------------------------------------------------------------------------- |
+| `brands`       | List all brands; resolve brand IDs by name.                                      |
+| `categories`   | Category tree + per-category attributes.                                         |
+| `suppliers`    | Seller-info read (rate-limited to 1 req/hour).                                   |
+| `products`     | Read + create + update merchant products (incl. lightweight stock/price filter). |
+| `inventory`    | Stock/price update + status polling.                                             |
+| `orders`       | Order list, status transitions, package management.                              |
+| `claims`       | Customer returns — list + accept/reject.                                         |
+| `questions`    | Product questions on storefront — answer / reject.                               |
+| `finance`      | Settlements + other financial transactions.                                      |
+| `invoices`     | E-invoice flows.                                                                 |
+| `labels`       | Shared cargo labels / barcodes.                                                  |
+| `testOrders`   | Sandbox test order creation.                                                     |
+| `locations`    | Country/city/district lookup.                                                    |
+| `exportCenter` | Export Center (İhracat Merkezi) — cross-border catalog + packages.               |
+| `videos`       | Product-page video upload + status.                                              |
+| `webhooks`     | CRUD over webhook configurations + `parseWebhookEvent()` helper.                 |
 
 ## Quick start
 
@@ -69,7 +71,7 @@ app.use(express.json());
 app.post('/ty/webhook', (req, res) => {
   const { packages, pageInfo } = parseWebhookEvent(req.body);
   for (const p of packages) {
-    console.log(p.shipmentPackageId, p.status);
+    console.log(p.id, p.status);
   }
   res.status(200).end();
 });

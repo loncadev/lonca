@@ -30,8 +30,8 @@ Lonca uses [Changesets](https://github.com/changesets/changesets) for releases. 
 ```jsonc
 {
   "dependencies": {
-    "@lonca/hepsiburada": "~0.6.0",
-    "@lonca/trendyol": "~0.6.0",
+    "@lonca/hepsiburada": "~0.9.0",
+    "@lonca/trendyol": "~0.11.0",
   },
 }
 ```
