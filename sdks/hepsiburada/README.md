@@ -8,6 +8,9 @@
 
 Type-safe TypeScript SDK for the [Hepsiburada Marketplace API](https://developers.hepsiburada.com). Covers every operation documented on the developer portal — **95 methods across 12 resources**, live-verified against SIT.
 
+> [!IMPORTANT]
+> **Unofficial.** This is an independent, community-maintained SDK. It is not affiliated with, endorsed by, or supported by Hepsiburada. "Hepsiburada" and related names are trademarks of their respective owners.
+
 ## Coverage
 
 | Resource         | Methods | Host                                   | Source                         |

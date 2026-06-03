@@ -1,0 +1,14 @@
+---
+// Site-wide footer override: keep Starlight's default footer (pagination,
+// last-updated, edit link) and append an "unofficial / not affiliated"
+// disclaimer to every documentation page.
+import Default from '@astrojs/starlight/components/Footer.astro';
+---
+
+<Default><slot /></Default>
+
+<p class="lonca-unofficial-disclaimer">
+  <strong>Unofficial.</strong> Lonca is an independent, community-maintained project — not affiliated
+  with, endorsed by, or supported by Trendyol, Hepsiburada, or any other marketplace. All marketplace
+  names and trademarks belong to their respective owners.
+</p>

@@ -15,3 +15,12 @@
 .expressive-code .frame pre {
   line-height: 1.5;
 }
+
+/* Site-wide "unofficial" disclaimer appended to the page footer */
+.lonca-unofficial-disclaimer {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--sl-color-hairline);
+  font-size: var(--sl-text-xs);
+  color: var(--sl-color-gray-3);
+}

@@ -5,6 +5,10 @@ description: What Lonca is, what's inside, and how the SDKs are organized.
 
 **Lonca** is an open-source collection of TypeScript SDKs for Turkish marketplaces — built so a single TypeScript codebase can integrate with Trendyol, Hepsiburada, and (eventually) every other major Turkish marketplace through a uniform, type-safe surface.
 
+:::caution[Unofficial & independent]
+Lonca is a community-maintained project. These are **not** official SDKs and are not affiliated with, endorsed by, or supported by Trendyol, Hepsiburada, or any other marketplace. All product names and trademarks belong to their respective owners.
+:::
+
 ## The problem
 
 If you sell on more than one Turkish marketplace, you've probably written something like this:
