@@ -1,6 +1,6 @@
 {
   "name": "@lonca/trendyol",
-  "version": "0.11.1",
+  "version": "0.11.2",
   "description": "Type-safe TypeScript SDK for the Trendyol Marketplace API",
   "license": "MIT",
   "repository": {

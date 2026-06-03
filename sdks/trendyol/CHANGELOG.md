@@ -1,5 +1,12 @@
 # @lonca/trendyol
 
+## 0.11.2
+
+### Patch Changes
+
+- Updated dependencies [[`8ae5960`](https://github.com/loncadev/lonca/commit/8ae59608ea3c90cf435f1c1e6cee43cb428948e1)]:
+  - @lonca/core@0.5.0
+
 ## 0.11.1
 
 ### Patch Changes
