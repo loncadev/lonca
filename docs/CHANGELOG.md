@@ -1,5 +1,14 @@
 # @lonca/docs
 
+## 0.0.9
+
+### Patch Changes
+
+- Updated dependencies [[`c80e1f7`](https://github.com/loncadev/lonca/commit/c80e1f7430f5919570b9642300fe89ec82294d94)]:
+  - @lonca/core@0.6.0
+  - @lonca/hepsiburada@0.9.3
+  - @lonca/trendyol@0.11.3
+
 ## 0.0.8
 
 ### Patch Changes
