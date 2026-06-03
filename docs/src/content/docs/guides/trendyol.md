@@ -51,10 +51,10 @@ for (const b of page.items) {
 
 ## Pagination
 
-All list endpoints return `CursorPage<T>` with `items` + `nextCursor`. Use `paginate()` from `@lonca/core` to iterate every page:
+All list endpoints return `CursorPage<T>` with `items` + `nextCursor`. Use `paginate()` — re-exported from `@lonca/trendyol`, so you don't need a direct `@lonca/core` dependency — to iterate every page:
 
 ```ts
-import { paginate } from '@lonca/core';
+import { paginate } from '@lonca/trendyol';
 
 for await (const brand of paginate((cursor) => client.brands.list({ limit: 50, cursor }))) {
   console.log(brand.id, brand.name);

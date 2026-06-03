@@ -4,6 +4,17 @@ export { normalizeShipmentPackage } from './resources/orders.js';
 export { statusMap, normalizeStatus } from './status.js';
 export { trendyolCapabilities, type TrendyolCapabilities } from './capabilities.js';
 export { type TrendyolEnvironment } from './transport.js';
+// Pagination helpers re-exported from @lonca/core so consumers can iterate list
+// endpoints (which return `CursorPage`/`OffsetPage`) without taking a direct
+// @lonca/core dependency.
+export {
+  paginate,
+  paginateOffset,
+  type CursorPage,
+  type CursorPaginationParams,
+  type OffsetPage,
+  type OffsetPaginationParams,
+} from '@lonca/core';
 export { BrandsResource } from './resources/brands.js';
 export {
   CategoriesResource,
