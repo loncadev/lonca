@@ -1,14 +1,5 @@
-import { randomUUID } from 'node:crypto';
-import {
-  LoncaError,
-  NetworkError,
-  TimeoutError,
-  noopLogger,
-  retry,
-  type Logger,
-  type TokenBucketRateLimiter,
-} from '@lonca/core';
-import { mapHttpError, parseRetryAfter } from './errors.js';
+import { createRequester, type BaseRequestOptions, type Logger } from '@lonca/core';
+import { mapHttpError } from './errors.js';
 
 /**
  * Hepsiburada exposes its marketplace API across several `*-external` hostnames,
@@ -61,123 +52,43 @@ export interface TransportConfig {
   fetch?: typeof fetch;
 }
 
-export interface RequestOptions {
+export interface RequestOptions extends BaseRequestOptions {
   method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
   /** Which Hepsiburada service to call; selects the base URL. */
   service: HepsiburadaService;
   /** Path beginning with `/` (e.g. `/listings/merchantid/<id>`). */
   path: string;
   query?: Record<string, string | number | boolean | undefined>;
-  body?: unknown;
-  signal?: AbortSignal;
-  /** Per-endpoint rate limiter; acquire one token before each attempt. */
-  rateLimiter?: TokenBucketRateLimiter;
 }
 
 export class HepsiburadaTransport {
   private readonly env: HepsiburadaEnvironment;
-  private readonly logger: Logger;
-  private readonly timeoutMs: number;
-  private readonly fetchImpl: typeof fetch;
   private readonly authHeader: string;
+  private readonly requester: <T>(opts: RequestOptions) => Promise<T>;
 
   constructor(private readonly config: TransportConfig) {
     this.env = config.env;
-    this.logger = config.logger ?? noopLogger;
-    this.timeoutMs = config.timeoutMs ?? 30_000;
-    this.fetchImpl = config.fetch ?? fetch;
     this.authHeader =
       'Basic ' + Buffer.from(`${config.username}:${config.password}`, 'utf8').toString('base64');
+    this.requester = createRequester<RequestOptions>({
+      fetch: config.fetch ?? fetch,
+      logger: config.logger,
+      timeoutMs: config.timeoutMs ?? 30_000,
+      label: 'Hepsiburada',
+      logPrefix: 'hepsiburada',
+      buildUrl: (opts) => this.buildUrl(opts.service, opts.path, opts.query),
+      buildHeaders: (correlationId) => this.buildHeaders(correlationId),
+      mapHttpError,
+      logFields: (opts) => ({ service: opts.service }),
+    });
   }
 
   get merchantId(): string {
     return this.config.merchantId;
   }
 
-  async request<T>(opts: RequestOptions): Promise<T> {
-    return retry(
-      async (attempt) => {
-        if (opts.rateLimiter) await opts.rateLimiter.acquire(opts.signal);
-
-        const correlationId = randomUUID();
-        const url = this.buildUrl(opts.service, opts.path, opts.query);
-        const headers = this.buildHeaders(correlationId);
-        const init: RequestInit = {
-          method: opts.method,
-          headers,
-          signal: this.composeSignal(opts.signal),
-        };
-        if (opts.body !== undefined && opts.method !== 'GET') {
-          if (opts.body instanceof FormData) {
-            init.body = opts.body;
-            delete (headers as Record<string, string>)['Content-Type'];
-          } else {
-            init.body = JSON.stringify(opts.body);
-          }
-        }
-
-        this.logger.debug('hepsiburada.request', {
-          method: opts.method,
-          service: opts.service,
-          url,
-          attempt,
-          correlationId,
-        });
-
-        let response: Response;
-        try {
-          response = await this.fetchImpl(url, init);
-        } catch (err) {
-          if (err instanceof Error && err.name === 'AbortError') {
-            throw new TimeoutError({
-              message: `Hepsiburada request timed out after ${this.timeoutMs}ms`,
-              cause: err,
-            });
-          }
-          throw new NetworkError({
-            message: 'Hepsiburada network failure',
-            cause: err,
-          });
-        }
-
-        if (!response.ok) {
-          const body = await safeJson(response);
-          const retryAfterMs = parseRetryAfter(response.headers.get('retry-after'));
-          const error = mapHttpError(response.status, body, retryAfterMs);
-          this.logger.warn('hepsiburada.error', {
-            method: opts.method,
-            service: opts.service,
-            url,
-            status: response.status,
-            code: error.code,
-            retryable: error.retryable,
-            correlationId,
-          });
-          throw error;
-        }
-
-        this.logger.debug('hepsiburada.response', {
-          status: response.status,
-          correlationId,
-        });
-
-        if (response.status === 204) return undefined as T;
-        return (await safeJson(response)) as T;
-      },
-      {
-        signal: opts.signal,
-        onRetry: (err, attempt, delay) => {
-          if (err instanceof LoncaError) {
-            this.logger.warn('hepsiburada.retry', {
-              attempt,
-              delayMs: delay,
-              code: err.code,
-              status: err.status,
-            });
-          }
-        },
-      },
-    );
+  request<T>(opts: RequestOptions): Promise<T> {
+    return this.requester<T>(opts);
   }
 
   private buildUrl(
@@ -211,21 +122,5 @@ export class HepsiburadaTransport {
       // Hepsiburada Merchant Portal.
       'User-Agent': this.config.integratorName,
     };
-  }
-
-  private composeSignal(external?: AbortSignal): AbortSignal {
-    const timeoutSignal = AbortSignal.timeout(this.timeoutMs);
-    if (!external) return timeoutSignal;
-    return AbortSignal.any([external, timeoutSignal]);
-  }
-}
-
-async function safeJson(response: Response): Promise<unknown> {
-  const text = await response.text();
-  if (!text) return undefined;
-  try {
-    return JSON.parse(text);
-  } catch {
-    return text;
   }
 }

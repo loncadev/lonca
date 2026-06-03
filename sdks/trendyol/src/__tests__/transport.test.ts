@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { AuthError, NetworkError, RateLimitError } from '@lonca/core';
+import { AuthError, NetworkError, RateLimitError, ServerError } from '@lonca/core';
 import { TrendyolTransport } from '../transport.js';
 
 function jsonResponse(body: unknown, init: ResponseInit = {}): Response {
@@ -178,5 +178,57 @@ describe('TrendyolTransport', () => {
       transport.request({ method: 'GET', path: '/sapigw/brands' }),
     ).rejects.toBeInstanceOf(NetworkError);
     await assertion;
+  });
+
+  it('does NOT retry a non-idempotent POST on a 5xx (avoids duplicate side-effects)', async () => {
+    const fetchMock = fetchStatus(500, '{}');
+    const transport = makeTransport(fetchMock);
+
+    await expect(
+      transport.request({ method: 'POST', path: '/sapigw/suppliers/1/products', body: {} }),
+    ).rejects.toBeInstanceOf(ServerError);
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it('does NOT retry a non-idempotent POST on a network failure', async () => {
+    const fetchMock = vi.fn().mockRejectedValue(new Error('connect ECONNREFUSED'));
+    const transport = makeTransport(fetchMock);
+
+    await expect(
+      transport.request({ method: 'POST', path: '/sapigw/suppliers/1/products', body: {} }),
+    ).rejects.toBeInstanceOf(NetworkError);
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it('still retries a POST on 429 (server rejected it before processing)', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response('{}', { status: 429 }))
+      .mockResolvedValueOnce(jsonResponse({ ok: true }));
+    const transport = makeTransport(fetchMock);
+
+    const result = await transport.request<{ ok: boolean }>({
+      method: 'POST',
+      path: '/sapigw/suppliers/1/products',
+      body: {},
+    });
+
+    expect(result.ok).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('retries a POST on 5xx when the caller marks it idempotent', async () => {
+    const fetchMock = fetchStatus(500, '{}');
+    const transport = makeTransport(fetchMock);
+
+    await expect(
+      transport.request({
+        method: 'POST',
+        path: '/sapigw/suppliers/1/products',
+        body: {},
+        idempotent: true,
+      }),
+    ).rejects.toBeInstanceOf(ServerError);
+    expect(fetchMock).toHaveBeenCalledTimes(3); // default maxAttempts
   });
 });

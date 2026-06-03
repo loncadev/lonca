@@ -3,9 +3,11 @@ import {
   AuthError,
   isLoncaError,
   isRetryableError,
+  isRetryableIdempotentOnly,
   LoncaError,
   NetworkError,
   NotFoundError,
+  parseRetryAfter,
   RateLimitError,
   ServerError,
   TimeoutError,
@@ -87,5 +89,40 @@ describe('errors', () => {
     expect(isRetryableError(new RateLimitError({ message: '' }))).toBe(true);
     expect(isRetryableError(new AuthError({ message: '' }))).toBe(false);
     expect(isRetryableError(new Error('plain'))).toBe(false);
+  });
+
+  it('isRetryableIdempotentOnly only matches RateLimitError (429), not ambiguous failures', () => {
+    // 429 is provably rejected before processing — safe to replay even on a write.
+    expect(isRetryableIdempotentOnly(new RateLimitError({ message: '' }))).toBe(true);
+    // These could have committed server-side; replaying a write would duplicate it.
+    expect(isRetryableIdempotentOnly(new ServerError({ message: '' }))).toBe(false);
+    expect(isRetryableIdempotentOnly(new NetworkError({ message: '' }))).toBe(false);
+    expect(isRetryableIdempotentOnly(new TimeoutError({ message: '' }))).toBe(false);
+    expect(isRetryableIdempotentOnly(new AuthError({ message: '' }))).toBe(false);
+    expect(isRetryableIdempotentOnly(new Error('plain'))).toBe(false);
+  });
+});
+
+describe('parseRetryAfter', () => {
+  it('returns undefined for an absent or unparseable header', () => {
+    expect(parseRetryAfter(null)).toBeUndefined();
+    expect(parseRetryAfter('not a date')).toBeUndefined();
+  });
+
+  it('parses a positive delta-seconds value into milliseconds', () => {
+    expect(parseRetryAfter('5')).toBe(5000);
+  });
+
+  it('ignores a non-positive value so backoff is not collapsed to zero', () => {
+    expect(parseRetryAfter('0')).toBeUndefined();
+    expect(parseRetryAfter('-1')).toBeUndefined();
+  });
+
+  it('parses a future HTTP-date into a positive delay and ignores past dates', () => {
+    const future = new Date(Date.now() + 10_000).toUTCString();
+    const ms = parseRetryAfter(future);
+    expect(ms).toBeGreaterThan(8_000);
+    expect(ms).toBeLessThan(12_000);
+    expect(parseRetryAfter(new Date(Date.now() - 60_000).toUTCString())).toBeUndefined();
   });
 });

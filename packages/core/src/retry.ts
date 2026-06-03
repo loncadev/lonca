@@ -64,7 +64,9 @@ export async function retry<T>(
 
       const retryAfterMs = isLoncaError(err) ? err.retryAfterMs : undefined;
       const exponential = Math.min(maxDelayMs, baseDelayMs * 2 ** (attempt - 1));
-      const base = retryAfterMs ?? exponential;
+      // A non-positive `retryAfterMs` is ignored (not used as the base) so a
+      // `Retry-After: 0` can never collapse backoff to an immediate retry.
+      const base = retryAfterMs && retryAfterMs > 0 ? retryAfterMs : exponential;
       const jitterMs = jitter ? Math.random() * base * 0.5 : 0;
       const delay = Math.min(maxDelayMs, base + jitterMs);
 

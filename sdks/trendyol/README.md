@@ -398,7 +398,7 @@ Trendyol uses HTTP Basic Auth. Get your `sellerId`, `apiKey`, and `apiSecret` fr
 
 ## Built-in robustness
 
-- **Retry with exponential backoff** on 429 (respects `Retry-After`) and 5xx
+- **Idempotency-aware retry with exponential backoff** — reads (`GET`) retry on 429 (honoring `Retry-After`), 5xx, and network/timeout errors. Writes (`POST`/`PUT`/`DELETE`) retry **only** on 429, which the server rejects before processing; ambiguous 5xx/network/timeout failures on a write are not replayed, so a transient error can't duplicate an order action or stock/price push. A `Retry-After: 0` no longer collapses backoff to an immediate retry.
 - **Per-endpoint rate limiting** (token bucket) sized to Trendyol's documented limits — see defaults below; override per resource
 - **Per-request correlation ID** — every call gets a UUID surfaced in log messages and the `x-correlationid` header for Trendyol-side log tracing
 - **Structured errors** via `@lonca/core` (`AuthError`, `RateLimitError`, `NotFoundError`, `ServerError`, `ValidationError`, `NetworkError`, `TimeoutError`)
