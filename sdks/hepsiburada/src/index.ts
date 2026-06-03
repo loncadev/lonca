@@ -21,6 +21,17 @@ export {
   type ParsedHepsiburadaWebhookEvent,
 } from './types/webhook-event.js';
 export { type HepsiburadaEnvironment } from './transport.js';
+// Pagination helpers re-exported from @lonca/core so consumers can iterate list
+// endpoints (which return `OffsetPage`/`CursorPage`) without taking a direct
+// @lonca/core dependency.
+export {
+  paginate,
+  paginateOffset,
+  type CursorPage,
+  type CursorPaginationParams,
+  type OffsetPage,
+  type OffsetPaginationParams,
+} from '@lonca/core';
 export { ListingsResource } from './resources/listings.js';
 export { ShippingResource } from './resources/shipping.js';
 export { ClaimsResource } from './resources/claims.js';
