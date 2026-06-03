@@ -6,6 +6,7 @@ import {
 } from '@lonca/core';
 import type { TrendyolTransport } from '../transport.js';
 import type {
+  ApprovedProductStatus,
   BatchRequestItemResult,
   BatchRequestResult,
   BuyboxInfo,
@@ -13,6 +14,8 @@ import type {
   Product,
   ProductAttribute,
   ProductBase,
+  ProductStockPrice,
+  ProductStockPriceVariant,
   ProductVariant,
   UnapprovedProduct,
   UnapprovedProductRejectReason,
@@ -29,6 +32,8 @@ import type {
 const DEFAULT_PAGE_SIZE = 50;
 /** Trendyol caps `page × size` at 10,000; we cap `size` defensively. */
 const MAX_PAGE_SIZE = 1000;
+/** The inventory-and-price endpoint caps `size` at 100 (tighter than `list`). */
+const MAX_INVENTORY_PAGE_SIZE = 100;
 
 export interface ListProductsParams extends CursorPaginationParams {
   /** Filter by a single barcode. */
@@ -37,6 +42,33 @@ export interface ListProductsParams extends CursorPaginationParams {
   startDate?: Date;
   /** Filter products updated on or before this date. */
   endDate?: Date;
+}
+
+/**
+ * Filters for `products.listInventoryAndPrice` (Trendyol's lightweight
+ * `inventory-and-price` approved-product filter). All filters are optional;
+ * pass none to page through every approved product's stock + price.
+ */
+export interface ListInventoryAndPriceParams extends CursorPaginationParams {
+  /** Filter by a single barcode. */
+  barcode?: string;
+  /** Filter by a single contentId. */
+  contentId?: string;
+  /** Filter by the seller's stock code. */
+  stockCode?: string;
+  /** Filter by the seller's productMainId. */
+  productMainId?: string;
+  /** Filter by listing status (archived / blacklisted / locked / onSale / notOnSale). */
+  status?: ApprovedProductStatus;
+  /**
+   * Sort by `SellerCreatedDate`. `ASC` = oldest→newest, `DESC` = newest→oldest.
+   */
+  orderByDirection?: 'ASC' | 'DESC';
+  /**
+   * Storefront code sent as the `storeFrontCode` header. Required on the
+   * International marketplace; optional on the Türkiye marketplace.
+   */
+  storeFrontCode?: string;
 }
 
 /** Date field to filter against on `listUnapproved` (default: server choice). */
@@ -101,6 +133,41 @@ interface TrendyolProductNode {
 
 interface TrendyolFilterResponse {
   content?: TrendyolProductNode[];
+  totalElements?: number;
+  totalPages?: number;
+  page?: number;
+  size?: number;
+  nextPageToken?: string;
+}
+
+// ─── Inventory-and-price (stock + price only) wire shape ────────────────────
+// Verified live against Trendyol STAGE on 2026-06-03 (seller 2738):
+// response keys totalElements/totalPages/page/size/nextPageToken/content;
+// variant keys variantId/barcode/salePrice/listPrice/quantity/stockCode/
+// stockLastModifiedDate. `storeFrontCode` header is NOT required on the
+// Türkiye marketplace (200 without it).
+
+interface TrendyolStockPriceVariantNode {
+  variantId?: number | string;
+  barcode?: string;
+  salePrice?: number;
+  listPrice?: number;
+  quantity?: number;
+  stockCode?: string;
+  /** ms-epoch; `null` when stock was never updated. */
+  stockLastModifiedDate?: number | null;
+  [key: string]: unknown;
+}
+
+interface TrendyolStockPriceNode {
+  contentId?: number | string;
+  productMainId?: string;
+  variants?: TrendyolStockPriceVariantNode[];
+  [key: string]: unknown;
+}
+
+interface TrendyolStockPriceResponse {
+  content?: TrendyolStockPriceNode[];
   totalElements?: number;
   totalPages?: number;
   page?: number;
@@ -277,6 +344,32 @@ function normalizeProduct(node: TrendyolProductNode): Product {
   if (node.description !== undefined) out.description = node.description;
   if (node.lastModifiedBy !== undefined) out.lastModifiedBy = node.lastModifiedBy;
   return out;
+}
+
+function normalizeStockPriceVariant(node: TrendyolStockPriceVariantNode): ProductStockPriceVariant {
+  const out: ProductStockPriceVariant = {
+    variantId: node.variantId !== undefined ? String(node.variantId) : '',
+    barcode: node.barcode ?? '',
+    raw: node as Record<string, unknown>,
+  };
+  if (typeof node.salePrice === 'number') out.salePrice = node.salePrice;
+  if (typeof node.listPrice === 'number') out.listPrice = node.listPrice;
+  if (typeof node.quantity === 'number') out.quantity = node.quantity;
+  if (node.stockCode !== undefined) out.stockCode = node.stockCode;
+  if (node.stockLastModifiedDate !== undefined && node.stockLastModifiedDate !== null) {
+    const iso = toIso(node.stockLastModifiedDate);
+    if (iso) out.stockLastModifiedAt = iso;
+  }
+  return out;
+}
+
+function normalizeStockPrice(node: TrendyolStockPriceNode): ProductStockPrice {
+  return {
+    contentId: node.contentId !== undefined ? String(node.contentId) : '',
+    productMainId: node.productMainId ?? '',
+    variants: (node.variants ?? []).map(normalizeStockPriceVariant),
+    raw: node as Record<string, unknown>,
+  };
 }
 
 function normalizeUnapprovedRejectReason(
@@ -508,6 +601,69 @@ export class ProductsResource {
 
     const items = (data.content ?? []).map(normalizeProduct);
     const page: CursorPage<Product> = { items };
+    if (data.nextPageToken) {
+      page.nextCursor = data.nextPageToken;
+    }
+    return page;
+  }
+
+  /**
+   * List **stock and price** for approved products — Trendyol's lightweight
+   * `inventory-and-price` filter. A slim alternative to {@link list} when you
+   * only need pricing + stock: the response carries `contentId`,
+   * `productMainId`, and a `variants[]` array with `barcode`, `salePrice`,
+   * `listPrice`, `quantity`, `stockCode`, and `stockLastModifiedAt` — nothing
+   * else.
+   *
+   * Filter by `barcode`, `contentId`, `stockCode`, `productMainId`, or listing
+   * `status`. Sort with `orderByDirection` (`SellerCreatedDate`). `size` caps
+   * at **100** here (tighter than `list`'s 1000).
+   *
+   * Pagination follows the same convention as {@link list}: pass our opaque
+   * `cursor` from the previous response and we forward it as `nextPageToken`
+   * (required once the dataset exceeds 10,000 items).
+   *
+   * @example
+   * ```ts
+   * import { paginate } from '@lonca/core';
+   * for await (const p of paginate((q) =>
+   *   client.products.listInventoryAndPrice({ ...q, status: 'onSale' }),
+   * )) {
+   *   for (const v of p.variants) {
+   *     console.log(v.barcode, v.quantity, v.salePrice);
+   *   }
+   * }
+   * ```
+   */
+  async listInventoryAndPrice(
+    params: ListInventoryAndPriceParams = {},
+  ): Promise<CursorPage<ProductStockPrice>> {
+    const size = Math.min(params.limit ?? DEFAULT_PAGE_SIZE, MAX_INVENTORY_PAGE_SIZE);
+    const query: Record<string, string | number | undefined> = { size };
+    if (params.cursor) {
+      query.nextPageToken = params.cursor;
+    } else {
+      query.page = 0;
+    }
+    if (params.barcode) query.barcode = params.barcode;
+    if (params.contentId) query.contentId = params.contentId;
+    if (params.stockCode) query.stockCode = params.stockCode;
+    if (params.productMainId) query.productMainId = params.productMainId;
+    if (params.status) query.status = params.status;
+    if (params.orderByDirection) query.orderByDirection = params.orderByDirection;
+
+    const headers = params.storeFrontCode ? { storeFrontCode: params.storeFrontCode } : undefined;
+
+    const data = await this.transport.request<TrendyolStockPriceResponse>({
+      method: 'GET',
+      path: `/integration/product/sellers/${this.transport.sellerId}/products/approved/inventory-and-price`,
+      query,
+      headers,
+      rateLimiter: this.filterLimiter,
+    });
+
+    const items = (data.content ?? []).map(normalizeStockPrice);
+    const page: CursorPage<ProductStockPrice> = { items };
     if (data.nextPageToken) {
       page.nextCursor = data.nextPageToken;
     }

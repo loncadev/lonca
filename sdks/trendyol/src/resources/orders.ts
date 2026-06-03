@@ -33,6 +33,12 @@ import type {
 /** Trendyol caps `size` at 200; default 200. */
 const MAX_PAGE_SIZE = 200;
 const DEFAULT_PAGE_SIZE = 50;
+/**
+ * Effective 2026-06-08, `getShipmentPackages` caps total reachable records at
+ * 10,000 — requests past that offset return HTTP 429. Use `listStream()` for
+ * full scans. We fail fast client-side before issuing a doomed request.
+ */
+const MAX_OFFSET_RECORDS = 10_000;
 
 export interface ListOrdersParams extends CursorPaginationParams {
   status?: ShipmentPackageStatus;
@@ -363,13 +369,19 @@ function normalizePackage(node: TrendyolShipmentPackageNode): ShipmentPackage {
 /**
  * Trendyol order (shipment-package) endpoints.
  *
- * Rate limit (per Trendyol service limits): scheduled to tighten on 2026-05-15;
- * for now we set a generous default that the user can tune via the constructor.
+ * Rate limit (per Trendyol service limits): tunable via the constructor with a
+ * generous default.
  *
- * Pagination: Trendyol uses page-based pagination here (not nextPageToken).
- * The SDK still exposes `CursorPage<ShipmentPackage>` so the caller can
- * iterate with `paginate()` from `@lonca/core`; the opaque cursor encodes the
- * page index.
+ * Pagination: `getShipmentPackages` (`list`) uses page-based pagination (not
+ * nextPageToken). The SDK exposes `CursorPage<ShipmentPackage>` so the caller
+ * can iterate with `paginate()` from `@lonca/core`; the opaque cursor encodes
+ * the page index.
+ *
+ * **2026-06-08 limit:** `getShipmentPackages` reaches at most 10,000 records —
+ * requests past that offset return HTTP 429. For full scans, periodic syncs, or
+ * exports use {@link OrdersResource.listStream} (`getShipmentPackagesStream`),
+ * which paginates with an opaque cursor and is not subject to the cap. Note the
+ * stream endpoint exposes only the last 3 months of orders.
  */
 export class OrdersResource {
   private readonly limiter: TokenBucketRateLimiter;
@@ -395,6 +407,12 @@ export class OrdersResource {
   async list(params: ListOrdersParams = {}): Promise<CursorPage<ShipmentPackage>> {
     const size = Math.min(params.limit ?? DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
     const page = params.cursor ? Number.parseInt(params.cursor, 10) : 0;
+
+    if ((page + 1) * size > MAX_OFFSET_RECORDS) {
+      throw new ValidationError({
+        message: `getShipmentPackages can reach at most ${MAX_OFFSET_RECORDS} records (page ${page} × size ${size} exceeds it); use listStream() for full scans`,
+      });
+    }
 
     const query: Record<string, string | number | undefined> = { page, size };
     if (params.status) query.status = params.status;

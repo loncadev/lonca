@@ -138,6 +138,60 @@ export interface UnapprovedProduct {
 }
 
 /**
+ * Listing-status filter accepted by `filterProducts` inventory-and-price.
+ *
+ * Trendyol documents `archived`, `blacklisted`, `locked`, `onSale`, and
+ * `notOnSale`. Open (`string & {}`) so a value Trendyol adds later still
+ * type-checks.
+ */
+export type ApprovedProductStatus =
+  | 'archived'
+  | 'blacklisted'
+  | 'locked'
+  | 'onSale'
+  | 'notOnSale'
+  | (string & {});
+
+/**
+ * A single variant's stock + price, returned by
+ * `products.listInventoryAndPrice` (Trendyol's lightweight
+ * `inventory-and-price` filter). Intentionally narrow: this endpoint returns
+ * only pricing + stock, not the full product/variant shape exposed by
+ * {@link ProductVariant}.
+ */
+export interface ProductStockPriceVariant {
+  variantId: string;
+  barcode: string;
+  /** Sale price (price the customer pays). */
+  salePrice?: number;
+  /** List price (pre-discount reference price). */
+  listPrice?: number;
+  /** Stock quantity. */
+  quantity?: number;
+  stockCode?: string;
+  /**
+   * ISO 8601 UTC string (from `stockLastModifiedDate` ms-epoch). Absent when
+   * the variant's stock has never been updated (Trendyol returns `null`).
+   */
+  stockLastModifiedAt?: string;
+  /** Untouched raw response. */
+  raw: Record<string, unknown>;
+}
+
+/**
+ * An approved product's stock + price, returned by
+ * `products.listInventoryAndPrice`. Slimmer than {@link Product} — it carries
+ * only the identifiers and the per-variant stock/price.
+ */
+export interface ProductStockPrice {
+  contentId: string;
+  productMainId: string;
+  variants: ProductStockPriceVariant[];
+  /** Untouched raw response. */
+  raw: Record<string, unknown>;
+}
+
+/**
  * Basic lifecycle info for a single product, returned by `getProductBase`.
  *
  * Cheap to call (no body — just barcode in path) and useful as a polling
