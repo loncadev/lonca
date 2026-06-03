@@ -1,6 +1,6 @@
 {
   "name": "@lonca/core",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Shared primitives for Lonca marketplace SDKs: money, errors, retry, logger, rate limiter.",
   "license": "MIT",
   "repository": {

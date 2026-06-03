@@ -1,5 +1,14 @@
 # @lonca/docs
 
+## 0.0.5
+
+### Patch Changes
+
+- Updated dependencies [[`ace3bd7`](https://github.com/loncadev/lonca/commit/ace3bd70036bb5d6a0fa545b2ba46768a9a36efe), [`ace3bd7`](https://github.com/loncadev/lonca/commit/ace3bd70036bb5d6a0fa545b2ba46768a9a36efe), [`ace3bd7`](https://github.com/loncadev/lonca/commit/ace3bd70036bb5d6a0fa545b2ba46768a9a36efe)]:
+  - @lonca/core@0.3.0
+  - @lonca/hepsiburada@0.9.0
+  - @lonca/trendyol@0.10.0
+
 ## 0.0.4
 
 ### Patch Changes

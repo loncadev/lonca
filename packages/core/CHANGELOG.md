@@ -1,5 +1,14 @@
 # @lonca/core
 
+## 0.3.0
+
+### Minor Changes
+
+- [#68](https://github.com/loncadev/lonca/pull/68) [`ace3bd7`](https://github.com/loncadev/lonca/commit/ace3bd70036bb5d6a0fa545b2ba46768a9a36efe) Thanks [@keparlak](https://github.com/keparlak)! - feat: error + status-normalization primitives for marketplace SDKs (additive)
+  - `LoncaError.issues: LoncaErrorIssue[]` — a normalized, field-level error detail array (always present, defaults to `[]`). Each SDK maps its raw error body into it so consumers stop sniffing marketplace-specific JSON shapes.
+  - `NormalizedOrderStatus` — a closed, cross-marketplace order-status vocabulary, plus `createStatusNormalizer(map)`, which folds a raw status into the vocab and surfaces unmapped values via `{ mapped: false }` instead of silently defaulting.
+  - docs: `moneyFromMajor` / `moneyToMajor` now carry TRY lira↔kuruş `@example`s, and the README points marketplace prices at `moneyFromMajor(price, TRY)` instead of a hand-rolled `Math.round(x * 100)`.
+
 ## 0.2.0
 
 ### Minor Changes
