@@ -2,6 +2,7 @@ import {
   AuthError,
   LoncaError,
   type LoncaErrorIssue,
+  normalizeIssueEntries,
   NotFoundError,
   parseRetryAfter,
   RateLimitError,
@@ -80,24 +81,7 @@ export function mapHttpError(status: number, body: unknown, retryAfterMs?: numbe
 function normalizeErrorIssues(body: unknown): LoncaErrorIssue[] {
   if (!body || typeof body !== 'object') return [];
   const b = body as Record<string, unknown>;
-  if (Array.isArray(b.errors)) {
-    const issues: LoncaErrorIssue[] = [];
-    for (const entry of b.errors) {
-      if (typeof entry === 'string') {
-        issues.push({ message: entry });
-        continue;
-      }
-      if (entry && typeof entry === 'object') {
-        const e = entry as Record<string, unknown>;
-        if (typeof e.message !== 'string') continue;
-        const issue: LoncaErrorIssue = { message: e.message };
-        if (typeof e.field === 'string') issue.field = e.field;
-        if (typeof e.code === 'string') issue.code = e.code;
-        issues.push(issue);
-      }
-    }
-    return issues;
-  }
+  if (Array.isArray(b.errors)) return normalizeIssueEntries(b.errors);
   if (typeof b.message === 'string') return [{ message: b.message }];
   if (typeof b.title === 'string') return [{ message: b.title }];
   return [];
