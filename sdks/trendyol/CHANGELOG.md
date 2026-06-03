@@ -1,5 +1,22 @@
 # @lonca/trendyol
 
+## 0.10.0
+
+### Minor Changes
+
+- [#68](https://github.com/loncadev/lonca/pull/68) [`ace3bd7`](https://github.com/loncadev/lonca/commit/ace3bd70036bb5d6a0fa545b2ba46768a9a36efe) Thanks [@keparlak](https://github.com/keparlak)! - feat: batch helper, status map, normalized error issues, capabilities, and a test double
+  - **fix (breaking on the previously-broken path):** `inventory.update()` now throws `ServerError` when Trendyol accepts the request but returns no `batchRequestId`, instead of returning `{ batchRequestId: '' }`. An empty id is unpollable and was forcing consumers into sentinel hacks.
+  - `inventory.updateAndWait(items, opts?)` — chunks to ≤1000, submits, and polls each batch to a terminal state; returns one `BatchRequestResult` per chunk. Plus a standalone `pollBatchStatus(getStatus, id, opts)` for ids obtained elsewhere.
+  - `statusMap` + `normalizeStatus` — exhaustive over the known shipment-package statuses, mapping into core's `NormalizedOrderStatus`; unknown statuses surface via `mapped: false`. Adds `KnownShipmentPackageStatus` (the open wire type `ShipmentPackageStatus` is unchanged).
+  - `mapHttpError` now populates `LoncaError.issues` from Trendyol error bodies (`field`/`code`/`message` only — never the raw PII-bearing payload, which stays on `error.data`).
+  - `trendyolCapabilities` (`scheduledPricing` / `stockOnlyBatch` / `listingUpdatedAt`), also exposed as `client.capabilities`.
+  - New `@lonca/trendyol/testing` subpath export: `createFakeTrendyolClient(seed?)` — the real client graph over a fake transport for unit tests (batch hot-path works out of the box; drive other endpoints with `seed.handler`).
+
+### Patch Changes
+
+- Updated dependencies [[`ace3bd7`](https://github.com/loncadev/lonca/commit/ace3bd70036bb5d6a0fa545b2ba46768a9a36efe)]:
+  - @lonca/core@0.3.0
+
 ## 0.9.0
 
 ### Minor Changes
