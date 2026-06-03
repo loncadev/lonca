@@ -61,6 +61,10 @@ for await (const brand of paginate((cursor) => client.brands.list({ limit: 50, c
 }
 ```
 
+:::note[Orders cap]
+Trendyol's page-based `orders.list()` can only reach the first **10,000** records — requests past that offset return HTTP 429. `paginate()` stops cleanly at that boundary (it stops emitting a cursor) instead of throwing mid-iteration. For full scans, periodic syncs, or exports use `orders.listStream()`, which paginates with an opaque cursor and isn't subject to the cap (it exposes the last 3 months of orders).
+:::
+
 ## Webhook events
 
 Trendyol's webhook model is **body-discriminated** — a single endpoint receives every event, with `type` in the JSON body.

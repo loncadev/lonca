@@ -19,15 +19,16 @@ pnpm add @lonca/core
 
 ## What's inside
 
-| Primitive                | Purpose                                                                                                                                                                                    |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `Money`, `Currency`      | ISO 4217 currency codes; integer minor-unit money representation; `moneyFromMajor`/`moneyToMajor` lira↔kuruş converters                                                                    |
-| `CursorPage`, `paginate` | Cursor-based pagination + async iterator helper                                                                                                                                            |
-| `LoncaError` hierarchy   | Structured errors (`AuthError`, `RateLimitError`, `ValidationError`, `NotFoundError`, `ServerError`, `NetworkError`, `TimeoutError`) with `retryable` flag and a normalized `issues` array |
-| `NormalizedOrderStatus`  | Closed cross-marketplace order-status vocabulary + `createStatusNormalizer` (surfaces unmapped statuses via `mapped: false`, never a silent default)                                       |
-| `retry`                  | Exponential backoff with jitter, honors `retryAfterMs`, supports `AbortSignal`                                                                                                             |
-| `Logger`                 | Structured logger interface (`debug`/`info`/`warn`/`error`/`child`) with `noopLogger` and `consoleLogger`                                                                                  |
-| `TokenBucketRateLimiter` | Async token-bucket rate limiter with `AbortSignal` support                                                                                                                                 |
+| Primitive                | Purpose                                                                                                                                                                                                                                    |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Money`, `Currency`      | ISO 4217 currency codes; integer minor-unit money representation; `moneyFromMajor`/`moneyToMajor` lira↔kuruş converters                                                                                                                    |
+| `CursorPage`, `paginate` | Cursor-based pagination + async iterator helper                                                                                                                                                                                            |
+| `LoncaError` hierarchy   | Structured errors (`AuthError`, `RateLimitError`, `ValidationError`, `NotFoundError`, `ServerError`, `NetworkError`, `TimeoutError`) with `retryable` flag and a normalized `issues` array                                                 |
+| `NormalizedOrderStatus`  | Closed cross-marketplace order-status vocabulary + `createStatusNormalizer` (surfaces unmapped statuses via `mapped: false`, never a silent default)                                                                                       |
+| `retry`                  | Exponential backoff with jitter, honors `retryAfterMs`, supports `AbortSignal`. `parseRetryAfter` parses `Retry-After`; `isRetryableIdempotentOnly` gates non-idempotent writes to 429-only replays                                        |
+| `createRequester`        | Shared HTTP request lifecycle (rate-limit → fetch under a composed timeout → 204/error mapping → idempotency-aware retry → structured logging) that each SDK transport is built on; inject marketplace-specific URL/header/error-map seams |
+| `Logger`                 | Structured logger interface (`debug`/`info`/`warn`/`error`/`child`) with `noopLogger` and `consoleLogger`                                                                                                                                  |
+| `TokenBucketRateLimiter` | Async token-bucket rate limiter with `AbortSignal` support                                                                                                                                                                                 |
 
 ## Design principles
 
