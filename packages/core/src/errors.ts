@@ -123,3 +123,41 @@ export function isLoncaError(value: unknown): value is LoncaError {
 export function isRetryableError(value: unknown): boolean {
   return isLoncaError(value) && value.retryable;
 }
+
+/**
+ * Retry predicate for **non-idempotent** requests (POST/PUT/DELETE/PATCH).
+ *
+ * Only `RateLimitError` (HTTP 429) is replayed, because a 429 means the server
+ * rejected the request *before* processing it, so a retry cannot duplicate a
+ * side-effect. Ambiguous failures — 5xx, network drops, and client-side
+ * timeouts — are deliberately NOT retried here: the write may already have
+ * taken effect server-side, and a blind replay would duplicate it (double
+ * order split, double cancel, re-pushed price/stock batch).
+ *
+ * Callers that have made a write idempotent (e.g. by sending an idempotency
+ * key) should opt back into full retries via `isRetryableError` instead.
+ */
+export function isRetryableIdempotentOnly(value: unknown): boolean {
+  return isLoncaError(value) && value.retryable && value.code === 'RATE_LIMITED';
+}
+
+/**
+ * Parse a `Retry-After` header value (delta-seconds OR an HTTP-date) into
+ * milliseconds. Returns `undefined` when the header is absent, unparseable, or
+ * non-positive.
+ *
+ * A non-positive value is treated as "no hint" rather than `0`: a literal
+ * `Retry-After: 0` must not collapse exponential backoff into a zero-delay
+ * retry storm against the very endpoint that is rate-limiting the client.
+ */
+export function parseRetryAfter(header: string | null): number | undefined {
+  if (!header) return undefined;
+  const seconds = Number(header);
+  if (!Number.isNaN(seconds)) return seconds > 0 ? seconds * 1000 : undefined;
+  const epoch = Date.parse(header);
+  if (!Number.isNaN(epoch)) {
+    const delta = epoch - Date.now();
+    return delta > 0 ? delta : undefined;
+  }
+  return undefined;
+}

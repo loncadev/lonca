@@ -88,7 +88,13 @@ describe('parseRetryAfter', () => {
 
   it('parses an integer number of seconds', () => {
     expect(parseRetryAfter('5')).toBe(5000);
-    expect(parseRetryAfter('0')).toBe(0);
+  });
+
+  it('treats a non-positive delay as no hint (avoids a zero-delay retry storm)', () => {
+    // A literal `Retry-After: 0` must not collapse exponential backoff to an
+    // immediate retry — it is ignored so the caller falls back to backoff.
+    expect(parseRetryAfter('0')).toBeUndefined();
+    expect(parseRetryAfter('-5')).toBeUndefined();
   });
 
   it('parses an HTTP-date into a positive delay', () => {
@@ -98,9 +104,9 @@ describe('parseRetryAfter', () => {
     expect(ms).toBeLessThan(12_000);
   });
 
-  it('clamps past HTTP-dates to 0', () => {
+  it('ignores past HTTP-dates (no positive delay to honor)', () => {
     const past = new Date(Date.now() - 60_000).toUTCString();
-    expect(parseRetryAfter(past)).toBe(0);
+    expect(parseRetryAfter(past)).toBeUndefined();
   });
 
   it('returns undefined for garbage', () => {

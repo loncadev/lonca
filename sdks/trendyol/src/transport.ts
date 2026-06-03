@@ -4,6 +4,7 @@ import {
   NetworkError,
   TimeoutError,
   retry,
+  isRetryableIdempotentOnly,
   noopLogger,
   type Logger,
   type TokenBucketRateLimiter,
@@ -46,6 +47,16 @@ export interface RequestOptions {
   headers?: Record<string, string>;
   /** Per-endpoint rate limiter; acquire one token before each attempt. */
   rateLimiter?: TokenBucketRateLimiter;
+  /**
+   * Whether this request is safe to auto-replay on an ambiguous transient
+   * failure (5xx / network drop / client timeout). `GET` is always treated as
+   * idempotent. For writes this defaults to `false`: a timed-out or 5xx POST
+   * may already have committed server-side, so it is not retried (only a `429`,
+   * which the server provably rejected before processing, is). Set `true` to
+   * opt a write back into full retries — e.g. when it carries an idempotency
+   * key and replays are safe.
+   */
+  idempotent?: boolean;
 }
 
 export class TrendyolTransport {
@@ -67,6 +78,7 @@ export class TrendyolTransport {
   }
 
   async request<T>(opts: RequestOptions): Promise<T> {
+    const safeToReplay = opts.method === 'GET' || opts.idempotent === true;
     return retry(
       async (attempt) => {
         if (opts.rateLimiter) await opts.rateLimiter.acquire(opts.signal);
@@ -137,6 +149,10 @@ export class TrendyolTransport {
       },
       {
         signal: opts.signal,
+        // Non-idempotent writes only retry rate-limit (429) errors; ambiguous
+        // 5xx/network/timeout failures are not replayed to avoid duplicate
+        // side-effects. GET (and explicitly idempotent requests) retry normally.
+        isRetryable: safeToReplay ? undefined : isRetryableIdempotentOnly,
         onRetry: (err, attempt, delay) => {
           if (err instanceof LoncaError) {
             this.logger.warn('trendyol.retry', {

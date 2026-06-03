@@ -3,10 +3,15 @@ import {
   LoncaError,
   type LoncaErrorIssue,
   NotFoundError,
+  parseRetryAfter,
   RateLimitError,
   ServerError,
   ValidationError,
 } from '@lonca/core';
+
+// Re-exported from `@lonca/core` so the transport (and existing imports) keep a
+// single, drift-free `Retry-After` parser shared with the Hepsiburada SDK.
+export { parseRetryAfter };
 
 /**
  * Map a Trendyol HTTP response status to a `@lonca/core` error.
@@ -106,15 +111,5 @@ function extractErrorsArray(body: unknown): unknown[] | undefined {
     const n = nested as Record<string, unknown>;
     if (Array.isArray(n.errors)) return n.errors;
   }
-  return undefined;
-}
-
-/** Parse a `Retry-After` header value (seconds OR HTTP-date) into milliseconds. */
-export function parseRetryAfter(header: string | null): number | undefined {
-  if (!header) return undefined;
-  const seconds = Number(header);
-  if (!Number.isNaN(seconds)) return Math.max(0, seconds * 1000);
-  const epoch = Date.parse(header);
-  if (!Number.isNaN(epoch)) return Math.max(0, epoch - Date.now());
   return undefined;
 }

@@ -430,7 +430,13 @@ export class OrdersResource {
     const items = (data.content ?? []).map(normalizePackage);
     const totalPages = typeof data.totalPages === 'number' ? data.totalPages : 0;
     const result: CursorPage<ShipmentPackage> = { items };
-    if (page + 1 < totalPages) {
+    // Only advertise a next page when the server has one AND fetching it would
+    // stay within the 10k-record offset cap. Emitting a cursor whose page would
+    // trip the guard above makes `paginate()` throw mid-iteration after yielding
+    // ~10k rows; instead the stream ends cleanly and the caller is steered to
+    // `listStream()` for full scans (see the cap guard and class docs).
+    const nextPageWithinCap = (page + 2) * size <= MAX_OFFSET_RECORDS;
+    if (page + 1 < totalPages && nextPageWithinCap) {
       result.nextCursor = String(page + 1);
     }
     return result;

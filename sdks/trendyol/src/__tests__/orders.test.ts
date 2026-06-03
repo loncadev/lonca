@@ -145,6 +145,23 @@ describe('OrdersResource.list', () => {
     expect(transport.request).toHaveBeenCalled();
   });
 
+  it('suppresses nextCursor at the cap boundary so paginate() ends cleanly', async () => {
+    // page 49 × size 200 = 10,000 (valid, returns rows), but the *next* page (50)
+    // would exceed the cap. Even though the server reports many more pages, the
+    // cursor must be withheld so a consumer's `paginate()` loop stops here rather
+    // than calling page 50 and hitting the ValidationError guard mid-iteration.
+    const transport = mockTransport({ content: [], totalPages: 9999 });
+    const page = await newResource(transport).list({ cursor: '49', limit: 200 });
+    expect(page.nextCursor).toBeUndefined();
+  });
+
+  it('still advertises nextCursor below the cap boundary', async () => {
+    // page 48 → next page 49 ends at exactly 10,000, still within the cap.
+    const transport = mockTransport({ content: [], totalPages: 9999 });
+    const page = await newResource(transport).list({ cursor: '48', limit: 200 });
+    expect(page.nextCursor).toBe('49');
+  });
+
   it('forwards status, orderNumber, startDate, endDate', async () => {
     const transport = mockTransport({ content: [] });
     const start = new Date('2026-01-01T00:00:00Z');
