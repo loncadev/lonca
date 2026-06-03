@@ -29,6 +29,20 @@ describe('money', () => {
     expect(moneyFromMajor(0.005, 'USD').amount).toBe(1);
   });
 
+  it('rounds in decimal space, not via a drifting binary multiply', () => {
+    // `1.255 * 100` is `125.49999999999999` in IEEE-754, so a naive
+    // `Math.round(major * 100)` returns 125; decimal scaling returns 126.
+    expect(moneyFromMajor(1.255, 'TRY').amount).toBe(126);
+    expect(moneyFromMajor(1.005, 'TRY').amount).toBe(101);
+    // A common float-arithmetic result still scales cleanly.
+    expect(moneyFromMajor(0.1 + 0.2, 'USD').amount).toBe(30);
+  });
+
+  it('rejects non-finite major amounts', () => {
+    expect(() => moneyFromMajor(Number.NaN, 'TRY')).toThrow(TypeError);
+    expect(() => moneyFromMajor(Number.POSITIVE_INFINITY, 'TRY')).toThrow(TypeError);
+  });
+
   it('converts back to major units', () => {
     expect(moneyToMajor({ amount: 12550, currency: 'TRY' })).toBe(125.5);
   });

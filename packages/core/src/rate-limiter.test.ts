@@ -41,6 +41,32 @@ describe('TokenBucketRateLimiter', () => {
     expect(acquired).toBe(true);
   });
 
+  it('never over-grants under concurrent acquire() (check-and-decrement is atomic)', async () => {
+    // The risk a multi-threaded limiter would have: many concurrent acquire()
+    // calls each seeing a token after a refill and all decrementing. In a
+    // single-threaded event loop the `timeUntilNextToken()`→`tokens -= 1` step
+    // has no `await` between its read and write, so it runs to completion before
+    // any other acquire() — only `capacity` callers can pass without a refill.
+    const limiter = new TokenBucketRateLimiter({ capacity: 3, intervalMs: 10_000 });
+    let granted = 0;
+    const promises = Array.from({ length: 5 }, () =>
+      limiter.acquire().then(() => {
+        granted += 1;
+      }),
+    );
+
+    // Settle microtasks without advancing time: exactly the 3 buffered tokens
+    // are granted; the other 2 are parked on a refill timer. No over-grant.
+    await vi.advanceTimersByTimeAsync(0);
+    expect(granted).toBe(3);
+    expect(limiter.available()).toBeGreaterThanOrEqual(0);
+
+    // Drain the rest once enough time passes; still no over-grant in total.
+    await vi.runAllTimersAsync();
+    await Promise.all(promises);
+    expect(granted).toBe(5);
+  });
+
   it('aborts a waiting acquire when the signal fires', async () => {
     const limiter = new TokenBucketRateLimiter({ capacity: 1, intervalMs: 10_000 });
     await limiter.acquire();
