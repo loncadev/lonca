@@ -1,16 +1,6 @@
-import { randomUUID } from 'node:crypto';
-import {
-  LoncaError,
-  NetworkError,
-  TimeoutError,
-  retry,
-  isRetryableIdempotentOnly,
-  noopLogger,
-  type Logger,
-  type TokenBucketRateLimiter,
-} from '@lonca/core';
+import { createRequester, type BaseRequestOptions, type Logger } from '@lonca/core';
 import { buildAuthHeader, buildUserAgent } from './auth.js';
-import { mapHttpError, parseRetryAfter } from './errors.js';
+import { mapHttpError } from './errors.js';
 
 const BASE_URLS = {
   prod: 'https://apigw.trendyol.com',
@@ -33,43 +23,29 @@ export interface TransportConfig {
   fetch?: typeof fetch;
 }
 
-export interface RequestOptions {
+export interface RequestOptions extends BaseRequestOptions {
   method: 'GET' | 'POST' | 'PUT' | 'DELETE';
   /** Path beginning with `/` (e.g., `/sapigw/brands`). */
   path: string;
   query?: Record<string, string | number | boolean | undefined>;
-  body?: unknown;
-  signal?: AbortSignal;
-  /**
-   * Extra per-request headers merged over the default header set (caller
-   * headers win). Used for endpoint-specific headers like `storeFrontCode`.
-   */
-  headers?: Record<string, string>;
-  /** Per-endpoint rate limiter; acquire one token before each attempt. */
-  rateLimiter?: TokenBucketRateLimiter;
-  /**
-   * Whether this request is safe to auto-replay on an ambiguous transient
-   * failure (5xx / network drop / client timeout). `GET` is always treated as
-   * idempotent. For writes this defaults to `false`: a timed-out or 5xx POST
-   * may already have committed server-side, so it is not retried (only a `429`,
-   * which the server provably rejected before processing, is). Set `true` to
-   * opt a write back into full retries — e.g. when it carries an idempotency
-   * key and replays are safe.
-   */
-  idempotent?: boolean;
 }
 
 export class TrendyolTransport {
   private readonly baseUrl: string;
-  private readonly logger: Logger;
-  private readonly timeoutMs: number;
-  private readonly fetchImpl: typeof fetch;
+  private readonly requester: <T>(opts: RequestOptions) => Promise<T>;
 
   constructor(private readonly config: TransportConfig) {
     this.baseUrl = BASE_URLS[config.env];
-    this.logger = config.logger ?? noopLogger;
-    this.timeoutMs = config.timeoutMs ?? 30_000;
-    this.fetchImpl = config.fetch ?? fetch;
+    this.requester = createRequester<RequestOptions>({
+      fetch: config.fetch ?? fetch,
+      logger: config.logger,
+      timeoutMs: config.timeoutMs ?? 30_000,
+      label: 'Trendyol',
+      logPrefix: 'trendyol',
+      buildUrl: (opts) => this.buildUrl(opts.path, opts.query),
+      buildHeaders: (correlationId) => this.buildHeaders(correlationId),
+      mapHttpError,
+    });
   }
 
   /** Seller ID this transport is configured with. Resources read it for path-building. */
@@ -77,94 +53,8 @@ export class TrendyolTransport {
     return this.config.sellerId;
   }
 
-  async request<T>(opts: RequestOptions): Promise<T> {
-    const safeToReplay = opts.method === 'GET' || opts.idempotent === true;
-    return retry(
-      async (attempt) => {
-        if (opts.rateLimiter) await opts.rateLimiter.acquire(opts.signal);
-
-        const url = this.buildUrl(opts.path, opts.query);
-        const correlationId = randomUUID();
-        const headers = { ...this.buildHeaders(correlationId), ...opts.headers };
-        const init: RequestInit = {
-          method: opts.method,
-          headers,
-          signal: this.composeSignal(opts.signal),
-        };
-        if (opts.body !== undefined && opts.method !== 'GET') {
-          if (opts.body instanceof FormData) {
-            // multipart: let fetch set Content-Type (it includes the boundary).
-            init.body = opts.body;
-            delete (headers as Record<string, string>)['Content-Type'];
-          } else {
-            init.body = JSON.stringify(opts.body);
-          }
-        }
-
-        this.logger.debug('trendyol.request', {
-          method: opts.method,
-          url,
-          correlationId,
-          attempt,
-        });
-
-        let response: Response;
-        try {
-          response = await this.fetchImpl(url, init);
-        } catch (err) {
-          if (err instanceof Error && err.name === 'AbortError') {
-            throw new TimeoutError({
-              message: `Trendyol request timed out after ${this.timeoutMs}ms`,
-              cause: err,
-            });
-          }
-          throw new NetworkError({
-            message: 'Trendyol network failure',
-            cause: err,
-          });
-        }
-
-        if (!response.ok) {
-          const body = await safeJson(response);
-          const retryAfterMs = parseRetryAfter(response.headers.get('retry-after'));
-          const error = mapHttpError(response.status, body, retryAfterMs);
-          this.logger.warn('trendyol.error', {
-            method: opts.method,
-            url,
-            correlationId,
-            status: response.status,
-            code: error.code,
-            retryable: error.retryable,
-          });
-          throw error;
-        }
-
-        this.logger.debug('trendyol.response', {
-          correlationId,
-          status: response.status,
-        });
-
-        if (response.status === 204) return undefined as T;
-        return (await safeJson(response)) as T;
-      },
-      {
-        signal: opts.signal,
-        // Non-idempotent writes only retry rate-limit (429) errors; ambiguous
-        // 5xx/network/timeout failures are not replayed to avoid duplicate
-        // side-effects. GET (and explicitly idempotent requests) retry normally.
-        isRetryable: safeToReplay ? undefined : isRetryableIdempotentOnly,
-        onRetry: (err, attempt, delay) => {
-          if (err instanceof LoncaError) {
-            this.logger.warn('trendyol.retry', {
-              attempt,
-              delayMs: delay,
-              code: err.code,
-              status: err.status,
-            });
-          }
-        },
-      },
-    );
+  request<T>(opts: RequestOptions): Promise<T> {
+    return this.requester<T>(opts);
   }
 
   private buildUrl(path: string, query?: RequestOptions['query']): string {
@@ -188,21 +78,5 @@ export class TrendyolTransport {
       'Content-Type': 'application/json',
       Accept: 'application/json',
     };
-  }
-
-  private composeSignal(external?: AbortSignal): AbortSignal {
-    const timeoutSignal = AbortSignal.timeout(this.timeoutMs);
-    if (!external) return timeoutSignal;
-    return AbortSignal.any([external, timeoutSignal]);
-  }
-}
-
-async function safeJson(response: Response): Promise<unknown> {
-  const text = await response.text();
-  if (!text) return undefined;
-  try {
-    return JSON.parse(text);
-  } catch {
-    return text;
   }
 }

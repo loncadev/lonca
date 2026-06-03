@@ -23,3 +23,11 @@ Harden retry, backoff, and pagination against duplicate writes and retry storms.
   When the next page would exceed the 10,000-record offset cap, `nextCursor` is
   withheld so `paginate()` ends cleanly instead of handing back a cursor that
   then throws a `ValidationError`. Use `listStream()` for full scans.
+- **Shared transport lifecycle.** The request loop (rate-limit, fetch under a
+  composed timeout, FormData/JSON body, 204 handling, error mapping, retry, and
+  logging) is now a single `createRequester` factory in `@lonca/core`, with each
+  SDK injecting only its marketplace-specific seams (URL building, headers,
+  status→error mapping). This removes ~150 duplicated lines per SDK and the
+  drift between them; as a side effect the Hepsiburada transport regains
+  per-request `headers` support. New `@lonca/core` exports: `createRequester`,
+  `BaseRequestOptions`, `RequesterConfig`.

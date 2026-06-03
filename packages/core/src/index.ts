@@ -6,3 +6,4 @@ export * from './errors.js';
 export * from './retry.js';
 export * from './logger.js';
 export * from './rate-limiter.js';
+export * from './transport.js';
