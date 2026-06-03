@@ -6,6 +6,7 @@ import {
   isRetryableIdempotentOnly,
   LoncaError,
   NetworkError,
+  normalizeIssueEntries,
   NotFoundError,
   parseRetryAfter,
   RateLimitError,
@@ -100,6 +101,28 @@ describe('errors', () => {
     expect(isRetryableIdempotentOnly(new TimeoutError({ message: '' }))).toBe(false);
     expect(isRetryableIdempotentOnly(new AuthError({ message: '' }))).toBe(false);
     expect(isRetryableIdempotentOnly(new Error('plain'))).toBe(false);
+  });
+});
+
+describe('normalizeIssueEntries', () => {
+  it('maps string entries to { message }', () => {
+    expect(normalizeIssueEntries(['too low', 'out of stock'])).toEqual([
+      { message: 'too low' },
+      { message: 'out of stock' },
+    ]);
+  });
+
+  it('copies only field/code/message from object entries, never extra (PII) fields', () => {
+    const issues = normalizeIssueEntries([
+      { code: 'E1', message: 'sku invalid', field: 'barcode', phone: '5551234567' },
+    ]);
+    expect(issues).toEqual([{ code: 'E1', message: 'sku invalid', field: 'barcode' }]);
+    expect(JSON.stringify(issues)).not.toContain('5551234567');
+  });
+
+  it('skips object entries without a string message, and is empty for []', () => {
+    expect(normalizeIssueEntries([{ code: 'E', field: 'x' }, null, 42])).toEqual([]);
+    expect(normalizeIssueEntries([])).toEqual([]);
   });
 });
 

@@ -142,6 +142,33 @@ export function isRetryableIdempotentOnly(value: unknown): boolean {
 }
 
 /**
+ * Map an array of raw marketplace error entries into PII-safe
+ * {@link LoncaErrorIssue}s. Each SDK extracts the array from its own (different)
+ * error-body shape, then calls this to do the shared, security-sensitive part:
+ * copy **only** `message`/`field`/`code` and never the raw entry, which can
+ * carry PII. String entries become `{ message }`; object entries without a
+ * string `message` are skipped.
+ */
+export function normalizeIssueEntries(entries: readonly unknown[]): LoncaErrorIssue[] {
+  const issues: LoncaErrorIssue[] = [];
+  for (const entry of entries) {
+    if (typeof entry === 'string') {
+      issues.push({ message: entry });
+      continue;
+    }
+    if (entry && typeof entry === 'object') {
+      const e = entry as Record<string, unknown>;
+      if (typeof e.message !== 'string') continue;
+      const issue: LoncaErrorIssue = { message: e.message };
+      if (typeof e.field === 'string') issue.field = e.field;
+      if (typeof e.code === 'string') issue.code = e.code;
+      issues.push(issue);
+    }
+  }
+  return issues;
+}
+
+/**
  * Parse a `Retry-After` header value (delta-seconds OR an HTTP-date) into
  * milliseconds. Returns `undefined` when the header is absent, unparseable, or
  * non-positive.
