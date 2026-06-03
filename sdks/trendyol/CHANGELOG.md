@@ -1,5 +1,23 @@
 # @lonca/trendyol
 
+## 0.12.0
+
+### Minor Changes
+
+- [#80](https://github.com/loncadev/lonca/pull/80) [`0c2cf47`](https://github.com/loncadev/lonca/commit/0c2cf47412cf71474faf2b56445c136d5a9d0ed8) Thanks [@keparlak](https://github.com/keparlak)! - Re-export the `@lonca/core` pagination helpers from each SDK.
+
+  `paginate`, `paginateOffset`, and the `CursorPage` / `OffsetPage` (and their
+  param) types are now re-exported from `@lonca/trendyol` and `@lonca/hepsiburada`,
+  so consumers can iterate list endpoints without taking a separate direct
+  dependency on `@lonca/core`:
+
+  ```ts
+  import { paginate } from '@lonca/trendyol';
+  for await (const pkg of paginate((cursor) => client.orders.list({ cursor }))) {
+    /* … */
+  }
+  ```
+
 ## 0.11.3
 
 ### Patch Changes
