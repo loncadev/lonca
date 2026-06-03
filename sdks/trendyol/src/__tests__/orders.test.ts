@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { TokenBucketRateLimiter } from '@lonca/core';
+import { TokenBucketRateLimiter, ValidationError } from '@lonca/core';
 import { OrdersResource } from '../resources/orders.js';
 import type { TrendyolTransport } from '../transport.js';
 
@@ -127,6 +127,22 @@ describe('OrdersResource.list', () => {
     expect(transport.request).toHaveBeenCalledWith(
       expect.objectContaining({ query: expect.objectContaining({ size: 200 }) }),
     );
+  });
+
+  it('throws once page × size would exceed the 10,000-record cap', async () => {
+    const transport = mockTransport({ content: [] });
+    // page 50 × size 200 = 10,200 > 10,000.
+    await expect(newResource(transport).list({ cursor: '50', limit: 200 })).rejects.toThrow(
+      ValidationError,
+    );
+    expect(transport.request).not.toHaveBeenCalled();
+  });
+
+  it('allows a request right at the 10,000-record boundary', async () => {
+    const transport = mockTransport({ content: [] });
+    // page 49 × size 200 = (49+1)*200 = 10,000, exactly the cap.
+    await newResource(transport).list({ cursor: '49', limit: 200 });
+    expect(transport.request).toHaveBeenCalled();
   });
 
   it('forwards status, orderNumber, startDate, endDate', async () => {

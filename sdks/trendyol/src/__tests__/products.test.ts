@@ -196,6 +196,140 @@ describe('ProductsResource.list', () => {
   });
 });
 
+/**
+ * Sample inventory-and-price node from Trendyol's doc example for the
+ * `products/approved/inventory-and-price` endpoint.
+ */
+const stockPriceSample = {
+  contentId: 12431242141,
+  productMainId: '1242141241',
+  variants: [
+    {
+      variantId: 3953959353,
+      barcode: '60506560',
+      salePrice: 699.99,
+      listPrice: 699.99,
+      quantity: 50,
+      stockCode: '056565964',
+      stockLastModifiedDate: 1780463592464,
+    },
+  ],
+};
+
+describe('ProductsResource.listInventoryAndPrice', () => {
+  it('hits the inventory-and-price path with default page=0 and size=50', async () => {
+    const transport = mockTransport({ content: [] });
+    const resource = newResource(transport);
+
+    await resource.listInventoryAndPrice();
+
+    expect(transport.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: 'GET',
+        path: '/integration/product/sellers/42/products/approved/inventory-and-price',
+        query: { size: 50, page: 0 },
+      }),
+    );
+  });
+
+  it('caps size at the endpoint-specific 100 max', async () => {
+    const transport = mockTransport({ content: [] });
+    await newResource(transport).listInventoryAndPrice({ limit: 5000 });
+
+    expect(transport.request).toHaveBeenCalledWith(
+      expect.objectContaining({ query: expect.objectContaining({ size: 100 }) }),
+    );
+  });
+
+  it('forwards filters and orderByDirection', async () => {
+    const transport = mockTransport({ content: [] });
+    await newResource(transport).listInventoryAndPrice({
+      barcode: 'BC1',
+      contentId: 'C1',
+      stockCode: 'SC1',
+      productMainId: 'PM1',
+      status: 'onSale',
+      orderByDirection: 'DESC',
+    });
+
+    expect(transport.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        query: expect.objectContaining({
+          barcode: 'BC1',
+          contentId: 'C1',
+          stockCode: 'SC1',
+          productMainId: 'PM1',
+          status: 'onSale',
+          orderByDirection: 'DESC',
+        }),
+      }),
+    );
+  });
+
+  it('forwards storeFrontCode as a header (and omits headers when absent)', async () => {
+    const transport = mockTransport({ content: [] });
+    await newResource(transport).listInventoryAndPrice({ storeFrontCode: 'INT' });
+    expect(transport.request).toHaveBeenCalledWith(
+      expect.objectContaining({ headers: { storeFrontCode: 'INT' } }),
+    );
+
+    const transport2 = mockTransport({ content: [] });
+    await newResource(transport2).listInventoryAndPrice();
+    expect(
+      (transport2.request as ReturnType<typeof vi.fn>).mock.calls[0]![0].headers,
+    ).toBeUndefined();
+  });
+
+  it('forwards cursor as nextPageToken instead of page=0', async () => {
+    const transport = mockTransport({ content: [] });
+    await newResource(transport).listInventoryAndPrice({ cursor: 'tok-1', limit: 100 });
+
+    const query = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0].query;
+    expect(query).toMatchObject({ size: 100, nextPageToken: 'tok-1' });
+    expect(query).not.toHaveProperty('page');
+  });
+
+  it('normalizes variants and converts stockLastModifiedDate to ISO', async () => {
+    const transport = mockTransport({ content: [stockPriceSample], nextPageToken: 'tok-2' });
+    const page = await newResource(transport).listInventoryAndPrice();
+
+    expect(page.nextCursor).toBe('tok-2');
+    expect(page.items).toHaveLength(1);
+    expect(page.items[0]).toMatchObject({
+      contentId: '12431242141',
+      productMainId: '1242141241',
+    });
+    expect(page.items[0]!.variants[0]).toMatchObject({
+      variantId: '3953959353',
+      barcode: '60506560',
+      salePrice: 699.99,
+      listPrice: 699.99,
+      quantity: 50,
+      stockCode: '056565964',
+      stockLastModifiedAt: new Date(1780463592464).toISOString(),
+    });
+  });
+
+  it('omits stockLastModifiedAt when Trendyol returns null', async () => {
+    const transport = mockTransport({
+      content: [
+        {
+          contentId: 1,
+          productMainId: 'X',
+          variants: [{ variantId: 1, barcode: 'B', stockLastModifiedDate: null }],
+        },
+      ],
+    });
+    const page = await newResource(transport).listInventoryAndPrice();
+    expect(page.items[0]!.variants[0]).not.toHaveProperty('stockLastModifiedAt');
+  });
+
+  it('returns an empty page when content is missing', async () => {
+    const transport = mockTransport({});
+    expect((await newResource(transport).listInventoryAndPrice()).items).toEqual([]);
+  });
+});
+
 describe('ProductsResource.getBatchStatus', () => {
   it('hits /products/batch-requests/{id} with the sellerId in the path', async () => {
     const transport = mockTransport({ batchRequestId: 'b1', status: 'COMPLETED', items: [] });

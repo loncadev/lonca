@@ -23,6 +23,7 @@ export { LocationsResource } from './resources/locations.js';
 export { OrdersResource, type ListOrdersParams } from './resources/orders.js';
 export {
   ProductsResource,
+  type ListInventoryAndPriceParams,
   type ListProductsParams,
   type ListUnapprovedProductsParams,
   type UnapprovedDateQueryType,
@@ -90,6 +91,7 @@ export type {
   UpdatePackageStatusInput,
 } from './types/order.js';
 export type {
+  ApprovedProductStatus,
   BatchRequestItemResult,
   BatchRequestResult,
   BatchRequestStatus,
@@ -98,6 +100,8 @@ export type {
   Product,
   ProductAttribute,
   ProductBase,
+  ProductStockPrice,
+  ProductStockPriceVariant,
   ProductVariant,
   UnapprovedProduct,
   UnapprovedProductRejectReason,

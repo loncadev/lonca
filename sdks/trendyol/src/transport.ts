@@ -39,6 +39,11 @@ export interface RequestOptions {
   query?: Record<string, string | number | boolean | undefined>;
   body?: unknown;
   signal?: AbortSignal;
+  /**
+   * Extra per-request headers merged over the default header set (caller
+   * headers win). Used for endpoint-specific headers like `storeFrontCode`.
+   */
+  headers?: Record<string, string>;
   /** Per-endpoint rate limiter; acquire one token before each attempt. */
   rateLimiter?: TokenBucketRateLimiter;
 }
@@ -68,7 +73,7 @@ export class TrendyolTransport {
 
         const url = this.buildUrl(opts.path, opts.query);
         const correlationId = randomUUID();
-        const headers = this.buildHeaders(correlationId);
+        const headers = { ...this.buildHeaders(correlationId), ...opts.headers };
         const init: RequestInit = {
           method: opts.method,
           headers,
