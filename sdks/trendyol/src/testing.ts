@@ -102,7 +102,6 @@ function parseBody(body: unknown): unknown {
 }
 
 function jsonResponse(data: unknown): Response {
-  if (data === undefined) return new Response(null, { status: 204 });
   return new Response(JSON.stringify(data), {
     status: 200,
     headers: { 'content-type': 'application/json' },
