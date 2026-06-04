@@ -53,13 +53,12 @@ pnpm add @lonca/trendyol @lonca/core
 # or npm install / yarn add
 ```
 
-`@lonca/core` is a peer dependency (provides `paginate`, `CursorPage`, error classes, the token-bucket limiter).
+`@lonca/core` is a peer dependency (error classes, the token-bucket limiter). The `paginate` / `paginateOffset` helpers and the `CursorPage` / `OffsetPage` types are re-exported from `@lonca/trendyol`, so you can import them straight from this package.
 
 ## Quick start
 
 ```ts
-import { createTrendyolClient } from '@lonca/trendyol';
-import { paginate } from '@lonca/core';
+import { createTrendyolClient, paginate } from '@lonca/trendyol';
 
 const client = createTrendyolClient({
   sellerId: 12345,
