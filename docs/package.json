@@ -17,7 +17,7 @@
     "@lonca/core": "workspace:*",
     "@lonca/hepsiburada": "workspace:*",
     "@lonca/trendyol": "workspace:*",
-    "astro": "^6.4.3",
+    "astro": "^6.4.4",
     "sharp": "^0.34.0",
     "starlight-typedoc": "^0.23.0",
     "typedoc": "^0.28.19",
