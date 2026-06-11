@@ -305,6 +305,11 @@ export class ListingsResource {
   /**
    * Bulk-update stock quantities.
    *
+   * ⚠️ This overwrites the stock Hepsiburada holds for each SKU. For listings
+   * fulfilled by Hepsiburada (`Listing.isFulfilledByHB === true`), that figure
+   * is managed by HB's warehouse — pushing your own can oversell or zero them
+   * out. Filter those SKUs out of your stock sync unless you mean to override.
+   *
    * @throws {ValidationError} when `items` is empty or longer than 1000.
    */
   async uploadStock(items: StockUploadItem[]): Promise<UploadReceipt> {

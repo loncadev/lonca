@@ -565,6 +565,11 @@ export class ProductsResource {
    * List approved products. Use `paginate()` from `@lonca/core` to iterate
    * lazily across pages.
    *
+   * **Approved only:** this endpoint silently excludes products still in review
+   * or rejected — use {@link listUnapproved} for those. Date fields on the
+   * returned {@link Product} (`createdAt` / `updatedAt`) are ISO 8601 UTC
+   * **strings**, not `Date` objects.
+   *
    * Trendyol exposes both page-based and `nextPageToken`-based pagination
    * (the latter required when the dataset exceeds 10,000 items). The SDK
    * picks the right strategy automatically — pass our opaque `cursor` from
