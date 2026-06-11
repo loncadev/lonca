@@ -105,7 +105,17 @@ export type OtherFinancialRow = FinancialTransaction;
 export interface ListFinanceParams extends CursorPaginationParams {
   startDate?: Date;
   endDate?: Date;
+  /**
+   * **Required** by Trendyol's CHE finance API (it returns 500 without one),
+   * e.g. `'Sale'`, `'Return'`, `'Discount'`, `'DeductionInvoices'`. The SDK
+   * throws a `ValidationError` if omitted.
+   */
   transactionType?: string;
+  /**
+   * Page size. Trendyol's finance API only accepts **500 or 1000** — the SDK
+   * clamps any value to the nearest of those (default 500).
+   */
+  limit?: number;
 }
 
 // ─── Common labels ────────────────────────────────────────────────────────
