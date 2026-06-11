@@ -1,5 +1,30 @@
 # @lonca/hepsiburada
 
+## 0.12.0
+
+### Minor Changes
+
+- [#89](https://github.com/loncadev/lonca/pull/89) [`24f63e2`](https://github.com/loncadev/lonca/commit/24f63e24384fc352a1eaafede84384a439e14c9d) Thanks [@keparlak](https://github.com/keparlak)! - Type the claim/package/catalog mutation surface (feedback [#4](https://github.com/loncadev/lonca/issues/4) + [#5](https://github.com/loncadev/lonca/issues/5)).
+  - **Returns ([#4](https://github.com/loncadev/lonca/issues/4)):** `catalog.approvePreMatch` / `rejectPreMatch` / `checkProductStatus`
+    and `claims.accept` / `reject` / `preApprovalConfirm` / `create` now return a
+    `MutationResult` (`{ raw: unknown }`) instead of bare `unknown` — the API response
+    is on `.raw`. (`unknown` already forced a cast, so this is a one-line migration:
+    `(x as T)` → `x.raw`.)
+  - **Inputs ([#5](https://github.com/loncadev/lonca/issues/5)):** `CreateClaimInput`, `ClaimActionInput`, `CreatePackagesInput`,
+    `SplitPackageInput`, `CancelLineItemInput`, `PackageStatusInput`, and
+    `ChangeCargoCompanyInput` now carry typed field hints intersected with
+    `Record<string, unknown>`, so common fields autocomplete while undocumented ones
+    still pass through (non-breaking).
+
+### Patch Changes
+
+- [#91](https://github.com/loncadev/lonca/pull/91) [`e9a3332`](https://github.com/loncadev/lonca/commit/e9a3332cb939071f7b53b0ae34a3fb190d1f5833) Thanks [@keparlak](https://github.com/keparlak)! - Document the FBH stock-overwrite hazard (feedback [#3](https://github.com/loncadev/lonca/issues/3)): `Listing.isFulfilledByHB`
+  and `listings.uploadStock` now warn that pushing stock to a Hepsiburada-fulfilled
+  listing overwrites Hepsiburada's warehouse stock and can oversell — filter those
+  SKUs out of stock sync unless you mean to override.
+- Updated dependencies [[`24f63e2`](https://github.com/loncadev/lonca/commit/24f63e24384fc352a1eaafede84384a439e14c9d)]:
+  - @lonca/core@0.7.0
+
 ## 0.11.0
 
 ### Minor Changes

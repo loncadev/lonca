@@ -1,5 +1,29 @@
 # @lonca/trendyol
 
+## 0.14.0
+
+### Minor Changes
+
+- [#91](https://github.com/loncadev/lonca/pull/91) [`e9a3332`](https://github.com/loncadev/lonca/commit/e9a3332cb939071f7b53b0ae34a3fb190d1f5833) Thanks [@keparlak](https://github.com/keparlak)! - Add a shared `ProductContentBase` interface, extended by both `Product` and
+  `UnapprovedProduct`, so callers can read the common content surface
+  (`productMainId`, `title`, `description`, `brand`, `category`, `images`,
+  `attributes`) from either shape without branching (feedback [#8](https://github.com/loncadev/lonca/issues/8)). The concrete
+  types are otherwise unchanged — `Product` keeps `variants[]`, `UnapprovedProduct`
+  stays flat — so this is purely additive.
+
+  Also clarified `products.list` docs: it returns **approved products only** (use
+  `listUnapproved` for drafts), and its date fields are ISO 8601 **strings**.
+
+- [#89](https://github.com/loncadev/lonca/pull/89) [`24f63e2`](https://github.com/loncadev/lonca/commit/24f63e24384fc352a1eaafede84384a439e14c9d) Thanks [@keparlak](https://github.com/keparlak)! - The claim and invoice mutation methods (`claims.create` / `createIssue` /
+  `approveLineItems`, `invoices.uploadFile` / `sendLink` / `deleteLink`) now return a
+  `MutationResult` (`{ raw: unknown }`) instead of bare `unknown` — the API response
+  is on `.raw`. `unknown` already forced a cast, so this is a one-line migration.
+
+### Patch Changes
+
+- Updated dependencies [[`24f63e2`](https://github.com/loncadev/lonca/commit/24f63e24384fc352a1eaafede84384a439e14c9d)]:
+  - @lonca/core@0.7.0
+
 ## 0.13.0
 
 ### Minor Changes

@@ -1,5 +1,14 @@
 # @lonca/core
 
+## 0.7.0
+
+### Minor Changes
+
+- [#89](https://github.com/loncadev/lonca/pull/89) [`24f63e2`](https://github.com/loncadev/lonca/commit/24f63e24384fc352a1eaafede84384a439e14c9d) Thanks [@keparlak](https://github.com/keparlak)! - Add a shared `MutationResult` type (`{ raw: unknown }`) — a minimal envelope for
+  mutation/action endpoints whose response the SDKs don't model field-by-field.
+  Re-exported from `@lonca/trendyol` and `@lonca/hepsiburada`, it gives callers a
+  stable `result.raw` access point instead of a bare `unknown`.
+
 ## 0.6.0
 
 ### Minor Changes
