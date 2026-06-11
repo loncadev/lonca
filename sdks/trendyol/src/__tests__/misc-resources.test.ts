@@ -304,6 +304,14 @@ describe('LocationsResource', () => {
     expect(call.path).toBe('/integration/member/countries/domestic/TR/cities');
   });
 
+  it('getTurkeyCities exposes the internal id separately from the display code', async () => {
+    // Verified live: wire is { id: 100, name: 'Adana', code: '1' }. The nested
+    // districts endpoint keys off `id` (100), not `code` ('1') — which 500s.
+    const transport = mockTransport([{ id: 100, name: 'Adana', code: '1' }]);
+    const [city] = await r(transport).getTurkeyCities();
+    expect(city).toMatchObject({ id: '100', code: '1', name: 'Adana' });
+  });
+
   it('getTurkeyDistricts and getTurkeyNeighborhoods nest correctly', async () => {
     const transport = mockTransport([]);
     await r(transport).getTurkeyDistricts(34);

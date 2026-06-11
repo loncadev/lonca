@@ -59,18 +59,27 @@ export class LocationsResource {
     return this.cities(`/integration/member/countries/domestic/TR/cities`);
   }
 
-  async getTurkeyDistricts(cityCode: string | number): Promise<District[]> {
+  /**
+   * List districts for a Turkish city. **Pass the city `id`** (`City.id`) — the
+   * nested endpoint keys off Trendyol's internal id, not the display `code`, and
+   * returns 500 for the code. Verified live.
+   */
+  async getTurkeyDistricts(cityId: string | number): Promise<District[]> {
     return this.districts(
-      `/integration/member/countries/domestic/TR/cities/${encodeURIComponent(String(cityCode))}/districts`,
+      `/integration/member/countries/domestic/TR/cities/${encodeURIComponent(String(cityId))}/districts`,
     );
   }
 
+  /**
+   * List neighborhoods for a Turkish district. **Pass the ids** (`City.id`,
+   * `District.id`) — not the display codes (those 500).
+   */
   async getTurkeyNeighborhoods(
-    cityCode: string | number,
-    districtCode: string | number,
+    cityId: string | number,
+    districtId: string | number,
   ): Promise<Neighborhood[]> {
     return this.neighborhoods(
-      `/integration/member/countries/domestic/TR/cities/${encodeURIComponent(String(cityCode))}/districts/${encodeURIComponent(String(districtCode))}/neighborhoods`,
+      `/integration/member/countries/domestic/TR/cities/${encodeURIComponent(String(cityId))}/districts/${encodeURIComponent(String(districtId))}/neighborhoods`,
     );
   }
 
@@ -78,9 +87,10 @@ export class LocationsResource {
     return this.cities(`/integration/member/countries/domestic/AZ/cities`);
   }
 
-  async getAzerbaijanDistricts(cityCode: string | number): Promise<District[]> {
+  /** List districts for an Azerbaijani city. **Pass the city `id`** (`City.id`), not `code`. */
+  async getAzerbaijanDistricts(cityId: string | number): Promise<District[]> {
     return this.districts(
-      `/integration/member/countries/domestic/AZ/cities/${encodeURIComponent(String(cityCode))}/districts`,
+      `/integration/member/countries/domestic/AZ/cities/${encodeURIComponent(String(cityId))}/districts`,
     );
   }
 
@@ -105,6 +115,7 @@ export class LocationsResource {
       rateLimiter: this.limiter,
     });
     return n<City>(data, (node) => ({
+      id: node.id !== undefined ? String(node.id) : undefined,
       code: String(node.code ?? node.id ?? ''),
       name: node.name,
       countryCode: node.countryCode,
@@ -118,6 +129,7 @@ export class LocationsResource {
       rateLimiter: this.limiter,
     });
     return n<District>(data, (node) => ({
+      id: node.id !== undefined ? String(node.id) : undefined,
       code: String(node.code ?? node.id ?? ''),
       name: node.name,
       cityCode: node.cityCode !== undefined ? String(node.cityCode) : undefined,
@@ -131,6 +143,7 @@ export class LocationsResource {
       rateLimiter: this.limiter,
     });
     return n<Neighborhood>(data, (node) => ({
+      id: node.id !== undefined ? String(node.id) : undefined,
       code: String(node.code ?? node.id ?? ''),
       name: node.name,
       districtCode: node.districtCode !== undefined ? String(node.districtCode) : undefined,
