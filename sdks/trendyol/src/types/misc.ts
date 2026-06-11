@@ -174,6 +174,12 @@ export interface Country {
 }
 
 export interface City {
+  /**
+   * Trendyol's internal city id — the value the **nested** endpoints expect
+   * (`getTurkeyDistricts(city.id)`). Distinct from `code` (the plate-style
+   * display code, e.g. `"1"` for Adana); passing `code` there returns 500.
+   */
+  id?: string;
   code: string;
   name?: string;
   countryCode?: string;
@@ -181,6 +187,8 @@ export interface City {
 }
 
 export interface District {
+  /** Trendyol's internal district id — pass to `getTurkeyNeighborhoods(cityId, district.id)`. */
+  id?: string;
   code: string;
   name?: string;
   cityCode?: string;
@@ -188,6 +196,8 @@ export interface District {
 }
 
 export interface Neighborhood {
+  /** Trendyol's internal neighborhood id. */
+  id?: string;
   code: string;
   name?: string;
   districtCode?: string;
