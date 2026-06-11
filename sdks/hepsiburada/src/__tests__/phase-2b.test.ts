@@ -210,6 +210,89 @@ describe('CatalogResource — Phase 2b mutations + tracking', () => {
     expect(call.query).toMatchObject({ merchantId: 'M-2b', status: 'Active', page: 0, size: 50 });
   });
 
+  it('listProducts resolves typed content (title/category/brand/images) from the fields map', async () => {
+    const transport = mockTransport([
+      {
+        id: 'CP-1',
+        merchantSku: 'SKU-1',
+        fields: {
+          // Hepsiburada keys the title as `productName`, not `title`.
+          productName: { value: 'Kırmızı Tişört' },
+          categoryId: { value: 18021982 }, // numeric → stringified
+          categoryName: { value: 'Tişört' },
+          brand: { value: 'LoncaBrand' },
+          description: { value: 'Pamuklu' },
+          images: { value: ['https://img/1.jpg', { url: 'https://img/2.jpg' }] },
+        },
+      },
+    ]);
+    const [p] = await r(transport).listProducts({ page: 0, size: 1 });
+    expect(p!.title).toBe('Kırmızı Tişört');
+    expect(p!.categoryId).toBe('18021982');
+    expect(p!.categoryName).toBe('Tişört');
+    expect(p!.brand).toBe('LoncaBrand');
+    expect(p!.description).toBe('Pamuklu');
+    expect(p!.images).toEqual(['https://img/1.jpg', 'https://img/2.jpg']);
+    // `fields` + `raw` stay untouched.
+    expect(p!.fields).toBeDefined();
+    expect(p!.raw).toMatchObject({ merchantSku: 'SKU-1' });
+  });
+
+  it('listProducts leaves content undefined when no known key matches (never guesses)', async () => {
+    const transport = mockTransport([{ id: 'CP-2', fields: { randomAttr: { value: 'x' } } }]);
+    const [p] = await r(transport).listProducts({ page: 0, size: 1 });
+    expect(p!.title).toBeUndefined();
+    expect(p!.categoryId).toBeUndefined();
+    expect(p!.brand).toBeUndefined();
+    expect(p!.images).toBeUndefined();
+  });
+
+  it('listProducts unwraps the Spring-page envelope ({ data: [...] }) + resolves top-level content', async () => {
+    // Real `all-products-of-merchant` shape (verified live 2026-06): rows carry
+    // content as TOP-LEVEL fields (no `fields` revision-map), wrapped in an
+    // envelope. Before the fix the SDK saw a non-array and returned [].
+    const transport = mockTransport({
+      success: true,
+      totalElements: 928378,
+      totalPages: 185676,
+      number: 0,
+      data: [
+        {
+          merchantSku: 'MSKU-9',
+          barcode: 'BAR-9',
+          hbSku: 'HBSKU-9',
+          productName: 'My Collection 6520 Çanta',
+          brand: 'My Collection',
+          images: ['https://img/a.jpg', 'https://img/b.jpg'],
+          categoryId: 301143, // numeric on the wire
+          categoryName: 'Bebek Bakım Çantası',
+          description: 'Deri çanta',
+          status: 'Active',
+        },
+      ],
+    });
+    const rows = await r(transport).listProducts({ page: 0, size: 5 });
+    expect(rows).toHaveLength(1); // envelope unwrapped (was silently [] pre-fix)
+    const p = rows[0]!;
+    expect(p.title).toBe('My Collection 6520 Çanta'); // from top-level productName
+    expect(p.brand).toBe('My Collection');
+    expect(p.images).toEqual(['https://img/a.jpg', 'https://img/b.jpg']);
+    expect(p.categoryId).toBe('301143'); // numeric → stringified
+    expect(p.categoryName).toBe('Bebek Bakım Çantası');
+    expect(p.description).toBe('Deri çanta');
+    expect(p.merchantSku).toBe('MSKU-9');
+    expect(p.status).toBe('Active');
+  });
+
+  it('listProducts resolves content from the raw top level + CSV images when fields is absent', async () => {
+    const transport = mockTransport([
+      { id: 'CP-3', name: 'Mavi Pantolon', images: 'https://a.jpg, https://b.jpg' },
+    ]);
+    const [p] = await r(transport).listProducts({ page: 0, size: 1 });
+    expect(p!.title).toBe('Mavi Pantolon'); // falls back to `name`, then raw
+    expect(p!.images).toEqual(['https://a.jpg', 'https://b.jpg']);
+  });
+
   it('getProductStatus / getDeleteProcess require tracking id', async () => {
     await expect(r(mockTransport()).getProductStatus('')).rejects.toThrow(/trackingId/);
     await expect(r(mockTransport()).getDeleteProcess('')).rejects.toThrow(/trackingId/);

@@ -48,8 +48,7 @@ export class CatalogResource {
       query: { page: params.page, size: params.size },
       rateLimiter: this.limiter,
     });
-    const rows = Array.isArray(data) ? data : [];
-    return rows.map(normalizeCatalogProduct);
+    return unwrapCatalogRows(data).map(normalizeCatalogProduct);
   }
 
   /** List catalog rows filtered by status (`Active`, `WaitingApproval`, …). */
@@ -67,8 +66,7 @@ export class CatalogResource {
       },
       rateLimiter: this.limiter,
     });
-    const rows = Array.isArray(data) ? data : [];
-    return rows.map(normalizeCatalogProduct);
+    return unwrapCatalogRows(data).map(normalizeCatalogProduct);
   }
 
   /** Look up status for a single tracking-id (returned by an earlier upload). */
@@ -227,6 +225,24 @@ export class CatalogResource {
 
 // ─── Normalizers ───────────────────────────────────────────────────────────
 
+/**
+ * Catalog list endpoints wrap rows in a Spring-style page envelope
+ * (`{ data: [...], totalElements, totalPages, number, ... }`) — verified against
+ * live `all-products-of-merchant` (2026-06). Other/older surfaces may return a
+ * bare array or a `{ content }` / `{ items }` envelope. Unwrap defensively so a
+ * non-array response never silently drops every row.
+ */
+function unwrapCatalogRows(data: unknown): unknown[] {
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === 'object') {
+    for (const key of ['data', 'content', 'items']) {
+      const value = (data as Record<string, unknown>)[key];
+      if (Array.isArray(value)) return value;
+    }
+  }
+  return [];
+}
+
 function normalizeCatalogProduct(row: unknown): CatalogProduct {
   const r = (row && typeof row === 'object' ? row : {}) as Record<string, unknown>;
   const out: CatalogProduct = { id: String(r.id ?? ''), raw: r };
@@ -248,7 +264,91 @@ function normalizeCatalogProduct(row: unknown): CatalogProduct {
   if (r.fields && typeof r.fields === 'object') {
     out.fields = r.fields as Record<string, never>;
   }
+  // Best-effort typed content. Hepsiburada keeps title/category/brand/images in
+  // the per-SKU `fields` map (keys verified against the catalog OpenAPI:
+  // `productName`/`name`, `categoryId`, `categoryName`, `brand`, `images`,
+  // `description`) — occasionally at the raw top level. Try known key variants;
+  // leave `undefined` when none match (never guess a value).
+  const fields = r.fields as Record<string, { value?: unknown }> | undefined;
+  const title = pickContentString(fields, r, 'productName', 'name', 'title');
+  if (title !== undefined) out.title = title;
+  const categoryId = pickContentString(fields, r, 'categoryId', 'categoryID');
+  if (categoryId !== undefined) out.categoryId = categoryId;
+  const categoryName = pickContentString(fields, r, 'categoryName', 'category');
+  if (categoryName !== undefined) out.categoryName = categoryName;
+  const brand = pickContentString(fields, r, 'brand', 'brandName');
+  if (brand !== undefined) out.brand = brand;
+  const description = pickContentString(fields, r, 'description');
+  if (description !== undefined) out.description = description;
+  const images = pickContentImages(fields, r, 'images', 'image', 'imageUrls');
+  if (images !== undefined) out.images = images;
   return out;
+}
+
+/**
+ * Resolve a string content field from the catalog `fields` map (value side),
+ * falling back to the raw top level. Tries each key in order; `undefined` when
+ * none carry a usable value. Numbers are stringified (e.g. numeric `categoryId`).
+ */
+function pickContentString(
+  fields: Record<string, { value?: unknown }> | undefined,
+  raw: Record<string, unknown>,
+  ...keys: string[]
+): string | undefined {
+  for (const key of keys) {
+    const fromField = coerceString(fields?.[key]?.value);
+    if (fromField !== undefined) return fromField;
+    const fromRaw = coerceString(raw[key]);
+    if (fromRaw !== undefined) return fromRaw;
+  }
+  return undefined;
+}
+
+function coerceString(value: unknown): string | undefined {
+  if (typeof value === 'string') return value ? value : undefined;
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+  return undefined;
+}
+
+/**
+ * Resolve image URLs from the catalog `fields` map / raw — accepts `string[]`,
+ * `{ url | imageUrl }[]`, or a CSV string. `undefined` when none match.
+ */
+function pickContentImages(
+  fields: Record<string, { value?: unknown }> | undefined,
+  raw: Record<string, unknown>,
+  ...keys: string[]
+): string[] | undefined {
+  for (const key of keys) {
+    const urls = coerceImages(fields?.[key]?.value) ?? coerceImages(raw[key]);
+    if (urls && urls.length) return urls;
+  }
+  return undefined;
+}
+
+function coerceImages(value: unknown): string[] | undefined {
+  if (Array.isArray(value)) {
+    const urls = value
+      .map((item) => {
+        if (typeof item === 'string') return item.trim();
+        if (item && typeof item === 'object') {
+          const u =
+            (item as { url?: unknown }).url ?? (item as { imageUrl?: unknown }).imageUrl;
+          return typeof u === 'string' ? u.trim() : undefined;
+        }
+        return undefined;
+      })
+      .filter((s): s is string => !!s);
+    return urls.length ? urls : undefined;
+  }
+  if (typeof value === 'string' && value.trim()) {
+    const urls = value
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    return urls.length ? urls : undefined;
+  }
+  return undefined;
 }
 
 function normalizeTrackingReceipt(data: unknown): CatalogTrackingReceipt {

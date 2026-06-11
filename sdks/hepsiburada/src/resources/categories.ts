@@ -76,8 +76,25 @@ export class CategoriesResource {
         message: `categories.getAttributes: ${result.message ?? 'request rejected'} (code=${result.code})`,
       });
     }
-    const rows = Array.isArray(result.data) ? result.data : [];
-    return rows.map(normalizeAttribute);
+    // Hepsiburada returns attributes nested in `data` under three buckets
+    // (`baseAttributes` / `attributes` / `variantAttributes`) — verified live —
+    // not as a bare array. Flatten them into one list, tagging each with its
+    // group. Fall back to a bare array for any other/legacy shape.
+    if (Array.isArray(result.data)) {
+      return result.data.map((row) => normalizeAttribute(row));
+    }
+    const d = (result.data && typeof result.data === 'object' ? result.data : {}) as Record<string, unknown>;
+    const buckets: Array<[string, CategoryAttribute['group']]> = [
+      ['baseAttributes', 'base'],
+      ['attributes', 'category'],
+      ['variantAttributes', 'variant'],
+    ];
+    const out: CategoryAttribute[] = [];
+    for (const [key, group] of buckets) {
+      const arr = d[key];
+      if (Array.isArray(arr)) for (const row of arr) out.push(normalizeAttribute(row, group));
+    }
+    return out;
   }
 
   /**
@@ -162,7 +179,7 @@ function normalizeCategory(row: unknown): Category {
   };
 }
 
-function normalizeAttribute(row: unknown): CategoryAttribute {
+function normalizeAttribute(row: unknown, group?: CategoryAttribute['group']): CategoryAttribute {
   const r = (row && typeof row === 'object' ? row : {}) as Record<string, unknown>;
   const out: CategoryAttribute = { raw: r };
   if (typeof r.id === 'number' || typeof r.id === 'string') out.id = r.id;
@@ -170,6 +187,7 @@ function normalizeAttribute(row: unknown): CategoryAttribute {
   if (typeof r.externalName === 'string') out.externalName = r.externalName;
   if (typeof r.mandatory === 'boolean') out.mandatory = r.mandatory;
   if (Array.isArray(r.values)) out.values = r.values;
+  if (group) out.group = group;
   return out;
 }
 

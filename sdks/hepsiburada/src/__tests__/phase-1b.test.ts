@@ -39,6 +39,14 @@ describe('ShippingResource', () => {
     expect(fromData[0]!.name).toBe('Y');
   });
 
+  it('getCargoFirms unwraps the live { cargoFirms: [...] } envelope', async () => {
+    // Verified live: this endpoint wraps rows under `cargoFirms`, which the SDK
+    // previously did not unwrap → always returned [].
+    const firms = await r(mockTransport({ cargoFirms: [{ id: 1, name: 'Aras' }], error: null })).getCargoFirms();
+    expect(firms).toHaveLength(1);
+    expect(firms[0]!.name).toBe('Aras');
+  });
+
   it('listProfiles GETs /profiles/{merchantId}', async () => {
     const transport = mockTransport([{ profileName: 'P1' }]);
     const profiles = await r(transport).listProfiles();
@@ -46,6 +54,13 @@ describe('ShippingResource', () => {
       expect.objectContaining({ path: '/profiles/M-42', service: 'shipping' }),
     );
     expect(profiles[0]!.profileName).toBe('P1');
+  });
+
+  it('listProfiles unwraps the live { profiles: [...] } envelope', async () => {
+    // Verified live: rows live under `profiles` (not bare array / items / data).
+    const profiles = await r(mockTransport({ profiles: [{ profileName: 'P9' }], error: null })).listProfiles();
+    expect(profiles).toHaveLength(1);
+    expect(profiles[0]!.profileName).toBe('P9');
   });
 
   it('createProfile POSTs to /profile/createByMerchantId with body', async () => {
@@ -89,14 +104,22 @@ describe('ShippingResource', () => {
 describe('ClaimsResource', () => {
   const r = (t: HepsiburadaTransport) => new ClaimsResource(t, fastLimiter());
 
-  it('list GETs /claims/merchantId/{id} on oms service with no query by default', async () => {
+  it('list defaults offset/limit (Hepsiburada rejects a missing limit with 400)', async () => {
     const transport = mockTransport([]);
     await r(transport).list();
     const call = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0];
     expect(call.method).toBe('GET');
     expect(call.service).toBe('oms');
     expect(call.path).toBe('/claims/merchantId/M-42');
-    expect(call.query).toBeUndefined();
+    // Was `undefined` before — that produced `400 LimitCannotBeEmpty` live.
+    expect(call.query).toEqual({ offset: 0, limit: 100 });
+  });
+
+  it('list lets caller override the default limit/offset', async () => {
+    const transport = mockTransport([]);
+    await r(transport).list({ limit: 5 });
+    const call = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0];
+    expect(call.query).toEqual({ offset: 0, limit: 5 });
   });
 
   it('list forwards beginDate / endDate / offset / limit', async () => {
