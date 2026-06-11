@@ -202,7 +202,8 @@ const start = new Date('2026-05-01');
 const end = new Date('2026-05-31');
 
 for await (const tx of paginate((p) =>
-  client.finance.getSettlements({ ...p, startDate: start, endDate: end }),
+  // `transactionType` is required (Trendyol 500s without it); `limit` is clamped to 500/1000.
+  client.finance.getSettlements({ ...p, startDate: start, endDate: end, transactionType: 'Sale' }),
 )) {
   // tx is a typed FinancialTransaction — no .raw drill required for documented fields
   if (tx.transactionType === 'Satış' && tx.orderNumber) {
@@ -348,7 +349,7 @@ await client.invoices.sendLink({ shipmentPackageId: 100, invoiceLink: 'https://x
 await client.invoices.deleteLink({ serviceSourceId: 1, channelId: 2, customerId: 3 });
 
 // finance — typed FinancialTransaction[]
-await client.finance.getSettlements({ startDate, endDate });
+await client.finance.getSettlements({ startDate, endDate, transactionType: 'Sale' }); // transactionType required
 await client.finance.getOtherFinancials({ transactionType: 'DeductionInvoices' });
 
 // labels

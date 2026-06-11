@@ -90,16 +90,35 @@ describe('InvoicesResource', () => {
 describe('FinanceResource', () => {
   const r = (t: TrendyolTransport) => new FinanceResource(t, fastLimiter());
 
-  it('getSettlements GETs /settlements with default paging', async () => {
+  it('getSettlements GETs /settlements with size clamped to 500 + transactionType', async () => {
     const transport = mockTransport({ content: [], totalPages: 0 });
-    await r(transport).getSettlements();
+    await r(transport).getSettlements({ transactionType: 'Sale' });
     expect(transport.request).toHaveBeenCalledWith(
       expect.objectContaining({
         method: 'GET',
         path: '/integration/finance/che/sellers/42/settlements',
-        query: { page: 0, size: 50 },
+        // Trendyol requires size 500/1000 (default 500) + transactionType.
+        query: { page: 0, size: 500, transactionType: 'Sale' },
       }),
     );
+  });
+
+  it('finance throws without transactionType (Trendyol 500s otherwise)', async () => {
+    await expect(r(mockTransport()).getSettlements({})).rejects.toThrow(
+      /transactionType is required/,
+    );
+    await expect(r(mockTransport()).getOtherFinancials({})).rejects.toThrow(
+      /transactionType is required/,
+    );
+  });
+
+  it('finance clamps size to 500 / 1000', async () => {
+    const t1 = mockTransport({ content: [] });
+    await r(t1).getSettlements({ transactionType: 'Sale', limit: 50 });
+    expect((t1.request as ReturnType<typeof vi.fn>).mock.calls[0]![0].query.size).toBe(500);
+    const t2 = mockTransport({ content: [] });
+    await r(t2).getSettlements({ transactionType: 'Sale', limit: 1000 });
+    expect((t2.request as ReturnType<typeof vi.fn>).mock.calls[0]![0].query.size).toBe(1000);
   });
 
   it('getOtherFinancials forwards date range + transactionType + cursor', async () => {
@@ -115,7 +134,7 @@ describe('FinanceResource', () => {
     const call = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0];
     expect(call.query).toMatchObject({
       page: 0,
-      size: 100,
+      size: 500, // limit 100 clamped up to the API minimum of 500
       startDate: start.getTime(),
       transactionType: 'DeductionInvoices',
     });
@@ -141,7 +160,7 @@ describe('FinanceResource', () => {
         },
       ],
     });
-    const page = await r(transport).getSettlements();
+    const page = await r(transport).getSettlements({ transactionType: 'Sale' });
     expect(page.items[0]).toMatchObject({
       id: 'TXN-1',
       transactionDate: new Date(1779363893000).toISOString(),
@@ -159,7 +178,7 @@ describe('FinanceResource', () => {
 
   it('numeric ID gets coerced to string for stability', async () => {
     const transport = mockTransport({ content: [{ id: 12345, amount: 10 }] });
-    const page = await r(transport).getSettlements();
+    const page = await r(transport).getSettlements({ transactionType: 'Sale' });
     expect(page.items[0]!.id).toBe('12345');
     expect(page.items[0]!.raw).toEqual({ id: 12345, amount: 10 });
   });
