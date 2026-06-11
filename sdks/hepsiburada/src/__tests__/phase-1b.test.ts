@@ -211,7 +211,8 @@ describe('ClaimsResource', () => {
         body: { orderNumber: 'O-1', lines: [] },
       }),
     );
-    expect(out).toEqual({ claimNumber: 'CLM-2' });
+    // Action mutations now return a typed { raw } envelope (the API response on `.raw`).
+    expect(out).toEqual({ raw: { claimNumber: 'CLM-2' } });
   });
 
   it('create throws on falsy input', async () => {

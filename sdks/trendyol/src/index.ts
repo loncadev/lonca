@@ -14,6 +14,7 @@ export {
   type CursorPaginationParams,
   type OffsetPage,
   type OffsetPaginationParams,
+  type MutationResult,
 } from '@lonca/core';
 export { BrandsResource } from './resources/brands.js';
 export {

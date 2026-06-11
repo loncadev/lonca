@@ -1,4 +1,9 @@
-import { TokenBucketRateLimiter, ValidationError, type CursorPage } from '@lonca/core';
+import {
+  TokenBucketRateLimiter,
+  ValidationError,
+  type CursorPage,
+  type MutationResult,
+} from '@lonca/core';
 import type { TrendyolTransport } from '../transport.js';
 import type {
   ApproveClaimLineItemsInput,
@@ -69,16 +74,18 @@ export class ClaimsResource {
    *
    * @throws {ValidationError} when `claimItems` is empty.
    */
-  async create(input: CreateClaimInput): Promise<unknown> {
+  async create(input: CreateClaimInput): Promise<MutationResult> {
     if (!Array.isArray(input?.claimItems) || input.claimItems.length === 0) {
       throw new ValidationError({ message: 'claims.create: claimItems must not be empty' });
     }
-    return this.transport.request<unknown>({
-      method: 'POST',
-      path: `/integration/order/sellers/${this.transport.sellerId}/claims/create`,
-      body: input,
-      rateLimiter: this.limiter,
-    });
+    return {
+      raw: await this.transport.request<unknown>({
+        method: 'POST',
+        path: `/integration/order/sellers/${this.transport.sellerId}/claims/create`,
+        body: input,
+        rateLimiter: this.limiter,
+      }),
+    };
   }
 
   /**
@@ -89,7 +96,7 @@ export class ClaimsResource {
    * commas (Trendyol expects a single comma-separated string field).
    * Attach supporting docs (PDF / JPEG) via `files: [Blob, ...]`.
    */
-  async createIssue(claimId: string, input: CreateClaimIssueInput): Promise<unknown> {
+  async createIssue(claimId: string, input: CreateClaimIssueInput): Promise<MutationResult> {
     if (!Array.isArray(input?.claimItemIdList) || input.claimItemIdList.length === 0) {
       throw new ValidationError({
         message: 'claims.createIssue: claimItemIdList must not be empty',
@@ -114,12 +121,14 @@ export class ClaimsResource {
       }
     }
 
-    return this.transport.request<unknown>({
-      method: 'POST',
-      path: `/integration/order/sellers/${this.transport.sellerId}/claims/${encodeURIComponent(claimId)}/issue`,
-      body: form,
-      rateLimiter: this.limiter,
-    });
+    return {
+      raw: await this.transport.request<unknown>({
+        method: 'POST',
+        path: `/integration/order/sellers/${this.transport.sellerId}/claims/${encodeURIComponent(claimId)}/issue`,
+        body: form,
+        rateLimiter: this.limiter,
+      }),
+    };
   }
 
   /**
@@ -128,18 +137,23 @@ export class ClaimsResource {
    *
    * @throws {ValidationError} when `claimLineItemIdList` is empty.
    */
-  async approveLineItems(claimId: string, input: ApproveClaimLineItemsInput): Promise<unknown> {
+  async approveLineItems(
+    claimId: string,
+    input: ApproveClaimLineItemsInput,
+  ): Promise<MutationResult> {
     if (!Array.isArray(input?.claimLineItemIdList) || input.claimLineItemIdList.length === 0) {
       throw new ValidationError({
         message: 'claims.approveLineItems: claimLineItemIdList must not be empty',
       });
     }
-    return this.transport.request<unknown>({
-      method: 'PUT',
-      path: `/integration/order/sellers/${this.transport.sellerId}/claims/${encodeURIComponent(claimId)}/items/approve`,
-      body: input,
-      rateLimiter: this.limiter,
-    });
+    return {
+      raw: await this.transport.request<unknown>({
+        method: 'PUT',
+        path: `/integration/order/sellers/${this.transport.sellerId}/claims/${encodeURIComponent(claimId)}/items/approve`,
+        body: input,
+        rateLimiter: this.limiter,
+      }),
+    };
   }
 
   /**

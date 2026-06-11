@@ -62,10 +62,23 @@ export interface ListClaimsByStatusParams extends ListClaimsParams {
 }
 
 /**
- * Payload for `claims.create()`. Hepsiburada's `createClaimRequest` body
- * is documented on the portal — passes through verbatim.
+ * Payload for `claims.create()`. Common fields are typed as hints; the
+ * `& Record<string, unknown>` keeps Hepsiburada's full `createClaimRequest` body
+ * open so undocumented/extra fields still pass through verbatim.
  */
-export type CreateClaimInput = Record<string, unknown>;
+export type CreateClaimInput = {
+  orderNumber?: string;
+  /** Line items being claimed (shape per Hepsiburada's portal docs). */
+  lines?: unknown[];
+} & Record<string, unknown>;
 
-/** Payload for `claims.accept()` / `claims.reject()` / `claims.preApprovalConfirm()`. */
-export type ClaimActionInput = Record<string, unknown>;
+/**
+ * Payload for `claims.accept()` / `claims.reject()` / `claims.preApprovalConfirm()`.
+ * Common fields typed as hints; open for the rest.
+ */
+export type ClaimActionInput = {
+  /** Reason code for accept/reject. */
+  reasonCode?: string;
+  /** Pre-approval confirmation flag (`preApprovalConfirm`). */
+  confirmed?: boolean;
+} & Record<string, unknown>;

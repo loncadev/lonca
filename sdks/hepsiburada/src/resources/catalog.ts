@@ -1,4 +1,4 @@
-import { TokenBucketRateLimiter, ValidationError } from '@lonca/core';
+import { TokenBucketRateLimiter, ValidationError, type MutationResult } from '@lonca/core';
 import type { HepsiburadaTransport } from '../transport.js';
 import type {
   CatalogProduct,
@@ -139,45 +139,51 @@ export class CatalogResource {
   }
 
   /** Approve a product Hepsiburada has pre-matched to an existing catalog entry. */
-  async approvePreMatch(input: PreMatchActionInput): Promise<unknown> {
+  async approvePreMatch(input: PreMatchActionInput): Promise<MutationResult> {
     if (!input || typeof input !== 'object') {
       throw new ValidationError({ message: 'catalog.approvePreMatch: input is required' });
     }
-    return this.transport.request<unknown>({
-      method: 'POST',
-      service: SERVICE,
-      path: `${BASE_PATH}/approve-prematch`,
-      body: input,
-      rateLimiter: this.limiter,
-    });
+    return {
+      raw: await this.transport.request<unknown>({
+        method: 'POST',
+        service: SERVICE,
+        path: `${BASE_PATH}/approve-prematch`,
+        body: input,
+        rateLimiter: this.limiter,
+      }),
+    };
   }
 
   /** Reject a pre-match Hepsiburada has proposed. */
-  async rejectPreMatch(input: PreMatchActionInput): Promise<unknown> {
+  async rejectPreMatch(input: PreMatchActionInput): Promise<MutationResult> {
     if (!input || typeof input !== 'object') {
       throw new ValidationError({ message: 'catalog.rejectPreMatch: input is required' });
     }
-    return this.transport.request<unknown>({
-      method: 'POST',
-      service: SERVICE,
-      path: `${BASE_PATH}/reject-prematch`,
-      body: input,
-      rateLimiter: this.limiter,
-    });
+    return {
+      raw: await this.transport.request<unknown>({
+        method: 'POST',
+        service: SERVICE,
+        path: `${BASE_PATH}/reject-prematch`,
+        body: input,
+        rateLimiter: this.limiter,
+      }),
+    };
   }
 
   /** Check upload status for one or more tracking ids in a single request. */
-  async checkProductStatus(input: CheckProductStatusInput): Promise<unknown> {
+  async checkProductStatus(input: CheckProductStatusInput): Promise<MutationResult> {
     if (!input || typeof input !== 'object') {
       throw new ValidationError({ message: 'catalog.checkProductStatus: input is required' });
     }
-    return this.transport.request<unknown>({
-      method: 'POST',
-      service: SERVICE,
-      path: `${BASE_PATH}/check-product-status`,
-      body: input,
-      rateLimiter: this.limiter,
-    });
+    return {
+      raw: await this.transport.request<unknown>({
+        method: 'POST',
+        service: SERVICE,
+        path: `${BASE_PATH}/check-product-status`,
+        body: input,
+        rateLimiter: this.limiter,
+      }),
+    };
   }
 
   // ─── Delete ────────────────────────────────────────────────────────────
