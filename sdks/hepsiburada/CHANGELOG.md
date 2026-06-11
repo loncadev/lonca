@@ -1,5 +1,47 @@
 # @lonca/hepsiburada
 
+## 0.11.0
+
+### Minor Changes
+
+- [#85](https://github.com/loncadev/lonca/pull/85) [`2f80d30`](https://github.com/loncadev/lonca/commit/2f80d30e49ef3524d26c84a8ace7217c40db748b) Thanks [@keparlak](https://github.com/keparlak)! - Fix `catalog.listProducts` / `listProductsByStatus` silently returning `[]`, and
+  surface typed product content on `CatalogProduct`.
+
+  **Fix (data loss):** Hepsiburada's catalog list endpoints return a paginated
+  envelope (`{ totalElements, totalPages, data: [...] }`), but the SDK assumed a
+  bare array and dropped every row when the response was an object — so these calls
+  returned nothing against the live API. They now unwrap the envelope (`data`, with
+  `content` / `items` / bare-array fallbacks). Verified against live prod
+  `all-products-of-merchant`.
+
+  **Content typing:** `CatalogProduct` now exposes `title`, `categoryId`,
+  `categoryName`, `brand`, `description`, and `images`, resolved best-effort from the
+  row (Hepsiburada keys the title as `productName`/`name`) — so callers stop
+  hand-parsing the raw row. Fields stay `undefined` when the catalog doesn't surface
+  them (never guessed); `fields` and `raw` are untouched.
+
+  ```ts
+  const products = await client.catalog.listProducts(); // now returns rows (was [])
+  products[0]?.title; // string | undefined
+  products[0]?.categoryName; // string | undefined
+  products[0]?.images; // string[] | undefined
+  ```
+
+- [#85](https://github.com/loncadev/lonca/pull/85) [`2f80d30`](https://github.com/loncadev/lonca/commit/2f80d30e49ef3524d26c84a8ace7217c40db748b) Thanks [@keparlak](https://github.com/keparlak)! - Fix three read endpoints that silently returned empty results, found by
+  verifying every GET endpoint against the live API.
+  - **`shipping.getCargoFirms` / `shipping.listProfiles`** returned `[]` because
+    Hepsiburada wraps the rows under endpoint-specific keys (`cargoFirms`,
+    `profiles`) that the SDK didn't unwrap. They now resolve those keys (live: 5
+    cargo firms / 9 profiles, previously 0).
+  - **`categories.getAttributes`** returned `[]` because the response nests
+    attributes in `data` under three buckets (`baseAttributes`, `attributes`,
+    `variantAttributes`) rather than a bare array. They're now flattened into one
+    `CategoryAttribute[]`, each tagged with a new `group` field
+    (`'base' | 'category' | 'variant'`). Live: 38 attributes, previously 0.
+  - **`claims.list` / `claims.listByStatus`** failed with `400 "LimitCannotBeEmpty"`
+    when called without pagination. `offset`/`limit` now default to `0`/`100`
+    (override via params), so `claims.list()` works out of the box.
+
 ## 0.10.0
 
 ### Minor Changes

@@ -1,5 +1,30 @@
 # @lonca/trendyol
 
+## 0.13.0
+
+### Minor Changes
+
+- [#88](https://github.com/loncadev/lonca/pull/88) [`c758a77`](https://github.com/loncadev/lonca/commit/c758a77857a148d0a2ac111a88facb83d72e0094) Thanks [@keparlak](https://github.com/keparlak)! - Fix `finance.getSettlements` / `getOtherFinancials` failing against the live API.
+  Trendyol's CHE finance endpoints **require** a `transactionType` (they return a
+  bare 500 without one) and only accept a page **size of 500 or 1000** (`400 "Size
+değeri 500 ya da 1000 olmalı"`), but the SDK left `transactionType` optional and
+  sent `size=50`/capped at 200 — so both calls failed.
+
+  The SDK now throws a clear `ValidationError` when `transactionType` is missing and
+  clamps `limit` to 500/1000 (default 500). Verified live: `getSettlements({
+transactionType: 'Sale', startDate, endDate })` → 116 transactions.
+
+- [#87](https://github.com/loncadev/lonca/pull/87) [`72132c8`](https://github.com/loncadev/lonca/commit/72132c80e4411b25f9e374665764f16e27fb014c) Thanks [@keparlak](https://github.com/keparlak)! - Fix `locations.getTurkeyDistricts` / `getTurkeyNeighborhoods` (and the Azerbaijan
+  variants) returning **500**. Trendyol's nested location endpoints key off the
+  city/district **internal id**, but `City` only exposed the display `code` — e.g.
+  Adana is `{ id: 100, code: "1" }`, so the natural `getTurkeyDistricts(city.code)`
+  call hit the id-only path with `"1"` and 500'd.
+
+  `City`, `District`, and `Neighborhood` now expose an `id` field (distinct from
+  `code`), and the district/neighborhood lookups take that id. Verified live:
+  `getTurkeyDistricts(city.id)` → 15 districts; `getTurkeyNeighborhoods(city.id,
+district.id)` → 31 neighborhoods.
+
 ## 0.12.0
 
 ### Minor Changes
