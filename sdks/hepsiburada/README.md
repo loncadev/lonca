@@ -1,5 +1,5 @@
 <p align="left">
-  <img src="https://raw.githubusercontent.com/loncadev/lonca/main/assets/brand/icon.svg" alt="Lonca" height="32">
+  <img src="https://raw.githubusercontent.com/loncadev/.github/main/brand/logomark.svg" alt="Lonca" height="32">
 </p>
 
 # @lonca/hepsiburada
@@ -54,7 +54,7 @@ const client = createHepsiburadaClient({
 });
 
 const page = await client.listings.list({ offset: 0, limit: 100 });
-for (const l of page.listings) {
+for (const l of page.items) {
   console.log(l.hepsiburadaSku, l.merchantSku, l.availableStock, l.price);
 }
 ```
@@ -541,12 +541,13 @@ const orders = new OrdersResource(
 
 ## Wire-shape notes
 
-Hepsiburada doesn't ship a single uniform envelope across its surfaces. The SDK normalizes each shape but the typed output mirrors what the wire returns:
+Hepsiburada doesn't ship a single uniform envelope across its surfaces — the key holding the rows differs per endpoint. The SDK unwraps each one for you and returns a consistent typed shape; the table below is what the wire actually sends (verified live):
 
-- **`{ totalCount, limit, offset, pageCount, items[] }`** — OMS list endpoints (`orders.list*`, `orders.listShippedPackages`, …)
-- **`{ totalElements, totalPages, number, numberOfElements, first, last, data[] }`** — Spring-style envelope (catalog category surface)
-- **`{ success, code, message, data }`** — non-paged catalog responses (e.g. `getAttributes` rejects with `success: false, code: 1003` on non-leaf categories — surfaced as `ValidationError`)
-- **Raw `T[]` (no envelope)** — some surfaces (unfiltered `/packages`, `catalog.listProducts`, `shipping.getCargoFirms`, …)
+- **`{ totalCount, limit, offset, pageCount, items[] }`** — OMS list endpoints (`orders.list*`, `orders.listShippedPackages`, …). SDK returns an `OffsetPage` (`.items`, `.pageCount`).
+- **`{ totalElements, totalPages, number, …, data[] }`** — Spring-style envelope used by the catalog surface: `catalog.listProducts` **and** `categories.list`. Rows live under **`data`** (not `items`). SDK unwraps it.
+- **`{ success, code, message, data }`** — non-paged catalog responses. For `categories.getAttributes`, `data` is an object with three buckets (`baseAttributes`, `attributes`, `variantAttributes`) — the SDK flattens them into one `CategoryAttribute[]`, each tagged with a `group`. A non-leaf category returns `success: false, code: 1003` → surfaced as `ValidationError`.
+- **Endpoint-specific key** — `shipping.getCargoFirms` returns `{ cargoFirms[] }`, `shipping.listProfiles` returns `{ profiles[] }`. SDK unwraps the named key.
+- **Raw `T[]` (bare array)** — `orders.listPackages` (unfiltered `/packages`), `orders.getPackageableLineItems`.
 
 Every row carries an untouched `raw: Record<string, unknown>` for fields the SDK doesn't surface — undocumented fields stay available without an SDK release.
 
