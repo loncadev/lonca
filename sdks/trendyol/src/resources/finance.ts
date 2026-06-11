@@ -1,4 +1,4 @@
-import { TokenBucketRateLimiter, type CursorPage } from '@lonca/core';
+import { TokenBucketRateLimiter, ValidationError, type CursorPage } from '@lonca/core';
 import type { TrendyolTransport } from '../transport.js';
 import type { FinancialTransaction, ListFinanceParams } from '../types/misc.js';
 
@@ -111,12 +111,25 @@ export class FinanceResource {
     path: string,
     params: ListFinanceParams,
   ): Promise<CursorPage<FinancialTransaction>> {
-    const size = Math.min(params.limit ?? 50, 200);
+    // Trendyol's CHE finance API requires `transactionType` — without it the
+    // endpoint returns a bare 500. Surface a clear error instead. (Verified live.)
+    if (!params.transactionType) {
+      throw new ValidationError({
+        message:
+          "finance: transactionType is required (Trendyol returns 500 without it) — pass e.g. { transactionType: 'Sale' }.",
+      });
+    }
+    // …and it only accepts a page size of 500 or 1000 (anything else → 400
+    // "Size değeri 500 ya da 1000 olmalı"). Clamp to the nearest allowed value.
+    const size = (params.limit ?? 500) > 500 ? 1000 : 500;
     const page = params.cursor ? Number.parseInt(params.cursor, 10) : 0;
-    const query: Record<string, string | number | undefined> = { page, size };
+    const query: Record<string, string | number | undefined> = {
+      page,
+      size,
+      transactionType: params.transactionType,
+    };
     if (params.startDate) query.startDate = params.startDate.getTime();
     if (params.endDate) query.endDate = params.endDate.getTime();
-    if (params.transactionType) query.transactionType = params.transactionType;
 
     const data = await this.transport.request<WirePage>({
       method: 'GET',
