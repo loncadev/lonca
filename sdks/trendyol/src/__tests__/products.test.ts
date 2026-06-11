@@ -2,6 +2,14 @@ import { describe, expect, it, vi } from 'vitest';
 import { TokenBucketRateLimiter } from '@lonca/core';
 import { ProductsResource } from '../resources/products.js';
 import type { TrendyolTransport } from '../transport.js';
+import type { Product, UnapprovedProduct, ProductContentBase } from '../types/product.js';
+
+// Type-level guard (enforced by `tsc`): both product shapes are assignable to the
+// shared content base. Breaks the build if either stops extending ProductContentBase.
+const _approvedIsContent = (p: Product): ProductContentBase => p;
+const _draftIsContent = (p: UnapprovedProduct): ProductContentBase => p;
+void _approvedIsContent;
+void _draftIsContent;
 
 function mockTransport(response: unknown) {
   return {

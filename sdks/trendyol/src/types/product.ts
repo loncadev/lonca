@@ -38,13 +38,16 @@ export interface ProductVariant {
 }
 
 /**
- * A Trendyol marketplace product (approved variant).
+ * The content fields shared by an approved {@link Product} and an unapproved
+ * (draft) {@link UnapprovedProduct} — so callers can read title / brand /
+ * category / images from either shape without branching.
  *
- * Lonca surfaces the stable fields we have verified against live Trendyol
- * responses. Everything else stays accessible via `raw`.
+ * Intentionally just the common surface: the two diverge structurally beyond
+ * this (`Product` carries `variants[]`; `UnapprovedProduct` is flat with a root
+ * `barcode`), and their timestamp fields differ in optionality, so those stay on
+ * the concrete types.
  */
-export interface Product {
-  contentId: string;
+export interface ProductContentBase {
   productMainId: string;
   title: string;
   description?: string;
@@ -53,6 +56,16 @@ export interface Product {
   /** Image URLs in display order. */
   images: string[];
   attributes: ProductAttribute[];
+}
+
+/**
+ * A Trendyol marketplace product (approved variant).
+ *
+ * Lonca surfaces the stable fields we have verified against live Trendyol
+ * responses. Everything else stays accessible via `raw`.
+ */
+export interface Product extends ProductContentBase {
+  contentId: string;
   variants: ProductVariant[];
   /** ISO 8601 UTC string (converted from Trendyol's ms-epoch). */
   createdAt: string;
@@ -93,17 +106,12 @@ export interface UnapprovedProductRejectReason {
  * calls the image-list field `media`, but the live API returns it as
  * `images`. SDK normalizes to `images`.
  */
-export interface UnapprovedProduct {
+export interface UnapprovedProduct extends ProductContentBase {
   /** Seller (supplier) ID echoed back by Trendyol. */
   supplierId?: string;
-  productMainId: string;
   /** Lifecycle status — see `UnapprovedProductStatus`. */
   status?: UnapprovedProductStatus;
-  brand: NamedRef;
-  category: NamedRef;
   barcode: string;
-  title: string;
-  description?: string;
   /** Stock quantity at the moment of the query. */
   quantity?: number;
   listPrice?: number;
@@ -112,9 +120,9 @@ export interface UnapprovedProduct {
   vatRate?: number;
   dimensionalWeight?: number;
   stockCode?: string;
-  /** Image URLs in display order (Trendyol's `images` field, spec says `media`). */
-  images: string[];
-  attributes: ProductAttribute[];
+  // productMainId / title / description / brand / category / images / attributes
+  // are inherited from ProductContentBase. (Trendyol's image field is `media` in
+  // the spec but `images` on the wire — see the interface note above.)
   /** Populated when `status === 'rejected'`. */
   rejectReasonDetails: UnapprovedProductRejectReason[];
   /** Returned by Trendyol; null when the seller has not configured this. */

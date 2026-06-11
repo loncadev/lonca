@@ -112,6 +112,7 @@ export type {
   Product,
   ProductAttribute,
   ProductBase,
+  ProductContentBase,
   ProductStockPrice,
   ProductStockPriceVariant,
   ProductVariant,

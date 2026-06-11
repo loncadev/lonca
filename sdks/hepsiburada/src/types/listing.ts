@@ -53,6 +53,14 @@ export interface Listing {
   isFrozen: boolean;
   freezeReasons?: string[];
   availableWarehouses?: string[];
+  /**
+   * `true` when this listing is fulfilled by Hepsiburada (FBH / "HepsiLojistik").
+   *
+   * ⚠️ For FBH listings, stock is managed by Hepsiburada's warehouse. Pushing
+   * your own stock via `uploadStock` / `uploadInventory` can **overwrite**
+   * Hepsiburada's stock figure and oversell or zero out the listing. Skip
+   * `isFulfilledByHB` listings in your stock-sync unless you intend to override.
+   */
   isFulfilledByHB: boolean;
   priceIncreaseDisabled: boolean;
   priceDecreaseDisabled: boolean;
