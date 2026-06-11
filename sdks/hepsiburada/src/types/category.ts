@@ -72,6 +72,13 @@ export interface CategoryAttribute {
   externalName?: string;
   mandatory?: boolean;
   values?: unknown[];
+  /**
+   * Which bucket this attribute came from. Hepsiburada returns a leaf
+   * category's attributes in three groups — `base` (common), `category`
+   * (category-specific), and `variant` (variant-defining) — flattened into one
+   * list here, with this tag so callers can tell them apart.
+   */
+  group?: 'base' | 'category' | 'variant';
   /** Untouched raw attribute object. */
   raw: Record<string, unknown>;
 }

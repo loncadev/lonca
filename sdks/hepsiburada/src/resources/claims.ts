@@ -12,6 +12,15 @@ import type {
 const SERVICE_LIST = 'oms' as const;
 const SERVICE_CREATE = 'claim-stub' as const;
 
+/**
+ * Hepsiburada's claim list endpoints reject a missing `limit` with
+ * `400 "LimitCannotBeEmpty"` (verified live), so the SDK defaults it (and
+ * `offset`) when the caller doesn't pass one — keeping `claims.list()` usable
+ * with no args. Override either via params.
+ */
+const DEFAULT_OFFSET = 0;
+const DEFAULT_LIMIT = 100;
+
 interface WireClaim {
   claimNumber?: string;
   status?: string;
@@ -65,13 +74,17 @@ export class ClaimsResource {
     this.limiter = limiter ?? new TokenBucketRateLimiter({ capacity: 120, intervalMs: 60_000 });
   }
 
-  /** List all claims (date-range / pagination filters optional). */
+  /**
+   * List all claims. Date-range filters are optional; `offset`/`limit` default
+   * to `0`/`100` because Hepsiburada rejects a missing `limit` (`400
+   * "LimitCannotBeEmpty"`). Pass your own to paginate.
+   */
   async list(params: ListClaimsParams = {}): Promise<Claim[]> {
     const query: Record<string, string | number | undefined> = {};
     if (params.beginDate) query.beginDate = params.beginDate;
     if (params.endDate) query.endDate = params.endDate;
-    if (params.offset !== undefined) query.offset = params.offset;
-    if (params.limit !== undefined) query.limit = params.limit;
+    query.offset = params.offset ?? DEFAULT_OFFSET;
+    query.limit = params.limit ?? DEFAULT_LIMIT;
 
     const data = await this.transport.request<unknown>({
       method: 'GET',
@@ -102,8 +115,8 @@ export class ClaimsResource {
     if (params.endDate) query.endDate = params.endDate;
     if (params.statusBeginDate) query.statusBeginDate = params.statusBeginDate;
     if (params.statusEndDate) query.statusEndDate = params.statusEndDate;
-    if (params.offset !== undefined) query.offset = params.offset;
-    if (params.limit !== undefined) query.limit = params.limit;
+    query.offset = params.offset ?? DEFAULT_OFFSET;
+    query.limit = params.limit ?? DEFAULT_LIMIT;
 
     const data = await this.transport.request<unknown>({
       method: 'GET',

@@ -178,6 +178,30 @@ describe('CategoriesResource', () => {
     expect(attrs[0]!.raw).toBeDefined();
   });
 
+  it('getAttributes flattens the live nested data buckets with a group tag', async () => {
+    // Verified live: `data` is an object with three attribute buckets, not a
+    // bare array — the SDK previously returned [] for this real shape.
+    const transport = mockTransport({
+      success: true,
+      code: 0,
+      message: null,
+      data: {
+        baseAttributes: [{ id: 1, name: 'Marka' }],
+        attributes: [{ id: 2, name: 'Renk', mandatory: true }],
+        variantAttributes: [{ id: 3, name: 'Beden' }],
+      },
+    });
+    const attrs = await r(transport).getAttributes(60123456);
+    expect(attrs).toHaveLength(3);
+    expect(attrs.find((a) => a.id === 1)).toMatchObject({ name: 'Marka', group: 'base' });
+    expect(attrs.find((a) => a.id === 2)).toMatchObject({
+      name: 'Renk',
+      group: 'category',
+      mandatory: true,
+    });
+    expect(attrs.find((a) => a.id === 3)).toMatchObject({ name: 'Beden', group: 'variant' });
+  });
+
   it('getAttributes throws ValidationError when API returns success:false (non-leaf)', async () => {
     const transport = mockTransport({
       success: false,

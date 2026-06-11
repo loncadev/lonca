@@ -13,10 +13,11 @@ export default defineConfig({
       description:
         'Type-safe TypeScript SDKs for Turkish e-commerce marketplaces (Trendyol, Hepsiburada).',
       logo: {
-        // Source-of-truth: assets/brand/. Mirrored into docs/public/brand/
-        // via `pnpm docs:sync-brand` (run automatically before docs:build).
-        // The SVG carries its own `prefers-color-scheme` rule, so a single
-        // file adapts to Starlight's light/dark themes without a `dark` pair.
+        // Source-of-truth: the org brand repo (loncadev/.github/brand), fetched
+        // into docs/public/brand/ via `pnpm docs:sync-brand` (runs automatically
+        // before docs:dev / docs:build). The SVG carries its own
+        // `prefers-color-scheme` rule, so a single file adapts to Starlight's
+        // light/dark themes without a `dark` pair.
         src: './public/brand/logomark.svg',
         replacesTitle: true,
       },

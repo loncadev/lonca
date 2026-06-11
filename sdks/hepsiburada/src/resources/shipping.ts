@@ -4,6 +4,24 @@ import type { CargoFirm, ShippingProfile, ShippingProfileInput } from '../types/
 
 const SERVICE = 'shipping' as const;
 
+/**
+ * Unwrap a list response. Hepsiburada's shipping surface wraps rows under an
+ * endpoint-specific key (`cargoFirms`, `profiles`) rather than a bare array or
+ * the generic `items`/`data` envelopes — so a non-array response would silently
+ * drop every row without these keys. Tries bare array → `items` → `data` →
+ * caller-supplied keys.
+ */
+function unwrapShippingRows(data: unknown, ...keys: string[]): unknown[] {
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === 'object') {
+    for (const key of ['items', 'data', ...keys]) {
+      const value = (data as Record<string, unknown>)[key];
+      if (Array.isArray(value)) return value;
+    }
+  }
+  return [];
+}
+
 interface WireCargoFirm {
   id?: string | number;
   name?: string;
@@ -45,13 +63,9 @@ export class ShippingResource {
       path: `/cargoFirms/${encodeURIComponent(this.transport.merchantId)}`,
       rateLimiter: this.limiter,
     });
-    const rows = Array.isArray(data)
-      ? data
-      : Array.isArray((data as { items?: unknown[] })?.items)
-        ? (data as { items: unknown[] }).items
-        : Array.isArray((data as { data?: unknown[] })?.data)
-          ? (data as { data: unknown[] }).data
-          : [];
+    // Hepsiburada returns this list under a `cargoFirms` key (verified live),
+    // not a bare array / `items` / `data` — so include it in the unwrap.
+    const rows = unwrapShippingRows(data, 'cargoFirms');
     return rows.map((r) => {
       const row = r as WireCargoFirm;
       const out: CargoFirm = { raw: row as Record<string, unknown> };
@@ -70,13 +84,8 @@ export class ShippingResource {
       path: `/profiles/${encodeURIComponent(this.transport.merchantId)}`,
       rateLimiter: this.limiter,
     });
-    const rows = Array.isArray(data)
-      ? data
-      : Array.isArray((data as { items?: unknown[] })?.items)
-        ? (data as { items: unknown[] }).items
-        : Array.isArray((data as { data?: unknown[] })?.data)
-          ? (data as { data: unknown[] }).data
-          : [];
+    // Returned under a `profiles` key (verified live), not a bare array.
+    const rows = unwrapShippingRows(data, 'profiles');
     return rows.map((r) => {
       const row = r as WireProfile;
       const out: ShippingProfile = { raw: row as Record<string, unknown> };

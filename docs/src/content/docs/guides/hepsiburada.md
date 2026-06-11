@@ -42,7 +42,7 @@ const client = createHepsiburadaClient({
 });
 
 const page = await client.listings.list({ offset: 0, limit: 100 });
-for (const l of page.listings) {
+for (const l of page.items) {
   console.log(l.hepsiburadaSku, l.merchantSku, l.availableStock, l.price);
 }
 ```

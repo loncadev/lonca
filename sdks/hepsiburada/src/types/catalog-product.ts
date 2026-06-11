@@ -57,6 +57,27 @@ export interface CatalogProduct {
   uploadDate?: string;
   productQuality?: number;
   categoryScore?: number;
+  /**
+   * Product title, resolved best-effort from the per-SKU `fields` map (or the
+   * raw row). Hepsiburada's catalog keys this as `productName`/`name`, **not**
+   * `title`. `undefined` when the catalog doesn't surface it — never guessed.
+   */
+  title?: string;
+  /** Hepsiburada category id, resolved best-effort from `fields` / raw. */
+  categoryId?: string;
+  /** Human-readable category name, resolved best-effort from `fields` / raw. */
+  categoryName?: string;
+  /** Brand name, resolved best-effort from `fields` / raw. */
+  brand?: string;
+  /** Product description, resolved best-effort from `fields` / raw. */
+  description?: string;
+  /** Image URLs in display order, resolved best-effort from `fields` / raw. */
+  images?: string[];
+  /**
+   * Raw per-field map (value + revision history) as returned by Hepsiburada.
+   * The typed `title`/`categoryId`/… above are resolved from this; keep reading
+   * `fields` directly for anything not promoted to a typed field.
+   */
   fields?: Record<string, CatalogField<unknown>>;
   /** Untouched raw row. */
   raw: Record<string, unknown>;
