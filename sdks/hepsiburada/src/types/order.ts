@@ -100,19 +100,37 @@ export interface PackageLabel {
  * Body for `orders.createPackages()` — one or more line-item groups to pack.
  * Hepsiburada's portal docs the field set; the SDK accepts any object.
  */
-export type CreatePackagesInput = Record<string, unknown>;
+export type CreatePackagesInput = {
+  /** Line-item ids to pack together. */
+  lineItems?: string[];
+  /** Cargo company code (e.g. `'ARAS'`). */
+  cargoCompany?: string;
+} & Record<string, unknown>;
 
 /** Body for `orders.splitPackage()`. */
-export type SplitPackageInput = Record<string, unknown>;
+export type SplitPackageInput = {
+  /** Line-item ids to split into a new package. */
+  lineItems?: string[];
+} & Record<string, unknown>;
 
 /** Body for `orders.cancelLineItem()`. Hepsiburada expects a `reason` field. */
-export type CancelLineItemInput = Record<string, unknown>;
+export type CancelLineItemInput = {
+  reason?: string;
+} & Record<string, unknown>;
 
 /** Body for the deliver / intransit / undeliver status transitions. */
-export type PackageStatusInput = Record<string, unknown>;
+export type PackageStatusInput = {
+  /** Cargo tracking number (e.g. for the in-transit transition). */
+  trackingNumber?: string;
+  /** Reason (e.g. for a failed/undelivered transition). */
+  reason?: string;
+} & Record<string, unknown>;
 
 /** Body for cargo-company-change updates (line item or package level). */
-export type ChangeCargoCompanyInput = Record<string, unknown>;
+export type ChangeCargoCompanyInput = {
+  /** Target cargo company code (e.g. `'MNG'`). */
+  cargoCompany?: string;
+} & Record<string, unknown>;
 
 /** Body for `orders.updateLineItemLaborCost()`. */
 export type LaborCostInput = Record<string, unknown>;

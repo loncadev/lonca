@@ -1,4 +1,4 @@
-import { TokenBucketRateLimiter, ValidationError } from '@lonca/core';
+import { TokenBucketRateLimiter, ValidationError, type MutationResult } from '@lonca/core';
 import type { HepsiburadaTransport } from '../transport.js';
 import type {
   Claim,
@@ -132,66 +132,77 @@ export class ClaimsResource {
    * Accept (approve) a customer claim. Hepsiburada expects a body —
    * pass the documented `c` payload via `input`.
    */
-  async accept(claimNumber: string, input: ClaimActionInput = {}): Promise<unknown> {
+  async accept(claimNumber: string, input: ClaimActionInput = {}): Promise<MutationResult> {
     if (!claimNumber) {
       throw new ValidationError({ message: 'claims.accept: claimNumber is required' });
     }
-    return this.transport.request<unknown>({
-      method: 'POST',
-      service: SERVICE_LIST,
-      path: `/claims/number/${encodeURIComponent(claimNumber)}/accept`,
-      body: input,
-      rateLimiter: this.limiter,
-    });
+    return {
+      raw: await this.transport.request<unknown>({
+        method: 'POST',
+        service: SERVICE_LIST,
+        path: `/claims/number/${encodeURIComponent(claimNumber)}/accept`,
+        body: input,
+        rateLimiter: this.limiter,
+      }),
+    };
   }
 
   /** Reject a customer claim. */
-  async reject(claimNumber: string, input: ClaimActionInput = {}): Promise<unknown> {
+  async reject(claimNumber: string, input: ClaimActionInput = {}): Promise<MutationResult> {
     if (!claimNumber) {
       throw new ValidationError({ message: 'claims.reject: claimNumber is required' });
     }
-    return this.transport.request<unknown>({
-      method: 'POST',
-      service: SERVICE_LIST,
-      path: `/claims/number/${encodeURIComponent(claimNumber)}/reject`,
-      body: input,
-      rateLimiter: this.limiter,
-    });
+    return {
+      raw: await this.transport.request<unknown>({
+        method: 'POST',
+        service: SERVICE_LIST,
+        path: `/claims/number/${encodeURIComponent(claimNumber)}/reject`,
+        body: input,
+        rateLimiter: this.limiter,
+      }),
+    };
   }
 
   /**
    * Confirm a "pre-approval" — a Hepsiburada-specific second-step
    * approval flow for certain claim categories.
    */
-  async preApprovalConfirm(claimNumber: string, input: ClaimActionInput = {}): Promise<unknown> {
+  async preApprovalConfirm(
+    claimNumber: string,
+    input: ClaimActionInput = {},
+  ): Promise<MutationResult> {
     if (!claimNumber) {
       throw new ValidationError({
         message: 'claims.preApprovalConfirm: claimNumber is required',
       });
     }
-    return this.transport.request<unknown>({
-      method: 'POST',
-      service: SERVICE_LIST,
-      path: `/claims/number/${encodeURIComponent(claimNumber)}/preapprovalconfirm`,
-      body: input,
-      rateLimiter: this.limiter,
-    });
+    return {
+      raw: await this.transport.request<unknown>({
+        method: 'POST',
+        service: SERVICE_LIST,
+        path: `/claims/number/${encodeURIComponent(claimNumber)}/preapprovalconfirm`,
+        body: input,
+        rateLimiter: this.limiter,
+      }),
+    };
   }
 
   /**
    * Create a new claim against an order. Routes to the `claim-stub`
    * backend service.
    */
-  async create(input: CreateClaimInput): Promise<unknown> {
+  async create(input: CreateClaimInput): Promise<MutationResult> {
     if (!input || typeof input !== 'object') {
       throw new ValidationError({ message: 'claims.create: input is required' });
     }
-    return this.transport.request<unknown>({
-      method: 'POST',
-      service: SERVICE_CREATE,
-      path: `/claims/merchant/${encodeURIComponent(this.transport.merchantId)}/create`,
-      body: input,
-      rateLimiter: this.limiter,
-    });
+    return {
+      raw: await this.transport.request<unknown>({
+        method: 'POST',
+        service: SERVICE_CREATE,
+        path: `/claims/merchant/${encodeURIComponent(this.transport.merchantId)}/create`,
+        body: input,
+        rateLimiter: this.limiter,
+      }),
+    };
   }
 }

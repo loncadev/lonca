@@ -113,9 +113,9 @@ describe('ClaimsResource.createIssue', () => {
 });
 
 describe('ClaimsResource.approveLineItems', () => {
-  it('PUTs to /claims/{id}/items/approve with the input as body', async () => {
-    const transport = mockTransport();
-    await r(transport).approveLineItems('CLM-1', {
+  it('PUTs to /claims/{id}/items/approve with the input as body + returns a { raw } envelope', async () => {
+    const transport = mockTransport({ approved: true });
+    const out = await r(transport).approveLineItems('CLM-1', {
       claimLineItemIdList: ['line-1', 'line-2'],
     });
 
@@ -126,6 +126,8 @@ describe('ClaimsResource.approveLineItems', () => {
         body: { claimLineItemIdList: ['line-1', 'line-2'] },
       }),
     );
+    // Mutation methods now return the API response on `.raw` (was bare `unknown`).
+    expect(out).toEqual({ raw: { approved: true } });
   });
 
   it('throws ValidationError on empty list', async () => {

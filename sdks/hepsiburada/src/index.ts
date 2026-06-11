@@ -31,6 +31,7 @@ export {
   type CursorPaginationParams,
   type OffsetPage,
   type OffsetPaginationParams,
+  type MutationResult,
 } from '@lonca/core';
 export { ListingsResource } from './resources/listings.js';
 export { ShippingResource } from './resources/shipping.js';

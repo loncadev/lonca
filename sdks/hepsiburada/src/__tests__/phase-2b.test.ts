@@ -329,6 +329,17 @@ describe('CatalogResource — Phase 2b mutations + tracking', () => {
     );
   });
 
+  it.each(['approvePreMatch', 'rejectPreMatch', 'checkProductStatus'] as const)(
+    '%s returns the API response wrapped in a { raw } envelope',
+    async (method) => {
+      const transport = mockTransport({ ok: true, trackingId: 'TRK-9' });
+      const out = await (
+        r(transport) as unknown as Record<string, (body: unknown) => Promise<{ raw: unknown }>>
+      )[method]!({ foo: 'bar' });
+      expect(out).toEqual({ raw: { ok: true, trackingId: 'TRK-9' } });
+    },
+  );
+
   it('deleteByMerchantSkuList requires non-empty list', async () => {
     await expect(r(mockTransport()).deleteByMerchantSkuList({} as never)).rejects.toThrow(
       /non-empty/,

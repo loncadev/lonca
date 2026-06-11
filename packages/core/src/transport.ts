@@ -42,6 +42,18 @@ export interface BaseRequestOptions {
   headers?: Record<string, string>;
 }
 
+/**
+ * Minimal envelope for mutation/action endpoints whose response the SDK does
+ * not model field-by-field. The untouched parsed response (or `undefined` for a
+ * `204`) is on `raw`. Returned instead of a bare `unknown` so callers get a
+ * stable, discoverable access point (`result.raw`) rather than casting an opaque
+ * value — and so a richer typed shape can be added later without another break.
+ */
+export interface MutationResult {
+  /** Untouched parsed response body (`undefined` for an empty / `204` response). */
+  raw: unknown;
+}
+
 /** Marketplace-specific seams plus runtime dependencies for {@link createRequester}. */
 export interface RequesterConfig<O extends BaseRequestOptions> {
   /** Underlying `fetch` (tests inject a mock). */

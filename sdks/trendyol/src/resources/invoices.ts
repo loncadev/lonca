@@ -1,4 +1,4 @@
-import { TokenBucketRateLimiter, ValidationError } from '@lonca/core';
+import { TokenBucketRateLimiter, ValidationError, type MutationResult } from '@lonca/core';
 import type { TrendyolTransport } from '../transport.js';
 import type {
   DeleteInvoiceLinkInput,
@@ -27,7 +27,7 @@ export class InvoicesResource {
    *
    * Max 10 MB. Accepted formats: PDF, JPEG, PNG.
    */
-  async uploadFile(input: UploadInvoiceFileInput): Promise<unknown> {
+  async uploadFile(input: UploadInvoiceFileInput): Promise<MutationResult> {
     if (!input?.file) {
       throw new ValidationError({ message: 'invoices.uploadFile: file is required' });
     }
@@ -43,34 +43,40 @@ export class InvoicesResource {
     if (input.invoiceNumber !== undefined) {
       form.append('invoiceNumber', input.invoiceNumber);
     }
-    return this.transport.request<unknown>({
-      method: 'POST',
-      path: `/integration/sellers/${this.transport.sellerId}/seller-invoice-file`,
-      body: form,
-      rateLimiter: this.limiter,
-    });
+    return {
+      raw: await this.transport.request<unknown>({
+        method: 'POST',
+        path: `/integration/sellers/${this.transport.sellerId}/seller-invoice-file`,
+        body: form,
+        rateLimiter: this.limiter,
+      }),
+    };
   }
 
   /** Register an invoice URL with Trendyol (alternative to uploading the file). */
-  async sendLink(input: SendInvoiceLinkInput): Promise<unknown> {
+  async sendLink(input: SendInvoiceLinkInput): Promise<MutationResult> {
     if (!input?.invoiceLink) {
       throw new ValidationError({ message: 'invoices.sendLink: invoiceLink is required' });
     }
-    return this.transport.request<unknown>({
-      method: 'POST',
-      path: `/integration/sellers/${this.transport.sellerId}/seller-invoice-links`,
-      body: input,
-      rateLimiter: this.limiter,
-    });
+    return {
+      raw: await this.transport.request<unknown>({
+        method: 'POST',
+        path: `/integration/sellers/${this.transport.sellerId}/seller-invoice-links`,
+        body: input,
+        rateLimiter: this.limiter,
+      }),
+    };
   }
 
   /** Remove a previously-registered invoice link. */
-  async deleteLink(input: DeleteInvoiceLinkInput): Promise<unknown> {
-    return this.transport.request<unknown>({
-      method: 'POST',
-      path: `/integration/sellers/${this.transport.sellerId}/seller-invoice-links/delete`,
-      body: input,
-      rateLimiter: this.limiter,
-    });
+  async deleteLink(input: DeleteInvoiceLinkInput): Promise<MutationResult> {
+    return {
+      raw: await this.transport.request<unknown>({
+        method: 'POST',
+        path: `/integration/sellers/${this.transport.sellerId}/seller-invoice-links/delete`,
+        body: input,
+        rateLimiter: this.limiter,
+      }),
+    };
   }
 }
