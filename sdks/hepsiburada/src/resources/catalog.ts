@@ -332,8 +332,7 @@ function coerceImages(value: unknown): string[] | undefined {
       .map((item) => {
         if (typeof item === 'string') return item.trim();
         if (item && typeof item === 'object') {
-          const u =
-            (item as { url?: unknown }).url ?? (item as { imageUrl?: unknown }).imageUrl;
+          const u = (item as { url?: unknown }).url ?? (item as { imageUrl?: unknown }).imageUrl;
           return typeof u === 'string' ? u.trim() : undefined;
         }
         return undefined;

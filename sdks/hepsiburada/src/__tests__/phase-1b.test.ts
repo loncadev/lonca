@@ -42,7 +42,9 @@ describe('ShippingResource', () => {
   it('getCargoFirms unwraps the live { cargoFirms: [...] } envelope', async () => {
     // Verified live: this endpoint wraps rows under `cargoFirms`, which the SDK
     // previously did not unwrap → always returned [].
-    const firms = await r(mockTransport({ cargoFirms: [{ id: 1, name: 'Aras' }], error: null })).getCargoFirms();
+    const firms = await r(
+      mockTransport({ cargoFirms: [{ id: 1, name: 'Aras' }], error: null }),
+    ).getCargoFirms();
     expect(firms).toHaveLength(1);
     expect(firms[0]!.name).toBe('Aras');
   });
@@ -58,7 +60,9 @@ describe('ShippingResource', () => {
 
   it('listProfiles unwraps the live { profiles: [...] } envelope', async () => {
     // Verified live: rows live under `profiles` (not bare array / items / data).
-    const profiles = await r(mockTransport({ profiles: [{ profileName: 'P9' }], error: null })).listProfiles();
+    const profiles = await r(
+      mockTransport({ profiles: [{ profileName: 'P9' }], error: null }),
+    ).listProfiles();
     expect(profiles).toHaveLength(1);
     expect(profiles[0]!.profileName).toBe('P9');
   });

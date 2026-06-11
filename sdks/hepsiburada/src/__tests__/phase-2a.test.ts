@@ -194,7 +194,11 @@ describe('CategoriesResource', () => {
     const attrs = await r(transport).getAttributes(60123456);
     expect(attrs).toHaveLength(3);
     expect(attrs.find((a) => a.id === 1)).toMatchObject({ name: 'Marka', group: 'base' });
-    expect(attrs.find((a) => a.id === 2)).toMatchObject({ name: 'Renk', group: 'category', mandatory: true });
+    expect(attrs.find((a) => a.id === 2)).toMatchObject({
+      name: 'Renk',
+      group: 'category',
+      mandatory: true,
+    });
     expect(attrs.find((a) => a.id === 3)).toMatchObject({ name: 'Beden', group: 'variant' });
   });
 

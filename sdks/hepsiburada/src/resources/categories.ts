@@ -83,7 +83,10 @@ export class CategoriesResource {
     if (Array.isArray(result.data)) {
       return result.data.map((row) => normalizeAttribute(row));
     }
-    const d = (result.data && typeof result.data === 'object' ? result.data : {}) as Record<string, unknown>;
+    const d = (result.data && typeof result.data === 'object' ? result.data : {}) as Record<
+      string,
+      unknown
+    >;
     const buckets: Array<[string, CategoryAttribute['group']]> = [
       ['baseAttributes', 'base'],
       ['attributes', 'category'],

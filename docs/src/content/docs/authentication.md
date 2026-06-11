@@ -46,7 +46,7 @@ The `integratorName` you pass is sent as the `User-Agent`, and Hepsiburada is st
 
 - It must be the **integrator name registered in your Merchant Portal**. Production sits behind a bot manager that rejects an unrecognized `User-Agent` with **`401` / `403`** — a wrong name fails every call. (SIT is more lenient, which can mask the problem.)
 - Use a recognizable bare slug (e.g. your company name). **Do not** include the merchant ID — `0.1.0` / `0.2.0` did this and returned 401 on every call.
-:::
+  :::
 
 ## Environment variables (recommended)
 

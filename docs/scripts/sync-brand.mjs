@@ -31,4 +31,6 @@ for (const file of FILES) {
   copied++;
 }
 
-console.log(`sync-brand: fetched ${copied} file(s) from loncadev/.github/brand → docs/public/brand/`);
+console.log(
+  `sync-brand: fetched ${copied} file(s) from loncadev/.github/brand → docs/public/brand/`,
+);
