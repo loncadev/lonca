@@ -10,7 +10,7 @@ packages:
 catalog:
   typescript: ^6.0.3
   "@types/node": ^24.0.0
-  vitest: ^4.1.8
+  vitest: ^4.1.9
   tsup: ^8.3.5
 
 # pnpm 10 denies postinstall scripts by default.
