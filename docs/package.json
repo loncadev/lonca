@@ -13,12 +13,12 @@
     "preview": "astro preview"
   },
   "dependencies": {
-    "@astrojs/starlight": "^0.39.3",
+    "@astrojs/starlight": "^0.40.0",
     "@lonca/core": "workspace:*",
     "@lonca/hepsiburada": "workspace:*",
     "@lonca/trendyol": "workspace:*",
     "astro": "^6.4.7",
-    "sharp": "^0.35.1",
+    "sharp": "^0.35.2",
     "starlight-typedoc": "^0.23.0",
     "typedoc": "^0.28.19",
     "typedoc-plugin-markdown": "^4.12.0"
