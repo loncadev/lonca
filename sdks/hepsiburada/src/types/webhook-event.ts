@@ -74,10 +74,7 @@ export const ORDER_WEBHOOK_EVENTS = [
  *   - `packageFromClaimResult` — a new return package was created after claim approval
  */
 export type ClaimWebhookEvent =
-  | 'awaitingAction'
-  | 'awaitingPreApproval'
-  | 'disputedClaimResult'
-  | 'packageFromClaimResult';
+  'awaitingAction' | 'awaitingPreApproval' | 'disputedClaimResult' | 'packageFromClaimResult';
 
 /** Exhaustive list of claim webhook event names — runtime use. */
 export const CLAIM_WEBHOOK_EVENTS = [

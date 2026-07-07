@@ -153,12 +153,7 @@ export interface UnapprovedProduct extends ProductContentBase {
  * type-checks.
  */
 export type ApprovedProductStatus =
-  | 'archived'
-  | 'blacklisted'
-  | 'locked'
-  | 'onSale'
-  | 'notOnSale'
-  | (string & {});
+  'archived' | 'blacklisted' | 'locked' | 'onSale' | 'notOnSale' | (string & {});
 
 /**
  * A single variant's stock + price, returned by

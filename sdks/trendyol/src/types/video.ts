@@ -13,11 +13,7 @@ import type { OffsetPaginationParams } from '@lonca/core';
  * union — Trendyol may add new statuses without an SDK release.
  */
 export type SellerIntegrationStatus =
-  | 'WAITING'
-  | 'IN_PROGRESS'
-  | 'COMPLETED'
-  | 'FAILED'
-  | (string & {});
+  'WAITING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED' | (string & {});
 
 /** Body for `videos.create()` — initiates an async download + processing. */
 export type CreateVideoInput = Record<string, unknown>;

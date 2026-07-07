@@ -10,11 +10,7 @@ import { createStatusNormalizer, type NormalizedOrderStatus } from '@lonca/core'
  * (never a silent default), so an unrecognized status is visible, not hidden.
  */
 export type KnownHepsiburadaOrderStatus =
-  | 'Open'
-  | 'Shipped'
-  | 'Delivered'
-  | 'Cancelled'
-  | 'Returned';
+  'Open' | 'Shipped' | 'Delivered' | 'Cancelled' | 'Returned';
 
 /**
  * Exhaustive map over {@link KnownHepsiburadaOrderStatus} → the

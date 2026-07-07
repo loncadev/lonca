@@ -10,11 +10,7 @@
 import type { CursorPaginationParams } from '@lonca/core';
 
 export type QuestionStatus =
-  | 'WAITING_FOR_ANSWER'
-  | 'ANSWERED'
-  | 'REJECTED'
-  | 'REPORTED'
-  | (string & {});
+  'WAITING_FOR_ANSWER' | 'ANSWERED' | 'REJECTED' | 'REPORTED' | (string & {});
 
 export interface QuestionAnswer {
   text?: string;
