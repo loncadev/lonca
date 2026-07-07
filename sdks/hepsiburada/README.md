@@ -366,9 +366,7 @@ await client.claims.preApprovalConfirm('CLM-1', { confirmed: true });
 // Create a new claim (routes to a different host: claim-stub)
 await client.claims.create({
   orderNumber: 'O-1',
-  lines: [
-    /* ... */
-  ],
+  lines: [/* ... */],
 });
 ```
 
@@ -398,21 +396,13 @@ await client.catalog.getProductStatus('trk-id'); // status of a previous upload
 await client.catalog.getTrackingIdHistory();
 
 // Create / update via async upload (returns trackingId, poll status)
-await client.catalog.uploadProductViaFile([
-  {
-    /* per-category attributes */
-  },
-]);
+await client.catalog.uploadProductViaFile([{/* per-category attributes */}]);
 await client.catalog.uploadFastListing(/* ... */);
 await client.catalog.checkProductStatus({ trackingIds: ['trk-1', 'trk-2'] });
 
 // Pre-match approval (Hepsiburada matched your SKU to an existing catalog entry)
-await client.catalog.approvePreMatch({
-  /* ... */
-});
-await client.catalog.rejectPreMatch({
-  /* ... */
-});
+await client.catalog.approvePreMatch({/* ... */});
+await client.catalog.rejectPreMatch({/* ... */});
 
 // Async delete with status polling
 const { trackingId } = await client.catalog.deleteByMerchantSkuList({
@@ -438,9 +428,7 @@ await client.suppliers.searchOpenPurchaseOrders({ pageNumber: 0, pageSize: 50 })
 await client.suppliers.searchSupplierListings({ pageNumber: 0, pageSize: 50 });
 await client.suppliers.searchListingUpdateRequests({ pageNumber: 0, pageSize: 50 });
 await client.suppliers.getListingUpdateRequest('REQ-1');
-await client.suppliers.createListingUpdateRequest({
-  /* ... */
-});
+await client.suppliers.createListingUpdateRequest({/* ... */});
 ```
 
 ### `accounting` — record-level transactions (1 method)
@@ -462,9 +450,7 @@ await client.questions.get('Q-1');
 await client.questions.getCountByStatus();
 await client.questions.answer('Q-1', { answer: 'Stokumuzda var, 2 günde teslim ediyoruz.' });
 await client.questions.reject('Q-1', { reasonCode: 'inappropriate' });
-await client.questions.create({
-  /* rarely needed — buyer normally creates */
-});
+await client.questions.create({/* rarely needed — buyer normally creates */});
 ```
 
 ### `promotions` — self-service basket campaigns (9 methods)
@@ -490,12 +476,8 @@ await client.promotions.cancelDiscount({ campaignId: 'C-1' });
 // SIT only — guard your code so it never runs against prod
 if (env === 'sit') {
   await client.testOrders.create({
-    customer: {
-      /* ... */
-    },
-    lines: [
-      /* ... */
-    ],
+    customer: {/* ... */},
+    lines: [/* ... */],
   });
 }
 ```

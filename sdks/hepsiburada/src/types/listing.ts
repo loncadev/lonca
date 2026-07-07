@@ -190,11 +190,7 @@ export interface UploadReceipt {
 
 /** Lifecycle status of an upload. */
 export type UploadStatus =
-  | 'PROCESSING'
-  | 'COMPLETED'
-  | 'FAILED'
-  | 'COMPLETED_WITH_ERRORS'
-  | (string & {});
+  'PROCESSING' | 'COMPLETED' | 'FAILED' | 'COMPLETED_WITH_ERRORS' | (string & {});
 
 /** Per-row failure surfaced by an upload result. */
 export interface UploadError {

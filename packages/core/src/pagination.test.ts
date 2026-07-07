@@ -4,11 +4,9 @@ import { paginate } from './pagination.js';
 
 describe('paginate', () => {
   it('iterates a single page', async () => {
-    const fetchPage = vi.fn(
-      async (_p: CursorPaginationParams): Promise<CursorPage<number>> => ({
-        items: [1, 2, 3],
-      }),
-    );
+    const fetchPage = vi.fn(async (_p: CursorPaginationParams): Promise<CursorPage<number>> => ({
+      items: [1, 2, 3],
+    }));
     const out: number[] = [];
     for await (const n of paginate(fetchPage)) out.push(n);
     expect(out).toEqual([1, 2, 3]);
@@ -34,9 +32,9 @@ describe('paginate', () => {
   });
 
   it('forwards extra params on every fetch', async () => {
-    const fetchPage = vi.fn(
-      async (_p: CursorPaginationParams): Promise<CursorPage<number>> => ({ items: [] }),
-    );
+    const fetchPage = vi.fn(async (_p: CursorPaginationParams): Promise<CursorPage<number>> => ({
+      items: [],
+    }));
     for await (const _ of paginate(fetchPage, { limit: 50 })) {
       // no-op
     }

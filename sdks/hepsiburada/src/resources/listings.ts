@@ -356,8 +356,7 @@ export class ListingsResource {
         maxPrice: typeof row.maxPrice === 'number' ? row.maxPrice : undefined,
         regulativePriceDetail:
           row.regulativePriceDetail as PriceUploadResult['priceValidations'] extends
-            | (infer R)[]
-            | undefined
+            (infer R)[] | undefined
             ? R extends { regulativePriceDetail?: infer D }
               ? D
               : never
