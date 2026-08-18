@@ -9,7 +9,7 @@ packages:
 # https://pnpm.io/catalogs
 catalog:
   typescript: ^6.0.3
-  "@types/node": ^24.0.0
+  "@types/node": ^24.13.3
   vitest: ^4.1.10
   tsup: ^8.3.5
 
