@@ -102,7 +102,12 @@ export interface CatalogField<V = string> {
 
 /** One row in the merchant's catalog. */
 export interface CatalogProduct {
-  id: string;
+  /**
+   * Catalog row id. Absent when the wire row has none — `listProductsByStatus`
+   * rows carry no `id` (verified live 2026-08). Never the `''` placeholder
+   * earlier versions emitted.
+   */
+  id?: string;
   createdAt?: string;
   createdBy?: string;
   modifiedAt?: string;

@@ -1,4 +1,5 @@
 import { TokenBucketRateLimiter, ValidationError } from '@lonca/core';
+import { resolveCatalogPaging, type ResolvedCatalogPaging } from '../catalog-paging.js';
 import type { HepsiburadaTransport } from '../transport.js';
 import type {
   CatalogPage,
@@ -32,22 +33,35 @@ export class CategoriesResource {
     this.limiter = limiter ?? new TokenBucketRateLimiter({ capacity: 600, intervalMs: 60_000 });
   }
 
-  /** List the category tree. ~27,000 categories total — use `leaf: true` to filter to listable ones. */
+  /**
+   * List the category tree. ~27,000 categories total — use `leaf: true` to
+   * filter to listable ones.
+   *
+   * Returns a {@link CatalogPage} — the shared `OffsetPage` shape (`items`,
+   * `totalCount`, `pageCount`, …) mapped from Hepsiburada's Spring envelope,
+   * so it plugs into `paginateOffset` (pass `limit`; `offset` must be a
+   * multiple of it because the API pages by number). The legacy Spring fields
+   * (`data`, `totalElements`, …) are still present but deprecated.
+   *
+   * @throws {ValidationError} when both `page`/`size` and `offset`/`limit` are
+   *   given, or `offset` is not a multiple of `limit`.
+   */
   async list(params: ListCategoriesParams = {}): Promise<CatalogPage<Category>> {
+    const paging = resolveCatalogPaging(params, 'categories.list');
     const data = await this.transport.request<unknown>({
       method: 'GET',
       service: SERVICE,
       path: `${BASE_PATH}/get-all-categories`,
       query: {
-        page: params.page,
-        size: params.size,
+        page: paging.page,
+        size: paging.size,
         leaf: params.leaf,
         status: params.status,
         available: params.available,
       },
       rateLimiter: this.limiter,
     });
-    return normalizeCatalogPage<Category>(data, normalizeCategory);
+    return normalizeCatalogPage<Category>(data, paging, normalizeCategory);
   }
 
   /**
@@ -137,14 +151,38 @@ export class CategoriesResource {
   }
 }
 
-function normalizeCatalogPage<T>(data: unknown, mapRow: (row: unknown) => T): CatalogPage<T> {
+/**
+ * Map the Spring envelope onto {@link CatalogPage}: the `OffsetPage` fields
+ * (`totalCount` ← `totalElements`, `pageCount` ← `totalPages`, `items` ←
+ * `data`, `limit` ← requested `size` else the server's `numberOfElements`,
+ * `offset` ← page index × `limit`) plus the deprecated legacy fields.
+ */
+function normalizeCatalogPage<T>(
+  data: unknown,
+  paging: ResolvedCatalogPaging,
+  mapRow: (row: unknown) => T,
+): CatalogPage<T> {
   const obj = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>;
   const rows = Array.isArray(obj.data) ? obj.data.map(mapRow) : [];
+  const num = (key: string): number | undefined => {
+    const value = obj[key];
+    return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+  };
+  const number = num('number') ?? paging.page ?? 0;
+  const totalPages = num('totalPages') ?? 0;
+  const totalElements = num('totalElements') ?? 0;
+  const numberOfElements = num('numberOfElements') ?? rows.length;
+  const limit = paging.size ?? numberOfElements;
   return {
-    number: Number(obj.number ?? 0),
-    totalPages: Number(obj.totalPages ?? 0),
-    totalElements: Number(obj.totalElements ?? 0),
-    numberOfElements: Number(obj.numberOfElements ?? 0),
+    totalCount: totalElements,
+    limit,
+    offset: number * limit,
+    pageCount: totalPages,
+    items: rows,
+    number,
+    totalPages,
+    totalElements,
+    numberOfElements,
     first: Boolean(obj.first),
     last: Boolean(obj.last),
     success: Boolean(obj.success),

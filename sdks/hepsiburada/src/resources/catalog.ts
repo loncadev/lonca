@@ -4,9 +4,9 @@ import {
   type MutationResult,
   type OffsetPage,
 } from '@lonca/core';
+import { resolveCatalogPaging, type ResolvedCatalogPaging } from '../catalog-paging.js';
 import type { HepsiburadaTransport } from '../transport.js';
 import type {
-  CatalogPagingParams,
   CatalogProduct,
   CatalogProductStatus,
   CatalogTrackingReceipt,
@@ -300,48 +300,6 @@ function unwrapCatalogRows(data: unknown): unknown[] {
   return [];
 }
 
-/** Page-number paging as sent on the wire (`page` / `size`, both optional). */
-interface ResolvedCatalogPaging {
-  page?: number;
-  size?: number;
-}
-
-/**
- * Turn the caller's paging into Hepsiburada's page-number model. `page` /
- * `size` pass straight through; `offset` / `limit` (the `paginateOffset`
- * contract) are converted — which is only honest when `offset` lands on a
- * page boundary, so anything else is rejected instead of silently rounded.
- */
-function resolveCatalogPaging(params: CatalogPagingParams, method: string): ResolvedCatalogPaging {
-  const { page, size, offset, limit } = params;
-  const usesOffset = offset !== undefined || limit !== undefined;
-  const usesPage = page !== undefined || size !== undefined;
-  if (usesOffset && usesPage) {
-    throw new ValidationError({
-      message: `${method}: pass either page/size or offset/limit, not both`,
-    });
-  }
-  if (!usesOffset) return { page, size };
-  if (limit !== undefined && (!Number.isInteger(limit) || limit < 1)) {
-    throw new ValidationError({ message: `${method}: limit must be an integer ≥ 1` });
-  }
-  if (offset !== undefined && (!Number.isInteger(offset) || offset < 0)) {
-    throw new ValidationError({ message: `${method}: offset must be an integer ≥ 0` });
-  }
-  if (!offset) return { page: 0, size: limit };
-  if (limit === undefined) {
-    throw new ValidationError({
-      message: `${method}: offset requires limit — Hepsiburada pages by number (pass \`limit\` to paginateOffset)`,
-    });
-  }
-  if (offset % limit !== 0) {
-    throw new ValidationError({
-      message: `${method}: offset must be a multiple of limit — Hepsiburada pages by number`,
-    });
-  }
-  return { page: offset / limit, size: limit };
-}
-
 /**
  * Map a catalog list response onto `OffsetPage`. The live shape is the Spring
  * envelope `{ totalElements, totalPages, number, numberOfElements, data[] }`
@@ -392,7 +350,9 @@ function toCatalogPage(data: unknown, paging: ResolvedCatalogPaging): OffsetPage
 
 function normalizeCatalogProduct(row: unknown): CatalogProduct {
   const r = (row && typeof row === 'object' ? row : {}) as Record<string, unknown>;
-  const out: CatalogProduct = { id: String(r.id ?? ''), raw: r };
+  const out: CatalogProduct = { raw: r };
+  if (typeof r.id === 'string') out.id = r.id;
+  else if (typeof r.id === 'number') out.id = String(r.id);
   if (typeof r.createdAt === 'string') out.createdAt = r.createdAt;
   if (typeof r.createdBy === 'string') out.createdBy = r.createdBy;
   if (typeof r.modifiedAt === 'string') out.modifiedAt = r.modifiedAt;
