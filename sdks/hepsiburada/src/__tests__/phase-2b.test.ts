@@ -407,13 +407,13 @@ describe('CategoriesResource — Phase 2b getAttributeValues', () => {
 describe('ProductUpdatesResource', () => {
   const r = (t: HepsiburadaTransport) => new ProductUpdatesResource(t, fastLimiter());
 
-  it('importUpdates POSTs raw array body to /api/integrator/import', async () => {
+  it('importUpdates POSTs raw array body to /ticket-api/api/integrator/import on mpop', async () => {
     const transport = mockTransport({ trackingId: 'TRK-U1' });
     const receipt = await r(transport).importUpdates([{ hbSku: 'HB-1', fields: {} }]);
     const call = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0];
     expect(call.method).toBe('POST');
-    expect(call.service).toBe('oms');
-    expect(call.path).toBe('/api/integrator/import');
+    expect(call.service).toBe('mpop');
+    expect(call.path).toBe('/ticket-api/api/integrator/import');
     expect(call.body).toEqual([{ hbSku: 'HB-1', fields: {} }]);
     expect(receipt.trackingId).toBe('TRK-U1');
   });
@@ -422,17 +422,17 @@ describe('ProductUpdatesResource', () => {
     await expect(r(mockTransport()).importUpdates([])).rejects.toThrow(/non-empty/);
   });
 
-  it('getUpdateStatus / getUpdateHistory build correct paths', async () => {
+  it('getUpdateStatus / getUpdateHistory build correct /ticket-api paths', async () => {
     const t1 = mockTransport({ trackingId: 'TRK-1', status: 'Done' });
     await r(t1).getUpdateStatus('TRK-1');
     expect((t1.request as ReturnType<typeof vi.fn>).mock.calls[0]![0].path).toBe(
-      '/api/integrator/status/TRK-1',
+      '/ticket-api/api/integrator/status/TRK-1',
     );
 
     const t2 = mockTransport([{ trackingId: 'TRK-1', status: 'Done' }]);
     await r(t2).getUpdateHistory('HBC-1');
     expect((t2.request as ReturnType<typeof vi.fn>).mock.calls[0]![0].path).toBe(
-      '/api/integrator/merchant/M-2b/hbSku/HBC-1',
+      '/ticket-api/api/integrator/merchant/M-2b/hbSku/HBC-1',
     );
   });
 });
@@ -455,7 +455,12 @@ describe('SuppliersResource', () => {
       },
     );
     expect(transport.request).toHaveBeenCalledWith(
-      expect.objectContaining({ method: verb, service: 'oms', path, body: { pageNumber: 0 } }),
+      expect.objectContaining({
+        method: verb,
+        service: 'supplier-api',
+        path,
+        body: { pageNumber: 0 },
+      }),
     );
   });
 
@@ -482,7 +487,7 @@ describe('SuppliersResource', () => {
 describe('AccountingResource', () => {
   const r = (t: HepsiburadaTransport) => new AccountingResource(t, fastLimiter());
 
-  it('listTransactions GETs /transactions/merchantId/{id} on oms', async () => {
+  it('listTransactions GETs /transactions/merchantid/{id} on mpfinance with PascalCase params', async () => {
     const transport = mockTransport([{ transactionId: 'T-1', amount: 99.9, currency: 'TRY' }]);
     const rows = await r(transport).listTransactions({
       beginDate: '2026-01-01',
@@ -490,10 +495,41 @@ describe('AccountingResource', () => {
     });
     const call = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0];
     expect(call.method).toBe('GET');
-    expect(call.service).toBe('oms');
-    expect(call.path).toBe('/transactions/merchantId/M-2b');
-    expect(call.query).toMatchObject({ beginDate: '2026-01-01', endDate: '2026-02-01' });
+    expect(call.service).toBe('mpfinance');
+    expect(call.path).toBe('/transactions/merchantid/M-2b');
+    // Legacy beginDate/endDate map onto the spec's OrderDateStart/OrderDateEnd;
+    // Offset/Limit are required by the API and defaulted by the SDK.
+    expect(call.query).toMatchObject({
+      OrderDateStart: '2026-01-01',
+      OrderDateEnd: '2026-02-01',
+      Offset: 0,
+      Limit: 100,
+    });
     expect(rows[0]).toMatchObject({ transactionId: 'T-1', amount: 99.9, currency: 'TRY' });
+  });
+
+  it('listTransactions passes spec-named filters through in PascalCase', async () => {
+    const transport = mockTransport([]);
+    await r(transport).listTransactions({
+      offset: 5,
+      limit: 10,
+      orderNumber: 'HBO-9',
+      sku: 'SKU-9',
+      recordDateStart: '2026-08-01',
+      recordDateEnd: '2026-08-28',
+    });
+    const call = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0];
+    expect(call.query).toMatchObject({
+      Offset: 5,
+      Limit: 10,
+      OrderNumber: 'HBO-9',
+      Sku: 'SKU-9',
+      RecordDateStart: '2026-08-01',
+      RecordDateEnd: '2026-08-28',
+    });
+    // No lowercase duplicates leak onto the wire.
+    expect(call.query).not.toHaveProperty('offset');
+    expect(call.query).not.toHaveProperty('beginDate');
   });
 
   it('listTransactions unwraps various envelopes', async () => {
@@ -516,12 +552,46 @@ describe('QuestionsResource', () => {
   it.each([
     ['list', 'GET', '/api/v1.0/issues'],
     ['getCountByStatus', 'GET', '/api/v1.0/issues/count'],
-  ] as const)('%s sends %s to %s on oms', async (method, verb, path) => {
+  ] as const)(
+    '%s sends %s to %s on asktoseller with the merchantId header',
+    async (method, verb, path) => {
+      const transport = mockTransport({ items: [] });
+      await (r(transport) as unknown as Record<string, () => Promise<unknown>>)[method]!();
+      expect(transport.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: verb,
+          service: 'asktoseller',
+          path,
+          headers: { merchantId: 'M-2b' },
+        }),
+      );
+    },
+  );
+
+  it('list maps offset/limit → page/size and beginDate/endDate → minCreatedAt/maxCreatedAt', async () => {
     const transport = mockTransport({ items: [] });
-    await (r(transport) as unknown as Record<string, () => Promise<unknown>>)[method]!();
-    expect(transport.request).toHaveBeenCalledWith(
-      expect.objectContaining({ method: verb, service: 'oms', path }),
-    );
+    await r(transport).list({
+      offset: 2,
+      limit: 25,
+      beginDate: '2026-08-01',
+      endDate: '2026-08-28',
+    });
+    const call = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0];
+    expect(call.query).toMatchObject({
+      page: 2,
+      size: 25,
+      minCreatedAt: '2026-08-01',
+      maxCreatedAt: '2026-08-28',
+    });
+    expect(call.query).not.toHaveProperty('offset');
+    expect(call.query).not.toHaveProperty('beginDate');
+  });
+
+  it('list prefers explicit page/size over the deprecated aliases', async () => {
+    const transport = mockTransport({ items: [] });
+    await r(transport).list({ page: 3, size: 5, offset: 9, limit: 99 });
+    const call = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0];
+    expect(call.query).toMatchObject({ page: 3, size: 5 });
   });
 
   it('get GETs /api/v1.0/issues/{n}', async () => {
@@ -544,6 +614,23 @@ describe('QuestionsResource', () => {
     expect((transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0].path).toBe(path);
   });
 
+  it('getCountByStatus surfaces the flat per-status body as byStatus', async () => {
+    // Real Ask-the-Seller shape, verified on SIT 2026-08-30.
+    const transport = mockTransport({
+      waitingForAnswer: 1,
+      answered: 2,
+      reported: 0,
+      autoClosedInLastWeek: 0,
+    });
+    const out = await r(transport).getCountByStatus();
+    expect(out.byStatus).toEqual({
+      waitingForAnswer: 1,
+      answered: 2,
+      reported: 0,
+      autoClosedInLastWeek: 0,
+    });
+  });
+
   it('throws on missing question number / falsy input', async () => {
     await expect(r(mockTransport()).get('')).rejects.toThrow(/number/);
     await expect(r(mockTransport()).answer('', { a: 1 })).rejects.toThrow(/number/);
@@ -563,12 +650,40 @@ describe('PromotionsResource', () => {
     ['getBudgets', 'GET', '/self-campaign/M-2b/budgets'],
     ['getLimits', 'GET', '/self-campaign/M-2b/limits'],
     ['listDiscounts', 'GET', '/self-campaign/M-2b/discounts'],
-  ] as const)('%s sends %s to %s on oms', async (method, verb, path) => {
+  ] as const)('%s sends %s to %s on diskonto', async (method, verb, path) => {
     const transport = mockTransport({});
     await (r(transport) as unknown as Record<string, () => Promise<unknown>>)[method]!();
     expect(transport.request).toHaveBeenCalledWith(
-      expect.objectContaining({ method: verb, service: 'oms', path }),
+      expect.objectContaining({ method: verb, service: 'diskonto', path }),
     );
+  });
+
+  it('listCategories unwraps the PascalCase { Data } envelope and maps categoryName', async () => {
+    // Real diskonto shape, verified on SIT 2026-08-30.
+    const transport = mockTransport({
+      Data: [{ categoryId: 28001496, categoryLevel: 4, categoryName: 'Bisküvi', isLeaf: true }],
+      Success: true,
+    });
+    const rows = await r(transport).listCategories();
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ categoryId: 28001496, name: 'Bisküvi' });
+    expect(rows[0]!.raw).toMatchObject({ categoryLevel: 4 });
+  });
+
+  it('listDiscounts sends the required page/pagesize params (defaulted)', async () => {
+    const transport = mockTransport({});
+    await r(transport).listDiscounts();
+    expect((transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0].query).toEqual({
+      page: 1,
+      pagesize: 100,
+    });
+
+    const t2 = mockTransport({});
+    await r(t2).listDiscounts({ page: 3, pageSize: 10 });
+    expect((t2.request as ReturnType<typeof vi.fn>).mock.calls[0]![0].query).toEqual({
+      page: 3,
+      pagesize: 10,
+    });
   });
 
   it('getDiscount GETs /self-campaign/{id}/discount/{cid}', async () => {
@@ -593,7 +708,7 @@ describe('PromotionsResource', () => {
       },
     );
     expect(transport.request).toHaveBeenCalledWith(
-      expect.objectContaining({ method: 'POST', service: 'oms', path, body: { foo: 'bar' } }),
+      expect.objectContaining({ method: 'POST', service: 'diskonto', path, body: { foo: 'bar' } }),
     );
   });
 

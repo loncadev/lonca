@@ -9,25 +9,29 @@ import type {
   DiscountBudgets,
   DiscountReceipt,
   DiscountLimits,
+  ListDiscountsParams,
   PromotionCategory,
 } from '../types/promotion.js';
 
-const SERVICE = 'oms' as const;
+const SERVICE = 'diskonto' as const;
 
 /**
  * Hepsiburada Seller Promotions (`satici-promosyonu-entegrasyonu`).
  *
- * **Service base URL**: `oms-external[-sit].hepsiburada.com`. 9-endpoint
- * self-service basket-discount lifecycle:
+ * **Service base URL**: `diskonto-external[-sit].hepsiburada.com` (per the
+ * portal spec — routing through `oms-external` returns 401 because the routes
+ * don't exist there; verified on SIT 2026-08-30, where `listCategories`
+ * answers 200). 9-endpoint self-service basket-discount lifecycle:
  * - list seller's eligible product categories
  * - query budgets / limits
  * - list discounts / get single discount
  * - create three discount types (TL, %, X-buy-Y-pay)
  * - cancel a discount
  *
- * NOTE: Sandbox `beekod_dev` merchant doesn't have permission for this
- * surface; SIT calls return `403`. Endpoints typed from the developer-portal
- * spec; live-tested in production by integrators with the right scope.
+ * NOTE: On SIT the `/self-campaign/*` read endpoints answer a server-side
+ * `500` (`"Beklenmedik bir hata oluştu."`) for the sandbox merchant
+ * regardless of parameters (verified 2026-08-30) — likely no self-campaign
+ * enrollment. `listCategories` works (200).
  */
 export class PromotionsResource {
   private readonly limiter: TokenBucketRateLimiter;
@@ -49,20 +53,17 @@ export class PromotionsResource {
       path: `/categories/${this.merchantSegment()}`,
       rateLimiter: this.limiter,
     });
-    const rows = Array.isArray(data)
-      ? data
-      : Array.isArray((data as { items?: unknown[] })?.items)
-        ? (data as { items: unknown[] }).items
-        : Array.isArray((data as { data?: unknown[] })?.data)
-          ? (data as { data: unknown[] }).data
-          : [];
+    const rows = unwrapDiskontoRows(data);
     return rows.map((row) => {
       const r = (row && typeof row === 'object' ? row : {}) as Record<string, unknown>;
       const out: PromotionCategory = { raw: r };
       if (typeof r.categoryId === 'number' || typeof r.categoryId === 'string') {
         out.categoryId = r.categoryId;
       }
+      // The wire names the field `categoryName` (verified on SIT 2026-08-30);
+      // `name` is kept first for any older payloads.
       if (typeof r.name === 'string') out.name = r.name;
+      else if (typeof r.categoryName === 'string') out.name = r.categoryName;
       return out;
     });
   }
@@ -89,21 +90,25 @@ export class PromotionsResource {
     return { raw: (data && typeof data === 'object' ? data : {}) as Record<string, unknown> };
   }
 
-  /** List the seller's existing discounts. */
-  async listDiscounts(): Promise<Discount[]> {
+  /**
+   * List the seller's existing discounts.
+   *
+   * The API requires `page`/`pagesize` (both mandatory per
+   * `specs/hepsiburada/diskonto-external.json`); the SDK defaults them to
+   * `page=1`, `pagesize=100`.
+   */
+  async listDiscounts(params: ListDiscountsParams = {}): Promise<Discount[]> {
     const data = await this.transport.request<unknown>({
       method: 'GET',
       service: SERVICE,
       path: `/self-campaign/${this.merchantSegment()}/discounts`,
+      query: {
+        page: params.page ?? 1,
+        pagesize: params.pageSize ?? 100,
+      },
       rateLimiter: this.limiter,
     });
-    const rows = Array.isArray(data)
-      ? data
-      : Array.isArray((data as { items?: unknown[] })?.items)
-        ? (data as { items: unknown[] }).items
-        : Array.isArray((data as { data?: unknown[] })?.data)
-          ? (data as { data: unknown[] }).data
-          : [];
+    const rows = unwrapDiskontoRows(data);
     return rows.map(normalizeDiscount);
   }
 
@@ -190,6 +195,22 @@ export class PromotionsResource {
       throw new ValidationError({ message: `${methodLabel}: input is required` });
     }
   }
+}
+
+/**
+ * Diskonto wraps list responses in a PascalCase envelope
+ * (`{ Data: [...], Success, Errors }` — verified on SIT 2026-08-30). Bare
+ * arrays and the lowercase envelope variants seen on other Hepsiburada
+ * surfaces are accepted too.
+ */
+function unwrapDiskontoRows(data: unknown): unknown[] {
+  if (Array.isArray(data)) return data;
+  const obj = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>;
+  for (const key of ['Data', 'data', 'items', 'Items'] as const) {
+    const value = obj[key];
+    if (Array.isArray(value)) return value;
+  }
+  return [];
 }
 
 function normalizeDiscount(row: unknown): Discount {

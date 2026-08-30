@@ -8,10 +8,12 @@
   },
   "probes": {
     "accounting.listTransactions": {
-      "status": "error",
-      "httpStatus": 404,
-      "errorName": "NotFoundError",
-      "errorCode": "NOT_FOUND"
+      "status": "ok",
+      "shape": {
+        "types": [
+          "array"
+        ]
+      }
     },
     "catalog.listProducts": {
       "status": "ok",
@@ -40,11 +42,6 @@
                   ]
                 },
                 "categoryName": {
-                  "types": [
-                    "string"
-                  ]
-                },
-                "id": {
                   "types": [
                     "string"
                   ]
@@ -255,11 +252,6 @@
                 "object"
               ],
               "keys": {
-                "id": {
-                  "types": [
-                    "string"
-                  ]
-                },
                 "merchantSku": {
                   "types": [
                     "string"
@@ -585,9 +577,108 @@
               "boolean"
             ]
           },
+          "items": {
+            "types": [
+              "array"
+            ],
+            "items": {
+              "types": [
+                "object"
+              ],
+              "keys": {
+                "available": {
+                  "types": [
+                    "boolean"
+                  ]
+                },
+                "categoryId": {
+                  "types": [
+                    "number"
+                  ]
+                },
+                "displayName": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "leaf": {
+                  "types": [
+                    "boolean"
+                  ]
+                },
+                "merge": {
+                  "types": [
+                    "boolean"
+                  ]
+                },
+                "name": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "parentCategoryId": {
+                  "types": [
+                    "number"
+                  ]
+                },
+                "paths": {
+                  "types": [
+                    "array"
+                  ],
+                  "items": {
+                    "types": [
+                      "string"
+                    ]
+                  }
+                },
+                "productTypes": {
+                  "types": [
+                    "array"
+                  ],
+                  "items": {
+                    "types": [
+                      "object"
+                    ],
+                    "keys": {
+                      "name": {
+                        "types": [
+                          "string"
+                        ]
+                      },
+                      "productTypeId": {
+                        "types": [
+                          "number"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "sortId": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "status": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "type": {
+                  "types": [
+                    "string"
+                  ]
+                }
+              }
+            }
+          },
           "last": {
             "types": [
               "boolean"
+            ]
+          },
+          "limit": {
+            "types": [
+              "number"
             ]
           },
           "message": {
@@ -605,9 +696,24 @@
               "number"
             ]
           },
+          "offset": {
+            "types": [
+              "number"
+            ]
+          },
+          "pageCount": {
+            "types": [
+              "number"
+            ]
+          },
           "success": {
             "types": [
               "boolean"
+            ]
+          },
+          "totalCount": {
+            "types": [
+              "number"
             ]
           },
           "totalElements": {
@@ -1097,11 +1203,243 @@
         }
       }
     },
+    "promotions.listCategories": {
+      "status": "ok",
+      "shape": {
+        "types": [
+          "array"
+        ]
+      }
+    },
     "questions.list": {
-      "status": "error",
-      "httpStatus": 401,
-      "errorName": "AuthError",
-      "errorCode": "AUTH_FAILED"
+      "status": "ok",
+      "shape": {
+        "types": [
+          "array"
+        ],
+        "items": {
+          "types": [
+            "object"
+          ],
+          "keys": {
+            "raw": {
+              "types": [
+                "object"
+              ],
+              "keys": {
+                "conversations": {
+                  "types": [
+                    "array"
+                  ],
+                  "items": {
+                    "types": [
+                      "object"
+                    ],
+                    "keys": {
+                      "canMessageBeModified": {
+                        "types": [
+                          "boolean"
+                        ]
+                      },
+                      "content": {
+                        "types": [
+                          "string"
+                        ]
+                      },
+                      "createdAt": {
+                        "types": [
+                          "string"
+                        ]
+                      },
+                      "customerFeedback": {
+                        "types": [
+                          "null"
+                        ]
+                      },
+                      "files": {
+                        "types": [
+                          "array"
+                        ]
+                      },
+                      "from": {
+                        "types": [
+                          "string"
+                        ]
+                      },
+                      "id": {
+                        "types": [
+                          "string"
+                        ]
+                      },
+                      "isConversationModified": {
+                        "types": [
+                          "boolean"
+                        ]
+                      },
+                      "isMessageSeen": {
+                        "types": [
+                          "boolean"
+                        ]
+                      },
+                      "lastModifiedAt": {
+                        "types": [
+                          "null"
+                        ]
+                      },
+                      "rejectConversation": {
+                        "types": [
+                          "null"
+                        ]
+                      },
+                      "rejectReason": {
+                        "types": [
+                          "null"
+                        ]
+                      },
+                      "schemaVersion": {
+                        "types": [
+                          "number"
+                        ]
+                      },
+                      "type": {
+                        "types": [
+                          "null"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "createdAt": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "customerId": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "didCustomerSeeTheMessage": {
+                  "types": [
+                    "boolean"
+                  ]
+                },
+                "expireDate": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "id": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "issueNumber": {
+                  "types": [
+                    "number"
+                  ]
+                },
+                "lastContent": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "lastModifiedAt": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "lineItemId": {
+                  "types": [
+                    "null"
+                  ]
+                },
+                "merchant": {
+                  "types": [
+                    "object"
+                  ],
+                  "keys": {
+                    "id": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "name": {
+                      "types": [
+                        "string"
+                      ]
+                    }
+                  }
+                },
+                "orderNumber": {
+                  "types": [
+                    "null"
+                  ]
+                },
+                "product": {
+                  "types": [
+                    "object"
+                  ],
+                  "keys": {
+                    "imageUrl": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "name": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "sku": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "stockCode": {
+                      "types": [
+                        "null"
+                      ]
+                    }
+                  }
+                },
+                "schemaVersion": {
+                  "types": [
+                    "number"
+                  ]
+                },
+                "status": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "subject": {
+                  "types": [
+                    "object"
+                  ],
+                  "keys": {
+                    "description": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "id": {
+                      "types": [
+                        "string"
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "status": {
+              "types": [
+                "string"
+              ]
+            }
+          }
+        }
+      }
     },
     "shipping.getCargoFirms": {
       "status": "ok",

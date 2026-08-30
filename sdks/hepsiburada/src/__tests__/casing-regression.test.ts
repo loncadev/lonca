@@ -9,6 +9,8 @@
  *   - mpop[-sit]              → merchantId is a query param (n/a)
  *   - shipping-external[-sit] → SDK uses camelCase per spec
  *   - claim-stub-external[-sit] → SDK uses camelCase per spec
+ *   - mpfinance-external[-sit] → accepts both casings; SDK uses the spec's
+ *     lowercase /merchantid/ (verified on SIT 2026-08-30)
  *
  * These tests pin the SDK's emitted casing per host so a careless future
  * refactor can't unintentionally flip a path back and silently break a
@@ -109,12 +111,15 @@ describe('Casing — OMS host (oms-external) uses CAMELCASE /merchantId/', () =>
     const call = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0];
     expect(call.path).toBe('/claims/merchantId/M-CASE/status/AwaitingAction');
   });
+});
 
-  it('accounting.listTransactions -> /transactions/merchantId/{id}', async () => {
+describe('Casing — mpfinance host (mpfinance-external) uses LOWERCASE /merchantid/ per spec', () => {
+  it('accounting.listTransactions -> /transactions/merchantid/{id}', async () => {
     const transport = mockTransport([]);
     await new AccountingResource(transport, fastLimiter()).listTransactions();
     const call = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0];
-    expect(call.path).toMatch(/^\/transactions\/merchantId\//);
+    expect(call.path).toMatch(/^\/transactions\/merchantid\//);
+    expect(call.path).not.toMatch(/merchantId/);
   });
 });
 

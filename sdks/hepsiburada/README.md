@@ -22,11 +22,11 @@ Type-safe TypeScript SDK for the [Hepsiburada Marketplace API](https://developer
 | `orders`         |      28 | `oms-external[-sit]`                   | Dev-portal `/operations` API ★ |
 | `categories`     |       3 | `mpop[-sit]` (`/product/api/*`)        | Dev-portal `/operations` API ★ |
 | `catalog`        |      11 | `mpop[-sit]` (`/product/api/*`)        | Dev-portal `/operations` API ★ |
-| `productUpdates` |       3 | `oms-external[-sit]`                   | Dev-portal `/operations` API ★ |
-| `suppliers`      |       5 | `oms-external[-sit]`                   | Dev-portal `/operations` API ★ |
-| `accounting`     |       1 | `oms-external[-sit]`                   | Dev-portal `/operations` API ★ |
-| `questions`      |       6 | `oms-external[-sit]`                   | Dev-portal `/operations` API ★ |
-| `promotions`     |       9 | `oms-external[-sit]`                   | Dev-portal `/operations` API ★ |
+| `productUpdates` |       3 | `mpop[-sit]` (`/ticket-api/*`)         | Dev-portal `/operations` API ★ |
+| `suppliers`      |       5 | `supplier-api-external[-sit]`          | Dev-portal `/operations` API ★ |
+| `accounting`     |       1 | `mpfinance-external[-sit]`             | Dev-portal `/operations` API ★ |
+| `questions`      |       6 | `api-asktoseller-merchant[-sit]`       | Dev-portal `/operations` API ★ |
+| `promotions`     |       9 | `diskonto-external[-sit]`              | Dev-portal `/operations` API ★ |
 
 ★ Hepsiburada publishes machine-readable OpenAPI for 5 of its 20 dev-portal products. The other 7 API-bearing products are typed from a hidden `/api/v1/public/docs/{co}/{slug}/{ver}/operations[/{opId}]` endpoint that returns the same OpenAPI shape (method / path / parameters / requestBody / responses).
 
@@ -528,7 +528,7 @@ if (env === 'sit') {
 - **Per-request correlation ID** — every call gets a UUID surfaced in log messages and an `x-correlationid` request header for downstream tracing
 - **Structured errors** via `@lonca/core` (`AuthError`, `RateLimitError`, `NotFoundError`, `ServerError`, `ValidationError`, `NetworkError`, `TimeoutError`)
 - **Client-side validation** — empty / >1000-item bulk uploads, required `skuList` on buybox/commissions, strict `ClaimStatus` union, every action's `claimNumber` / `packageNumber` / `trackingId` checked before the request leaves the process
-- **Multi-host routing** — each resource tags its target host (`listing`, `oms`, `shipping`, `claim-stub`, `oms-stub`, `mpop`); auto-resolved per env
+- **Multi-host routing** — each resource tags its target host (`listing`, `oms`, `shipping`, `claim-stub`, `oms-stub`, `mpop`, `mpfinance`, `supplier-api`, `asktoseller`, `diskonto`); auto-resolved per env
 - **`AbortSignal` support** throughout
 
 ### Rate-limiter defaults
@@ -584,6 +584,7 @@ Live verification revealed `merchantId` path-segment casing tolerance differs pe
 | `oms-external[-sit]`              |         ✓ 200          |         ✓ 200          | camelCase |
 | `mpop[-sit]` (catalog/categories) |   n/a (query param)    |           ✓            | camelCase |
 | `shipping-external[-sit]`         |          n/a           |           ✓            | camelCase |
+| `mpfinance-external[-sit]`        |         ✓ 200          |         ✓ 200          | lowercase |
 
 The SDK picks the casing each host actually serves — you don't need to think about it.
 

@@ -16,6 +16,10 @@ const BASE_URLS = {
     'claim-stub': 'https://claim-stub-external.hepsiburada.com',
     'oms-stub': 'https://oms-stub-external.hepsiburada.com',
     mpop: 'https://mpop.hepsiburada.com',
+    mpfinance: 'https://mpfinance-external.hepsiburada.com',
+    'supplier-api': 'https://supplier-api-external.hepsiburada.com',
+    asktoseller: 'https://api-asktoseller-merchant.hepsiburada.com',
+    diskonto: 'https://diskonto-external.hepsiburada.com',
   },
   sit: {
     listing: 'https://listing-external-sit.hepsiburada.com',
@@ -24,6 +28,10 @@ const BASE_URLS = {
     'claim-stub': 'https://claim-stub-external-sit.hepsiburada.com',
     'oms-stub': 'https://oms-stub-external-sit.hepsiburada.com',
     mpop: 'https://mpop-sit.hepsiburada.com',
+    mpfinance: 'https://mpfinance-external-sit.hepsiburada.com',
+    'supplier-api': 'https://supplier-api-external-sit.hepsiburada.com',
+    asktoseller: 'https://api-asktoseller-merchant-sit.hepsiburada.com',
+    diskonto: 'https://diskonto-external-sit.hepsiburada.com',
   },
 } as const satisfies Record<string, Record<string, string>>;
 

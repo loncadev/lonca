@@ -15,22 +15,24 @@ import type {
   SupplierSearchResult,
 } from '../types/supplier.js';
 
-const SERVICE = 'oms' as const;
+const SERVICE = 'supplier-api' as const;
 
 /**
  * Hepsiburada Supplier integration (`tedarikci-entegrasyonu`).
  *
- * **Service base URL**: `oms-external[-sit].hepsiburada.com`.
+ * **Service base URL**: `supplier-api-external[-sit].hepsiburada.com` (per the
+ * portal spec — routing through `oms-external` returns 401 because the routes
+ * don't exist there; verified on SIT 2026-08-30).
  *
  * Covers purchase-order discovery, inventory search, and the offer
  * (`listingUpdateRequest`) lifecycle for suppliers. Every response arrives in
  * the supplier API's `{ data, message, errorCode }` envelope; the SDK unwraps
  * `data` into the typed result and keeps the untouched body on `raw`.
  *
- * NOTE: Sandbox `beekod_dev` merchant doesn't have permission for this
- * surface; SIT calls return `403`. Endpoints typed from the developer-portal
- * spec (`specs/hepsiburada/supplier-api-external.json`); live-tested in
- * production by integrators with the supplier role.
+ * NOTE: A merchant that is not enrolled as a supplier gets a route-level
+ * `404` with `errorCode: "E4201"` ("Tedarikçi bulunamadı") — the SIT sandbox
+ * merchant behaves this way. Endpoints typed from the developer-portal spec
+ * (`specs/hepsiburada/supplier-api-external.json`).
  */
 export class SuppliersResource {
   private readonly limiter: TokenBucketRateLimiter;

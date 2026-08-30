@@ -2,21 +2,19 @@ import { TokenBucketRateLimiter } from '@lonca/core';
 import type { HepsiburadaTransport } from '../transport.js';
 import type { AccountingTransaction, ListTransactionsParams } from '../types/accounting.js';
 
-const SERVICE = 'oms' as const;
+const SERVICE = 'mpfinance' as const;
 
 /**
  * Hepsiburada Accounting (`muhasebe-entegrasyonu`).
  *
- * **Service base URL**: `oms-external[-sit].hepsiburada.com`.
+ * **Service base URL**: `mpfinance-external[-sit].hepsiburada.com` (per the
+ * portal spec — routing through `oms-external` returns 404 because the route
+ * doesn't exist there; verified on SIT 2026-08-30, where the rerouted call
+ * answers 200).
  *
  * One unique endpoint here — the per-record transactions feed. The
  * "Performans Servisi" endpoint Hepsiburada documents under this product
- * is the same `/orders/merchantId/{id}` already covered by `orders.list()`.
- *
- * NOTE: Sandbox `beekod_dev` merchant doesn't have permission for this
- * surface; SIT calls return `404` (no transactions). Endpoint typed from
- * the developer-portal spec; live-tested in production by integrators with
- * the right scope.
+ * is the same `/orders/merchantid/{id}` already covered by `orders.list()`.
  */
 export class AccountingResource {
   private readonly limiter: TokenBucketRateLimiter;
@@ -32,17 +30,35 @@ export class AccountingResource {
    * List accounting transactions (record-level).
    *
    * Hepsiburada's portal documents this under "Kayıt Bazlı Muhasebe Servisi".
+   * The API validates the filter combination — pass an identifier
+   * (`orderNumber` / `packageNumber` / `referenceDocument` / `sku`) or a
+   * date-range pair spanning at most 1 month, otherwise it answers 400.
+   * Query parameter names are PascalCase on the wire (`Offset`, `Limit`, …)
+   * per `specs/hepsiburada/mpfinance-external.json`.
    */
   async listTransactions(params: ListTransactionsParams = {}): Promise<AccountingTransaction[]> {
     const data = await this.transport.request<unknown>({
       method: 'GET',
       service: SERVICE,
-      path: `/transactions/merchantId/${encodeURIComponent(this.transport.merchantId)}`,
+      path: `/transactions/merchantid/${encodeURIComponent(this.transport.merchantId)}`,
       query: {
-        beginDate: params.beginDate,
-        endDate: params.endDate,
-        offset: params.offset,
-        limit: params.limit,
+        // Required by the API — defaulted so a bare call stays valid.
+        Offset: params.offset ?? 0,
+        Limit: params.limit ?? 100,
+        OrderNumber: params.orderNumber,
+        PackageNumber: params.packageNumber,
+        ReferenceDocument: params.referenceDocument,
+        TransactionTypes: params.transactionTypes,
+        Status: params.status,
+        Sku: params.sku,
+        OrderDateStart: params.orderDateStart ?? params.beginDate,
+        OrderDateEnd: params.orderDateEnd ?? params.endDate,
+        DueDateStart: params.dueDateStart,
+        DueDateEnd: params.dueDateEnd,
+        RecordDateStart: params.recordDateStart,
+        RecordDateEnd: params.recordDateEnd,
+        PaymentDateStart: params.paymentDateStart,
+        PaymentDateEnd: params.paymentDateEnd,
       },
       rateLimiter: this.limiter,
     });
