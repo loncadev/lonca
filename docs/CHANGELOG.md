@@ -1,5 +1,11 @@
 # @lonca/docs
 
+## 0.0.13
+
+### Patch Changes
+
+- [#117](https://github.com/loncadev/lonca/pull/117) [`6e11c0f`](https://github.com/loncadev/lonca/commit/6e11c0fdd866330058be05e5a8da64096ba03976) Thanks [@keparlak](https://github.com/keparlak)! - Upgrade the docs site to Astro 7 / Starlight 0.41 and pin vulnerable transitive dependencies (nanoid, postcss, svgo, brace-expansion) to close the open Dependabot alerts.
+
 ## 0.0.12
 
 ### Patch Changes
