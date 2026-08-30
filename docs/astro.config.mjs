@@ -69,6 +69,7 @@ export default defineConfig({
         {
           label: 'Guides',
           items: [
+            { label: 'Trendyol in 30 minutes', slug: 'guides/trendyol-in-30-minutes' },
             { label: 'Trendyol', slug: 'guides/trendyol' },
             { label: 'Hepsiburada', slug: 'guides/hepsiburada' },
             { label: 'Webhook events', slug: 'guides/webhook-events' },
