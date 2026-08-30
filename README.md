@@ -141,6 +141,17 @@ Work on a single package:
 pnpm --filter @lonca/core test
 ```
 
+Live contract probes (read-only, credentials from `.env` — see [`.env.example`](./.env.example)):
+
+```bash
+pnpm probe          # call the main read endpoints, write key-set/type snapshots to probe-snapshots/
+pnpm probe:check    # compare a fresh run with the committed snapshots; exit 1 on drift
+```
+
+The same check runs nightly via [`contract-probe.yml`](./.github/workflows/contract-probe.yml) and
+opens a `drift` issue when a marketplace response changes shape. Details in
+[`scripts/probe/README.md`](./scripts/probe/README.md).
+
 ## Contributing
 
 Pull requests are welcome. Start with [CONTRIBUTING.md](./CONTRIBUTING.md) and our [Code of Conduct](./CODE_OF_CONDUCT.md). For larger changes, open a [Discussion](https://github.com/loncadev/lonca/discussions) first.

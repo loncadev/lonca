@@ -41,6 +41,9 @@
     "try:inspect-attribute-values": "tsx --env-file=.env examples/inspect-attribute-values.mts",
     "try:inspect-product-reads": "tsx --env-file=.env examples/inspect-product-reads.mts",
     "try:inspect-inventory-and-price": "tsx --env-file=.env examples/inspect-inventory-and-price.mts",
+    "probe": "tsx --env-file-if-exists=.env scripts/probe/run.mts",
+    "probe:check": "tsx --env-file-if-exists=.env scripts/probe/run.mts --check",
+    "probe:hosts": "tsx --env-file-if-exists=.env scripts/probe/host-check.mts",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "turbo run build && changeset publish"

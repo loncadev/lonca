@@ -135,6 +135,22 @@ importers:
         specifier: 'catalog:'
         version: 4.1.11(@types/node@24.13.3)(@vitest/coverage-v8@4.1.11)(vite@8.0.16(@types/node@24.13.3)(esbuild@0.28.1)(tsx@4.23.12)(yaml@2.9.0))
 
+  scripts/probe:
+    dependencies:
+      '@lonca/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@lonca/hepsiburada':
+        specifier: workspace:*
+        version: link:../../sdks/hepsiburada
+      '@lonca/trendyol':
+        specifier: workspace:*
+        version: link:../../sdks/trendyol
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.3
+
   sdks/hepsiburada:
     dependencies:
       '@lonca/core':
