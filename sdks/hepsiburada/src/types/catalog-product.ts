@@ -8,20 +8,81 @@
  * matching state, and product-quality scoring per merchant SKU.
  */
 
-/** Query parameters for `catalog.listProducts()`. */
-export interface ListCatalogProductsParams {
+/**
+ * Paging for the catalog list endpoints. Hepsiburada pages the catalog by
+ * **page number** (`page` / `size`, zero-based). `offset` / `limit` are
+ * accepted as an alias so the methods plug straight into `paginateOffset`
+ * from `@lonca/core` — `offset` must then be a whole multiple of `limit`,
+ * because the API cannot address an arbitrary row offset. Use one style per
+ * call, not both.
+ *
+ * @example
+ * for await (const p of paginateOffset((q) => client.catalog.listProducts(q), { limit: 100 })) {
+ *   console.log(p.merchantSku);
+ * }
+ */
+export interface CatalogPagingParams {
+  /** Zero-based page index. Omitted ⇒ Hepsiburada's default (`0`). */
   page?: number;
+  /** Rows per page. Omitted ⇒ Hepsiburada applies its own default page size. */
   size?: number;
+  /** Row offset (`paginateOffset` style). Must be a multiple of `limit`. */
+  offset?: number;
+  /** Rows per page (`paginateOffset` style alias of `size`). */
+  limit?: number;
 }
 
+/** Query parameters for `catalog.listProducts()`. */
+export interface ListCatalogProductsParams extends CatalogPagingParams {
+  /** Narrow to one barcode (documented filter; verified live). */
+  barcode?: string;
+  /** Narrow to one merchant SKU (documented filter; verified live). */
+  merchantSku?: string;
+  /** Narrow to one Hepsiburada SKU (documented filter; verified live). */
+  hbSku?: string;
+}
+
+/**
+ * Catalog lifecycle status exactly as Hepsiburada's product API spells it —
+ * the closed enum documented for the `productStatus` query parameter of
+ * `products-by-merchant-and-status` (and the `status` field on
+ * `all-products-of-merchant` rows). Values are UPPER_SNAKE; the API answers
+ * HTTP 500 to anything else, including differently-cased spellings
+ * (verified live 2026-08).
+ */
+export type CatalogProductLifecycleStatus =
+  | 'WAITING'
+  | 'IN_EXTERNAL_PROGRESS'
+  | 'PRE_MATCHED'
+  | 'MATCHED'
+  | 'REJECTED'
+  | 'MATCHED_WITH_STAGED'
+  | 'MISSING_INFO'
+  | 'CREATED'
+  | 'BLOCKED';
+
 /** Query parameters for `catalog.listProductsByStatus()`. */
-export interface ListProductsByStatusParams {
-  /** Hepsiburada lifecycle status (e.g. `Active`, `WaitingApproval`, `Rejected`). */
-  status?: string;
-  /** ISO timestamp. */
+export interface ListProductsByStatusParams extends CatalogPagingParams {
+  /**
+   * Lifecycle status to filter by — **required** by Hepsiburada (sent as the
+   * `productStatus` query parameter). Use the API's UPPER_SNAKE vocabulary
+   * (`'MATCHED'`, `'WAITING'`, …): the server returns HTTP 500 for unknown or
+   * differently-cased values. Strings outside the documented union are passed
+   * through unchanged so a newly added status works before this type catches up.
+   */
+  status: CatalogProductLifecycleStatus | (string & {});
+  /**
+   * Documented optional boolean filter, sent as `taskStatus`. Passed through
+   * as-is — Hepsiburada does not document what it selects.
+   */
+  taskStatus?: boolean;
+  /** Documented `version` query parameter (Hepsiburada's default is `1`). Passed through as-is. */
+  version?: number;
+  /**
+   * @deprecated Not a documented parameter — Hepsiburada ignores it (verified
+   *   live). It is no longer sent and will be removed in a future minor.
+   */
   modifiedAtSince?: string;
-  page?: number;
-  size?: number;
 }
 
 /** One field on a catalog product (value + revision history). */

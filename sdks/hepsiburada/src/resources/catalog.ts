@@ -1,6 +1,12 @@
-import { TokenBucketRateLimiter, ValidationError, type MutationResult } from '@lonca/core';
+import {
+  TokenBucketRateLimiter,
+  ValidationError,
+  type MutationResult,
+  type OffsetPage,
+} from '@lonca/core';
 import type { HepsiburadaTransport } from '../transport.js';
 import type {
+  CatalogPagingParams,
   CatalogProduct,
   CatalogProductStatus,
   CatalogTrackingReceipt,
@@ -39,34 +45,79 @@ export class CatalogResource {
 
   // ─── Read ─────────────────────────────────────────────────────────────
 
-  /** List ALL catalog rows for the merchant. */
-  async listProducts(params: ListCatalogProductsParams = {}): Promise<CatalogProduct[]> {
+  /**
+   * List the merchant's catalog rows, one page at a time, optionally narrowed
+   * to a single `barcode` / `merchantSku` / `hbSku`.
+   *
+   * Returns an `OffsetPage` mapped from Hepsiburada's Spring-style envelope
+   * (`totalElements` → `totalCount`, `totalPages` → `pageCount`, `data` →
+   * `items`). Page by `page` / `size`, or by `offset` / `limit` to drive it
+   * with `paginateOffset` (pass `limit` — the API pages by number, so
+   * `offset` must be a multiple of it). A filter that matches nothing comes
+   * back as HTTP 200 `success: false, code: 4014` with an empty `data` array;
+   * that is surfaced as an empty page, not an error.
+   *
+   * @throws {ValidationError} when `offset` / `limit` cannot be expressed as a page.
+   */
+  async listProducts(params: ListCatalogProductsParams = {}): Promise<OffsetPage<CatalogProduct>> {
+    const paging = resolveCatalogPaging(params, 'catalog.listProducts');
     const data = await this.transport.request<unknown>({
       method: 'GET',
       service: SERVICE,
       path: `${BASE_PATH}/all-products-of-merchant/${encodeURIComponent(this.transport.merchantId)}`,
-      query: { page: params.page, size: params.size },
+      query: {
+        barcode: params.barcode,
+        merchantSku: params.merchantSku,
+        hbSku: params.hbSku,
+        page: paging.page,
+        size: paging.size,
+      },
       rateLimiter: this.limiter,
     });
-    return unwrapCatalogRows(data).map(normalizeCatalogProduct);
+    return toCatalogPage(data, paging);
   }
 
-  /** List catalog rows filtered by status (`Active`, `WaitingApproval`, …). */
-  async listProductsByStatus(params: ListProductsByStatusParams = {}): Promise<CatalogProduct[]> {
+  /**
+   * List catalog rows filtered by lifecycle status (`'MATCHED'`, `'WAITING'`,
+   * `'MISSING_INFO'`, … — see `CatalogProductLifecycleStatus`).
+   *
+   * Hepsiburada requires the status (query parameter `productStatus`) and
+   * answers HTTP 500 — not 400 — when it is missing or not one of its
+   * UPPER_SNAKE values, so the SDK validates presence up front. A status
+   * bucket with no rows comes back as HTTP 200 `success: false, code: 4008`
+   * with an empty `data` array; that is surfaced as an empty page, not an error.
+   *
+   * Returns an `OffsetPage` (see `listProducts` for the envelope mapping and
+   * the `offset` / `limit` alias that makes it work with `paginateOffset`).
+   *
+   * @throws {ValidationError} when `status` is missing or empty, or when
+   *   `offset` / `limit` cannot be expressed as a page.
+   */
+  async listProductsByStatus(
+    params: ListProductsByStatusParams,
+  ): Promise<OffsetPage<CatalogProduct>> {
+    if (!params || typeof params.status !== 'string' || params.status.length === 0) {
+      throw new ValidationError({
+        message:
+          'catalog.listProductsByStatus: status is required (e.g. "MATCHED", "WAITING" — Hepsiburada\'s UPPER_SNAKE vocabulary)',
+      });
+    }
+    const paging = resolveCatalogPaging(params, 'catalog.listProductsByStatus');
     const data = await this.transport.request<unknown>({
       method: 'GET',
       service: SERVICE,
       path: `${BASE_PATH}/products-by-merchant-and-status`,
       query: {
         merchantId: this.transport.merchantId,
-        status: params.status,
-        modifiedAtSince: params.modifiedAtSince,
-        page: params.page,
-        size: params.size,
+        productStatus: params.status,
+        taskStatus: params.taskStatus,
+        version: params.version,
+        page: paging.page,
+        size: paging.size,
       },
       rateLimiter: this.limiter,
     });
-    return unwrapCatalogRows(data).map(normalizeCatalogProduct);
+    return toCatalogPage(data, paging);
   }
 
   /** Look up status for a single tracking-id (returned by an earlier upload). */
@@ -247,6 +298,96 @@ function unwrapCatalogRows(data: unknown): unknown[] {
     }
   }
   return [];
+}
+
+/** Page-number paging as sent on the wire (`page` / `size`, both optional). */
+interface ResolvedCatalogPaging {
+  page?: number;
+  size?: number;
+}
+
+/**
+ * Turn the caller's paging into Hepsiburada's page-number model. `page` /
+ * `size` pass straight through; `offset` / `limit` (the `paginateOffset`
+ * contract) are converted — which is only honest when `offset` lands on a
+ * page boundary, so anything else is rejected instead of silently rounded.
+ */
+function resolveCatalogPaging(params: CatalogPagingParams, method: string): ResolvedCatalogPaging {
+  const { page, size, offset, limit } = params;
+  const usesOffset = offset !== undefined || limit !== undefined;
+  const usesPage = page !== undefined || size !== undefined;
+  if (usesOffset && usesPage) {
+    throw new ValidationError({
+      message: `${method}: pass either page/size or offset/limit, not both`,
+    });
+  }
+  if (!usesOffset) return { page, size };
+  if (limit !== undefined && (!Number.isInteger(limit) || limit < 1)) {
+    throw new ValidationError({ message: `${method}: limit must be an integer ≥ 1` });
+  }
+  if (offset !== undefined && (!Number.isInteger(offset) || offset < 0)) {
+    throw new ValidationError({ message: `${method}: offset must be an integer ≥ 0` });
+  }
+  if (!offset) return { page: 0, size: limit };
+  if (limit === undefined) {
+    throw new ValidationError({
+      message: `${method}: offset requires limit — Hepsiburada pages by number (pass \`limit\` to paginateOffset)`,
+    });
+  }
+  if (offset % limit !== 0) {
+    throw new ValidationError({
+      message: `${method}: offset must be a multiple of limit — Hepsiburada pages by number`,
+    });
+  }
+  return { page: offset / limit, size: limit };
+}
+
+/**
+ * Map a catalog list response onto `OffsetPage`. The live shape is the Spring
+ * envelope `{ totalElements, totalPages, number, numberOfElements, data[] }`
+ * (verified 2026-08 on both list endpoints, including the `success: false`
+ * empty-result variant, which carries zeros). Nothing is guessed:
+ *
+ * - `totalCount` ← `totalElements`; `pageCount` ← `totalPages`
+ * - `limit` ← the requested `size`, else the server's `numberOfElements`
+ *   (equal to its page size on every page but the last)
+ * - `offset` ← the server's page index (`number`) × `limit`
+ * - a bare array / envelope without paging metadata is an un-paged result:
+ *   one page holding exactly the rows received.
+ */
+function toCatalogPage(data: unknown, paging: ResolvedCatalogPaging): OffsetPage<CatalogProduct> {
+  const items = unwrapCatalogRows(data).map(normalizeCatalogProduct);
+  const envelope =
+    data && typeof data === 'object' && !Array.isArray(data)
+      ? (data as Record<string, unknown>)
+      : undefined;
+  const num = (key: string): number | undefined => {
+    const value = envelope?.[key];
+    return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+  };
+  const totalElements = num('totalElements');
+  const totalPages = num('totalPages');
+
+  if (totalElements === undefined && totalPages === undefined) {
+    const limit = paging.size ?? items.length;
+    return {
+      totalCount: items.length,
+      limit,
+      offset: (paging.page ?? 0) * limit,
+      pageCount: items.length > 0 ? 1 : 0,
+      items,
+    };
+  }
+
+  const limit = paging.size ?? num('numberOfElements') ?? items.length;
+  const totalCount = totalElements ?? items.length;
+  return {
+    totalCount,
+    limit,
+    offset: (num('number') ?? paging.page ?? 0) * limit,
+    pageCount: totalPages ?? (limit > 0 ? Math.ceil(totalCount / limit) : 0),
+    items,
+  };
 }
 
 function normalizeCatalogProduct(row: unknown): CatalogProduct {

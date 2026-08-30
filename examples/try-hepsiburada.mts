@@ -196,8 +196,8 @@ await section('5.2 categories.getAttributes(leafId)', async () => {
 // ─── Catalog (Phase 2a/2b, doc-portal — `mpop`) ─────────────────────────
 
 await section('6.1 catalog.listProducts({ page: 0, size: 2 })', async () => {
-  const products = await client.catalog.listProducts({ page: 0, size: 2 });
-  return `${products.length} catalog row(s)`;
+  const page = await client.catalog.listProducts({ page: 0, size: 2 });
+  return `${page.items.length} catalog row(s) on this page, ${page.totalCount} total`;
 });
 
 await section('6.2 catalog.getTrackingIdHistory()', async () => {

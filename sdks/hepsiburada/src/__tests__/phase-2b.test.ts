@@ -202,12 +202,17 @@ describe('OrdersResource — Phase 2b status-bucketed + actions', () => {
 describe('CatalogResource — Phase 2b mutations + tracking', () => {
   const r = (t: HepsiburadaTransport) => new CatalogResource(t, fastLimiter());
 
-  it('listProductsByStatus query passes through', async () => {
+  it('listProductsByStatus query passes through (status → productStatus)', async () => {
     const transport = mockTransport([]);
-    await r(transport).listProductsByStatus({ status: 'Active', page: 0, size: 50 });
+    await r(transport).listProductsByStatus({ status: 'MATCHED', page: 0, size: 50 });
     const call = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0];
     expect(call.path).toBe('/product/api/products/products-by-merchant-and-status');
-    expect(call.query).toMatchObject({ merchantId: 'M-2b', status: 'Active', page: 0, size: 50 });
+    expect(call.query).toMatchObject({
+      merchantId: 'M-2b',
+      productStatus: 'MATCHED',
+      page: 0,
+      size: 50,
+    });
   });
 
   it('listProducts resolves typed content (title/category/brand/images) from the fields map', async () => {
@@ -226,7 +231,7 @@ describe('CatalogResource — Phase 2b mutations + tracking', () => {
         },
       },
     ]);
-    const [p] = await r(transport).listProducts({ page: 0, size: 1 });
+    const [p] = (await r(transport).listProducts({ page: 0, size: 1 })).items;
     expect(p!.title).toBe('Kırmızı Tişört');
     expect(p!.categoryId).toBe('18021982');
     expect(p!.categoryName).toBe('Tişört');
@@ -240,7 +245,7 @@ describe('CatalogResource — Phase 2b mutations + tracking', () => {
 
   it('listProducts leaves content undefined when no known key matches (never guesses)', async () => {
     const transport = mockTransport([{ id: 'CP-2', fields: { randomAttr: { value: 'x' } } }]);
-    const [p] = await r(transport).listProducts({ page: 0, size: 1 });
+    const [p] = (await r(transport).listProducts({ page: 0, size: 1 })).items;
     expect(p!.title).toBeUndefined();
     expect(p!.categoryId).toBeUndefined();
     expect(p!.brand).toBeUndefined();
@@ -271,9 +276,11 @@ describe('CatalogResource — Phase 2b mutations + tracking', () => {
         },
       ],
     });
-    const rows = await r(transport).listProducts({ page: 0, size: 5 });
-    expect(rows).toHaveLength(1); // envelope unwrapped (was silently [] pre-fix)
-    const p = rows[0]!;
+    const page = await r(transport).listProducts({ page: 0, size: 5 });
+    expect(page.items).toHaveLength(1); // envelope unwrapped (was silently [] pre-fix)
+    expect(page.totalCount).toBe(928378);
+    expect(page.pageCount).toBe(185676);
+    const p = page.items[0]!;
     expect(p.title).toBe('My Collection 6520 Çanta'); // from top-level productName
     expect(p.brand).toBe('My Collection');
     expect(p.images).toEqual(['https://img/a.jpg', 'https://img/b.jpg']);
@@ -288,7 +295,7 @@ describe('CatalogResource — Phase 2b mutations + tracking', () => {
     const transport = mockTransport([
       { id: 'CP-3', name: 'Mavi Pantolon', images: 'https://a.jpg, https://b.jpg' },
     ]);
-    const [p] = await r(transport).listProducts({ page: 0, size: 1 });
+    const [p] = (await r(transport).listProducts({ page: 0, size: 1 })).items;
     expect(p!.title).toBe('Mavi Pantolon'); // falls back to `name`, then raw
     expect(p!.images).toEqual(['https://a.jpg', 'https://b.jpg']);
   });

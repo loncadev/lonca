@@ -168,14 +168,22 @@ if (status.status === 'FAILED') {
   for (const row of status.rows ?? []) console.error(row);
 }
 
-// 3. Read your catalog rows with revision history
-const products = await client.catalog.listProducts({ page: 0, size: 100 });
-for (const p of products) {
+// 3. Read your catalog rows — an OffsetPage (`.items`, `.totalCount`, `.pageCount`)
+const page = await client.catalog.listProducts({ page: 0, size: 100 });
+console.log(`${page.totalCount} rows over ${page.pageCount} pages`);
+for (const p of page.items) {
   console.log(p.merchantSku, p.status, `quality=${p.productQuality}`);
 }
 
-// 4. Or filter to a specific lifecycle status
-const waiting = await client.catalog.listProductsByStatus({ status: 'WaitingApproval' });
+// …or walk every page with paginateOffset (re-exported from '@lonca/hepsiburada';
+//    pass `limit` — Hepsiburada pages by number)
+for await (const p of paginateOffset((q) => client.catalog.listProducts(q), { limit: 100 })) {
+  console.log(p.merchantSku);
+}
+
+// 4. Or filter to a specific lifecycle status (Hepsiburada's UPPER_SNAKE vocabulary —
+//    'WAITING', 'MATCHED', 'MISSING_INFO', … — anything else is answered with HTTP 500)
+const waiting = await client.catalog.listProductsByStatus({ status: 'WAITING' });
 ```
 
 ### 4) Returns / claims handling
@@ -390,8 +398,9 @@ const values = await client.categories.getAttributeValues(page.data[0].categoryI
 
 ```ts
 // Read
-await client.catalog.listProducts({ page: 0, size: 100 });
-await client.catalog.listProductsByStatus({ status: 'Active' });
+await client.catalog.listProducts({ page: 0, size: 100 }); // OffsetPage<CatalogProduct>
+await client.catalog.listProducts({ merchantSku: 'SKU-1' }); // or narrow by barcode / merchantSku / hbSku
+await client.catalog.listProductsByStatus({ status: 'MATCHED' }); // status is required; OffsetPage too
 await client.catalog.getProductStatus('trk-id'); // status of a previous upload
 await client.catalog.getTrackingIdHistory();
 
@@ -526,7 +535,7 @@ const orders = new OrdersResource(
 Hepsiburada doesn't ship a single uniform envelope across its surfaces — the key holding the rows differs per endpoint. The SDK unwraps each one for you and returns a consistent typed shape; the table below is what the wire actually sends (verified live):
 
 - **`{ totalCount, limit, offset, pageCount, items[] }`** — OMS list endpoints (`orders.list*`, `orders.listShippedPackages`, …). SDK returns an `OffsetPage` (`.items`, `.pageCount`).
-- **`{ totalElements, totalPages, number, …, data[] }`** — Spring-style envelope used by the catalog surface: `catalog.listProducts` **and** `categories.list`. Rows live under **`data`** (not `items`). SDK unwraps it.
+- **`{ totalElements, totalPages, number, …, data[] }`** — Spring-style envelope used by the catalog surface. `catalog.listProducts` / `catalog.listProductsByStatus` map it onto an `OffsetPage` (`totalElements` → `.totalCount`, `totalPages` → `.pageCount`, `data` → `.items`); `categories.list` returns it as a `CatalogPage` with rows under **`.data`**. An empty result arrives as HTTP 200 `success: false` (`code` 4008 / 4014) with `data: []` — surfaced as an empty page, not an error.
 - **`{ success, code, message, data }`** — non-paged catalog responses. For `categories.getAttributes`, `data` is an object with three buckets (`baseAttributes`, `attributes`, `variantAttributes`) — the SDK flattens them into one `CategoryAttribute[]`, each tagged with a `group`. A non-leaf category returns `success: false, code: 1003` → surfaced as `ValidationError`.
 - **Endpoint-specific key** — `shipping.getCargoFirms` returns `{ cargoFirms[] }`, `shipping.listProfiles` returns `{ profiles[] }`. SDK unwraps the named key.
 - **Raw `T[]` (bare array)** — `orders.listPackages` (unfiltered `/packages`), `orders.getPackageableLineItems`.
