@@ -1,4 +1,4 @@
-import { TokenBucketRateLimiter, ValidationError } from '@lonca/core';
+import { TokenBucketRateLimiter, ValidationError, type MutationResult } from '@lonca/core';
 import type { HepsiburadaTransport } from '../transport.js';
 import type {
   CancelLineItemInput,
@@ -12,6 +12,7 @@ import type {
   Order,
   OrdersPage,
   PackageLabel,
+  PackageReceipt,
   PackageStatusInput,
   ParcelInfoInput,
   ShippingPackage,
@@ -248,57 +249,71 @@ export class OrdersResource {
    * Package one or more line items into a new shipping package. Hepsiburada's
    * portal documents the exact body shape under `Kalem veya Kalemleri
    * Paketleme`.
+   *
+   * Resolves to a {@link PackageReceipt} — the new `packageNumber` and its
+   * cargo `barcode` (the spec's `CreateDeliveryResponse`); the untouched
+   * body stays on `raw`.
    */
-  async createPackages(input: CreatePackagesInput): Promise<unknown> {
+  async createPackages(input: CreatePackagesInput): Promise<PackageReceipt> {
     this.assertInput(input, 'orders.createPackages');
-    return this.transport.request<unknown>({
+    const data = await this.transport.request<unknown>({
       method: 'POST',
       service: SERVICE,
       path: `/packages/merchantId/${this.merchantSegment()}`,
       body: input,
       rateLimiter: this.limiter,
     });
+    return normalizePackageReceipt(data);
   }
 
-  /** Split an existing package into two. */
-  async splitPackage(packageNumber: string, input: SplitPackageInput): Promise<unknown> {
+  /**
+   * Split an existing package into two. Resolves to a `MutationResult` — the
+   * API acknowledges with a bare string, available on `raw`.
+   */
+  async splitPackage(packageNumber: string, input: SplitPackageInput): Promise<MutationResult> {
     if (!packageNumber) {
       throw new ValidationError({ message: 'orders.splitPackage: packageNumber is required' });
     }
     this.assertInput(input, 'orders.splitPackage');
-    return this.transport.request<unknown>({
-      method: 'POST',
-      service: SERVICE,
-      path: `/packages/merchantId/${this.merchantSegment()}/packagenumber/${encodeURIComponent(packageNumber)}/split`,
-      body: input,
-      rateLimiter: this.limiter,
-    });
+    return {
+      raw: await this.transport.request<unknown>({
+        method: 'POST',
+        service: SERVICE,
+        path: `/packages/merchantId/${this.merchantSegment()}/packagenumber/${encodeURIComponent(packageNumber)}/split`,
+        body: input,
+        rateLimiter: this.limiter,
+      }),
+    };
   }
 
   /** Unpack an existing package (returns its line items to the un-packaged pool). */
   async unpackPackage(
     packageNumber: string,
     input: Record<string, unknown> = {},
-  ): Promise<unknown> {
+  ): Promise<MutationResult> {
     if (!packageNumber) {
       throw new ValidationError({ message: 'orders.unpackPackage: packageNumber is required' });
     }
-    return this.transport.request<unknown>({
-      method: 'POST',
-      service: SERVICE,
-      path: `/packages/merchantId/${this.merchantSegment()}/packagenumber/${encodeURIComponent(packageNumber)}/unpack`,
-      body: input,
-      rateLimiter: this.limiter,
-    });
+    return {
+      raw: await this.transport.request<unknown>({
+        method: 'POST',
+        service: SERVICE,
+        path: `/packages/merchantId/${this.merchantSegment()}/packagenumber/${encodeURIComponent(packageNumber)}/unpack`,
+        body: input,
+        rateLimiter: this.limiter,
+      }),
+    };
   }
 
   // ─── Package status transitions ──────────────────────────────────────────
+  // All three resolve to a `MutationResult`: the API acknowledges with a bare
+  // string (`raw`), no structured body.
 
   /** Mark a package as in transit (handed to the cargo firm). */
   async markPackageInTransit(
     packageNumber: string,
     input: PackageStatusInput = {},
-  ): Promise<unknown> {
+  ): Promise<MutationResult> {
     return this.packageStatusAction(packageNumber, 'intransit', input, 'markPackageInTransit');
   }
 
@@ -306,7 +321,7 @@ export class OrdersResource {
   async markPackageDelivered(
     packageNumber: string,
     input: PackageStatusInput = {},
-  ): Promise<unknown> {
+  ): Promise<MutationResult> {
     return this.packageStatusAction(packageNumber, 'deliver', input, 'markPackageDelivered');
   }
 
@@ -314,62 +329,73 @@ export class OrdersResource {
   async markPackageUndelivered(
     packageNumber: string,
     input: PackageStatusInput = {},
-  ): Promise<unknown> {
+  ): Promise<MutationResult> {
     return this.packageStatusAction(packageNumber, 'undeliver', input, 'markPackageUndelivered');
   }
 
   // ─── Line item mutations ─────────────────────────────────────────────────
+  // All resolve to a `MutationResult`: Hepsiburada answers `200` with a bare
+  // string or `204` with no body (`raw` is `undefined`).
 
   /** Cancel a single line item before it has been packaged. */
-  async cancelLineItem(lineId: string, input: CancelLineItemInput): Promise<unknown> {
+  async cancelLineItem(lineId: string, input: CancelLineItemInput): Promise<MutationResult> {
     if (!lineId) {
       throw new ValidationError({ message: 'orders.cancelLineItem: lineId is required' });
     }
     this.assertInput(input, 'orders.cancelLineItem');
-    return this.transport.request<unknown>({
-      method: 'POST',
-      service: SERVICE,
-      path: `/lineitems/merchantId/${this.merchantSegment()}/id/${encodeURIComponent(lineId)}/cancelbymerchant`,
-      body: input,
-      rateLimiter: this.limiter,
-    });
+    return {
+      raw: await this.transport.request<unknown>({
+        method: 'POST',
+        service: SERVICE,
+        path: `/lineitems/merchantId/${this.merchantSegment()}/id/${encodeURIComponent(lineId)}/cancelbymerchant`,
+        body: input,
+        rateLimiter: this.limiter,
+      }),
+    };
   }
 
   /** Change the cargo company on a line item before it has been packaged. */
   async updateLineItemCargoCompany(
     orderLineId: string,
     input: ChangeCargoCompanyInput,
-  ): Promise<unknown> {
+  ): Promise<MutationResult> {
     if (!orderLineId) {
       throw new ValidationError({
         message: 'orders.updateLineItemCargoCompany: orderLineId is required',
       });
     }
     this.assertInput(input, 'orders.updateLineItemCargoCompany');
-    return this.transport.request<unknown>({
-      method: 'PUT',
-      service: SERVICE,
-      path: `/lineitems/merchantId/${this.merchantSegment()}/orderlineid/${encodeURIComponent(orderLineId)}/cargocompany`,
-      body: input,
-      rateLimiter: this.limiter,
-    });
+    return {
+      raw: await this.transport.request<unknown>({
+        method: 'PUT',
+        service: SERVICE,
+        path: `/lineitems/merchantId/${this.merchantSegment()}/orderlineid/${encodeURIComponent(orderLineId)}/cargocompany`,
+        body: input,
+        rateLimiter: this.limiter,
+      }),
+    };
   }
 
   /** Update the labor-cost field on a line item. */
-  async updateLineItemLaborCost(orderLineId: string, input: LaborCostInput): Promise<unknown> {
+  async updateLineItemLaborCost(
+    orderLineId: string,
+    input: LaborCostInput,
+  ): Promise<MutationResult> {
     if (!orderLineId) {
       throw new ValidationError({
         message: 'orders.updateLineItemLaborCost: orderLineId is required',
       });
     }
     this.assertInput(input, 'orders.updateLineItemLaborCost');
-    return this.transport.request<unknown>({
-      method: 'PUT',
-      service: SERVICE,
-      path: `/lineitems/merchantId/${this.merchantSegment()}/orderlineid/${encodeURIComponent(orderLineId)}/laborcost`,
-      body: input,
-      rateLimiter: this.limiter,
-    });
+    return {
+      raw: await this.transport.request<unknown>({
+        method: 'PUT',
+        service: SERVICE,
+        path: `/lineitems/merchantId/${this.merchantSegment()}/orderlineid/${encodeURIComponent(orderLineId)}/laborcost`,
+        body: input,
+        rateLimiter: this.limiter,
+      }),
+    };
   }
 
   // ─── Package field updates ───────────────────────────────────────────────
@@ -378,67 +404,78 @@ export class OrdersResource {
   async updatePackageCargoCompany(
     packageNumber: string,
     input: ChangeCargoCompanyInput,
-  ): Promise<unknown> {
+  ): Promise<MutationResult> {
     if (!packageNumber) {
       throw new ValidationError({
         message: 'orders.updatePackageCargoCompany: packageNumber is required',
       });
     }
     this.assertInput(input, 'orders.updatePackageCargoCompany');
-    return this.transport.request<unknown>({
-      method: 'PUT',
-      service: SERVICE,
-      path: `/packages/merchantId/${this.merchantSegment()}/packagenumber/${encodeURIComponent(packageNumber)}/changecargocompany`,
-      body: input,
-      rateLimiter: this.limiter,
-    });
+    return {
+      raw: await this.transport.request<unknown>({
+        method: 'PUT',
+        service: SERVICE,
+        path: `/packages/merchantId/${this.merchantSegment()}/packagenumber/${encodeURIComponent(packageNumber)}/changecargocompany`,
+        body: input,
+        rateLimiter: this.limiter,
+      }),
+    };
   }
 
   /** Attach an invoice URL / number to a shipped package. */
-  async sendInvoiceLink(packageNumber: string, input: InvoiceLinkInput): Promise<unknown> {
+  async sendInvoiceLink(packageNumber: string, input: InvoiceLinkInput): Promise<MutationResult> {
     if (!packageNumber) {
       throw new ValidationError({ message: 'orders.sendInvoiceLink: packageNumber is required' });
     }
     this.assertInput(input, 'orders.sendInvoiceLink');
-    return this.transport.request<unknown>({
-      method: 'PUT',
-      service: SERVICE,
-      path: `/packages/merchantId/${this.merchantSegment()}/packagenumber/${encodeURIComponent(packageNumber)}/invoice`,
-      body: input,
-      rateLimiter: this.limiter,
-    });
+    return {
+      raw: await this.transport.request<unknown>({
+        method: 'PUT',
+        service: SERVICE,
+        path: `/packages/merchantId/${this.merchantSegment()}/packagenumber/${encodeURIComponent(packageNumber)}/invoice`,
+        body: input,
+        rateLimiter: this.limiter,
+      }),
+    };
   }
 
   /** Update parcel dimensions / `desi` info on a package. */
-  async updateParcelInfo(packageNumber: string, input: ParcelInfoInput): Promise<unknown> {
+  async updateParcelInfo(packageNumber: string, input: ParcelInfoInput): Promise<MutationResult> {
     if (!packageNumber) {
       throw new ValidationError({ message: 'orders.updateParcelInfo: packageNumber is required' });
     }
     this.assertInput(input, 'orders.updateParcelInfo');
-    return this.transport.request<unknown>({
-      method: 'PUT',
-      service: SERVICE,
-      path: `/packages/merchantId/${this.merchantSegment()}/packagenumber/${encodeURIComponent(packageNumber)}/parcel-info`,
-      body: input,
-      rateLimiter: this.limiter,
-    });
+    return {
+      raw: await this.transport.request<unknown>({
+        method: 'PUT',
+        service: SERVICE,
+        path: `/packages/merchantId/${this.merchantSegment()}/packagenumber/${encodeURIComponent(packageNumber)}/parcel-info`,
+        body: input,
+        rateLimiter: this.limiter,
+      }),
+    };
   }
 
   /** Update the source warehouse for a package. */
-  async updatePackageWarehouse(packageNumber: string, input: WarehouseInput): Promise<unknown> {
+  async updatePackageWarehouse(
+    packageNumber: string,
+    input: WarehouseInput,
+  ): Promise<MutationResult> {
     if (!packageNumber) {
       throw new ValidationError({
         message: 'orders.updatePackageWarehouse: packageNumber is required',
       });
     }
     this.assertInput(input, 'orders.updatePackageWarehouse');
-    return this.transport.request<unknown>({
-      method: 'PUT',
-      service: SERVICE,
-      path: `/packages/merchantId/${this.merchantSegment()}/packagenumber/${encodeURIComponent(packageNumber)}/warehouse`,
-      body: input,
-      rateLimiter: this.limiter,
-    });
+    return {
+      raw: await this.transport.request<unknown>({
+        method: 'PUT',
+        service: SERVICE,
+        path: `/packages/merchantId/${this.merchantSegment()}/packagenumber/${encodeURIComponent(packageNumber)}/warehouse`,
+        body: input,
+        rateLimiter: this.limiter,
+      }),
+    };
   }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────
@@ -504,17 +541,19 @@ export class OrdersResource {
     action: 'deliver' | 'intransit' | 'undeliver',
     input: PackageStatusInput,
     methodLabel: string,
-  ): Promise<unknown> {
+  ): Promise<MutationResult> {
     if (!packageNumber) {
       throw new ValidationError({ message: `orders.${methodLabel}: packageNumber is required` });
     }
-    return this.transport.request<unknown>({
-      method: 'POST',
-      service: SERVICE,
-      path: `/packages/merchantId/${this.merchantSegment()}/packagenumber/${encodeURIComponent(packageNumber)}/${action}`,
-      body: input,
-      rateLimiter: this.limiter,
-    });
+    return {
+      raw: await this.transport.request<unknown>({
+        method: 'POST',
+        service: SERVICE,
+        path: `/packages/merchantId/${this.merchantSegment()}/packagenumber/${encodeURIComponent(packageNumber)}/${action}`,
+        body: input,
+        rateLimiter: this.limiter,
+      }),
+    };
   }
 
   private assertInput(input: unknown, methodLabel: string): void {
@@ -525,6 +564,21 @@ export class OrdersResource {
 }
 
 // ─── Normalizers ───────────────────────────────────────────────────────────
+
+/**
+ * Map the `createPackages` response onto {@link PackageReceipt}. The spec's
+ * `CreateDeliveryResponse` is a flat `{ barcode, packageNumber }`; both are
+ * optional on the wire and only surfaced when they arrive as strings.
+ */
+function normalizePackageReceipt(data: unknown): PackageReceipt {
+  const out: PackageReceipt = { raw: data };
+  if (data && typeof data === 'object') {
+    const r = data as Record<string, unknown>;
+    if (typeof r.packageNumber === 'string') out.packageNumber = r.packageNumber;
+    if (typeof r.barcode === 'string') out.barcode = r.barcode;
+  }
+  return out;
+}
 
 function normalizeOrdersPage(data: unknown): OrdersPage {
   if (!data || typeof data !== 'object') {
