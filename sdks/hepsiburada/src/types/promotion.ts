@@ -8,17 +8,93 @@
  * discount, create three discount types (TL / Yüzde / X Al Y Öde), cancel.
  */
 
-/** Body for `promotions.createTlDiscount()` — `{ amount, ... }`. */
-export type CreateTlDiscountInput = Record<string, unknown>;
+/**
+ * Body for `promotions.createTlDiscount()` — the diskonto spec's "Sepette TL
+ * İndirimi Oluşturma" request. Undocumented fields pass through.
+ */
+export type CreateTlDiscountInput = {
+  /** Campaign name shown to the seller. */
+  name?: string;
+  /** Campaign start date-time (ISO 8601). */
+  startDate?: string;
+  /** Campaign end date-time (ISO 8601). */
+  endDate?: string;
+  /** Category ids the campaign applies to. */
+  conditionCategories?: string[];
+  /** SKUs the campaign applies to. */
+  conditionSkus?: string[];
+  /** Campaign budget (TL). */
+  budget?: number;
+  /** Discount amount (TL). */
+  discountAmount?: number;
+  /** Minimum cart amount for the discount to apply. */
+  conditionAmount?: number;
+  /** Whether the campaign is one-time-use per customer. */
+  oneTimeUsage?: boolean;
+} & Record<string, unknown>;
 
-/** Body for `promotions.createPercentDiscount()` — `{ percent, ... }`. */
-export type CreatePercentDiscountInput = Record<string, unknown>;
+/**
+ * Body for `promotions.createPercentDiscount()` — the diskonto spec's
+ * "Sepete % İndirimi Oluşturma" request. Undocumented fields pass through.
+ */
+export type CreatePercentDiscountInput = {
+  /** Campaign name shown to the seller. */
+  name?: string;
+  /** Campaign start date-time (ISO 8601). */
+  startDate?: string;
+  /** Campaign end date-time (ISO 8601). */
+  endDate?: string;
+  /** Category ids the campaign applies to. */
+  conditionCategories?: string[];
+  /** SKUs the campaign applies to. */
+  conditionSkus?: string[];
+  /** Percentage discount to apply. */
+  discountPercentage?: number;
+  /** Minimum cart amount for the discount to apply. */
+  conditionAmount?: number;
+  /** Maximum discount amount that can be applied. */
+  maxDiscountAmount?: number;
+  /** Maximum number of carts the campaign applies to. */
+  maxCartCount?: number;
+  /** Whether the campaign is one-time-use per customer. */
+  oneTimeUsage?: boolean;
+} & Record<string, unknown>;
 
-/** Body for `promotions.createXyDiscount()` — `{ buyQty, payQty, ... }`. */
-export type CreateXyDiscountInput = Record<string, unknown>;
+/**
+ * Body for `promotions.createXyDiscount()` — the diskonto spec's "Sepete X Al
+ * Y Öde İndirimi Oluşturma" request. Undocumented fields pass through.
+ */
+export type CreateXyDiscountInput = {
+  /** Campaign name shown to the seller. */
+  name?: string;
+  /** Campaign start date-time (ISO 8601). */
+  startDate?: string;
+  /** Campaign end date-time (ISO 8601). */
+  endDate?: string;
+  /** Category ids the campaign applies to. */
+  conditionCategories?: string[];
+  /** SKUs the campaign applies to. */
+  conditionSkus?: string[];
+  /** Products required in the cart for the campaign to apply (the X in "buy X pay Y"). */
+  conditionProductCount?: number;
+  /** Products the customer pays for (the Y in "buy X pay Y"). */
+  mustPayProductCount?: number;
+  /** How many times the campaign can repeat within one cart. */
+  iterationCount?: number;
+  /** Maximum number of carts the campaign applies to. */
+  maxCartCount?: number;
+  /** Whether the campaign is one-time-use per customer. */
+  oneTimeUsage?: boolean;
+} & Record<string, unknown>;
 
-/** Body for `promotions.cancelDiscount()` — `{ campaignId, ... }`. */
-export type CancelDiscountInput = Record<string, unknown>;
+/**
+ * Body for `promotions.cancelDiscount()` — the diskonto spec's "Sepet
+ * İndirimi İptali" request.
+ */
+export type CancelDiscountInput = {
+  /** Unique id of the campaign to cancel. */
+  campaignId?: number;
+} & Record<string, unknown>;
 
 /**
  * Query parameters for `promotions.listDiscounts()`. Both are required by

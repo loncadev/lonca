@@ -133,8 +133,8 @@ await client.orders.markPackageUndelivered('HBP-123', { reason: 'address-not-fou
 
 // 5. Attach an invoice link before delivery
 await client.orders.sendInvoiceLink('HBP-123', {
-  invoiceUrl: 'https://my-erp.example/inv/HBP-123.pdf',
-  invoiceNumber: 'INV-2026-00123',
+  invoiceLink: 'https://my-erp.example/inv/HBP-123.pdf',
+  serialNumber: 'INV-2026-00123',
 });
 
 // 6. Status-bucketed lists for reconciliation
@@ -349,13 +349,13 @@ await client.orders.markPackageUndelivered('HBP-1', { reason: '...' });
 // Line-item actions
 await client.orders.cancelLineItem('L1', { reason: 'out-of-stock' });
 await client.orders.updateLineItemCargoCompany('L1', { cargoCompany: 'MNG' });
-await client.orders.updateLineItemLaborCost('L1', { laborCost: 12.5 });
+await client.orders.updateLineItemLaborCost('L1', { unitLaborCost: 12.5 });
 
 // Package field updates
 await client.orders.updatePackageCargoCompany('HBP-1', { cargoCompany: 'YURTICI' });
-await client.orders.sendInvoiceLink('HBP-1', { invoiceUrl: '...', invoiceNumber: '...' });
-await client.orders.updateParcelInfo('HBP-1', { desi: 8, width: 30, height: 20, length: 40 });
-await client.orders.updatePackageWarehouse('HBP-1', { warehouseId: 'WH-2' });
+await client.orders.sendInvoiceLink('HBP-1', { invoiceLink: '...', serialNumber: '...' });
+await client.orders.updateParcelInfo('HBP-1', { totalDesi: 8, totalParcel: 1 });
+await client.orders.updatePackageWarehouse('HBP-1', { shippingAddressLabel: 'WH-2' });
 
 // Cargo-company-change discovery
 await client.orders.getChangeableCargoCompaniesForLineItem('L1');
@@ -423,11 +423,11 @@ await client.catalog.getTrackingIdHistory();
 // Create / update via async upload (returns trackingId, poll status)
 await client.catalog.uploadProductViaFile([{/* per-category attributes */}]);
 await client.catalog.uploadFastListing(/* ... */);
-await client.catalog.checkProductStatus({ trackingIds: ['trk-1', 'trk-2'] });
+await client.catalog.checkProductStatus([{ merchant: 'M-1', merchantSkuList: ['sku-1'] }]);
 
 // Pre-match approval (Hepsiburada matched your SKU to an existing catalog entry)
-await client.catalog.approvePreMatch({/* ... */});
-await client.catalog.rejectPreMatch({/* ... */});
+await client.catalog.approvePreMatch([{ merchant: 'M-1', merchantSkuList: ['sku-1'] }]);
+await client.catalog.rejectPreMatch([{ merchant: 'M-1', merchantSkuList: ['sku-2'] }]);
 
 // Async delete with status polling
 const { trackingId } = await client.catalog.deleteByMerchantSkuList({
@@ -500,11 +500,17 @@ await client.promotions.getDiscount('C-1');
 
 // Three discount types — each resolves to a DiscountReceipt ({ success, campaignId, raw })
 const { campaignId } = await client.promotions.createTlDiscount({
-  amount: 50,
-  minBasket: 200 /* ... */,
+  discountAmount: 50,
+  conditionAmount: 200 /* ... */,
 });
-await client.promotions.createPercentDiscount({ percent: 10, minBasket: 200 /* ... */ });
-await client.promotions.createXyDiscount({ buyQty: 3, payQty: 2 /* ... */ });
+await client.promotions.createPercentDiscount({
+  discountPercentage: 10,
+  conditionAmount: 200 /* ... */,
+});
+await client.promotions.createXyDiscount({
+  conditionProductCount: 3,
+  mustPayProductCount: 2 /* ... */,
+});
 
 await client.promotions.cancelDiscount({ campaignId }); // MutationResult — the API only answers { success }
 ```
