@@ -12,7 +12,11 @@
  * Uses the same env vars as `pnpm try:hepsiburada`.
  */
 
-import { createHepsiburadaClient, type HepsiburadaEnvironment } from '@lonca/hepsiburada';
+import {
+  createHepsiburadaClient,
+  type CatalogProductLifecycleStatus,
+  type HepsiburadaEnvironment,
+} from '@lonca/hepsiburada';
 import { LoncaError } from '@lonca/core';
 
 function required(name: string): string {
@@ -33,14 +37,18 @@ const client = createHepsiburadaClient({
   integratorName: process.env.HB_INTEGRATOR_NAME ?? 'LoncaInspect',
 });
 
-const STATUSES = [
-  'Active',
-  'WaitingApproval',
-  'Rejected',
-  'Suspended',
-  'Draft',
-  'WaitingMatching',
-  'Closed',
+// Hepsiburada's documented `productStatus` vocabulary (UPPER_SNAKE). Anything
+// else — including `Active` / `WaitingApproval` — makes the endpoint answer 500.
+const STATUSES: CatalogProductLifecycleStatus[] = [
+  'WAITING',
+  'IN_EXTERNAL_PROGRESS',
+  'PRE_MATCHED',
+  'MATCHED',
+  'REJECTED',
+  'MATCHED_WITH_STAGED',
+  'MISSING_INFO',
+  'CREATED',
+  'BLOCKED',
 ];
 
 console.log(`\n🚀 Inspecting ${env.toUpperCase()} catalog…\n`);

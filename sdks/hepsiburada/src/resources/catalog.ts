@@ -51,16 +51,34 @@ export class CatalogResource {
     return unwrapCatalogRows(data).map(normalizeCatalogProduct);
   }
 
-  /** List catalog rows filtered by status (`Active`, `WaitingApproval`, …). */
-  async listProductsByStatus(params: ListProductsByStatusParams = {}): Promise<CatalogProduct[]> {
+  /**
+   * List catalog rows filtered by lifecycle status (`'MATCHED'`, `'WAITING'`,
+   * `'MISSING_INFO'`, … — see `CatalogProductLifecycleStatus`).
+   *
+   * Hepsiburada requires the status (query parameter `productStatus`) and
+   * answers HTTP 500 — not 400 — when it is missing or not one of its
+   * UPPER_SNAKE values, so the SDK validates presence up front. A status
+   * bucket with no rows comes back as HTTP 200 `success: false, code: 4008`
+   * with an empty `data` array; that is surfaced as an empty list, not an error.
+   *
+   * @throws {ValidationError} when `status` is missing or empty.
+   */
+  async listProductsByStatus(params: ListProductsByStatusParams): Promise<CatalogProduct[]> {
+    if (!params || typeof params.status !== 'string' || params.status.length === 0) {
+      throw new ValidationError({
+        message:
+          'catalog.listProductsByStatus: status is required (e.g. "MATCHED", "WAITING" — Hepsiburada\'s UPPER_SNAKE vocabulary)',
+      });
+    }
     const data = await this.transport.request<unknown>({
       method: 'GET',
       service: SERVICE,
       path: `${BASE_PATH}/products-by-merchant-and-status`,
       query: {
         merchantId: this.transport.merchantId,
-        status: params.status,
-        modifiedAtSince: params.modifiedAtSince,
+        productStatus: params.status,
+        taskStatus: params.taskStatus,
+        version: params.version,
         page: params.page,
         size: params.size,
       },

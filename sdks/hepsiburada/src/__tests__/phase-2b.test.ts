@@ -202,12 +202,17 @@ describe('OrdersResource — Phase 2b status-bucketed + actions', () => {
 describe('CatalogResource — Phase 2b mutations + tracking', () => {
   const r = (t: HepsiburadaTransport) => new CatalogResource(t, fastLimiter());
 
-  it('listProductsByStatus query passes through', async () => {
+  it('listProductsByStatus query passes through (status → productStatus)', async () => {
     const transport = mockTransport([]);
-    await r(transport).listProductsByStatus({ status: 'Active', page: 0, size: 50 });
+    await r(transport).listProductsByStatus({ status: 'MATCHED', page: 0, size: 50 });
     const call = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0];
     expect(call.path).toBe('/product/api/products/products-by-merchant-and-status');
-    expect(call.query).toMatchObject({ merchantId: 'M-2b', status: 'Active', page: 0, size: 50 });
+    expect(call.query).toMatchObject({
+      merchantId: 'M-2b',
+      productStatus: 'MATCHED',
+      page: 0,
+      size: 50,
+    });
   });
 
   it('listProducts resolves typed content (title/category/brand/images) from the fields map', async () => {

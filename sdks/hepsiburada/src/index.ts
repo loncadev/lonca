@@ -106,6 +106,7 @@ export type {
 export type {
   CatalogField,
   CatalogProduct,
+  CatalogProductLifecycleStatus,
   CatalogProductStatus,
   CatalogTrackingReceipt,
   CheckProductStatusInput,

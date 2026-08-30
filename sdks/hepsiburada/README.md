@@ -174,8 +174,9 @@ for (const p of products) {
   console.log(p.merchantSku, p.status, `quality=${p.productQuality}`);
 }
 
-// 4. Or filter to a specific lifecycle status
-const waiting = await client.catalog.listProductsByStatus({ status: 'WaitingApproval' });
+// 4. Or filter to a specific lifecycle status (Hepsiburada's UPPER_SNAKE vocabulary —
+//    'WAITING', 'MATCHED', 'MISSING_INFO', … — anything else is answered with HTTP 500)
+const waiting = await client.catalog.listProductsByStatus({ status: 'WAITING' });
 ```
 
 ### 4) Returns / claims handling
@@ -391,7 +392,7 @@ const values = await client.categories.getAttributeValues(page.data[0].categoryI
 ```ts
 // Read
 await client.catalog.listProducts({ page: 0, size: 100 });
-await client.catalog.listProductsByStatus({ status: 'Active' });
+await client.catalog.listProductsByStatus({ status: 'MATCHED' }); // status is required
 await client.catalog.getProductStatus('trk-id'); // status of a previous upload
 await client.catalog.getTrackingIdHistory();
 
