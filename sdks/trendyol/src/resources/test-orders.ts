@@ -5,6 +5,7 @@ import type {
   CreateTestOrderResult,
   SetClaimsWaitingInActionInput,
   TestOrderStatus,
+  UpdateTestOrderStatusOptions,
 } from '../types/misc.js';
 
 /**
@@ -51,14 +52,25 @@ export class TestOrdersResource {
   }
 
   /**
-   * Push a test shipment package to the given status. Trendyol documents
-   * the response as a bare `200 OK` (no body), hence `MutationResult`.
+   * Push a test shipment package to the given status. Trendyol's
+   * `status-updates-on-test-orders` doc shows a `{ lines, params, status }`
+   * body — pass `options` to send the documented `lines` / `params`;
+   * omitted, the body stays `{ status }` alone as before. Documented
+   * response is a bare `200 OK` (no body), hence `MutationResult`.
    */
-  async updateStatus(packageId: string | number, status: TestOrderStatus): Promise<MutationResult> {
+  async updateStatus(
+    packageId: string | number,
+    status: TestOrderStatus,
+    options: UpdateTestOrderStatusOptions = {},
+  ): Promise<MutationResult> {
     const raw = await this.transport.request<unknown>({
       method: 'PUT',
       path: `/integration/test/order/sellers/${this.transport.sellerId}/shipment-packages/${encodeURIComponent(String(packageId))}/status`,
-      body: { status },
+      body: {
+        ...(options.lines !== undefined ? { lines: options.lines } : {}),
+        ...(options.params !== undefined ? { params: options.params } : {}),
+        status,
+      },
       rateLimiter: this.limiter,
     });
     return { raw };

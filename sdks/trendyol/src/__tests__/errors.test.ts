@@ -23,6 +23,37 @@ describe('mapHttpError', () => {
     expect(err.retryable).toBe(false);
   });
 
+  it('keeps the JSON 403 mapping (ValidationError with normalized issues)', () => {
+    const err = mapHttpError(403, { errors: [{ message: 'User-Agent missing' }] });
+    expect(err).toBeInstanceOf(ValidationError);
+    expect(err.code).toBe('VALIDATION_FAILED');
+    expect(err.issues).toEqual([{ message: 'User-Agent missing' }]);
+  });
+
+  it('maps a non-JSON (HTML) 403 to AuthError and never leaks the body', () => {
+    const html =
+      '<!DOCTYPE html><html><head><title>Attention Required! | Cloudflare</title></head><body>secret-ray-id</body></html>';
+    const err = mapHttpError(403, html);
+    expect(err).toBeInstanceOf(AuthError);
+    expect(err.code).toBe('AUTH_FAILED');
+    expect(err.retryable).toBe(false);
+    expect(err.message).toBe(
+      'Trendyol rejected the request before it reached the API (HTTP 403, non-JSON body) — check IP allowlisting / credentials / User-Agent',
+    );
+    // Redaction: only a kind + length hint, never the raw server body.
+    expect(err.data).toEqual({ bodyKind: 'html', bodyLength: html.length });
+    expect(JSON.stringify(err.data)).not.toContain('Cloudflare');
+    expect(JSON.stringify(err.data)).not.toContain('secret-ray-id');
+    expect(err.issues).toEqual([]);
+  });
+
+  it('maps a non-JSON (text) 401 to AuthError with the redacted hint', () => {
+    const err = mapHttpError(401, 'access denied');
+    expect(err).toBeInstanceOf(AuthError);
+    expect(err.message).toContain('HTTP 401, non-JSON body');
+    expect(err.data).toEqual({ bodyKind: 'text', bodyLength: 13 });
+  });
+
   it('maps 404 to NotFoundError', () => {
     const err = mapHttpError(404, null);
     expect(err).toBeInstanceOf(NotFoundError);

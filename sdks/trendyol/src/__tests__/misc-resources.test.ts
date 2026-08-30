@@ -307,6 +307,22 @@ describe('TestOrdersResource', () => {
     expect(out).toEqual({ raw: undefined });
   });
 
+  it('updateStatus forwards the documented { lines, params } when given', async () => {
+    const transport = mockTransport();
+    const out = await r(transport).updateStatus(99, 'Delivered', {
+      lines: [{ lineId: 4944785, quantity: 1 }],
+      params: {},
+    });
+    expect(transport.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: 'PUT',
+        path: '/integration/test/order/sellers/42/shipment-packages/99/status',
+        body: { lines: [{ lineId: 4944785, quantity: 1 }], params: {}, status: 'Delivered' },
+      }),
+    );
+    expect(out).toEqual({ raw: undefined });
+  });
+
   it('setClaimsWaitingInAction PUTs to /claims/waiting-in-action with no body', async () => {
     const transport = mockTransport();
     const out = await r(transport).setClaimsWaitingInAction();

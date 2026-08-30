@@ -143,6 +143,29 @@ describe('TrendyolTransport', () => {
     expect(fetchMock).toHaveBeenCalledOnce();
   });
 
+  it('maps a 403 HTML (Cloudflare-style block page) to AuthError, body redacted', async () => {
+    const html = '<!DOCTYPE html><html><body>Attention Required! | Cloudflare</body></html>';
+    const fetchMock = fetchStatus(403, html, { 'content-type': 'text/html' });
+    const transport = makeTransport(fetchMock);
+
+    await expect(
+      transport.request({ method: 'GET', path: '/sapigw/brands' }),
+    ).rejects.toMatchObject({
+      name: 'AuthError',
+      code: 'AUTH_FAILED',
+      data: { bodyKind: 'html', bodyLength: html.length },
+    });
+  });
+
+  it('maps a 401 with a plain-text body to AuthError with the non-JSON hint', async () => {
+    const fetchMock = fetchStatus(401, 'access denied', { 'content-type': 'text/plain' });
+    const transport = makeTransport(fetchMock);
+
+    await expect(transport.request({ method: 'GET', path: '/sapigw/brands' })).rejects.toThrow(
+      /HTTP 401, non-JSON body/,
+    );
+  });
+
   it('retries on 429 (RateLimitError) and eventually succeeds', async () => {
     const fetchMock = vi
       .fn()

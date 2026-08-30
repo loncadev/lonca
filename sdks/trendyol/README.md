@@ -38,7 +38,7 @@ Each entry is a method on the client.
 | `invoices`       | `uploadFile({shipmentPackageId, file, ...})` (multipart), `sendLink({...})`, `deleteLink({...})`                                                                                                                                                                                                                                   |
 | `finance`        | `getSettlements({...})`, `getOtherFinancials({...})` — both return typed `FinancialTransaction[]`                                                                                                                                                                                                                                  |
 | `labels`         | `createCommon(trackingNumber, {format: 'ZPL', ...})`, `getCommon(trackingNumber)`                                                                                                                                                                                                                                                  |
-| `testOrders`     | `create({...})`, `updateStatus(id, status)`, `setClaimsWaitingInAction()` — **STAGE-only utility**                                                                                                                                                                                                                                 |
+| `testOrders`     | `create({...})`, `updateStatus(id, status, { lines?, params? })`, `setClaimsWaitingInAction()` — **STAGE-only utility**                                                                                                                                                                                                            |
 | `locations`      | `getCountries()`, `getTurkeyCities()`, `getTurkeyDistricts(cityCode)`, `getTurkeyNeighborhoods(cityCode, districtCode)`, `getAzerbaijanCities()`, `getAzerbaijanDistricts(...)`, `getCitiesByCountry/getDistrictsByCity(...)`                                                                                                      |
 | `exportCenter`   | `listProducts({...})`, `createProducts(items)`, `updatePrices(items)`, `updateStocks(items)`, `getBatchStatus(batchId)`, `listPackagesV2/V3({...})`, `getPackageItems({packageId, ...})`, `getCategoryAttributes(id)`, `getCareInstructions()`, `getCompositions()`, `getOrigins()` — **Trendyol Export Center / İhracat Merkezi** |
 | `videos`         | `create({contentId, url, ...})`, `list({id?, sellerIntegrationStatus?, ...})` — product-page video upload + status                                                                                                                                                                                                                 |
@@ -363,6 +363,10 @@ const { orderNumber } = await client.testOrders.create({
   /* CreateTestOrderInput */
 }); // CreateTestOrderResult — documented `{ orderNumber }`
 await client.testOrders.updateStatus(pkgId, 'Shipped'); // MutationResult
+await client.testOrders.updateStatus(pkgId, 'Delivered', {
+  lines: [{ lineId, quantity: 1 }], // optional — the doc shows { lines, params, status }
+  params: {},
+});
 await client.testOrders.setClaimsWaitingInAction({ shipmentPackageId }); // MutationResult; body optional
 
 // videos
@@ -415,6 +419,7 @@ Trendyol uses HTTP Basic Auth. Get your `sellerId`, `apiKey`, and `apiSecret` fr
 - **Per-endpoint rate limiting** (token bucket) sized to Trendyol's documented limits — see defaults below; override per resource
 - **Per-request correlation ID** — every call gets a UUID surfaced in log messages and the `x-correlationid` header for Trendyol-side log tracing
 - **Structured errors** via `@lonca/core` (`AuthError`, `RateLimitError`, `NotFoundError`, `ServerError`, `ValidationError`, `NetworkError`, `TimeoutError`)
+- **Edge-block detection**: a `401`/`403` answered with a non-JSON (HTML/text) body — e.g. Cloudflare's stage IP-allowlist block page — maps to `AuthError` ("check IP allowlisting / credentials / User-Agent"); the raw HTML is never attached to the error, only a `{ bodyKind, bodyLength }` hint on `error.data`
 - **Client-side validation** before the network: empty batches, oversized batches (>1000 items), >10 buybox barcodes, ≤500-char claim descriptions, 10–2000-char Q&A answers — all throw `ValidationError`
 - **Multipart upload support** — `claims.createIssue` and `invoices.uploadFile` build `FormData` internally and the transport handles `Content-Type` correctly
 - **`AbortSignal` support** throughout

@@ -182,11 +182,33 @@ export interface SetClaimsWaitingInActionInput {
   shipmentPackageId: string | number;
 }
 
+/** One order line targeted by `testOrders.updateStatus()`. */
+export interface TestOrderStatusLine {
+  /** Line id from the test order (doc example: `4944785`). */
+  lineId: string | number;
+  /** Quantity of the line to move. */
+  quantity: number;
+  [key: string]: unknown;
+}
+
+/**
+ * Optional extras for `testOrders.updateStatus()`. Trendyol's
+ * `status-updates-on-test-orders` doc shows a `{ lines, params, status }`
+ * body; omitted, the SDK keeps sending `{ status }` alone as before.
+ */
+export interface UpdateTestOrderStatusOptions {
+  /** Order lines to move to the target status. */
+  lines?: TestOrderStatusLine[];
+  /** Doc-level `params` object (the doc's example sends `{}`). */
+  params?: Record<string, unknown>;
+}
+
 export type TestOrderStatus =
   | 'Created'
   | 'Picking'
   | 'Invoiced'
   | 'Shipped'
+  | 'AtCollectionPoint'
   | 'Delivered'
   | 'Cancelled'
   | 'Returned'
