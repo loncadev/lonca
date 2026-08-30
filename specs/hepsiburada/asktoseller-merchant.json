@@ -1,0 +1,1645 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Hepsiburada saticiya-sor-entegrasyonu",
+    "version": "v1.0",
+    "description": "Hepsiburada developer-portal API definition for product \"saticiya-sor-entegrasyonu\" (category \"saticiya-sor-entegrasyonu\"), redistributed unchanged for interoperability. Copyright Hepsiburada; not covered by the lonca repository licence. See specs/hepsiburada/README.md.",
+    "x-lonca-source": {
+      "portal": "https://developers.hepsiburada.com",
+      "companySlug": "hepsiburada",
+      "categorySlug": "saticiya-sor-entegrasyonu",
+      "productSlug": "saticiya-sor-entegrasyonu",
+      "versionLabel": "v1.0",
+      "capturedAt": "2026-05-31",
+      "portalUpdatedAt": "2026-05-07T21:13:20.274Z",
+      "generator": "scripts/specs/split-hepsiburada.mjs"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api-asktoseller-merchant-sit.hepsiburada.com",
+      "description": "Sandbox (SIT) host as published in the portal code samples"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Satıcıya Sor Entegrasyonu"
+    }
+  ],
+  "paths": {
+    "/api/v1.0/issues": {
+      "get": {
+        "tags": [
+          "Satıcıya Sor Entegrasyonu"
+        ],
+        "summary": "Soru Listesi",
+        "description": "Bu endpoint ile satıcıya sorulan sorular listelenmektedir. Satıcıların, müşteri sorularını cevaplamak için 1 iş günü hakkı vardır. Kalan süre arka tarafta Hepsiburada tarafından hesaplanır ve ne zaman süresinin dolacağı “expireDate” alanında belirtilir. Cevap bekleyen soruların status 1’dir.",
+        "operationId": "Soru Listesi",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "source",
+            "in": "query",
+            "description": "Soru kaynağı (Opsiyonel) 1:Siparişle ilgili değil, 2:Siparişle ilgili. Boş ise hepsi",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "subject",
+            "in": "query",
+            "description": "Sorunun konusu (Opsiyonel)",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "minCreatedAt",
+            "in": "query",
+            "description": "Minimum oluşturulma tarihi (Opsiyonel)",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "maxCreatedAt",
+            "in": "query",
+            "description": "Maksimum oluşturulma tarihi (Opsiyonel)",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "minModifiedAt",
+            "in": "query",
+            "description": "Minimum değiştirilme tarihi (Opsiyonel)",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "maxModifiedAt",
+            "in": "query",
+            "description": "Maksimum değiştirilme tarihi (Opsiyonel)",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "issueNumber",
+            "in": "query",
+            "description": "Sorunun numarası (Opsiyonel)",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Sorunun durumları (Opsiyonel). Durumlar şunlardır: \n1. 'WaitingForAnswer' - Soru yanıt bekliyor. \n2. 'Answered' - Soru yanıtlandı. \n3. 'Rejected' - Soru, satıcı tarafından şikayet edildi. \n4. 'AutoClosed' - Soru otomatik olarak kapatıldı.",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/IssueEsStatus"
+              }
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Arama metni (Opsiyonel)",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "description": "Sıralama tipi (Varsayılan: CreatedAt)",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "$ref": "#/components/schemas/SortBy"
+            }
+          },
+          {
+            "name": "desc",
+            "in": "query",
+            "description": "Azalan sıralama mı? (Varsayılan: true)",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Sayfa numarası (Varsayılan: 1)",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "Sayfa başına eleman sayısı (Varsayılan: 25)",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25
+            }
+          },
+          {
+            "name": "merchantId",
+            "in": "header",
+            "description": "MerchantId, merchant doğrulaması gerektiren isteklerde kullanılır ve entegrasyon sürecinde zorunludur.",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "description": "User-Agent, merchant doğrulaması gerektiren isteklerde kullanılır ve entegrasyon sürecinde zorunludur.",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueViewModelPaginatedResultViewModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueViewModelPaginatedResultViewModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueViewModelPaginatedResultViewModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelExtendedCustomErrorModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelExtendedCustomErrorModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelExtendedCustomErrorModel"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-07T21:13:20.274Z"
+      },
+      "post": {
+        "tags": [
+          "Satıcıya Sor Entegrasyonu"
+        ],
+        "summary": "Soru Oluşturma",
+        "description": "Bu endpoint ile satıcıya soru sorulabilmektedir. Bu işlev yalnızca SIT ortamında mevcuttur. Testlerinizi tamamlayabilmeniz için soru oluşturmanıza olanak tanır.",
+        "operationId": "Soru Oluşturma",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "merchantId",
+            "in": "header",
+            "description": "MerchantId, merchant doğrulaması gerektiren isteklerde kullanılır ve entegrasyon sürecinde zorunludur.",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "description": "User-Agent, merchant doğrulaması gerektiren isteklerde kullanılır ve entegrasyon sürecinde zorunludur.",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateIssueViewModel"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateIssueViewModel"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateIssueViewModel"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "int32"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "int32"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "int32"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelExtendedCustomErrorModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelExtendedCustomErrorModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelExtendedCustomErrorModel"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-07T21:13:20.274Z"
+      }
+    },
+    "/api/v1.0/issues/count": {
+      "get": {
+        "tags": [
+          "Satıcıya Sor Entegrasyonu"
+        ],
+        "summary": "Statü Bazlı Soru Sayısı",
+        "description": "Bu endpoint ile satıcıya sorulan soruların statü bazlı bilgisi çekilebilir.",
+        "operationId": "Statü Bazlı Soru Sayısı",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "merchantId",
+            "in": "header",
+            "description": "MerchantId, merchant doğrulaması gerektiren isteklerde kullanılır ve entegrasyon sürecinde zorunludur.",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "description": "User-Agent, merchant doğrulaması gerektiren isteklerde kullanılır ve entegrasyon sürecinde zorunludur.",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueCountModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueCountModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueCountModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-07T21:13:20.274Z"
+      }
+    },
+    "/api/v1.0/issues/{number}": {
+      "get": {
+        "tags": [
+          "Satıcıya Sor Entegrasyonu"
+        ],
+        "summary": "Soru Detayının Çekilmesi",
+        "description": "Bu endpoint ile satıcıya sorulan sorunun detayına ulaşılmaktadır.",
+        "operationId": "Soru Detayının Çekilmesi",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "number",
+            "in": "path",
+            "description": "Sorunun numarası",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "merchantId",
+            "in": "header",
+            "description": "MerchantId, merchant doğrulaması gerektiren isteklerde kullanılır ve entegrasyon sürecinde zorunludur.",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "description": "User-Agent, merchant doğrulaması gerektiren isteklerde kullanılır ve entegrasyon sürecinde zorunludur.",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueViewModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueViewModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueViewModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelExtendedCustomErrorModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelExtendedCustomErrorModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelExtendedCustomErrorModel"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-07T21:13:20.274Z"
+      }
+    },
+    "/api/v1.0/issues/{number}/answer": {
+      "post": {
+        "tags": [
+          "Satıcıya Sor Entegrasyonu"
+        ],
+        "summary": "Soru Cevaplama",
+        "description": "Bu endpoint ile satıcıya sorulan soruya yanıt verilebilir. Müşterilerin sorularını cevaplamak için satıcıların 1 iş günü hakkı vardır. Kalan süre arka tarafta Hepsiburada tarafından hesaplanır ve ne zaman süresinin dolacağı “expireDate” alanında belirtilir. Belirtilen süre içerisinde cevaplanmayan sorular cevaplanmaya çalışırsa servis buna izin vermeyip hata verecektir. Yine belirtilen süre içerisinde cevaplanmayan sorular sistem tarafından otomatik olarak AutoClosed statüsüne çekilecektir ve artık WaitingForAnswer statüsü için çekilen soru listesinde gelmeyecektir.",
+        "operationId": "Soru Cevaplama",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "number",
+            "in": "path",
+            "description": "Sorunun numarası",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "merchantId",
+            "in": "header",
+            "description": "MerchantId, merchant doğrulaması gerektiren isteklerde kullanılır ve entegrasyon sürecinde zorunludur.",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "description": "User-Agent, merchant doğrulaması gerektiren isteklerde kullanılır ve entegrasyon sürecinde zorunludur.",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "Files": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    },
+                    "description": "Yanıtla birlikte gönderilecek dosyalar koleksiyonu."
+                  },
+                  "Answer": {
+                    "maxLength": 2000,
+                    "type": "string",
+                    "description": "Yanıt içeriği, en fazla 2000 karakter olabilir."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Unsupported Media Type",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelExtendedCustomErrorModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelExtendedCustomErrorModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelExtendedCustomErrorModel"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-07T21:13:20.274Z"
+      }
+    },
+    "/api/v1.0/issues/{number}/reject": {
+      "post": {
+        "tags": [
+          "Satıcıya Sor Entegrasyonu"
+        ],
+        "summary": "Sorun Bildirme",
+        "description": "Bu endpoint ile satıcıya sorulan soru için sorun bildirilebilir verilebilir. Müşterilerin soruları cevap vermeye uygun değil ise, soru sorulmamış ise, hakaret edilmiş ise vb. durumlarda soru cevaplanmamak üzere sorun bildirilebilir. Sorun bildirme işlemi yapıldıktan sonra müşteriye sorunun cevaplanmadığına dair bildirim ve mail gider. Sorun bildirirken girilen metin Hepsiburada içindir, burada girilen metin müşteriye gösterilmez. Müşteri sadece sorunun yanıtlanmadığını görür.",
+        "operationId": "Sorun Bildirme",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "number",
+            "in": "path",
+            "description": "Sorunun numarası",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "merchantId",
+            "in": "header",
+            "description": "MerchantId, merchant doğrulaması gerektiren isteklerde kullanılır ve entegrasyon sürecinde zorunludur.",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "description": "User-Agent, merchant doğrulaması gerektiren isteklerde kullanılır ve entegrasyon sürecinde zorunludur.",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectIssueViewModel"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectIssueViewModel"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectIssueViewModel"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelExtendedCustomErrorModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelExtendedCustomErrorModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelExtendedCustomErrorModel"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModelCustomErrorModel"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-07T21:13:20.274Z"
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "basicAuth": {
+        "type": "http",
+        "scheme": "basic"
+      }
+    },
+    "schemas": {
+      "ConversationViewModel": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Konuşmanın benzersiz kimliği",
+            "nullable": true
+          },
+          "type": {
+            "type": "string",
+            "description": "Konuşmanın tipi",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Konuşmanın oluşturulma tarihi",
+            "format": "date-time"
+          },
+          "content": {
+            "type": "string",
+            "description": "Mesaj içeriği",
+            "nullable": true
+          },
+          "from": {
+            "type": "string",
+            "description": "Mesajı gönderen kişi (Müşteri/Satıcı)",
+            "nullable": true
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Mesaja eklenen dosyaların listesi",
+            "nullable": true
+          },
+          "customerFeedback": {
+            "type": "boolean",
+            "description": "Müşteri geri bildirimde bulundu mu?",
+            "nullable": true
+          },
+          "rejectReason": {
+            "type": "string",
+            "description": "Reddedilme nedeni (varsa)",
+            "nullable": true
+          },
+          "rejectConversation": {
+            "type": "string",
+            "description": "Reddedilen conversation (varsa)",
+            "nullable": true
+          },
+          "schemaVersion": {
+            "type": "integer",
+            "description": "Şema versiyonu",
+            "format": "int32"
+          },
+          "lastModifiedAt": {
+            "type": "string",
+            "description": "Son değişiklik tarihi (varsa)",
+            "format": "date-time",
+            "nullable": true
+          },
+          "isConversationModified": {
+            "type": "boolean",
+            "description": "Konuşmada değişiklik yapıldı mı?"
+          },
+          "canMessageBeModified": {
+            "type": "boolean",
+            "description": "Mesaj düzenlenebilir mi?"
+          },
+          "isMessageSeen": {
+            "type": "boolean",
+            "description": "Mesaj okundu mu?"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateIssueViewModel": {
+        "type": "object",
+        "properties": {
+          "issueCount": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "integer",
+            "description": "Kaç adet soru oluşturulacağı belirtilir.",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ErrorModel": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "internalMessage": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ErrorModelCustomErrorModel": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ErrorModel"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ErrorModelExtended": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "internalMessage": {
+            "type": "string",
+            "nullable": true
+          },
+          "fieldName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ErrorModelExtendedCustomErrorModel": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ErrorModelExtended"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "IssueCountModel": {
+        "type": "object",
+        "properties": {
+          "waitingForAnswer": {
+            "type": "integer",
+            "description": "Yanıt bekleyen soruların sayısı.",
+            "format": "int32"
+          },
+          "answered": {
+            "type": "integer",
+            "description": "Yanıtlanmış soruların sayısı.",
+            "format": "int32"
+          },
+          "reported": {
+            "type": "integer",
+            "description": "Raporlanmış (şikayet edilmiş) soruların sayısı.",
+            "format": "int32"
+          },
+          "autoClosedInLastWeek": {
+            "type": "integer",
+            "description": "Son bir hafta içinde otomatik olarak kapatılan soruların sayısı.",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "IssueEsStatus": {
+        "enum": [
+          1,
+          2,
+          3,
+          4,
+          7
+        ],
+        "type": "integer",
+        "description": "Soru yanıt bekliyor., Soru yanıtlandı., Soru satıcı tarafından reddedildi., Soru yanıtlanmadığı için otomatik olarak kapatıldı., Satıcı iletişime geçti.",
+        "format": "int32"
+      },
+      "IssueViewModel": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Sorunun benzersiz kimliği",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Sorunun oluşturulma tarihi",
+            "format": "date-time"
+          },
+          "issueNumber": {
+            "type": "integer",
+            "description": "Sorunun numarası",
+            "format": "int32"
+          },
+          "customerId": {
+            "type": "string",
+            "description": "Soruyu soran müşteri kimliği",
+            "format": "uuid"
+          },
+          "orderNumber": {
+            "type": "string",
+            "description": "Sipariş numarası",
+            "nullable": true
+          },
+          "lineItemId": {
+            "type": "string",
+            "description": "Sipariş satır numarası",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "description": "Sorunun durumu. Durumlar şunlardır: \n1. 'WaitingForAnswer' - Soru yanıt bekliyor. \n2. 'Answered' - Soru yanıtlandı. \n3. 'Rejected' - Soru, satıcı tarafından şikayet edildi. \n4. 'AutoClosed' - Soru otomatik olarak kapatıldı.",
+            "nullable": true
+          },
+          "subject": {
+            "$ref": "#/components/schemas/SubjectViewModel"
+          },
+          "lastContent": {
+            "type": "string",
+            "description": "Sorunun son mesaj içeriği",
+            "nullable": true
+          },
+          "conversations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationViewModel"
+            },
+            "description": "Soruyla ilgili konuşmaların listesi",
+            "nullable": true
+          },
+          "merchant": {
+            "$ref": "#/components/schemas/MerchantViewModel"
+          },
+          "product": {
+            "$ref": "#/components/schemas/ProductViewModel"
+          },
+          "expireDate": {
+            "type": "string",
+            "description": "Sorunun cevaplanması için kalan süre",
+            "format": "date-time"
+          },
+          "lastModifiedAt": {
+            "type": "string",
+            "description": "Son değişiklik tarihi",
+            "format": "date-time"
+          },
+          "didCustomerSeeTheMessage": {
+            "type": "boolean",
+            "description": "Müşteri mesajı gördü mü?"
+          },
+          "schemaVersion": {
+            "type": "integer",
+            "description": "Şema versiyonu",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "IssueViewModelPaginatedResultViewModel": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IssueViewModel"
+            },
+            "nullable": true
+          },
+          "currentPage": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "currentPageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPageCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalItemCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "nextPage": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "previousPage": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MerchantViewModel": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Satıcının benzersiz kimliği",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "description": "Satıcının adı",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "detail": {
+            "type": "string",
+            "nullable": true
+          },
+          "instance": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": {}
+      },
+      "ProductViewModel": {
+        "type": "object",
+        "properties": {
+          "sku": {
+            "type": "string",
+            "description": "Ürünün SKU (Stok Tutma Birimi) kodu",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "description": "Ürünün adı",
+            "nullable": true
+          },
+          "imageUrl": {
+            "type": "string",
+            "description": "Ürünün görsel URL'si",
+            "nullable": true
+          },
+          "stockCode": {
+            "type": "string",
+            "description": "Ürünün stok kodu",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "RejectIssueViewModel": {
+        "type": "object",
+        "properties": {
+          "rejectReason": {
+            "maxLength": 2000,
+            "type": "string",
+            "description": "Şikayetin neden reddedildiğine dair açıklama, en fazla 2000 karakter olabilir.",
+            "nullable": true
+          },
+          "rejectConversationId": {
+            "type": "string",
+            "description": "Şikayet belirli bir konuşma ile reddediliyorsa, ilgili konuşmanın ID'si.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SortBy": {
+        "enum": [
+          0,
+          1
+        ],
+        "type": "integer",
+        "description": ", ",
+        "format": "int32"
+      },
+      "SubjectViewModel": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Konunun benzersiz kimliği",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "description": "Konunun açıklaması",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}

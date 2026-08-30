@@ -1,0 +1,1257 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Hepsiburada tedarikci-entegrasyonu",
+    "version": "v1.0",
+    "description": "Hepsiburada developer-portal API definition for product \"tedarikci-entegrasyonu\" (category \"tedarikci-entegrasyonu\"), redistributed unchanged for interoperability. Copyright Hepsiburada; not covered by the lonca repository licence. See specs/hepsiburada/README.md.",
+    "x-lonca-source": {
+      "portal": "https://developers.hepsiburada.com",
+      "companySlug": "hepsiburada",
+      "categorySlug": "tedarikci-entegrasyonu",
+      "productSlug": "tedarikci-entegrasyonu",
+      "versionLabel": "v1.0",
+      "capturedAt": "2026-05-31",
+      "portalUpdatedAt": "2026-05-07T07:43:51.129Z",
+      "generator": "scripts/specs/split-hepsiburada.mjs"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://supplier-api-external-sit.hepsiburada.com",
+      "description": "Sandbox (SIT) host as published in the portal code samples"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Envanter Entegrasyonu"
+    },
+    {
+      "name": "Satın Alma Süreci Entegrasyonu"
+    }
+  ],
+  "paths": {
+    "/suppliers/{merchantId}/listingUpdateRequests": {
+      "post": {
+        "tags": [
+          "Envanter Entegrasyonu"
+        ],
+        "summary": "Teklif Oluşturma",
+        "description": "Bu metod ürünlerinizin stok, fiyat ve tedarikçi stok bilgileri için teklif iletmenize olanak tanır.",
+        "operationId": "Teklif Oluşturma",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "merchantId",
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddListingUpdateRequestCommand"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddListingUpdateRequestCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddListingUpdateRequestCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddListingUpdateRequestCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuidIdResultApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuidIdResultApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuidIdResultApiResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-07T07:43:51.129Z"
+      }
+    },
+    "/suppliers/{merchantId}/listingUpdateRequests/search": {
+      "post": {
+        "tags": [
+          "Envanter Entegrasyonu"
+        ],
+        "summary": "Teklifleri Listeleme",
+        "description": "Bu metod tekliflerinizi listeleyebilmenize olanak tanır.",
+        "operationId": "Teklifleri Listeleme",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "merchantId",
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetListingUpdateRequestSearchQuery"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetListingUpdateRequestSearchQuery"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetListingUpdateRequestSearchQuery"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetListingUpdateRequestSearchQuery"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingUpdateRequestSearchResponseApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingUpdateRequestSearchResponseApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingUpdateRequestSearchResponseApiResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-07T07:43:51.129Z"
+      }
+    },
+    "/suppliers/{merchantId}/listingUpdateRequests/{requestId}": {
+      "get": {
+        "tags": [
+          "Envanter Entegrasyonu"
+        ],
+        "summary": "Teklif Detayı Listeleme",
+        "description": "Bu metod bir teklifin detaylarını listeleyebilmenize olanak tanır.",
+        "operationId": "Teklif Detayı Listeleme",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "merchantId",
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingUpdateRequestDetailResponseApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingUpdateRequestDetailResponseApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingUpdateRequestDetailResponseApiResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-07T07:43:51.129Z"
+      }
+    },
+    "/suppliers/{merchantId}/openPurchaseOrders/search": {
+      "post": {
+        "tags": [
+          "Satın Alma Süreci Entegrasyonu"
+        ],
+        "summary": "Açık Siparişleri Listeleme",
+        "description": "Bu metod açık satınalma siparişlerinizi listeleyebilmenize olanak tanır.",
+        "operationId": "Açık Siparişleri Listeleme",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "merchantId",
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenPurchaseOrderSearchQuery"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenPurchaseOrderSearchQuery"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenPurchaseOrderSearchQuery"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenPurchaseOrderSearchQuery"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenPurchaseOrderResponseApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenPurchaseOrderResponseApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenPurchaseOrderResponseApiResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-07T07:43:51.129Z"
+      }
+    },
+    "/suppliers/{merchantId}/supplierlistings/search": {
+      "post": {
+        "tags": [
+          "Envanter Entegrasyonu"
+        ],
+        "summary": "Envanter Bilgilerini Listeleme",
+        "description": "Bu metod envanter bilgilerinizi listeleyebilmenize olanak tanır.",
+        "operationId": "Envanter Bilgilerini Listeleme",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "merchantId",
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetSupplierListingsSearchQuery"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetSupplierListingsSearchQuery"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetSupplierListingsSearchQuery"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetSupplierListingsSearchQuery"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupplierListingsResponseApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupplierListingsResponseApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupplierListingsResponseApiResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-07T07:43:51.129Z"
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "basicAuth": {
+        "type": "http",
+        "scheme": "basic",
+        "description": "Basic Authorization"
+      }
+    },
+    "schemas": {
+      "AddListingUpdateRequestCommand": {
+        "type": "object",
+        "properties": {
+          "requestItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AddListingUpdateRequestItem"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AddListingUpdateRequestItem": {
+        "type": "object",
+        "properties": {
+          "traceId": {
+            "type": "string",
+            "description": "Teklif yapılan Sku.",
+            "format": "uuid"
+          },
+          "merchantSku": {
+            "type": "string",
+            "description": "Teklif edilen tedarikçi stok kodu. Zorunlu değildir.",
+            "nullable": true
+          },
+          "sku": {
+            "type": "string",
+            "description": "Teklif yapılan Sku.",
+            "nullable": true
+          },
+          "price": {
+            "type": "number",
+            "description": "Teklif edilen fiyat. Zorunlu değildir.",
+            "format": "double",
+            "nullable": true
+          },
+          "priceEffectiveDate": {
+            "type": "string",
+            "description": "Teklif edilen fiyatın geçerli olacağı tarih. Zorunlu değildir.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "stock": {
+            "type": "integer",
+            "description": "Teklif edilen stok. Zorunlu değildir.",
+            "format": "int32",
+            "nullable": true
+          },
+          "currencyCode": {
+            "type": "string",
+            "description": "Teklif edilen fiyatın para birimi. Fiyat girildiyse zorunludur. Alabileceği değerler (TRY,USD,EUR)",
+            "nullable": true
+          },
+          "salable": {
+            "type": "boolean",
+            "description": "Ürün için teklif edeceğiniz satış durumu bilgisidir. Zorunlu değildir.",
+            "nullable": true
+          },
+          "unitPerPackage": {
+            "type": "integer",
+            "description": "Ürüne ait koli içi adet bilgisidir.",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ApprovalStatus": {
+        "enum": [
+          "Processing",
+          "Approved",
+          "Rejected",
+          "Accepted"
+        ],
+        "type": "string"
+      },
+      "CurrencyCode": {
+        "enum": [
+          "None",
+          "AUD",
+          "JPY",
+          "CHF",
+          "GBP",
+          "USD",
+          "TRY",
+          "EUR"
+        ],
+        "type": "string"
+      },
+      "GetListingUpdateRequestSearchQuery": {
+        "type": "object",
+        "properties": {
+          "startDate": {
+            "type": "string",
+            "description": "Teklif tarihi başlangıcı filtresi. yyyy-MM-dd formatında. Zorunlu değildir.",
+            "nullable": true
+          },
+          "endDate": {
+            "type": "string",
+            "description": "Teklif tarihi bitiş filtresi. yyyy-MM-dd formatında. Zorunlu değildir.",
+            "nullable": true
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Listelenecek maksimum kayıt adedi. Minimum 0, maksimum 1000 olabilir. Zorunlu değildir",
+            "format": "int32"
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Listelenecek kayıtların başlangıç indeksi. Minimum 0 olabilir. Zorunlu değildir, null gönderildiğinde 0 kullanılır.",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "GetSupplierListingsSearchQuery": {
+        "type": "object",
+        "properties": {
+          "listingType": {
+            "type": "string",
+            "description": "Satış türü filtresi. Zorunlu değildir. Alabileceği değerler (Normal, DropShipping, Consignee)",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "description": "Ürün durumu filtresi. Zorunlu değildir. Alabileceği değerler (Suspended, Active, Inactive)",
+            "nullable": true
+          },
+          "lastPurchasePriceUpdateStartDate": {
+            "type": "string",
+            "description": "Fiyat değişiklik tarihi başlangıcı filtresi. 'yyyy-MM-dd' formatında. Zorunlu değildir.",
+            "nullable": true
+          },
+          "lastPurchasePriceUpdateEndDate": {
+            "type": "string",
+            "description": "Fiyat değişiklik tarihi bitiş filtresi. 'yyyy-MM-dd' formatında. Zorunlu değildir.",
+            "nullable": true
+          },
+          "searchText": {
+            "type": "string",
+            "description": "Arama alanı. Sku ya da Tedarikçi stok kodu alanlarında arama yapmak için kullanılabilir. Zorunlu değildir.",
+            "nullable": true
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Listelenecek maksimum kayıt adedi. Minimum 0, maksimum 1000 olabilir. Zorunlu değildir",
+            "format": "int32"
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Listelenecek kayıtların başlangıç indeksi. Minimum 0 olabilir. Zorunlu değildir, null gönderildiğinde 0 kullanılır.",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "GuidIdResult": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "GuidIdResultApiResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/GuidIdResult"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ListingStatus": {
+        "enum": [
+          "Suspended",
+          "Active",
+          "Inactive"
+        ],
+        "type": "string"
+      },
+      "ListingType": {
+        "enum": [
+          "Normal",
+          "DropShipping",
+          "Consignee"
+        ],
+        "type": "string"
+      },
+      "ListingUpdateRequestDetailResponse": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "description": "Teklif id",
+            "format": "uuid",
+            "nullable": true
+          },
+          "requestItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ListingUpdateRequestItemResponse"
+            },
+            "nullable": true
+          },
+          "createdDateTime": {
+            "type": "string",
+            "description": "Teklif tarihi, yyyy-MM-dd formatında",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ListingUpdateRequestDetailResponseApiResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ListingUpdateRequestDetailResponse"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ListingUpdateRequestItemResponse": {
+        "type": "object",
+        "properties": {
+          "sku": {
+            "type": "string",
+            "description": "Teklif yapılan Sku",
+            "nullable": true
+          },
+          "price": {
+            "type": "number",
+            "description": "Teklif edilen fiyat",
+            "format": "double",
+            "nullable": true
+          },
+          "priceEffectiveDate": {
+            "type": "string",
+            "description": "Teklif edilen fiyatın geçerlilik tarihi",
+            "format": "date-time",
+            "nullable": true
+          },
+          "currencyCode": {
+            "$ref": "#/components/schemas/CurrencyCode"
+          },
+          "stock": {
+            "type": "integer",
+            "description": "Teklif edilen stok",
+            "format": "int32",
+            "nullable": true
+          },
+          "unitPerPackage": {
+            "type": "integer",
+            "description": "Ürüne ait koli içi adet bilgisidir.",
+            "format": "int32",
+            "nullable": true
+          },
+          "priceApprovalStatus": {
+            "$ref": "#/components/schemas/ApprovalStatus"
+          },
+          "priceRejectionReason": {
+            "type": "string",
+            "description": "Fiyat teklifi red sebebi",
+            "nullable": true
+          },
+          "priceEffectiveDateApprovalStatus": {
+            "$ref": "#/components/schemas/ApprovalStatus"
+          },
+          "priceEffectiveDateRejectionReason": {
+            "type": "string",
+            "description": "Fiyat geçerlilik tarihi teklifi red sebebi",
+            "nullable": true
+          },
+          "stockApprovalStatus": {
+            "$ref": "#/components/schemas/ApprovalStatus"
+          },
+          "stockRejectionReason": {
+            "type": "string",
+            "description": "Stok teklifi red sebebi",
+            "nullable": true
+          },
+          "unitPerPackageApprovalStatus": {
+            "$ref": "#/components/schemas/ApprovalStatus"
+          },
+          "merchantSku": {
+            "type": "string",
+            "description": "Teklif edilen tedarikçi stok kodu",
+            "nullable": true
+          },
+          "merchantSkuApprovalStatus": {
+            "$ref": "#/components/schemas/ApprovalStatus"
+          },
+          "salable": {
+            "type": "boolean",
+            "description": "Ürün için teklif edeceğiniz satış durumu bilgisidir.",
+            "nullable": true
+          },
+          "salableApprovalStatus": {
+            "$ref": "#/components/schemas/ApprovalStatus"
+          },
+          "salableRejectionReason": {
+            "type": "string",
+            "description": "Ürün için teklifinizin red nedenidir.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ListingUpdateRequestSearchResponse": {
+        "type": "object",
+        "properties": {
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ListingUpdateRequestSummaryResponse"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ListingUpdateRequestSearchResponseApiResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ListingUpdateRequestSearchResponse"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ListingUpdateRequestSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "description": "Teklif id",
+            "format": "uuid"
+          },
+          "createdDateTime": {
+            "type": "string",
+            "description": "Teklif tarihi, yyyy-MM-dd formatında",
+            "format": "date-time"
+          },
+          "operationSource": {
+            "type": "string",
+            "description": "İşlem kaynağı. Alabileceği değerler (Api, Portal)",
+            "nullable": true
+          },
+          "rowCount": {
+            "type": "integer",
+            "description": "Teklifteki ürün adedi",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "OpenPurchaseOrderResponse": {
+        "type": "object",
+        "properties": {
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OpenPurchaseOrderResponseItem"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "OpenPurchaseOrderResponseApiResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/OpenPurchaseOrderResponse"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "OpenPurchaseOrderResponseItem": {
+        "type": "object",
+        "properties": {
+          "purchaseOrderNumber": {
+            "type": "string",
+            "description": "SAS no",
+            "nullable": true
+          },
+          "lineNumber": {
+            "type": "integer",
+            "description": "Kalem no",
+            "format": "int32"
+          },
+          "sku": {
+            "type": "string",
+            "description": "Sku",
+            "nullable": true
+          },
+          "warehouseCode": {
+            "type": "string",
+            "description": "Depo kodu",
+            "nullable": true
+          },
+          "warehouseName": {
+            "type": "string",
+            "description": "Depo Adı",
+            "nullable": true
+          },
+          "createdDate": {
+            "type": "string",
+            "description": "SAS oluşturma tarihi, yyyy-MM-dd formatında",
+            "format": "date-time",
+            "nullable": true
+          },
+          "dueDate": {
+            "type": "string",
+            "description": "SAS kalemindeki ürünlerin depoya teslim edilmesi beklenen son tarihtir.",
+            "nullable": true
+          },
+          "remainingQuantity": {
+            "type": "integer",
+            "description": "Sevk edilecek maksimum adet",
+            "format": "int32",
+            "nullable": true
+          },
+          "receivedQuantity": {
+            "type": "integer",
+            "description": "Mal giriş adedi",
+            "format": "int32",
+            "nullable": true
+          },
+          "issuedQuantity": {
+            "type": "integer",
+            "description": "Mal çıkış adedi",
+            "format": "int32",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "description": "Ürün bilgisi",
+            "nullable": true
+          },
+          "currencyCode": {
+            "type": "string",
+            "description": "Para birimi. Alabileceği değerler (TRY,USD,EUR)",
+            "nullable": true
+          },
+          "purchaseOrderUnitPrice": {
+            "type": "number",
+            "description": "Birim fiyat",
+            "format": "double",
+            "nullable": true
+          },
+          "purchaseOrderTotalPrice": {
+            "type": "number",
+            "description": "Toplam fiyat",
+            "format": "double",
+            "nullable": true
+          },
+          "definitionName": {
+            "type": "string",
+            "description": "Ürün tipi",
+            "nullable": true
+          },
+          "brand": {
+            "type": "string",
+            "description": "Marka",
+            "nullable": true
+          },
+          "vatRate": {
+            "type": "number",
+            "description": "KDV",
+            "format": "double",
+            "nullable": true
+          },
+          "barcode": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Ürün barkodları",
+            "nullable": true
+          },
+          "originalLineQuantity": {
+            "type": "integer",
+            "description": "Açılan SAS adedi",
+            "format": "int32",
+            "nullable": true
+          },
+          "shipmentListCreatedQuantity": {
+            "type": "integer",
+            "description": "Sevkiyat oluşturulan adet",
+            "format": "int32",
+            "nullable": true
+          },
+          "buyingCategoryId": {
+            "type": "string",
+            "description": "Kategori id",
+            "nullable": true
+          },
+          "buyingCategoryName": {
+            "type": "string",
+            "description": "Kategori adı",
+            "nullable": true
+          },
+          "inProgressPurchaseOrdersOperation": {
+            "type": "boolean",
+            "description": "Devam eden SAS işlemi olup olmadığının göstergesi",
+            "nullable": true
+          },
+          "operationStatus": {
+            "$ref": "#/components/schemas/OpenPurchaseOrderResponseStatus"
+          },
+          "purchaseOrderType": {
+            "type": "string",
+            "description": "SAS tipi, Alabileceği değerler (ConsignmentPurchaseOrder, StandardPurchaseOrder, StandardPurchaseOrder)",
+            "nullable": true
+          },
+          "merchantSku": {
+            "type": "string",
+            "description": "Tedarikçi stok kodu",
+            "nullable": true
+          },
+          "warehouseGateId": {
+            "type": "string",
+            "description": "Depo giriş kapısı bilgisidir.",
+            "format": "uuid",
+            "nullable": true
+          },
+          "isPostdated": {
+            "type": "boolean",
+            "description": "Beklenen tarihin daha önce ertelenip ertelenmediğinin göstergesi",
+            "nullable": true
+          },
+          "isSent": {
+            "type": "boolean",
+            "description": "Gönderildi olarak işaretlenip işaretlenmediğinin göstergesi"
+          }
+        },
+        "additionalProperties": false
+      },
+      "OpenPurchaseOrderResponseStatus": {
+        "enum": [
+          "Actionable",
+          "Pending",
+          "DraftShipment"
+        ],
+        "type": "string"
+      },
+      "OpenPurchaseOrderSearchQuery": {
+        "type": "object",
+        "properties": {
+          "dueDateStart": {
+            "type": "string",
+            "description": "Beklenen tarih başlangıcı filtresi. 'yyyy-MM-dd' formatında. Zorunlu değildir.",
+            "nullable": true
+          },
+          "dueDateEnd": {
+            "type": "string",
+            "description": "Beklenen tarih bitişi filtresi. 'yyyy-MM-dd' formatında. Zorunlu değildir.",
+            "nullable": true
+          },
+          "createdDateStart": {
+            "type": "string",
+            "description": "SAS oluşturma tarihi başlangıcı filtresi. 'yyyy-MM-dd' formatında. Zorunlu değildir.",
+            "nullable": true
+          },
+          "createdDateEnd": {
+            "type": "string",
+            "description": "SAS oluşturma tarihi bitişi filtresi. 'yyyy-MM-dd' formatında. Zorunlu değildir.",
+            "nullable": true
+          },
+          "skus": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Sku filtresi. Zorunlu değildir.",
+            "nullable": true
+          },
+          "brands": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Marka filtresi. Zorunlu değildir.",
+            "nullable": true
+          },
+          "buyingCategories": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Kategori filtresi. Zorunlu değildir.",
+            "nullable": true
+          },
+          "definitionNames": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Ürün Tipi filtresi. Zorunlu değildir.",
+            "nullable": true
+          },
+          "purchaseOrderTypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "SAS tipi filtresi. Zorunlu değildir. Alabileceği değerler (ConsignmentPurchaseOrder, StandardPurchaseOrder, StandardPurchaseOrder)",
+            "nullable": true
+          },
+          "warehouseGateIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Depo giriş kapı bilgisidir. Zorunlu değildir.",
+            "nullable": true
+          },
+          "purchaseOrderLines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PurchaseOrderLine"
+            },
+            "nullable": true
+          },
+          "inProgressPurchaseOrdersOperation": {
+            "type": "boolean",
+            "description": "inProgressPurchaseOrdersOperation",
+            "nullable": true
+          },
+          "isSent": {
+            "type": "boolean",
+            "description": "Gönderildi olarak işaretlenip işaretlenmediğinin göstergesi",
+            "nullable": true
+          },
+          "searchText": {
+            "type": "string",
+            "nullable": true
+          },
+          "sortField": {
+            "type": "string",
+            "nullable": true
+          },
+          "sortDirection": {
+            "type": "string",
+            "nullable": true
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Listelenecek maksimum kayıt adedi. Minimum 0, maksimum 1000 olabilir. Zorunlu değildir",
+            "format": "int32"
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Listelenecek kayıtların başlangıç indeksi. Minimum 0 olabilir. Zorunlu değildir, null gönderildiğinde 0 kullanılır.",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PurchaseOrderLine": {
+        "type": "object",
+        "properties": {
+          "purchaseOrderNumber": {
+            "type": "string",
+            "description": "Satın alma sipariş numarasıdır.",
+            "nullable": true
+          },
+          "lineNumber": {
+            "type": "integer",
+            "description": "Satın alma sipariş numarasına ait kalem numarasıdır.",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SupplierListingItem": {
+        "type": "object",
+        "properties": {
+          "sku": {
+            "type": "string",
+            "description": "Sku",
+            "nullable": true
+          },
+          "merchantSku": {
+            "type": "string",
+            "description": "Tedarikçi stok kodu",
+            "nullable": true
+          },
+          "price": {
+            "type": "number",
+            "description": "Fiyat",
+            "format": "double",
+            "nullable": true
+          },
+          "currencyCode": {
+            "type": "string",
+            "description": "Para birimi. Alabileceği değerler (TRY, USD, EUR)",
+            "nullable": true
+          },
+          "lastPurchasePriceUpdateDate": {
+            "type": "string",
+            "description": "Fiyat değişiklik tarihi, yyyy-MM-dd formatında",
+            "format": "date-time",
+            "nullable": true
+          },
+          "stock": {
+            "type": "integer",
+            "description": "Stok",
+            "format": "int32",
+            "nullable": true
+          },
+          "unitPerPackage": {
+            "type": "integer",
+            "description": "Ürüne ait koli içi adet bilgisidir.",
+            "format": "int32",
+            "nullable": true
+          },
+          "status": {
+            "$ref": "#/components/schemas/ListingStatus"
+          },
+          "listingType": {
+            "$ref": "#/components/schemas/ListingType"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SupplierListingsResponse": {
+        "type": "object",
+        "properties": {
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SupplierListingItem"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SupplierListingsResponseApiResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/SupplierListingsResponse"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}

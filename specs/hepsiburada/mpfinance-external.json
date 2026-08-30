@@ -1,0 +1,879 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Hepsiburada muhasebe-entegrasyonu",
+    "version": "v1.0",
+    "description": "Hepsiburada developer-portal API definition for product \"muhasebe-entegrasyonu\" (category \"muhasebe-entegrasyonu\"), redistributed unchanged for interoperability. Copyright Hepsiburada; not covered by the lonca repository licence. See specs/hepsiburada/README.md.",
+    "x-lonca-source": {
+      "portal": "https://developers.hepsiburada.com",
+      "companySlug": "hepsiburada",
+      "categorySlug": "muhasebe-entegrasyonu",
+      "productSlug": "muhasebe-entegrasyonu",
+      "versionLabel": "v1.0",
+      "capturedAt": "2026-05-31",
+      "portalUpdatedAt": "2026-05-12T10:59:55.739Z",
+      "generator": "scripts/specs/split-hepsiburada.mjs"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://mpfinance-external-sit.hepsiburada.com",
+      "description": "Sandbox (SIT) host as published in the portal code samples"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Kayıt Bazlı Muhasebe Servisi"
+    },
+    {
+      "name": "Performans Servisi"
+    }
+  ],
+  "paths": {
+    "/orders/merchantid/{merchantId}": {
+      "get": {
+        "tags": [
+          "Performans Servisi"
+        ],
+        "summary": "Performans Servisi",
+        "description": "Servis, sipariş ve ürün detayı bazında finansal performansın listelenmesine olanak tanır.",
+        "operationId": "Get__orders_merchantid_merchantId",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "merchantId",
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Limit",
+            "in": "query",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 100
+            }
+          },
+          {
+            "name": "Offset",
+            "in": "query",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "DueDateStart",
+            "in": "query",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "DueDateEnd",
+            "in": "query",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "OrderDateStart",
+            "in": "query",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "OrderDateEnd",
+            "in": "query",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "OrderNumber",
+            "in": "query",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Sku",
+            "in": "query",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "description": "Integrator application identifier. Required for authentication.",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "totalCount": {
+                      "type": "integer",
+                      "format": "int32"
+                    },
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "orderNumber": {
+                            "type": "string"
+                          },
+                          "merchantId": {
+                            "type": "string"
+                          },
+                          "orderDate": {
+                            "type": "string",
+                            "format": "date-time",
+                            "nullable": true
+                          },
+                          "sku": {
+                            "type": "string"
+                          },
+                          "productName": {
+                            "type": "string"
+                          },
+                          "invoiceDate": {
+                            "type": "string",
+                            "format": "date-time",
+                            "nullable": true
+                          },
+                          "dueDate": {
+                            "type": "string",
+                            "format": "date-time",
+                            "nullable": true
+                          },
+                          "allowanceAmount": {
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "type": "number",
+                                "format": "double"
+                              },
+                              "currencyCode": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "quantity": {
+                            "type": "integer",
+                            "format": "int32"
+                          },
+                          "unitAmount": {
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "type": "number",
+                                "format": "double"
+                              },
+                              "currencyCode": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "income": {
+                            "type": "object",
+                            "properties": {
+                              "totalAmount": {
+                                "type": "object",
+                                "properties": {
+                                  "value": {
+                                    "type": "number",
+                                    "format": "double"
+                                  },
+                                  "currencyCode": {
+                                    "type": "string"
+                                  }
+                                }
+                              },
+                              "items": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "transactionType": {
+                                      "type": "string"
+                                    },
+                                    "amount": {
+                                      "type": "object",
+                                      "properties": {
+                                        "value": {
+                                          "type": "number",
+                                          "format": "double"
+                                        },
+                                        "currencyCode": {
+                                          "type": "string"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "expense": {
+                            "type": "object",
+                            "properties": {
+                              "totalAmount": {
+                                "type": "object",
+                                "properties": {
+                                  "value": {
+                                    "type": "number",
+                                    "format": "double"
+                                  },
+                                  "currencyCode": {
+                                    "type": "string"
+                                  }
+                                }
+                              },
+                              "items": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "transactionType": {
+                                      "type": "string"
+                                    },
+                                    "amount": {
+                                      "type": "object",
+                                      "properties": {
+                                        "value": {
+                                          "type": "number",
+                                          "format": "double"
+                                        },
+                                        "currencyCode": {
+                                          "type": "string"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "title": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "status": {
+                      "type": "integer",
+                      "format": "int32",
+                      "nullable": true
+                    },
+                    "detail": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "instance": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "errors": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errorMessage": {
+                      "type": "string"
+                    },
+                    "exceptionCode": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errorMessage": {
+                      "type": "string"
+                    },
+                    "exceptionCode": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errorMessage": {
+                      "type": "string"
+                    },
+                    "exceptionCode": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errorMessage": {
+                      "type": "string"
+                    },
+                    "exceptionCode": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-12T10:59:55.739Z"
+      }
+    },
+    "/transactions/merchantid/{merchantId}": {
+      "get": {
+        "tags": [
+          "Kayıt Bazlı Muhasebe Servisi"
+        ],
+        "summary": "Kayıt Bazlı Muhasebe Servisi",
+        "description": "Servis, ödeme ve faturaları listelemenize olanak tanır.",
+        "operationId": "Get__transactions_merchantid_merchantId",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "merchantId",
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Offset",
+            "in": "query",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "Limit",
+            "in": "query",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 100
+            }
+          },
+          {
+            "name": "OrderNumber",
+            "in": "query",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "PackageNumber",
+            "in": "query",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ReferenceDocument",
+            "in": "query",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "TransactionTypes",
+            "in": "query",
+            "description": "Transaction type filter. Leave it empty for all types. Or provide one or more types as a comma-separated string.\n\n**Allowed values:** `MarketingExpense`, `ShipmentCostSharingExpense`, `Stoppage`, `MpOutletProductExpense`, `MarketingSupportParticipationRefund`, `ReturnShipmentCostSharingExpense`, `FaturaLab`, `Payment`, `CommissionRefund`, `CustomerSatisfaction`, `HepsiGlobalTransferIncome`, `HepsiGlobalCampaignDiscount`, `LineItemTransferExpense`, `StoppageRefund`, `CommissionCorrection`, `AdBalanceTopUpFromAllowanceRefund`, `PaymentServiceCostReflection`, `OverseasCommissionRefund`, `InboundCustomerSatisfactionRefund`, `DeliveryProcessingFee`, `Commission`, `PaymentServiceCostReflectionRefund`, `BnplProcessingFeeRefund`, `ProductsReportedByService`, `RefusedInvoiceExpense`, `ReturnDeliveryProcessingFee`, `MpScrapExpense`, `ProcessingFeeExpenseRefund`, `CustomerSatisfactionRefund`, `CargoCompensationSellerSatisfactionIncome`, `RevenueIncome`, `HepsiGlobalTransferExpense`, `EInvoiceSales`, `BnplOrder`, `CargoCompensationExpenseRefund`, `MpScrapIncome`, `GoldLaborStoppageRefund`, `OutboundCustomerSatisfactionRefund`, `AdSharingExpense`, `AdBalanceTopUpFromAllowance`, `PriceDifferenceExpense`, `DeliveryProcessingFeeRefund`, `ShipmentCostSharingIncome`, `EInvoiceSalesRefund`, `FacebookAdExpense`, `DropShipmentCostSharingExpense`, `BnplProcessingFee`, `InboundCustomerSatisfaction`, `MarketingExpenseRefund`, `CargoLimitExcessCompensationIncome`, `SfsInterest`, `BalanceCorrection`, `RevenueExpense`, `AdSharingExpenseRefund`, `TotalPayment`, `CargoCompensationIncomeRefund`, `RoadAssistanceExpense`, `MpCompensationIncome`, `InternationalOperationFee`, `VAT`, `DropShipmentCostSharingIncome`, `TransportExpenseRefund`, `Return`, `InternationalOperationFeeRefund`, `LateInterestExpense`, `StudioExpense`, `BnplRefund`, `CargoCostRefund`, `FigoPara`, `OutboundCustomerSatisfaction`, `RoadAssistanceExpenseRefund`, `OneClickReturnShipmentCostSharingExpense`, `CampaignDiscount`, `PriceDifferenceRefund`, `RefusedInvoiceExpenseRefund`, `ProcessingFeeExpense`, `CampaignDiscountRefund`, `Deposit`, `CargoCompensationIncome`, `GoldLaborStoppage`, `MarketingSupportParticipation`, `ReturnProcessingFeeExpense`, `SponsorshipFee`, `TransportExpense`, `LineItemTransferIncome`, `Chargeout`, `CargoMargin`, `CommissionInvoiceRefund`",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Status",
+            "in": "query",
+            "description": "Status filter. Leave it empty for all statuses. Or provide one or more types as a comma-separated string.\n\n**Allowed values:** `Paid`, `WillBePaid`",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Sku",
+            "in": "query",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "OrderDateStart",
+            "in": "query",
+            "description": "Prioritize OrderDate over other date filters, for better response times",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "OrderDateEnd",
+            "in": "query",
+            "description": "Prioritize OrderDate over other date filters, for better response times",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "DueDateStart",
+            "in": "query",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "DueDateEnd",
+            "in": "query",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "RecordDateStart",
+            "in": "query",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "RecordDateEnd",
+            "in": "query",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "PaymentDateStart",
+            "in": "query",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "PaymentDateEnd",
+            "in": "query",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "description": "Integrator application identifier. Required for authentication.",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": {
+                      "type": "integer",
+                      "format": "int32"
+                    },
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "transactionType": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string"
+                          },
+                          "sku": {
+                            "type": "string"
+                          },
+                          "packageNumber": {
+                            "type": "string"
+                          },
+                          "orderNumber": {
+                            "type": "string"
+                          },
+                          "invoiceNumber": {
+                            "type": "string"
+                          },
+                          "orderItemNumber": {
+                            "type": "string"
+                          },
+                          "quantity": {
+                            "type": "integer",
+                            "format": "int32"
+                          },
+                          "amount": {
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "type": "number",
+                                "format": "double"
+                              },
+                              "currencyCode": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "taxAmount": {
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "type": "number",
+                                "format": "double"
+                              },
+                              "currencyCode": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "netAmount": {
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "type": "number",
+                                "format": "double"
+                              },
+                              "currencyCode": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "orderDate": {
+                            "type": "string",
+                            "format": "date-time",
+                            "nullable": true
+                          },
+                          "invoiceDate": {
+                            "type": "string",
+                            "format": "date-time",
+                            "nullable": true
+                          },
+                          "dueDate": {
+                            "type": "string",
+                            "format": "date-time",
+                            "nullable": true
+                          },
+                          "paymentDate": {
+                            "type": "string",
+                            "format": "date-time",
+                            "nullable": true
+                          },
+                          "invoiceExplanation": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "merchantId": {
+                            "type": "string"
+                          },
+                          "isInvoice": {
+                            "type": "boolean"
+                          },
+                          "isIncome": {
+                            "type": "boolean"
+                          },
+                          "transactionTypeCategory": {
+                            "type": "string"
+                          },
+                          "productName": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "title": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "status": {
+                      "type": "integer",
+                      "format": "int32",
+                      "nullable": true
+                    },
+                    "detail": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "instance": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "errors": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errorMessage": {
+                      "type": "string"
+                    },
+                    "exceptionCode": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errorMessage": {
+                      "type": "string"
+                    },
+                    "exceptionCode": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errorMessage": {
+                      "type": "string"
+                    },
+                    "exceptionCode": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errorMessage": {
+                      "type": "string"
+                    },
+                    "exceptionCode": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-12T10:59:55.739Z"
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "basicAuth": {
+        "type": "http",
+        "scheme": "basic",
+        "description": "Basic Authorization"
+      }
+    }
+  }
+}

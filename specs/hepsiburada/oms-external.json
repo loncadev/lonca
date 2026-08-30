@@ -1,0 +1,5090 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Hepsiburada siparis-olusturma-entegrasyonu",
+    "version": "v1.0",
+    "description": "Hepsiburada developer-portal API definition for product \"siparis-olusturma-entegrasyonu\" (category \"siparis-yonetimi\"), redistributed unchanged for interoperability. Copyright Hepsiburada; not covered by the lonca repository licence. See specs/hepsiburada/README.md.",
+    "x-lonca-source": {
+      "portal": "https://developers.hepsiburada.com",
+      "companySlug": "hepsiburada",
+      "categorySlug": "siparis-yonetimi",
+      "productSlug": "siparis-olusturma-entegrasyonu",
+      "versionLabel": "v1.0",
+      "capturedAt": "2026-05-31",
+      "portalUpdatedAt": "2026-05-04T18:16:19.405Z",
+      "generator": "scripts/specs/split-hepsiburada.mjs"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://oms-external-sit.hepsiburada.com",
+      "description": "Sandbox (SIT) host as published in the portal code samples"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Fatura Linki Gonderme"
+    },
+    {
+      "name": "Gonderi Koli ve Desi Bilgisi Guncelleme"
+    },
+    {
+      "name": "Iptal Bilgisi Gonderme"
+    },
+    {
+      "name": "Magaza Hesabi Teslimat Statu Iletimi"
+    },
+    {
+      "name": "Ortak Barkod Olusturma"
+    },
+    {
+      "name": "Paket Bilgilerinde Depo Bilgisi Güncelleme"
+    },
+    {
+      "name": "Paket Icin Kargo Bilgilerini Listeleme"
+    },
+    {
+      "name": "Paket Surecleri"
+    },
+    {
+      "name": "Siparis Kalemi Iscilik Maliyeti Guncelleme"
+    },
+    {
+      "name": "Siparise Ait Detay Listeleme"
+    },
+    {
+      "name": "Siparisin Kargo Bilgisini Degistirme"
+    },
+    {
+      "name": "Statu Bazlı Siparis Bilgileri"
+    }
+  ],
+  "paths": {
+    "/delivery/changeablecargocompanies/merchantid/{merchantId}/orderlineid/{orderLineId}": {
+      "get": {
+        "tags": [
+          "Siparisin Kargo Bilgisini Degistirme"
+        ],
+        "summary": "Paketlenecek Siparisin Hangi Kargo Firmasi Ile Degistirilebilecegini Listeleme",
+        "description": "Bu servis, belirli bir satıcıya (merchantId) ait ve paketlenmesi planlanan bir siparişi kalemi (orderLineId) için, hangi kargo firmalarıyla gönderim yapılabileceğini listelemek amacıyla kullanılır",
+        "operationId": "Get__delivery_changeablecargocompanies_merchantid_merchantId_orderlineid_orderLineId",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "description": "İsteği yapan client'ın bilgilerini içerir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "merchantId",
+            "in": "path",
+            "description": "Paketlenecek kalemin hangi satıcıya ait olduğunu belirten bilgidir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "orderLineId",
+            "in": "path",
+            "description": "Paketlenecek kalemin unique Id değeridir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/git_hepsiburada_com_oms_fulfilment-projections_application_api_external_model.ChangeableCargoCompanyRepresentation"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-04T18:16:19.405Z"
+      }
+    },
+    "/lineitems/merchantid/{merchantId}/id/{lineId}/cancelbymerchant": {
+      "post": {
+        "tags": [
+          "Iptal Bilgisi Gonderme"
+        ],
+        "summary": "Iptal Bilgisi Gonderme",
+        "description": "Bu servis, belirli bir satıcıya (merchantId) ait ve henüz paketlenmemiş bir sipariş kaleminin (lineId) iptal edilmesi için kullanılır",
+        "operationId": "Post__lineitems_merchantid_merchantId_id_lineId_cancelbymerchant",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "description": "İsteği yapan client'ın bilgilerini içerir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "merchantId",
+            "in": "path",
+            "description": "Siparişin hangi satıcıya ait olduğunu belirten bilgidir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lineId",
+            "in": "path",
+            "description": "İptal edilmek istenen, henüz paketlenmemiş kalemin unique Id değeridir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Satıcı iptal kodu",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/model.CancelByMerchantRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-04T18:16:19.405Z"
+      }
+    },
+    "/lineitems/merchantid/{merchantId}/orderlineid/{id}/cargocompany": {
+      "put": {
+        "tags": [
+          "Siparisin Kargo Bilgisini Degistirme"
+        ],
+        "summary": "Paketlenecek Siparisin Kargo Firmasini Degistirme",
+        "description": "Bu servis, belirli bir satıcıya (merchantId) ait bir sipariş kalemi (id) için kargo firmasını değiştirmek amacıyla kullanılır",
+        "operationId": "Put__lineitems_merchantid_merchantId_orderlineid_id_cargocompany",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "description": "İsteği yapan client'ın bilgilerini içerir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "merchantId",
+            "in": "path",
+            "description": "Paketlenecek kalemin hangi satıcıya ait olduğunu belirten bilgidir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Paketlenecek kalemin unique Id değeridir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Seçilen kargo firmasının kısa isim bilgisidir",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/git_hepsiburada_com_oms_fulfilment-projections_application_api_external_model.ChangeLineCargoCompanyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-04T18:16:19.405Z"
+      }
+    },
+    "/lineitems/merchantid/{merchantId}/orderlineid/{id}/laborcost": {
+      "put": {
+        "tags": [
+          "Siparis Kalemi Iscilik Maliyeti Guncelleme"
+        ],
+        "summary": "Siparis Kalemi Iscilik Maliyeti Guncelleme",
+        "description": "Bu servis, belirli bir satıcıya (merchantId) ait bir sipariş kalemi (id) için işçilik maliyetini güncellemek amacıyla kullanılır (sadece altın ürünler için geçerlidir)",
+        "operationId": "Put__lineitems_merchantid_merchantId_orderlineid_id_laborcost",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "description": "İsteği yapan client'ın bilgilerini içerir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "merchantId",
+            "in": "path",
+            "description": "Paketlenecek kalemin hangi satıcıya ait olduğunu belirten bilgidir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "description": "İşçilik maliyeti güncelenecek kalemin unique Id değeridir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Birim işçilik maliyeti",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/git_hepsiburada_com_oms_fulfilment-projections_application_api_external_model.UpdateLaborCostRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-04T18:16:19.405Z"
+      }
+    },
+    "/lineitems/merchantid/{merchantId}/packageablewith/lineitemid/{lineItemId}": {
+      "get": {
+        "tags": [
+          "Paket Surecleri"
+        ],
+        "summary": "Ayni Pakete Konulabilecek Kalemleri Listeleme",
+        "description": "Bu servis, belirli bir satıcıya (merchantId) ait ve belirli bir sipariş kalemi (lineItemId) için, aynı pakete konulabilecek diğer kalemleri listelemek amacıyla kullanılır",
+        "operationId": "Get__lineitems_merchantid_merchantId_packageablewith_lineitemid_lineItemId",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "description": "İsteği yapan client'ın bilgilerini içerir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "merchantId",
+            "in": "path",
+            "description": "Kalemin hangi satıcıya ait olduğunu belirten bilgidir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lineItemId",
+            "in": "path",
+            "description": "Kalemin unique Id değeridir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/model.ExternalLineItemsRepresentation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-04T18:16:19.405Z"
+      }
+    },
+    "/orders/merchantid/{merchantId}": {
+      "get": {
+        "tags": [
+          "Statu Bazlı Siparis Bilgileri"
+        ],
+        "summary": "Odemesi Tamamlanmis Siparisleri Listeleme",
+        "description": "Bu servis, belirli bir satıcıya (merchantId) ait ve sipariş alındı statüsündeki kalemleri listelemek için kullanılır",
+        "operationId": "Get__orders_merchantid_merchantId",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "description": "İsteği yapan client'ın bilgilerini içerir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "merchantId",
+            "in": "path",
+            "description": "Satıcının unique Id değeridir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "begindate",
+            "in": "query",
+            "description": "Girilen tarihten itibaren eklenen kalemler esas alınır",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "enddate",
+            "in": "query",
+            "description": "Girilen tarihten önce eklenmiş kalemler esas alınır",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Başlangıçtan belirtilen değer kadar kaydı atlar. Offset: 20, limit: 10 girildiğinde, ilk 20 kaydı atlar ve 21. kayıttan başlayarak 10 kayıt listeler",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Girilen değer kadar kalem listelenir, ancak en fazla ve varsayılan olarak 100 adet gösterilir. Limit değeri girilmediğinde hata oluşacaktır.",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/model.OpenLineItemsRepresentationWithPaging"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-04T18:16:19.405Z"
+      }
+    },
+    "/orders/merchantid/{merchantId}/cancelled": {
+      "get": {
+        "tags": [
+          "Statu Bazlı Siparis Bilgileri"
+        ],
+        "summary": "Iptal Siparis Bilgileri Listeleme",
+        "description": "Bu servis, belirli bir satıcıya (merchantId) ait iptal edilmiş siparişleri listelemek için kullanılır",
+        "operationId": "Get__orders_merchantid_merchantId_cancelled",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "description": "İsteği yapan client'ın bilgilerini içerir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "merchantId",
+            "in": "path",
+            "description": "Listelenmek istenen kalemlerin satıcısının unique Id değeridir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "begindate",
+            "in": "query",
+            "description": "Girilen tarihten itibaren iptal olmuş kalemler esas alınır",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "enddate",
+            "in": "query",
+            "description": "Girilen tarihten önce iptal olmuş kalemler esas alınır",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Başlangıçtan belirtilen değer kadar kaydı atlar. Offset: 20, limit: 10 girildiğinde, ilk 20 kaydı atlar ve 21. kayıttan başlayarak 10 kayıt listeler",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Girilen değer kadar kalem listelenir, ancak en fazla ve varsayılan olarak 50 adet gösterilir",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/model.CancelledOrderLineItemsRepresentationWithPaging"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-04T18:16:19.405Z"
+      }
+    },
+    "/orders/merchantid/{merchantId}/ordernumber/{orderNumber}": {
+      "get": {
+        "tags": [
+          "Siparise Ait Detay Listeleme"
+        ],
+        "summary": "Siparise Ait Detay Listeleme",
+        "description": "Bu servis, belirli bir sipariş numarasına ait detaylı bilgileri listelemek için kullanılır",
+        "operationId": "Get__orders_merchantid_merchantId_ordernumber_orderNumber",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "description": "İsteği yapan client'ın bilgilerini içerir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "merchantId",
+            "in": "path",
+            "description": "Satıcının unique Id değeridir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "orderNumber",
+            "in": "path",
+            "description": "Sipariş numarası",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/model.OrderRepresentation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-04T18:16:19.405Z"
+      }
+    },
+    "/orders/merchantid/{merchantId}/paymentawaiting": {
+      "get": {
+        "tags": [
+          "Statu Bazlı Siparis Bilgileri"
+        ],
+        "summary": "Odemesi Beklenen Siparisleri Listeleme",
+        "description": "Bu servis, belirli bir satıcıya (merchantId) ait ödemesi beklenen siparişleri listelemek için kullanılır",
+        "operationId": "Get__orders_merchantid_merchantId_paymentawaiting",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "description": "İsteği yapan client'ın bilgilerini içerir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "merchantId",
+            "in": "path",
+            "description": "Listelenmek istenen kalemlerin satıcısının unique Id değeridir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "begindate",
+            "in": "query",
+            "description": "Girilen tarihten itibaren siparişin oluşturulma tarihi esas alınır",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "enddate",
+            "in": "query",
+            "description": "Girilen tarihten önce oluşturulmuş sipariş esas alınır",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Başlangıçtan belirtilen değer kadar kaydı atlar. Offset: 20, limit: 10 girildiğinde, ilk 20 kaydı atlar ve 21. kayıttan başlayarak 10 kayıt listeler",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Girilen değer kadar kalem listelenir, ancak en fazla ve varsayılan olarak 50 adet gösterilir. Limit değeri 1' den küçük olduğunda hata oluşacaktır",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/model.PaymentAwaitingOrderLinesItemsRepresentationWithPaging"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-04T18:16:19.405Z"
+      }
+    },
+    "/packages/merchantid/{merchantId}": {
+      "get": {
+        "tags": [
+          "Paket Surecleri"
+        ],
+        "summary": "Saticiya Ait Paket Bilgilerini Listeleme",
+        "description": "Bu servis, belirli bir satıcıya (merchantId) ait paketleri listelemek için kullanılır",
+        "operationId": "Get__packages_merchantid_merchantId",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "description": "İsteği yapan client'ın bilgilerini içerir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "merchantId",
+            "in": "path",
+            "description": "Listelenmek istenen paketlerin satıcısının unique Id değeridir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "begindate",
+            "in": "query",
+            "description": "Girilen tarihten itibaren eklenen kalemler esas alınır",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "enddate",
+            "in": "query",
+            "description": "Girilen tarihten önce eklenmiş paketler esas alınır",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "timespan",
+            "in": "query",
+            "description": "Bugünün tarihinden girilen değer kadar saat geri gidilerek, o zaman aralığındaki paketler listelenir. Örneğin, 12 değeri girildiğinde son 12 saat içindeki paketler getirilir",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Girilen değer kadar paket listelenir, ancak en fazla ve varsayılan olarak 10 paket gösterilir. 1'den küçük bir değer girilirse hata alınır",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Offset",
+            "in": "query",
+            "description": "Başlangıçtan belirtilen değer kadar kaydı atlar. Offset: 20, limit: 10 girildiğinde, ilk 20 kaydı atlar ve 21. kayıttan başlayarak 10 kayıt listeler",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/model.ExternalRawPackageRepresentation"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-04T18:16:19.405Z"
+      },
+      "post": {
+        "tags": [
+          "Paket Surecleri"
+        ],
+        "summary": "Kalem veya Kalemleri Paketleme",
+        "description": "Bu servis, belirli bir satıcıya (merchantId) ait olan ve belirtilen sipariş kalemlerinin paketlenmesi için kullanılır",
+        "operationId": "Post__packages_merchantid_merchantId",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "description": "İsteği yapan client'ın bilgilerini içerir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "merchantId",
+            "in": "path",
+            "description": "Paketin satıcısının unique Id değeridir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Paket oluşturma talebidir",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/model.CreatePackageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/git_hepsiburada_com_oms_fulfilment-projections_application_api_external_model.CreateDeliveryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-04T18:16:19.405Z"
+      }
+    },
+    "/packages/merchantid/{merchantId}/delivered": {
+      "get": {
+        "tags": [
+          "Statu Bazlı Siparis Bilgileri"
+        ],
+        "summary": "Teslim Edilen Siparislerin Listelenmesi",
+        "description": "Bu servis, belirli bir satıcıya (merchantId) ait teslim edilmiş paketleri listelemek için kullanılır",
+        "operationId": "Get__packages_merchantid_merchantId_delivered",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "description": "İsteği yapan client'ın bilgilerini içerir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "merchantId",
+            "in": "path",
+            "description": "Listelenmek istenen paketlerin satıcısının unique Id değeridir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "begindate",
+            "in": "query",
+            "description": "Girilen tarihten itibaren teslim olmuş paketler esas alınır",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "enddate",
+            "in": "query",
+            "description": "Girilen tarihten önce teslim olmuş paketler esas alınır",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Başlangıçtan belirtilen değer kadar kaydı atlar. Offset: 20, limit: 10 girildiğinde, ilk 20 kaydı atlar ve 21. kayıttan başlayarak 10 kayıt listeler",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Girilen değer kadar paket listelenir, ancak en fazla ve varsayılan olarak 50 adet gösterilir",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/model.DeliveredDeliveriesRepresentationWithPaging"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-04T18:16:19.405Z"
+      }
+    },
+    "/packages/merchantid/{merchantId}/missing-invoice": {
+      "get": {
+        "tags": [
+          "Statu Bazlı Siparis Bilgileri"
+        ],
+        "summary": "Faturası Yüklenmemiş Siparişlerin Listelenmesi",
+        "description": "Bu servis, belirli bir satıcıya (merchantId) ait faturası sisteme yüklenmemiş tüm paketleri listelemek için kullanılır.",
+        "operationId": "Get__packages_merchantid_merchantId_missing-invoice",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "description": "İsteği yapan client'ın bilgilerini içerir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "merchantId",
+            "in": "path",
+            "description": "Listelenmek istenen paketlerin satıcısının unique Id değeridir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Başlangıçtan belirtilen değer kadar kaydı atlar",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Girilen değer kadar paket listelenir, ancak en fazla ve varsayılan olarak 50 adet gösterilir",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/model.MissingInvoicePackagesRepresentationWithPaging"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-04T18:16:19.405Z"
+      }
+    },
+    "/packages/merchantid/{merchantId}/packagenumber/{packageNumber}/changablecargocompanies": {
+      "get": {
+        "tags": [
+          "Siparisin Kargo Bilgisini Degistirme"
+        ],
+        "summary": "Paketli Siparisin Hangi Kargo Firmasi Ile Degistirilebilecegini Listeleme",
+        "description": "Bu servis, belirli bir satıcıya (merchantId) ait ve paketleme işlemi tamamlanmış bir siparişin hangi kargo firmaları ile gönderilebileceğini listelemek amacıyla kullanılır",
+        "operationId": "Get__packages_merchantid_merchantId_packagenumber_packageNumber_changablecargocompanies",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "description": "İsteği yapan client'ın bilgilerini içerir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "packageNumber",
+            "in": "path",
+            "description": "Paket numarasıdır",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "merchantId",
+            "in": "path",
+            "description": "Paketin hangi satıcıya ait olduğunu belirten bilgidir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/git_hepsiburada_com_oms_fulfilment-projections_application_api_external_model.ChangeableCargoCompanyRepresentation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-04T18:16:19.405Z"
+      }
+    },
+    "/packages/merchantid/{merchantId}/packagenumber/{packageNumber}/changecargocompany": {
+      "put": {
+        "tags": [
+          "Siparisin Kargo Bilgisini Degistirme"
+        ],
+        "summary": "Paketli Siparisin Kargo Firmasini Degistirme",
+        "description": "Bu servis, belirli bir satıcıya (merchantId) ait ve paketlenmiş bir siparişin kargo firmasını değiştirmek için kullanılır",
+        "operationId": "Put__packages_merchantid_merchantId_packagenumber_packageNumber_changecargocompany",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "description": "İsteği yapan client'ın bilgilerini içerir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "merchantId",
+            "in": "path",
+            "description": "Paketin hangi satıcıya ait olduğunu belirten bilgidir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "packageNumber",
+            "in": "path",
+            "description": "Paket numarasıdır",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Seçilen kargo firmasının kısa isim bilgisidir",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/git_hepsiburada_com_oms_fulfilment-projections_application_api_external_model.ChangeLineCargoCompanyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-04T18:16:19.405Z"
+      }
+    },
+    "/packages/merchantid/{merchantId}/packagenumber/{packageNumber}/invoice": {
+      "put": {
+        "tags": [
+          "Fatura Linki Gonderme"
+        ],
+        "summary": "Fatura Linki Gonderme",
+        "description": "Bu servis, belirli bir paket numarasına (packageNumber) ait fatura bilgisini eklemek için kullanılır",
+        "operationId": "Put__packages_merchantid_merchantId_packagenumber_packageNumber_invoice",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "description": "İsteği yapan client'ın bilgilerini içerir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "merchantId",
+            "in": "path",
+            "description": "Fatura eklenmek istenen paketin satıcısının unique Id değeridir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "packageNumber",
+            "in": "path",
+            "description": "Pakete ait fatura bilgileridir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Paketin fatura bilgisidir",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/model.AddInvoiceOfPackageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-04T18:16:19.405Z"
+      }
+    },
+    "/packages/merchantid/{merchantId}/packagenumber/{packagenumber}": {
+      "get": {
+        "tags": [
+          "Paket Icin Kargo Bilgilerini Listeleme"
+        ],
+        "summary": "Paket Icin Kargo Bilgilerini Listeleme",
+        "description": "Bu servis, belirli bir paket numarası (packagenumber) ile ilişkili kargo bilgilerini listelemek için kullanılır",
+        "operationId": "Get__packages_merchantid_merchantId_packagenumber_packagenumber",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "description": "İsteği yapan client'ın bilgilerini içerir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "merchantId",
+            "in": "path",
+            "description": "Listelenmek istenen paketin satıcısının unique Id değeridir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "packagenumber",
+            "in": "path",
+            "description": "Paket numarasıdır",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/model.ExternalTrackingInfoRepresentation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-04T18:16:19.405Z"
+      }
+    },
+    "/packages/merchantid/{merchantId}/packagenumber/{packagenumber}/deliver": {
+      "post": {
+        "tags": [
+          "Magaza Hesabi Teslimat Statu Iletimi"
+        ],
+        "summary": "Teslimat Statusu Iletme (Teslim Edildi)",
+        "description": "Bu servis, belirli bir paket numarası (packagenumber) için teslimat durumunu teslim edildi olarak güncellemek amacıyla kullanılır",
+        "operationId": "Post__packages_merchantid_merchantId_packagenumber_packagenumber_deliver",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "description": "İsteği yapan client'ın bilgilerini içerir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "merchantId",
+            "in": "path",
+            "description": "Satıcının unique Id değeridir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "packagenumber",
+            "in": "path",
+            "description": "Paket numarasıdır",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Teslimat bilgisi (Teslim Edildi)",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/model.ExternalDeliverRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-04T18:16:19.405Z"
+      }
+    },
+    "/packages/merchantid/{merchantId}/packagenumber/{packagenumber}/intransit": {
+      "post": {
+        "tags": [
+          "Magaza Hesabi Teslimat Statu Iletimi"
+        ],
+        "summary": "Teslimat Statusu Iletme(Kargoda)",
+        "description": "Bu servis, belirli bir paket numarası (packagenumber) için teslimat durumunu kargoda olarak güncellemek amacıyla kullanılır",
+        "operationId": "Post__packages_merchantid_merchantId_packagenumber_packagenumber_intransit",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "description": "İsteği yapan client'ın bilgilerini içerir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "merchantId",
+            "in": "path",
+            "description": "Paketin satıcısının unique Id değeridir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "packagenumber",
+            "in": "path",
+            "description": "Paket numarasıdır",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Teslimat bilgisidir (Kargoya verildi)",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/model.ExternalInfoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-04T18:16:19.405Z"
+      }
+    },
+    "/packages/merchantid/{merchantId}/packagenumber/{packagenumber}/labels": {
+      "get": {
+        "tags": [
+          "Ortak Barkod Olusturma"
+        ],
+        "summary": "Ortak Barkod Olusturma",
+        "description": "Bu servis, belirli bir paket numarasına (packagenumber) ve satıcıya (merchantId) ait paket için ortak barkod oluşturulmasını sağlar",
+        "operationId": "Get__packages_merchantid_merchantId_packagenumber_packagenumber_labels",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "description": "İsteği yapan client'ın bilgilerini içerir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "merchantId",
+            "in": "path",
+            "description": "Paketin hangi satıcıya ait olduğunu belirten bilgidir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "packagenumber",
+            "in": "path",
+            "description": "Paket numarasıdır",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "description": "Etiket basmak için kullanılan format türüdür",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/deliveryinternal.BarcodeData"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-04T18:16:19.405Z"
+      }
+    },
+    "/packages/merchantid/{merchantId}/packagenumber/{packagenumber}/parcel-info": {
+      "put": {
+        "tags": [
+          "Gonderi Koli ve Desi Bilgisi Guncelleme"
+        ],
+        "summary": "Gonderi Koli ve Desi Bilgisi Guncelleme",
+        "description": "Bu servis, belirli bir paket numarasina (packagenumber) ait koli sayisi ve desi bilgisini gunceller.",
+        "operationId": "Put__packages_merchantid_merchantId_packagenumber_packagenumber_parcel-info",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "description": "İsteği yapan client'ın bilgilerini içerir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "packagenumber",
+            "in": "path",
+            "description": "Guncellenecek paket numarasi",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "merchantId",
+            "in": "path",
+            "description": "Paketin hangi saticiya ait oldugunu belirten bilgidir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Koli ve desi bilgisi guncelleme talebi",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/model.UpdateDeliveryParcelInfoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-04T18:16:19.405Z"
+      }
+    },
+    "/packages/merchantid/{merchantId}/packagenumber/{packagenumber}/split": {
+      "post": {
+        "tags": [
+          "Paket Surecleri"
+        ],
+        "summary": "Paket Bolme",
+        "description": "Bu servis, belirli bir satıcıya (merchantId) ait mevcut paketi (packageNumber) bozarak, paketlenecek kalemleri paketlemek ve iptal edilecek de kalemleri iptal etmek için kullanılır",
+        "operationId": "Post__packages_merchantid_merchantId_packagenumber_packagenumber_split",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "description": "İsteği yapan client'ın bilgilerini içerir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "merchantId",
+            "in": "path",
+            "description": "Paketin satıcısının unique Id değeridir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "packagenumber",
+            "in": "path",
+            "description": "Paket numarasıdır",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "body",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/model.SplitPackageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-04T18:16:19.405Z"
+      }
+    },
+    "/packages/merchantid/{merchantId}/packagenumber/{packagenumber}/undeliver": {
+      "post": {
+        "tags": [
+          "Magaza Hesabi Teslimat Statu Iletimi"
+        ],
+        "summary": "Teslimat Statusu Iletme(Teslim Edilemedi)",
+        "description": "Bu servis, belirli bir paket numarası (packagenumber) için teslimat durumunu teslim edilemedi olarak güncellemek amacıyla kullanılır",
+        "operationId": "Post__packages_merchantid_merchantId_packagenumber_packagenumber_undeliver",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "description": "İsteği yapan client'ın bilgilerini içerir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "merchantId",
+            "in": "path",
+            "description": "Paketin satıcısının unique Id değeridir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "packagenumber",
+            "in": "path",
+            "description": "Paket numarasıdır",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Teslimat bilgisidir (Teslim Edilemedi)",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/model.ExternalUnDeliverRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-04T18:16:19.405Z"
+      }
+    },
+    "/packages/merchantid/{merchantId}/packagenumber/{packagenumber}/unpack": {
+      "post": {
+        "tags": [
+          "Paket Surecleri"
+        ],
+        "summary": "Paket Bozma",
+        "description": "Bu servis, belirli bir satıcıya (merchantId) ait mevcut bir paketi (packagenumber) bozmak için kullanılır",
+        "operationId": "Post__packages_merchantid_merchantId_packagenumber_packagenumber_unpack",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "description": "İsteği yapan client'ın bilgilerini içerir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "merchantId",
+            "in": "path",
+            "description": "Satıcının unique Id değeridir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "packagenumber",
+            "in": "path",
+            "description": "Paket numarasıdır",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-04T18:16:19.405Z"
+      }
+    },
+    "/packages/merchantid/{merchantId}/packagenumber/{packagenumber}/warehouse": {
+      "put": {
+        "tags": [
+          "Paket Bilgilerinde Depo Bilgisi Güncelleme"
+        ],
+        "summary": "Paket Bilgilerinde Depo Bilgisi Güncelleme",
+        "description": "Bu servis, belirli bir paket numarasına (packagenumber) ve satıcıya (merchantId) ait paketin depo bilgilerini güncellemek için kullanılır",
+        "operationId": "Put__packages_merchantid_merchantId_packagenumber_packagenumber_warehouse",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "description": "İsteği yapan client'ın bilgilerini içerir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "packagenumber",
+            "in": "path",
+            "description": "Paket numarasıdır",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "merchantId",
+            "in": "path",
+            "description": "Paketin hangi satıcıya ait olduğunu belirten bilgidir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Depo bilgisini güncelleme talebi",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/model.UpdateDeliveryWarehouseRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-04T18:16:19.405Z"
+      }
+    },
+    "/packages/merchantid/{merchantId}/shipped": {
+      "get": {
+        "tags": [
+          "Statu Bazlı Siparis Bilgileri"
+        ],
+        "summary": "Kargoya Verilen Siparislerin Listelenmesi",
+        "description": "Bu servis, belirli bir satıcıya (merchantId) ait kargoya verilen paketleri listelemek için kullanılır",
+        "operationId": "Get__packages_merchantid_merchantId_shipped",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "description": "İsteği yapan client'ın bilgilerini içerir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "merchantId",
+            "in": "path",
+            "description": "Listelenmek istenen paketlerin satıcısının unique Id değeridir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "begindate",
+            "in": "query",
+            "description": "Girilen tarihten itibaren kargoya teslim edilmiş paketler esas alınır",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "enddate",
+            "in": "query",
+            "description": "Girilen tarihten önce kargoya teslim edilmiş paketler esas alınır",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Başlangıçtan belirtilen değer kadar kaydı atlar. Offset: 20, limit: 10 girildiğinde, ilk 20 kaydı atlar ve 21. kayıttan başlayarak 10 kayıt listeler",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Girilen değer kadar paket listelenir, ancak en fazla ve varsayılan olarak 50 adet gösterilir",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/model.ShippedDeliveriesRepresentationWithPaging"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-04T18:16:19.405Z"
+      }
+    },
+    "/packages/merchantid/{merchantId}/status/unpacked": {
+      "get": {
+        "tags": [
+          "Statu Bazlı Siparis Bilgileri"
+        ],
+        "summary": "Bozulan (Unpack) Paket Bilgilerini Listeleme",
+        "description": "Bu servis, belirli bir satıcıya (merchantId) ait bozulan paketlerin bilgilerini listelemek için kullanılır",
+        "operationId": "Get__packages_merchantid_merchantId_status_unpacked",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "description": "İsteği yapan client'ın bilgilerini içerir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "merchantId",
+            "in": "path",
+            "description": "Listelenmek istenen paketlerin satıcısının unique Id değeridir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Girilen değer kadar paket listelenir, ancak en fazla ve varsayılan olarak 10 paket gösterilir. 1'den küçük bir değer girilirse hata alınır",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Offset",
+            "in": "query",
+            "description": "Başlangıçtan belirtilen değer kadar kaydı atlar. Offset: 20, limit: 10 girildiğinde, ilk 20 kaydı atlar ve 21. kayıttan başlayarak 10 kayıt listeler",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "begindate",
+            "in": "query",
+            "description": "Girilen tarihten itibaren Unpack olmuş paketler esas alınır",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "enddate",
+            "in": "query",
+            "description": "Girilen tarihten önce Unpack olmuş paketler esas alınır",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "timespan",
+            "in": "query",
+            "description": "Bugünün tarihinden girilen değer kadar saat geri gidilerek, o zaman aralığındaki Unpack olmuş paketler listelenir. Örneğin, 12 değeri girildiğinde son 12 saat içindeki paketler getirilir",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/endor.DeletedDeliveriesWithPagination"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-04T18:16:19.405Z"
+      }
+    },
+    "/packages/merchantid/{merchantId}/undelivered": {
+      "get": {
+        "tags": [
+          "Statu Bazlı Siparis Bilgileri"
+        ],
+        "summary": "Teslim Edilemedi Siparislerin Listelenmesi",
+        "description": "Bu servis, belirli bir satıcıya (merchantId) ait teslim edilememiş paketlerin bilgilerini listelemek için kullanılır",
+        "operationId": "Get__packages_merchantid_merchantId_undelivered",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "description": "İsteği yapan client'ın bilgilerini içerir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "merchantId",
+            "in": "path",
+            "description": "Listelenmek istenen paketlerin satıcısının unique Id değeridir",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "begindate",
+            "in": "query",
+            "description": "Girilen tarihten itibaren teslim edilememiş paketler esas alınır",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "enddate",
+            "in": "query",
+            "description": "Girilen tarihten önce teslim edilememiş paketler esas alınır",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Başlangıçtan belirtilen değer kadar kaydı atlar. Offset: 20, limit: 10 girildiğinde, ilk 20 kaydı atlar ve 21. kayıttan başlayarak 10 kayıt listeler",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Girilen değer kadar paket listelenir, ancak en fazla ve varsayılan olarak 50 adet gösterilir",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/model.UndeliveredDeliveriesRepresentationWithPaging"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-04T18:16:19.405Z"
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "basicAuth": {
+        "type": "http",
+        "scheme": "basic"
+      }
+    },
+    "schemas": {
+      "deliveryinternal.BarcodeData": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Delivery nin servisinden dönen barkod verileri"
+          },
+          "format": {
+            "type": "string",
+            "description": "Etiket format türü"
+          },
+          "hasMerchantMutualBarcode": {
+            "type": "boolean",
+            "description": "Delivery'nin servisinden dönen, satıcıya ait ortak barkod olup olmadığı bilgisi"
+          }
+        }
+      },
+      "endor.DeletedDeliveriesWithPagination": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/endor.UnpackedDelivery"
+            },
+            "description": "Satıcıya ait silinmiş paketlerin listesi"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Limit değeri"
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Offset değeri"
+          },
+          "pageCount": {
+            "type": "integer",
+            "description": "Sayfa sayısı"
+          },
+          "totalCount": {
+            "type": "integer",
+            "description": "Toplam kalem sayısı"
+          }
+        }
+      },
+      "endor.UnpackedDelivery": {
+        "type": "object",
+        "properties": {
+          "barcode": {
+            "type": "string",
+            "description": "Paketin teslimat numarası"
+          },
+          "packageNumber": {
+            "type": "string",
+            "description": "Paket numarası"
+          },
+          "unpackedDate": {
+            "type": "string",
+            "description": "Paketin silinme tarihi"
+          }
+        }
+      },
+      "endor.VariantProperty": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Ürünün hermes üzerindeki varyant ismi"
+          },
+          "value": {
+            "type": "string",
+            "description": "Ürünün hermes üzerindeki varyant değeri"
+          }
+        }
+      },
+      "git_hepsiburada_com_oms_fulfilment-projections_application_api_external_model.ChangeLineCargoCompanyRequest": {
+        "type": "object",
+        "properties": {
+          "CargoCompanyShortName": {
+            "type": "string"
+          }
+        }
+      },
+      "git_hepsiburada_com_oms_fulfilment-projections_application_api_external_model.ChangeableCargoCompanyRepresentation": {
+        "type": "object",
+        "properties": {
+          "Id": {
+            "type": "integer",
+            "description": "Kargo firmasının unique değeri"
+          },
+          "IsActive": {
+            "type": "boolean",
+            "description": "Kargo firmasının aktif olup olmadığı bilgisi"
+          },
+          "LogoUrl": {
+            "type": "string",
+            "description": "Kargo firmasının Logo URL bilgisi"
+          },
+          "Name": {
+            "type": "string",
+            "description": "Kargo firmasının isim bilgisi"
+          },
+          "ShortName": {
+            "type": "string",
+            "description": "Kargo firmasının kısa isim bilgisi"
+          }
+        }
+      },
+      "git_hepsiburada_com_oms_fulfilment-projections_application_api_external_model.CreateDeliveryResponse": {
+        "type": "object",
+        "properties": {
+          "barcode": {
+            "type": "string",
+            "description": "Paketin teslimat kodu"
+          },
+          "packageNumber": {
+            "type": "string",
+            "description": "Paket numarısı"
+          }
+        }
+      },
+      "git_hepsiburada_com_oms_fulfilment-projections_application_api_external_model.OrderLine": {
+        "type": "object",
+        "properties": {
+          "orderLineId": {
+            "type": "string",
+            "description": "Kalemin unique Id değeridir"
+          },
+          "quantity": {
+            "type": "integer",
+            "description": "Kalem miktarı"
+          }
+        }
+      },
+      "git_hepsiburada_com_oms_fulfilment-projections_application_api_external_model.UpdateLaborCostRequest": {
+        "type": "object",
+        "properties": {
+          "unitLaborCost": {
+            "type": "number"
+          }
+        }
+      },
+      "git_hepsiburada_com_oms_fulfilment-projections_application_api_external_model.Warehouse": {
+        "type": "object",
+        "properties": {
+          "shippingAddressLabel": {
+            "type": "string",
+            "description": "Depo kodu"
+          },
+          "shippingModel": {
+            "type": "string",
+            "description": "Teslimat modeli"
+          }
+        }
+      },
+      "model.AddInvoiceOfPackageRequest": {
+        "type": "object",
+        "properties": {
+          "arrangementDate": {
+            "type": "string",
+            "description": "Fatura düzenlenme tarihi"
+          },
+          "invoiceLink": {
+            "type": "string",
+            "description": "Fatura Linki"
+          },
+          "invoices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/models.InvoiceItem"
+            },
+            "description": "Faturalar"
+          },
+          "rowNumber": {
+            "type": "string",
+            "description": "Fatura sıra numarası"
+          },
+          "serialNumber": {
+            "type": "string",
+            "description": "Faturanın seri numarası"
+          }
+        }
+      },
+      "model.AddressRepresentation": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "Adres bilgileri"
+          },
+          "addressId": {
+            "type": "string",
+            "description": "Adresin unique Id değeri"
+          },
+          "alternatePhoneNumber": {
+            "type": "string",
+            "description": "Müşterinin Gsm numarası"
+          },
+          "city": {
+            "type": "string",
+            "description": "Adresin şehir bilgisi"
+          },
+          "countryCode": {
+            "type": "string",
+            "description": "Ülke kodu"
+          },
+          "directions": {
+            "type": "string",
+            "description": "Adrese ilişkin açıklayıcı bilgi"
+          },
+          "district": {
+            "type": "string",
+            "description": "Adresin mahalle/semt bilgisi"
+          },
+          "email": {
+            "type": "string",
+            "description": "Müşterinin mail bilgisi"
+          },
+          "name": {
+            "type": "string",
+            "description": "Teslim edilecek kişinin ismi"
+          },
+          "phoneNumber": {
+            "type": "string",
+            "description": "Müşterinin telefon numarası"
+          },
+          "postalCode": {
+            "type": "string",
+            "description": "Faturanın teslim edileceği adresin posta kodu bilgisi"
+          },
+          "town": {
+            "type": "string",
+            "description": "Adresin ilçe bilgisi"
+          }
+        }
+      },
+      "model.CancelByMerchantRequest": {
+        "type": "object",
+        "properties": {
+          "reasonId": {
+            "type": "integer"
+          }
+        }
+      },
+      "model.CancelledItem": {
+        "type": "object",
+        "properties": {
+          "cancelReasonId": {
+            "type": "integer",
+            "description": "İptal nedeni kodu"
+          },
+          "orderLineId": {
+            "type": "string",
+            "description": "Kalemin unique Id değeridir"
+          },
+          "quantity": {
+            "type": "integer",
+            "description": "Kalem miktarı"
+          }
+        }
+      },
+      "model.CancelledOrderLineItemsRepresentationWithPaging": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/model.CancelledOrderLineRepresentation"
+            },
+            "description": "Satıcıya ait İptal olmuş kalem listesi"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Limit değeri"
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Offset değeri"
+          },
+          "pageCount": {
+            "type": "integer",
+            "description": "Sayfa sayısı"
+          },
+          "totalCount": {
+            "type": "integer",
+            "description": "Toplam kalem sayısı"
+          }
+        }
+      },
+      "model.CancelledOrderLineRepresentation": {
+        "type": "object",
+        "properties": {
+          "cancelDate": {
+            "type": "string",
+            "description": "Kalemin iptal edildiği tarih"
+          },
+          "cancelReasonCode": {
+            "type": "string",
+            "description": "Kalemin iptal nedeni"
+          },
+          "cancelledBy": {
+            "type": "string",
+            "description": "Kalemin kim tarafından iptal edildiği bilgisi"
+          },
+          "lineItemId": {
+            "type": "string",
+            "description": "Kalemin unique Id değeri"
+          },
+          "merchantId": {
+            "type": "string",
+            "description": "Kalemin satıcısının unique Id değeri"
+          },
+          "merchantSku": {
+            "type": "string",
+            "description": "Kalemin satıcıya ait SKU değeri"
+          },
+          "orderNumber": {
+            "type": "string",
+            "description": "Kalemin sipariş numarası"
+          },
+          "quantity": {
+            "type": "integer",
+            "description": "Kalemin iptal edilen adedi"
+          },
+          "sku": {
+            "type": "string",
+            "description": "Kalemin sku değeri"
+          }
+        }
+      },
+      "model.CargoCompanyRepresentation": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Kargo firmasının unique değeri"
+          },
+          "logoUrl": {
+            "type": "string",
+            "description": "Kargo firmasının Logo URL bilgisi"
+          },
+          "name": {
+            "type": "string",
+            "description": "Kargo firmasının isim bilgisi"
+          },
+          "shortName": {
+            "type": "string",
+            "description": "Kargo firmasının kısa isim bilgisi"
+          },
+          "trackingUrl": {
+            "type": "string",
+            "description": "Kargonun takibi için URL bilgisi"
+          }
+        }
+      },
+      "model.CreatePackageRequest": {
+        "type": "object",
+        "properties": {
+          "barcode": {
+            "type": "string"
+          },
+          "cargoCompany": {
+            "type": "string"
+          },
+          "carrier": {
+            "type": "string"
+          },
+          "creationReason": {
+            "type": "string"
+          },
+          "deci": {
+            "type": "number"
+          },
+          "lineItemRequests": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/model.LineItemCreatePackageRequest"
+            }
+          },
+          "parcelQuantity": {
+            "type": "integer"
+          },
+          "warehouse": {
+            "$ref": "#/components/schemas/git_hepsiburada_com_oms_fulfilment-projections_application_api_external_model.Warehouse"
+          }
+        }
+      },
+      "model.CustomerRepresentation": {
+        "type": "object",
+        "properties": {
+          "customerId": {
+            "type": "string",
+            "description": "Müşterinin unique Id bilgisi"
+          },
+          "name": {
+            "type": "string",
+            "description": "Müşterinin adı ve soyadı"
+          }
+        }
+      },
+      "model.DeliveredDeliveriesRepresentation": {
+        "type": "object",
+        "properties": {
+          "Barcode": {
+            "type": "string",
+            "description": "Paketin teslimat numarası"
+          },
+          "DeliveredDate": {
+            "type": "string",
+            "description": "Paketin teslim edilme tarihi"
+          },
+          "EtgbNo": {
+            "type": "string",
+            "description": "Elektronik Ticaret Gümrük Beyannamesi numarası"
+          },
+          "Id": {
+            "type": "string",
+            "description": "Paketin unique Id değeri"
+          },
+          "MerchantId": {
+            "type": "string",
+            "description": "Paketin satıcısının unique Id değeri"
+          },
+          "OrderNumber": {
+            "type": "string",
+            "description": "Paket içindeki kalemlerin sipariş numarası"
+          },
+          "OrderNumbers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Paket içindeki kalemlerin sipariş numaraları"
+          },
+          "PackageNumber": {
+            "type": "string",
+            "description": "Paket numarası"
+          }
+        }
+      },
+      "model.DeliveredDeliveriesRepresentationWithPaging": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/model.DeliveredDeliveriesRepresentation"
+            },
+            "description": "Satıcıya ait teslim olmuş paketler"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Limit değeri"
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Offset değeri"
+          },
+          "pageCount": {
+            "type": "integer",
+            "description": "Sayfa sayısı"
+          },
+          "totalCount": {
+            "type": "integer",
+            "description": "Toplam paket sayısı"
+          }
+        }
+      },
+      "model.DiscountInfo": {
+        "type": "object",
+        "properties": {
+          "campaignDiscountRate": {
+            "type": "number",
+            "description": "Kampanya indirim oranı"
+          },
+          "campaignId": {
+            "type": "integer",
+            "description": "Kalemin kampanya unique Id değeri"
+          },
+          "campaignName": {
+            "type": "string",
+            "description": "Kampanya ismi"
+          },
+          "campaignType": {
+            "type": "integer",
+            "description": "Kampanya türü"
+          },
+          "conditionOrAward": {
+            "type": "integer",
+            "description": "Koşul sağlandığında kampanyanın tanımlanacağı bilgisi"
+          },
+          "correlationId": {
+            "type": "string",
+            "description": "Log Id"
+          },
+          "discountTotal": {
+            "type": "number",
+            "description": "Kampanya indirim tutarı"
+          },
+          "isProtectedCampaign": {
+            "type": "boolean"
+          },
+          "quantity": {
+            "type": "integer",
+            "description": "Kampanya uygulanacak kalemin miktarı"
+          }
+        }
+      },
+      "model.ExternalDeliverRequest": {
+        "type": "object",
+        "properties": {
+          "digitalCodes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Dijital ürün kodları"
+          },
+          "receivedBy": {
+            "type": "string",
+            "description": "Paketi teslim alacak kişi"
+          },
+          "receivedDate": {
+            "type": "string",
+            "description": "Paketin teslim edilme tarihi"
+          }
+        }
+      },
+      "model.ExternalInfoRequest": {
+        "type": "object",
+        "properties": {
+          "cost": {
+            "type": "number",
+            "description": "Gönderim ücreti"
+          },
+          "deci": {
+            "type": "number",
+            "description": "Paketin hacimsel ağırlığı"
+          },
+          "estimatedArrivalDate": {
+            "type": "string",
+            "description": "Paketin tahmini varış tarihi"
+          },
+          "shippedDate": {
+            "type": "string",
+            "description": "Paketin kargoya verilme tarihi"
+          },
+          "tax": {
+            "type": "number",
+            "description": "Paketin KDV'si"
+          },
+          "trackingNumber": {
+            "type": "string",
+            "description": "Kargo takip numarası"
+          },
+          "trackingPhoneNumber": {
+            "type": "string",
+            "description": "Kargo takip telefon numarası"
+          },
+          "trackingUrl": {
+            "type": "string",
+            "description": "Kargonun takibi için URL bilgisi"
+          }
+        }
+      },
+      "model.ExternalLineItemsRepresentation": {
+        "type": "object",
+        "properties": {
+          "lineItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/model.ExternalPackageableWithRepresentation"
+            }
+          }
+        }
+      },
+      "model.ExternalPackageableWithRepresentation": {
+        "type": "object",
+        "properties": {
+          "lineItemId": {
+            "type": "string",
+            "description": "Aynı pakete girebilecek kalemin unique Id bilgisi"
+          },
+          "orderNumber": {
+            "type": "string",
+            "description": "Aynı pakete girebilecek kalemlerin sipariş numarası"
+          },
+          "quantity": {
+            "type": "integer",
+            "description": "Aynı pakete girebilecek kalemin miktarı"
+          }
+        }
+      },
+      "model.ExternalRawPackageRepresentation": {
+        "type": "object",
+        "properties": {
+          "barcode": {
+            "type": "string",
+            "description": "Paketin teslimat numarası"
+          },
+          "billingAddress": {
+            "type": "string",
+            "description": "Faturanın teslim edileceği adres bilgisi"
+          },
+          "billingCity": {
+            "type": "string",
+            "description": "Faturanın teslim edileceği adresin şehir bilgisi"
+          },
+          "billingCountryCode": {
+            "type": "string",
+            "description": "Faturanın teslim edileceği ülke kodu"
+          },
+          "billingDistrict": {
+            "type": "string",
+            "description": "Faturanın teslim edileceği adresin mahalle/semt bilgisi"
+          },
+          "billingPostalCode": {
+            "type": "string",
+            "description": "Faturanın teslim edileceği adresin posta kodu bilgisi"
+          },
+          "billingTown": {
+            "type": "string",
+            "description": "Faturanın teslim edileceği adresin ilçe bilgisi"
+          },
+          "cargoCompany": {
+            "type": "string",
+            "description": "Kargo şirketi adı"
+          },
+          "companyName": {
+            "type": "string",
+            "description": "Faturanın teslim edileceği kişinin ismi"
+          },
+          "customerId": {
+            "type": "string",
+            "description": "Müşterinin unique Id bilgisi"
+          },
+          "customerName": {
+            "type": "string",
+            "description": "Müşterinin adı ve soyadı"
+          },
+          "customsTotalPrice": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/model.Money"
+              }
+            ],
+            "description": "Customs kalemler için toplam tutar bilgisi"
+          },
+          "dueDate": {
+            "type": "string",
+            "description": "Paketin tahmini kargoya veriliş tarihi (esd)"
+          },
+          "email": {
+            "type": "string",
+            "description": "Müşterinin mail bilgisi"
+          },
+          "estimatedArrivalDate": {
+            "type": "string",
+            "description": "Paketin tahmini varış tarihi"
+          },
+          "id": {
+            "type": "string",
+            "description": "Paketin unique Id değeri"
+          },
+          "identityNo": {
+            "type": "string",
+            "description": "Müşterinin TCKN bilgisi"
+          },
+          "isCargoChangable": {
+            "type": "boolean",
+            "description": "Kargo firması değiştirilebilir mi"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/model.PackageLine"
+            },
+            "description": "Paket içindeki kalemlerin bilgileri"
+          },
+          "orderDate": {
+            "type": "string",
+            "description": "Siparişin oluşturulma tarihi"
+          },
+          "packageNumber": {
+            "type": "string",
+            "description": "Paket numarası"
+          },
+          "phoneNumber": {
+            "type": "string",
+            "description": "Müşterinin telefon numarası"
+          },
+          "recipientName": {
+            "type": "string",
+            "description": "Paketin teslim edileceği kişinin ismi"
+          },
+          "shippingAddressDetail": {
+            "type": "string",
+            "description": "Paketin teslimat adresi"
+          },
+          "shippingCity": {
+            "type": "string",
+            "description": "Paketin teslim edileceği adresin şehir bilgisi"
+          },
+          "shippingCountryCode": {
+            "type": "string",
+            "description": "Paketin teslim edileceği ülke kodu"
+          },
+          "shippingDistrict": {
+            "type": "string",
+            "description": "Paketin teslim edileceği adresin mahalle/semt bilgisi"
+          },
+          "shippingTotalPrice": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/model.Money"
+              }
+            ],
+            "description": "ShippingFee kalemler için toplam tutar bilgisi"
+          },
+          "shippingTown": {
+            "type": "string",
+            "description": "Paketin teslim edileceği adresin ilçe bilgisi"
+          },
+          "status": {
+            "type": "string",
+            "description": "Paketin durumu"
+          },
+          "taxNumber": {
+            "type": "string",
+            "description": "Kurumsal müşterinin vergi numarası"
+          },
+          "taxOffice": {
+            "type": "string",
+            "description": "Faturanın teslim edileceği vergi dairesi adı"
+          },
+          "totalPrice": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/model.Money"
+              }
+            ],
+            "description": "Paketteki kalemlerin vade farkı eklenmemiş tutarlarının toplamı"
+          },
+          "unpackedDate": {
+            "type": "string",
+            "description": "Paketin silinme tarihi"
+          }
+        }
+      },
+      "model.ExternalTrackingInfoRepresentation": {
+        "type": "object",
+        "properties": {
+          "barcode": {
+            "type": "string",
+            "description": "Paketin teslimat numarası"
+          },
+          "cargoCompany": {
+            "type": "string",
+            "description": "Kargo firmasının isim bilgisi"
+          },
+          "deci": {
+            "type": "number",
+            "description": "Paketin hacimsel ağırlığı"
+          },
+          "estimatedArrivalDate": {
+            "type": "string",
+            "description": "Paketin tahmini varış tarihi"
+          },
+          "packageNumber": {
+            "type": "string",
+            "description": "Paket numarası"
+          },
+          "status": {
+            "type": "string",
+            "description": "Paketin durumu"
+          },
+          "trackingInfoCode": {
+            "type": "string",
+            "description": "Kargo takip numarası"
+          },
+          "trackingInfoUrl": {
+            "type": "string",
+            "description": "Kargo gönderisinin takibi için URL bilgisi"
+          }
+        }
+      },
+      "model.ExternalUnDeliverRequest": {
+        "type": "object",
+        "properties": {
+          "undeliveredDate": {
+            "type": "string",
+            "description": "Paketin teslim edilememe tarihi"
+          },
+          "undeliveredReason": {
+            "type": "string",
+            "description": "Paketin teslim edilememe nedeni"
+          }
+        }
+      },
+      "model.HbDiscount": {
+        "type": "object",
+        "properties": {
+          "totalPrice": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/model.Money"
+              }
+            ],
+            "description": "Kalemin toplam indirim tutarı"
+          },
+          "unitPrice": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/model.Money"
+              }
+            ],
+            "description": "Kalemin birim indirim tutarı"
+          }
+        }
+      },
+      "model.InvoiceRepresentation": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/model.AddressRepresentation"
+              }
+            ],
+            "description": "Faturanın teslim edileceği adres bilgisi"
+          },
+          "taxNumber": {
+            "type": "string",
+            "description": "Kurumsal müşterinin vergi numarası"
+          },
+          "taxOffice": {
+            "type": "string",
+            "description": "Faturanın teslim edileceği vergi dairesi adı"
+          },
+          "turkishIdentityNumber": {
+            "type": "string",
+            "description": "Müşterinin TCKN bilgisi"
+          }
+        }
+      },
+      "model.LineItemCreatePackageRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "integer"
+          },
+          "serialNumbers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "model.LineRepresentation": {
+        "type": "object",
+        "properties": {
+          "barcode": {
+            "type": "string",
+            "description": "Paketin teslimat numarası"
+          },
+          "bnplCommissionAmount": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/model.Money"
+              }
+            ],
+            "description": "Satıcıdan alınan BNPL işlem ücreti tutarı"
+          },
+          "canCreatePackage": {
+            "type": "boolean",
+            "description": "Ödemenin alınıp alınmadığı bilgisi"
+          },
+          "cargoCompany": {
+            "type": "string",
+            "description": "Kargo firmasının isim bilgisi"
+          },
+          "cargoCompanyModel": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/model.CargoCompanyRepresentation"
+              }
+            ],
+            "description": "Kargo bilgisi"
+          },
+          "commission": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/model.Money"
+              }
+            ],
+            "description": "Kalemin komisyon bedeli"
+          },
+          "commissionRate": {
+            "type": "number",
+            "description": "Kalemin komisyon oranı"
+          },
+          "commissionType": {
+            "type": "integer",
+            "description": "Satıcı komisyon servisinden alınan komisyon türü"
+          },
+          "creationReason": {
+            "type": "string",
+            "description": "Kalemin oluşma sebebi"
+          },
+          "creditCardHolderName": {
+            "type": "string",
+            "description": "Boş bir değer atar"
+          },
+          "customerId": {
+            "type": "string",
+            "description": "Müşterinin unique Id bilgisi"
+          },
+          "customerName": {
+            "type": "string",
+            "description": "Müşterinin adı ve soyadı"
+          },
+          "customizedText01": {
+            "type": "string",
+            "description": "Özelleştirilebilir kalemin içerik bilgisi"
+          },
+          "customizedText02": {
+            "type": "string",
+            "description": "Özelleştirilebilir kalemin içerik bilgisi"
+          },
+          "customizedText03": {
+            "type": "string",
+            "description": "Özelleştirilebilir kalemin içerik bilgisi"
+          },
+          "customizedText04": {
+            "type": "string",
+            "description": "Özelleştirilebilir kalemin içerik bilgisi"
+          },
+          "customizedTextX": {
+            "type": "string",
+            "description": "Özelleştirilebilir kalem ise \"X\" değilse varsayılan değer \"\""
+          },
+          "deliveryNote": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/model.Note"
+              }
+            ],
+            "description": "Teslimatla ilgili müşteriden gelen açıklama"
+          },
+          "deliveryOptionId": {
+            "type": "integer",
+            "description": "Paketin teslimat seçeneği"
+          },
+          "deliveryType": {
+            "type": "string",
+            "description": "Paketin teslimat türü"
+          },
+          "deptorDifferenceAmount": {
+            "type": "number",
+            "description": "Satıcı tarafından uygulanan indirim tutarı"
+          },
+          "discountInfo": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/model.DiscountInfo"
+            },
+            "description": "İndirim bilgisi"
+          },
+          "discountToBeBilledToHB": {
+            "type": "number",
+            "description": "HB’ye faturalandırılacak indirim (KDV dahil) tutarı"
+          },
+          "dispatchTime": {
+            "type": "integer",
+            "description": "Kargoya Teslim İçin Kalan Süre (Gün)"
+          },
+          "dueDate": {
+            "type": "string",
+            "description": "Tahmini kargoya veriliş tarihi (esd)"
+          },
+          "hbDiscount": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/model.HbDiscount"
+              }
+            ],
+            "description": "Kalemin birim indirim tutarı"
+          },
+          "id": {
+            "type": "string",
+            "description": "Kalemin unique Id değeri"
+          },
+          "invoice": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/model.InvoiceRepresentation"
+              }
+            ],
+            "description": "Fatura bilgileri"
+          },
+          "isCancellable": {
+            "type": "boolean",
+            "description": "Kalem, oluşturuldu durumundaysa true, değilse false"
+          },
+          "isCancellableByHbAdmin": {
+            "type": "boolean",
+            "description": "Kalem, oluşturuldu veya kargoya verildi durumundaysa true, değilse false"
+          },
+          "isCargoChangable": {
+            "type": "boolean",
+            "description": "Sipariş HepsiMat ise kargo değişimine izin verilmediği bilgisi"
+          },
+          "isCustomized": {
+            "type": "boolean",
+            "description": "Kalemin Özelleştirilebilir olup olmadığı bilgisi"
+          },
+          "isJetDelivery": {
+            "type": "boolean",
+            "description": "Yarın kapında mı?"
+          },
+          "isMicroExport": {
+            "type": "boolean",
+            "description": "Kalemin mikro ihracat olup olmadığı bilgisi"
+          },
+          "isSundayDelivery": {
+            "type": "boolean",
+            "description": "Pazar günü teslimatı mı?"
+          },
+          "lastStatusUpdateDate": {
+            "type": "string",
+            "description": "Kalemin son statüsünün güncellendiği tarih"
+          },
+          "merchantDiscount": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/model.MerchantDiscount"
+              }
+            ],
+            "description": "Kalemin satıcısı tarafından uygulanan indirim tutarı bilgileri"
+          },
+          "merchantId": {
+            "type": "string",
+            "description": "Kalemin satıcısının unique Id değeri"
+          },
+          "merchantSKU": {
+            "type": "string",
+            "description": "Kalemin satıcıya ait SKU değeri"
+          },
+          "name": {
+            "type": "string",
+            "description": "Ürün ismi"
+          },
+          "orderDate": {
+            "type": "string",
+            "description": "Siparişin oluşturulma tarihi"
+          },
+          "orderId": {
+            "type": "string",
+            "description": "Siparişin unique Id değeri"
+          },
+          "orderNumber": {
+            "type": "string",
+            "description": "Kalemin sipariş numarası"
+          },
+          "packageNumber": {
+            "type": "string",
+            "description": "Paket numarası"
+          },
+          "parentItemIndex": {
+            "type": "integer",
+            "description": "Bundle bilgisi"
+          },
+          "paymentTermInDays": {
+            "type": "integer",
+            "description": "Satıcıya ödeme yapılacak günü belirten veri"
+          },
+          "pickUpTime": {
+            "type": "string",
+            "description": "Satıcının kargo firmasına teslim etmesi gereken saat aralığı"
+          },
+          "productBarcode": {
+            "type": "string",
+            "description": "SKU'nun EAN barcode bilgisi"
+          },
+          "productImageUrlFormat": {
+            "type": "string",
+            "description": "Ürün görseli"
+          },
+          "properties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/model.Property"
+            },
+            "description": "Ürünün Hermes'teki bilgileri"
+          },
+          "purchasePrice": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/model.Money"
+              }
+            ],
+            "description": "Tedarikçiden alınan ürünün fiyatı"
+          },
+          "quantity": {
+            "type": "integer",
+            "description": "Kalem adedi"
+          },
+          "releatedLineIndexesWithCampaign": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Kampanya ilişkili kalemlerin index değerlerik"
+          },
+          "sapNumber": {
+            "type": "string",
+            "description": "SAP sisteminde takibi için kullanılan değer"
+          },
+          "shippingAddress": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/model.AddressRepresentation"
+              }
+            ],
+            "description": "Paketin teslimat adresi"
+          },
+          "sku": {
+            "type": "string",
+            "description": "Kalemin sku değeri"
+          },
+          "slot": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/model.Slot"
+              }
+            ],
+            "description": "Müşterinin paketi teslim almak için seçtiği saat aralığı"
+          },
+          "status": {
+            "type": "string",
+            "description": "Kalemin durumu"
+          },
+          "totalPrice": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/model.Money"
+              }
+            ],
+            "description": "Kalemin toplam tutarı"
+          },
+          "unitLaborCost": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/model.Money"
+              }
+            ],
+            "description": "Birim işçilik maliyeti tutarı ( altın işçiliği )"
+          },
+          "unitPrice": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/model.Money"
+              }
+            ],
+            "description": "Kalemin birim tutarı"
+          },
+          "vat": {
+            "type": "number",
+            "description": "Kalemin kdv tutarı"
+          },
+          "vatRate": {
+            "type": "number",
+            "description": "Kalemin kdv oranı"
+          },
+          "warehouse": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/model.WarehouseRepresentation"
+              }
+            ],
+            "description": "Depo"
+          }
+        }
+      },
+      "model.MerchantDiscount": {
+        "type": "object",
+        "properties": {
+          "totalPrice": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/model.Money"
+              }
+            ],
+            "description": "Kalemin satıcısı tarafından uygulanan toplam indirim tutarı"
+          },
+          "unitPrice": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/model.Money"
+              }
+            ],
+            "description": "Kalemin satıcısı tarafından uygulanan birim indirim tutarı"
+          }
+        }
+      },
+      "model.MissingInvoicePackageRepresentation": {
+        "type": "object",
+        "properties": {
+          "orderNumbers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Paket içindeki kalemlerin sipariş numaraları"
+          },
+          "packageNumber": {
+            "type": "string",
+            "description": "Paket numarası"
+          },
+          "status": {
+            "type": "string",
+            "description": "Paketin güncel statüsü"
+          }
+        }
+      },
+      "model.MissingInvoicePackagesRepresentationWithPaging": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/model.MissingInvoicePackageRepresentation"
+            },
+            "description": "Faturası eksik paketler"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Limit değeri"
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Offset değeri"
+          },
+          "pageCount": {
+            "type": "integer",
+            "description": "Sayfa sayısı"
+          },
+          "totalCount": {
+            "type": "integer",
+            "description": "Toplam paket sayısı"
+          }
+        }
+      },
+      "model.Money": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "number"
+          },
+          "currency": {
+            "type": "string"
+          }
+        }
+      },
+      "model.Note": {
+        "type": "object",
+        "properties": {
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Notun etiketi"
+          },
+          "value": {
+            "type": "string",
+            "description": "Teslimatla ilgili müşteriden gelen açıklama"
+          }
+        }
+      },
+      "model.OpenLineItemsRepresentationWithPaging": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/model.LineRepresentation"
+            },
+            "description": "Ödemesi tamamlanmış kalem listesi"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Limit değeri"
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Offset değeri"
+          },
+          "pageCount": {
+            "type": "integer",
+            "description": "Sayfa sayısı"
+          },
+          "totalCount": {
+            "type": "integer",
+            "description": "Toplam kalem sayısı"
+          }
+        }
+      },
+      "model.OrderRepresentation": {
+        "type": "object",
+        "properties": {
+          "createdDate": {
+            "type": "string",
+            "description": "Siparişin eklenme tarihi"
+          },
+          "customer": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/model.CustomerRepresentation"
+              }
+            ],
+            "description": "Müşteri bilgileri"
+          },
+          "deliveryAddress": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/model.AddressRepresentation"
+              }
+            ],
+            "description": "Paketin teslim edileceği adres bilgisi"
+          },
+          "invoice": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/model.InvoiceRepresentation"
+              }
+            ],
+            "description": "Fatura bilgileri"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/model.LineRepresentation"
+            },
+            "description": "Siparişteki kalem listesi"
+          },
+          "orderDate": {
+            "type": "string",
+            "description": "Siparişin oluşturulma tarihi"
+          },
+          "orderId": {
+            "type": "string",
+            "description": "Siparişin unique Id değeri"
+          },
+          "orderNote": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/model.Note"
+              }
+            ],
+            "description": "Teslimatla ilgili müşteriden gelen açıklama"
+          },
+          "orderNumber": {
+            "type": "string",
+            "description": "Sipariş numarası"
+          },
+          "paymentStatus": {
+            "type": "string",
+            "description": "Siparişin ödeme durumu"
+          }
+        }
+      },
+      "model.PackageDetail": {
+        "type": "object",
+        "properties": {
+          "barcode": {
+            "type": "string",
+            "description": "Paketin teslimat kodu"
+          },
+          "cargoCompany": {
+            "type": "string",
+            "description": "Kargo firması"
+          },
+          "carrier": {
+            "type": "string",
+            "description": "Kargo firması kısa isim bilgisi"
+          },
+          "deci": {
+            "type": "number",
+            "description": "Paketin hacimsel ağırlığı"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/git_hepsiburada_com_oms_fulfilment-projections_application_api_external_model.OrderLine"
+            },
+            "description": "Paketteki kalemlerin bilgileri"
+          },
+          "parcelQuantity": {
+            "type": "integer",
+            "description": "Koli sayısı"
+          },
+          "warehouse": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/git_hepsiburada_com_oms_fulfilment-projections_application_api_external_model.Warehouse"
+              }
+            ],
+            "description": "Depo bilgileri"
+          }
+        }
+      },
+      "model.PackageLine": {
+        "type": "object",
+        "properties": {
+          "bnplCommissionAmount": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/model.Money"
+              }
+            ],
+            "description": "Satıcıdan alınan BNPL işlem ücreti tutarı"
+          },
+          "cargoPaymentInfo": {
+            "type": "string",
+            "description": "Kargo ödeme bilgisi\""
+          },
+          "commission": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/model.Money"
+              }
+            ],
+            "description": "Kalemin komisyon bedeli"
+          },
+          "commissionRate": {
+            "type": "number",
+            "description": "Kalemin komisyon oranı"
+          },
+          "creationReason": {
+            "type": "string",
+            "description": "Kalemin oluşma sebebi"
+          },
+          "customerDelivery": {
+            "type": "string",
+            "description": "Müşterinin paketi teslim almak için seçtiği saat aralığı"
+          },
+          "customizedText01": {
+            "type": "string",
+            "description": "Özelleştirilebilir kalemin içerik bilgisi"
+          },
+          "customizedText02": {
+            "type": "string",
+            "description": "Özelleştirilebilir kalemin içerik bilgisi"
+          },
+          "customizedText03": {
+            "type": "string",
+            "description": "Özelleştirilebilir kalemin içerik bilgisi"
+          },
+          "customizedText04": {
+            "type": "string",
+            "description": "Özelleştirilebilir kalemin içerik bilgisi"
+          },
+          "deliveryType": {
+            "type": "string",
+            "description": "Paketin teslimat seçeneği"
+          },
+          "deptorDifferenceAmount": {
+            "type": "number",
+            "description": "Satıcı tarafından uygulanan indirim tutarı"
+          },
+          "discountToBeBilledToHB": {
+            "type": "number",
+            "description": "HB’ye faturalandırılacak indirim (KDV dahil) tutarı"
+          },
+          "gtip": {
+            "type": "string",
+            "description": "Ürünün gümrük vergisi kodu"
+          },
+          "hbSku": {
+            "type": "string",
+            "description": "Kalemin sku değeri"
+          },
+          "isMicroExport": {
+            "type": "boolean",
+            "description": "Kalemin mikro ihracat olup olmadığı bilgisi"
+          },
+          "lineItemId": {
+            "type": "string",
+            "description": "Kalemin unique Id değeri"
+          },
+          "listingId": {
+            "type": "string",
+            "description": "Kalemin unique Listing Id değeri"
+          },
+          "merchantId": {
+            "type": "string",
+            "description": "Kalemin satıcısının unique Id değeri"
+          },
+          "merchantSku": {
+            "type": "string",
+            "description": "Kalemin satıcıya ait SKU değeri"
+          },
+          "merchantTotalPrice": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/model.Money"
+              }
+            ],
+            "description": "Satıcının toplam satış fiyatı"
+          },
+          "merchantUnitPrice": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/model.Money"
+              }
+            ],
+            "description": "Satıcının birim satış fiyatı"
+          },
+          "orderDate": {
+            "type": "string",
+            "description": "Siparişin oluşturulma tarihi"
+          },
+          "orderNumber": {
+            "type": "string",
+            "description": "Kalemin sipariş numarası"
+          },
+          "parentItemIndex": {
+            "type": "integer",
+            "description": "Bundle bilgisi"
+          },
+          "pickupTime": {
+            "type": "string",
+            "description": "Satıcının kargo firmasına teslim etmesi gereken saat aralığı"
+          },
+          "price": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/model.Money"
+              }
+            ],
+            "description": "Kalemin birim tutarı"
+          },
+          "productBarcode": {
+            "type": "string",
+            "description": "SKU'nun EAN barcode bilgisi"
+          },
+          "productImageUrlFormat": {
+            "type": "string",
+            "description": "Ürün görseli"
+          },
+          "productName": {
+            "type": "string",
+            "description": "Ürünün ismi"
+          },
+          "properties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/model.Property"
+            },
+            "description": "Ürünün Hermes'teki bilgileri"
+          },
+          "purchasePrice": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/model.Money"
+              }
+            ],
+            "description": "Tedarikçiden alınan ürünün fiyatı"
+          },
+          "quantity": {
+            "type": "integer",
+            "description": "Kalem adedi"
+          },
+          "releatedLineIndexesWithCampaign": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Kampanya ilişkili kalemlerin index değerleri"
+          },
+          "totalHBDiscount": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/model.Money"
+              }
+            ],
+            "description": "Kalemin toplam indirim tutarı"
+          },
+          "totalMerchantDiscount": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/model.Money"
+              }
+            ],
+            "description": "Kalemin satıcısı tarafından uygulanan toplam indirim tutarı"
+          },
+          "totalPrice": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/model.Money"
+              }
+            ],
+            "description": "Kalemin toplam tutarı"
+          },
+          "unitHBDiscount": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/model.Money"
+              }
+            ],
+            "description": "Kalemin birim indirim tutarı"
+          },
+          "unitLaborCost": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/model.Money"
+              }
+            ],
+            "description": "Kalemin birim işçilik maliyeti"
+          },
+          "unitMerchantDiscount": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/model.Money"
+              }
+            ],
+            "description": "Kalemin satıcısı tarafından uygulanan birim indirim tutarı"
+          },
+          "vat": {
+            "type": "number",
+            "description": "Kalemin kdv tutarı"
+          },
+          "vatRate": {
+            "type": "number",
+            "description": "Kalemin kdv oranı"
+          },
+          "warehouse": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/git_hepsiburada_com_oms_fulfilment-projections_application_api_external_model.Warehouse"
+              }
+            ],
+            "description": "Depo bilgileri"
+          },
+          "weight": {
+            "type": "number",
+            "description": "Paketin ağırlık bilgisi"
+          }
+        }
+      },
+      "model.PaymentAwaitingOrderLineRepresentation": {
+        "type": "object",
+        "properties": {
+          "Id": {
+            "type": "string",
+            "description": "Kalemin unique Id değeri"
+          },
+          "MerchantId": {
+            "type": "string",
+            "description": "Kalemin satıcısının unique Id değeri"
+          },
+          "MerchantSku": {
+            "type": "string",
+            "description": "Kalemin satıcıya ait SKU değeri"
+          },
+          "Name": {
+            "type": "string",
+            "description": "Ürün ismi"
+          },
+          "OrderDate": {
+            "type": "string",
+            "description": "Siparişin oluşturulma tarihi"
+          },
+          "OrderNumber": {
+            "type": "string",
+            "description": "Kalemin sipariş numarası"
+          },
+          "Properties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/endor.VariantProperty"
+            },
+            "description": "Ürünün Hermes'teki bilgileri"
+          },
+          "Quantity": {
+            "type": "integer",
+            "description": "Kalem adedi"
+          },
+          "Sku": {
+            "type": "string",
+            "description": "Kalemin sku değeri"
+          }
+        }
+      },
+      "model.PaymentAwaitingOrderLinesItemsRepresentationWithPaging": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/model.PaymentAwaitingOrderLineRepresentation"
+            },
+            "description": "Satıcıya ait ödeme bekleniyor statüsünde bekleyen kalemler"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Limit değeri"
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Offset değeri"
+          },
+          "pageCount": {
+            "type": "integer",
+            "description": "Sayfa sayısı"
+          },
+          "totalCount": {
+            "type": "integer",
+            "description": "Toplam kalem sayısı"
+          }
+        }
+      },
+      "model.Property": {
+        "type": "object",
+        "properties": {
+          "displayName": {
+            "type": "string",
+            "description": "Ürünün hermes üzerindeki ismi"
+          },
+          "name": {
+            "type": "string",
+            "description": "Ürünün hermes üzerindeki varyant ismi"
+          },
+          "value": {
+            "type": "string",
+            "description": "Ürünün hermes üzerindeki varyant değeri"
+          }
+        }
+      },
+      "model.ShippedDeliveriesRepresentation": {
+        "type": "object",
+        "properties": {
+          "Barcode": {
+            "type": "string",
+            "description": "Paketin teslimat numarası"
+          },
+          "Deci": {
+            "type": "number",
+            "description": "Paketin hacimsel ağırlığı (desi), kargo fiyatlandırmasında kullanılan değer"
+          },
+          "EtgbNo": {
+            "type": "string",
+            "description": "Elektronik Ticaret Gümrük Beyannamesi numarası"
+          },
+          "Id": {
+            "type": "string",
+            "description": "Paketin unique Id değeri"
+          },
+          "MerchantId": {
+            "type": "string",
+            "description": "Paketin satıcısının unique Id değeri"
+          },
+          "OrderNumber": {
+            "type": "string",
+            "description": "Paket içindeki kalemlerin sipariş numarası"
+          },
+          "OrderNumbers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Paket içindeki kalemlerin sipariş numaraları"
+          },
+          "PackageNumber": {
+            "type": "string",
+            "description": "Paket numarası"
+          },
+          "ShippedDate": {
+            "type": "string",
+            "description": "Paketin kargoya teslim edilme tarihi"
+          }
+        }
+      },
+      "model.ShippedDeliveriesRepresentationWithPaging": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/model.ShippedDeliveriesRepresentation"
+            },
+            "description": "Satıcıya ait kargoya teslim edilmiş paketler"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Limit değeri"
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Offset değeri"
+          },
+          "pageCount": {
+            "type": "integer",
+            "description": "Sayfa sayısı"
+          },
+          "totalCount": {
+            "type": "integer",
+            "description": "Toplam paket sayısı"
+          }
+        }
+      },
+      "model.Slot": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "timeslot": {
+            "type": "string"
+          }
+        }
+      },
+      "model.SplitPackageRequest": {
+        "type": "object",
+        "properties": {
+          "cancelledItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/model.CancelledItem"
+            },
+            "description": "İptal edilmek istenen kalem bilgileri"
+          },
+          "packageDetails": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/model.PackageDetail"
+            },
+            "description": "Paket bilgileri"
+          }
+        }
+      },
+      "model.UndeliveredDeliveriesRepresentation": {
+        "type": "object",
+        "properties": {
+          "Barcode": {
+            "type": "string",
+            "description": "Paketin teslimat numarası"
+          },
+          "Id": {
+            "type": "string",
+            "description": "Paketin unique Id değeri"
+          },
+          "MerchantId": {
+            "type": "string",
+            "description": "Paketin satıcısının unique Id değeri"
+          },
+          "OrderNumber": {
+            "type": "string",
+            "description": "Paket içindeki kalemlerin sipariş numarası"
+          },
+          "OrderNumbers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Paket içindeki kalemlerin sipariş numaraları"
+          },
+          "PackageNumber": {
+            "type": "string",
+            "description": "Paket numarası"
+          },
+          "UndeliveredDate": {
+            "type": "string",
+            "description": "Paketin teslim edilememe tarihi"
+          },
+          "UndeliveredReason": {
+            "type": "string",
+            "description": "Paketin teslim edilememe nedeni"
+          }
+        }
+      },
+      "model.UndeliveredDeliveriesRepresentationWithPaging": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/model.UndeliveredDeliveriesRepresentation"
+            },
+            "description": "Satıcıya ait teslim edilememiş paketler"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Limit değeri"
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Offset değeri"
+          },
+          "pageCount": {
+            "type": "integer",
+            "description": "Sayfa sayısı"
+          },
+          "totalCount": {
+            "type": "integer",
+            "description": "Toplam paket sayısı"
+          }
+        }
+      },
+      "model.UpdateDeliveryParcelInfoRequest": {
+        "type": "object",
+        "properties": {
+          "totalDesi": {
+            "type": "number"
+          },
+          "totalParcel": {
+            "type": "integer"
+          }
+        }
+      },
+      "model.UpdateDeliveryWarehouseRequest": {
+        "type": "object",
+        "properties": {
+          "shippingAddressLabel": {
+            "type": "string",
+            "description": "Depo adresini tanımlayan kısa bir etiket bilgisi"
+          }
+        }
+      },
+      "model.WarehouseRepresentation": {
+        "type": "object",
+        "properties": {
+          "shippingAddressLabel": {
+            "type": "string",
+            "description": "Depo kodu"
+          },
+          "shippingModel": {
+            "type": "string",
+            "description": "Kalemin teslimat modeli"
+          }
+        }
+      },
+      "models.InvoiceItem": {
+        "type": "object",
+        "properties": {
+          "arrangementDate": {
+            "type": "string",
+            "description": "Fatura düzenlenme tarihi"
+          },
+          "contentType": {
+            "type": "string",
+            "description": "Fatura içerik tipi (pdf/html); dolu ise tekrar sorgulanmaz"
+          },
+          "invoiceLink": {
+            "type": "string",
+            "description": "Fatura linki"
+          },
+          "orderNumber": {
+            "type": "string",
+            "description": "Sipariş numarası"
+          },
+          "rowNumber": {
+            "type": "string",
+            "description": "Fatura sıra numarası"
+          },
+          "serialNumber": {
+            "type": "string",
+            "description": "Faturanın seri numarası"
+          }
+        }
+      }
+    }
+  }
+}

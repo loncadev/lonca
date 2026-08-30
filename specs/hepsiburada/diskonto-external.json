@@ -1,0 +1,1212 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Hepsiburada satici-promosyonu-entegrasyonu",
+    "version": "v1.0",
+    "description": "Hepsiburada developer-portal API definition for product \"satici-promosyonu-entegrasyonu\" (category \"satici-promosyonu-entegrasyonu\"), redistributed unchanged for interoperability. Copyright Hepsiburada; not covered by the lonca repository licence. See specs/hepsiburada/README.md.",
+    "x-lonca-source": {
+      "portal": "https://developers.hepsiburada.com",
+      "companySlug": "hepsiburada",
+      "categorySlug": "satici-promosyonu-entegrasyonu",
+      "productSlug": "satici-promosyonu-entegrasyonu",
+      "versionLabel": "v1.0",
+      "capturedAt": "2026-05-31",
+      "portalUpdatedAt": "2026-05-07T12:22:16.102Z",
+      "generator": "scripts/specs/split-hepsiburada.mjs"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://diskonto-external-sit.hepsiburada.com",
+      "description": "Sandbox (SIT) host as published in the portal code samples"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Self-Campaign"
+    }
+  ],
+  "paths": {
+    "/categories/{merchantId}": {
+      "get": {
+        "tags": [
+          "Self-Campaign"
+        ],
+        "summary": "Satıcı Ürün Kategorileri Sorgulama",
+        "description": "Entegratörün ilgili satıcının satış yaptığı kategorileri sorgulamasına olanak sağlar. İstek Limiti: “500 istek/1 saniye”",
+        "operationId": "Satıcı Ürün Kategorileri Sorgulama",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "merchantId",
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "İşlem başarılı. Satıcının ürün kategorileri bilgilerini döner.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MerchantCategoriesResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Sunucu hatası. İşlem sırasında bir sorun oluştu.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FailResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-07T12:22:16.102Z"
+      }
+    },
+    "/self-campaign/{merchantId}/budgets": {
+      "get": {
+        "tags": [
+          "Self-Campaign"
+        ],
+        "summary": "Sepet İndirimi Bütçeleri Sorgulama",
+        "description": "Entegratörün sepet indirimi bütçelerini sorgulamasına olanak sağlar. İstek Limiti: “500 istek/1 saniye”",
+        "operationId": "Sepet İndirimi Bütçeleri Sorgulama",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "merchantId",
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "İşlem başarılı. Sepet indirimi bütçe bilgilerini döner.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetsResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Sunucu hatası. İşlem sırasında bir sorun oluştu.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FailResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-07T12:22:16.102Z"
+      }
+    },
+    "/self-campaign/{merchantId}/cancel-discount": {
+      "post": {
+        "tags": [
+          "Self-Campaign"
+        ],
+        "summary": "Sepet İndirimi İptali",
+        "description": "Satıcının ilgili sepet indirimini iptal etmesine olanak sağlar. İstek Limiti: “500 istek/1 saniye”",
+        "operationId": "Sepet İndirimi İptali",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "merchantId",
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Kampanya iptali için gerekli olan kampanya ID bilgisini içeren isteği temsil eder.",
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelSelfCampaignRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "İşlem başarılı. Kampanya iptali gerçekleştirilmiştir.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Geçersiz istek. Gönderilen verilerde hata var.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FailResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Sunucu hatası. İşlem sırasında bir sorun oluştu.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FailResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-07T12:22:16.102Z"
+      }
+    },
+    "/self-campaign/{merchantId}/discount/{campaignId}": {
+      "get": {
+        "tags": [
+          "Self-Campaign"
+        ],
+        "summary": "Sepet İndirimi Detay Sorgulama",
+        "description": "Satıcının ilgili sepet indiriminin detaylarını sorgulamasına olanak sağlar. İstek Limiti: “500 istek/1 saniye”",
+        "operationId": "Sepet İndirimi Detay Sorgulama",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "merchantId",
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "İşlem başarılı. Kampanya detay bilgilerini döner.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SelfCampaignDiscountDetailResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Sunucu hatası. İşlem sırasında bir sorun oluştu.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FailResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-07T12:22:16.102Z"
+      }
+    },
+    "/self-campaign/{merchantId}/discounts": {
+      "get": {
+        "tags": [
+          "Self-Campaign"
+        ],
+        "summary": "Sepet İndirimleri Sorgulama",
+        "description": "Satıcının sepet indirimlerini sorgulamasına olanak sağlar. İstek Limiti: “500 istek/1 saniye”",
+        "operationId": "Sepet İndirimleri Sorgulama",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "merchantId",
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Hangi sayfanın görüntüleneceğini belirler.",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "pagesize",
+            "in": "query",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "İşlem başarılı. İndirime ait liste bilgilerini döner.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SelfCampaignDiscountListResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Sunucu hatası. İşlem sırasında bir sorun oluştu.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FailResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-07T12:22:16.102Z"
+      }
+    },
+    "/self-campaign/{merchantId}/limits": {
+      "get": {
+        "tags": [
+          "Self-Campaign"
+        ],
+        "summary": "Sepet İndirimi Limitleri Sorgulama",
+        "description": "Entegratörün sepet indirimi limitlerini sorgulamasına olanak sağlar. İstek Limiti: “500 istek/1 saniye”",
+        "operationId": "Sepet İndirimi Limitleri Sorgulama",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "merchantId",
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "İşlem başarılı. Sepet indirimi limit bilgilerini döner.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LimitsResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Sunucu hatası. İşlem sırasında bir sorun oluştu.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FailResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-07T12:22:16.102Z"
+      }
+    },
+    "/self-campaign/{merchantId}/percent-discount": {
+      "post": {
+        "tags": [
+          "Self-Campaign"
+        ],
+        "summary": "Sepete Yüzde İndirimi Oluşturma",
+        "description": "Satıcının \"Sepete Yüzde İndirimi\" oluşturmasına olanak sağlar. İstek Limiti: “500 istek/1 saniye”",
+        "operationId": "Sepete % İndirimi Oluşturma",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "merchantId",
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Yüzde indirimi kampanyası oluşturulması için gerekli istek verilerini içerir.",
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePercentSelfCampaignRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "İşlem başarılı. Oluşturulan kampanyanın bilgilerini döner.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateSelfCampaignResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Geçersiz istek. Gönderilen verilerde hata var.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FailResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Sunucu hatası. İşlem sırasında bir sorun oluştu.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FailResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-07T12:22:16.102Z"
+      }
+    },
+    "/self-campaign/{merchantId}/tl-discount": {
+      "post": {
+        "tags": [
+          "Self-Campaign"
+        ],
+        "summary": "Sepete TL İndirimi Oluşturma",
+        "description": "Satıcının \"Sepete TL İndirimi\" oluşturmasına olanak sağlar. İstek Limiti: “500 istek/1 saniye”",
+        "operationId": "Sepette TL İndirimi Oluşturma",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "merchantId",
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "TL indirimi kampanyası oluşturulması için gerekli istek verilerini içerir.",
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTLSelfCampaignRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "İşlem başarılı. Oluşturulan kampanyanın bilgilerini döner.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateSelfCampaignResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Geçersiz istek. Gönderilen verilerde hata var.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FailResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Sunucu hatası. İşlem sırasında bir sorun oluştu.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FailResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-07T12:22:16.102Z"
+      }
+    },
+    "/self-campaign/{merchantId}/xy-discount": {
+      "post": {
+        "tags": [
+          "Self-Campaign"
+        ],
+        "summary": "Sepete X Al Y Öde İndirimi Oluşturma",
+        "description": "Satıcının \"Sepete X Al Y Öde İndirimi\" oluşturmasına olanak sağlar. İstek Limiti: “500 istek/1 saniye”",
+        "operationId": "Sepete X Al Y Öde İndirimi Oluşturma",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "merchantId",
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "X Al Y Öde indirimi kampanyası oluşturulması için gerekli istek verilerini içerir.",
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateXYSelfCampaignRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "İşlem başarılı. Oluşturulan kampanyanın bilgilerini döner.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateSelfCampaignResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Geçersiz istek. Gönderilen verilerde hata var.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FailResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Sunucu hatası. İşlem sırasında bir sorun oluştu.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FailResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-07T12:22:16.102Z"
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "basicAuth": {
+        "type": "http",
+        "scheme": "basic",
+        "description": "Basic Authorization"
+      }
+    },
+    "schemas": {
+      "BudgetsResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "İşlemin başarılı olup olmadığını belirtir."
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          }
+        }
+      },
+      "CancelSelfCampaignRequest": {
+        "type": "object",
+        "properties": {
+          "campaignId": {
+            "type": "integer",
+            "description": "İptal edilecek kampanyanın benzersiz ID'sini belirtir."
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreatePercentSelfCampaignRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Kampanyanın satıcıya görülecek ismi."
+          },
+          "startDate": {
+            "type": "string",
+            "description": "Kampanya başlangıç tarihi.",
+            "format": "date-time",
+            "default": "2023-04-18T10:55:00.0000000+00:00"
+          },
+          "endDate": {
+            "type": "string",
+            "description": "Kampanya bitiş tarihi.",
+            "format": "date-time",
+            "default": "2023-04-18T21:55:00.0000000+00:00"
+          },
+          "conditionCategories": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Kampanyanın uygulanacağı kategori ID listesini belirtir.",
+            "nullable": true
+          },
+          "conditionSkus": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Kampanyanın uygulanacağı SKU listesini belirtir.",
+            "nullable": true
+          },
+          "discountPercentage": {
+            "type": "integer",
+            "description": "Uygulanacak yüzde indirimin değerini belirtir."
+          },
+          "conditionAmount": {
+            "type": "integer",
+            "description": "İndirimin geçerli olması için gerekli minimum sepet tutarı."
+          },
+          "maxDiscountAmount": {
+            "type": "integer",
+            "description": "Uygulanabilecek maksimum indirim tutarını belirtir."
+          },
+          "maxCartCount": {
+            "type": "integer",
+            "description": "Kampanyanın geçerli olacağı maksimum sepet sayısı."
+          },
+          "oneTimeUsage": {
+            "type": "boolean",
+            "description": "Kampanyanın müşteri bazında tek kullanımlık olup olmadığını belirtir."
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateSelfCampaignResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "İşlemin başarılı olup olmadığını belirtir."
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "campaignId": {
+                "type": "integer",
+                "description": "Oluşturulan kampanyanın benzersiz kimliğini belirtir."
+              }
+            },
+            "description": "Oluşturulan kampanyaya ait bilgileri içerir."
+          }
+        }
+      },
+      "CreateTLSelfCampaignRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Kampanyanın satıcıya görülecek ismi."
+          },
+          "startDate": {
+            "type": "string",
+            "description": "Kampanya başlangıç tarihi.",
+            "format": "date-time",
+            "default": "2023-04-18T10:55:00.0000000+00:00"
+          },
+          "endDate": {
+            "type": "string",
+            "description": "Kampanya bitiş tarihi.",
+            "format": "date-time",
+            "default": "2023-04-18T21:55:00.0000000+00:00"
+          },
+          "conditionCategories": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Kampanyanın geçerli olacağı kategori idleri.",
+            "nullable": true
+          },
+          "conditionSkus": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Kampanyanın geçerli olacağı SKU bilgileri.",
+            "nullable": true
+          },
+          "budget": {
+            "type": "integer",
+            "description": "Kampanyanın bütçesi."
+          },
+          "discountAmount": {
+            "type": "integer",
+            "description": "Kampanya indirim oranı."
+          },
+          "conditionAmount": {
+            "type": "integer",
+            "description": "Kampanyanın geçerli olacağı alt limit."
+          },
+          "oneTimeUsage": {
+            "type": "boolean",
+            "description": "Kampanyanın müşteri bazında tek kullanımlık olması durumunu belirler."
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateXYSelfCampaignRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Kampanya için satıcıya gösterilecek isim."
+          },
+          "startDate": {
+            "type": "string",
+            "description": "Kampanyanın başlangıç tarih ve saatini belirtir.",
+            "format": "date-time",
+            "default": "2023-04-18T10:55:00.0000000+00:00"
+          },
+          "endDate": {
+            "type": "string",
+            "description": "Kampanyanın bitiş tarih ve saatini belirtir.",
+            "format": "date-time",
+            "default": "2023-04-18T21:55:00.0000000+00:00"
+          },
+          "conditionCategories": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Kampanyanın geçerli olacağı kategori ID listesini içerir.",
+            "nullable": true
+          },
+          "conditionSkus": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Kampanyanın geçerli olacağı SKU bilgilerini içerir.",
+            "nullable": true
+          },
+          "conditionProductCount": {
+            "type": "integer",
+            "description": "Kampanyanın uygulanması için sepet içinde olması gereken ürün adedini belirtir. (X Al Y Öde'deki X)"
+          },
+          "mustPayProductCount": {
+            "type": "integer",
+            "description": "İndirim uygulanabilmesi için müşterinin ödemesi gereken ürün adedini belirtir. (X Al Y Öde'deki Y)"
+          },
+          "iterationCount": {
+            "type": "integer",
+            "description": "Kampanyanın tekrar edilebilme sayısını belirtir."
+          },
+          "maxCartCount": {
+            "type": "integer",
+            "description": "Kampanyanın geçerli olacağı maksimum sepet sayısı."
+          },
+          "oneTimeUsage": {
+            "type": "boolean",
+            "description": "Kampanyanın müşteri bazında tek seferlik kullanım olup olmadığını belirler."
+          }
+        },
+        "additionalProperties": false
+      },
+      "FailResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "İşlemin başarısız olduğunu belirtir.",
+            "default": false
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "İşlem sırasında oluşan hata mesajlarını içerir."
+          }
+        }
+      },
+      "LimitsItem": {
+        "type": "object",
+        "properties": {
+          "lowerLimit": {
+            "type": "integer",
+            "description": "Geçerli limitin alt sınır değerini belirtir."
+          },
+          "campaignAmounts": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "description": "Kampanya için belirlenen tutar değerlerinin listesini içerir."
+          }
+        }
+      },
+      "LimitsResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "İşlemin başarılı olup olmadığını belirtir."
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "rowCount": {
+                "type": "integer"
+              },
+              "limits": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/LimitsItem"
+                }
+              }
+            },
+            "description": "Limit bilgileri ve toplam kayıt sayısını içerir."
+          }
+        }
+      },
+      "MerchantCategoriesResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "İşlemin başarılı olup olmadığını belirtir."
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MerchantCategoryItem"
+            },
+            "description": "Satıcının satış yaptığı kategori bilgilerini içeren liste."
+          }
+        }
+      },
+      "MerchantCategoryItem": {
+        "type": "object",
+        "properties": {
+          "categoryId": {
+            "type": "integer",
+            "description": "Kategorinin benzersiz kimliği."
+          },
+          "categoryName": {
+            "type": "string",
+            "description": "Kategorinin adı."
+          },
+          "parentCategoryId": {
+            "type": "integer",
+            "description": "Üst kategori kimliği."
+          },
+          "categoryStatus": {
+            "type": "boolean",
+            "description": "Kategorinin durumu."
+          },
+          "parentCategories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ParentCategoryItem"
+            },
+            "description": "Üst kategorilere ait detaylı bilgiler."
+          },
+          "categorySortId": {
+            "type": "integer",
+            "description": "Kategori sıralama numarası."
+          },
+          "categoryLevel": {
+            "type": "integer",
+            "description": "Kategorinin seviye bilgisi."
+          },
+          "isCampaign": {
+            "type": "boolean",
+            "description": "Kategorinin kampanya bilgisi."
+          },
+          "isHX": {
+            "type": "boolean",
+            "description": "Kategori için HX durumunu belirtir."
+          },
+          "isLeaf": {
+            "type": "boolean",
+            "description": "Kategorinin bir 'en alt kategori' olum olmadığını belirtir"
+          }
+        }
+      },
+      "ParentCategoryItem": {
+        "type": "object",
+        "properties": {
+          "categoryId": {
+            "type": "integer",
+            "description": "Üst kategorinin benzersiz kimliği."
+          },
+          "categoryName": {
+            "type": "string",
+            "description": "Üst kategorinin adı."
+          },
+          "parentCategoryId": {
+            "type": "integer",
+            "description": "Üst kategorinin üst kategori kimliği."
+          },
+          "categoryStatus": {
+            "type": "boolean",
+            "description": "Üst kategorinin durumu."
+          },
+          "CategorySortId": {
+            "type": "integer",
+            "description": "Üst kategorinin sıralama numarası."
+          },
+          "CategoryLevel": {
+            "type": "integer",
+            "description": "Üst kategorinin seviye bilgisi."
+          }
+        }
+      },
+      "SelfCampaignDiscountDetailResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "İşlemin başarılı olup olmadığını belirtir."
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "integer",
+                "description": "Kampanya tipini belirtir."
+              },
+              "budget": {
+                "type": "number",
+                "description": "Kampanya için belirlenen toplam bütçeyi belirtir.",
+                "nullable": true
+              },
+              "remainingBudget": {
+                "type": "number",
+                "description": "Kampanyada kalan kullanılabilir bütçeyi belirtir.",
+                "nullable": true
+              },
+              "conditionAmount": {
+                "type": "number",
+                "description": "Kampanyanın uygulanabilmesi için gerekli olan alt limiti belirtir."
+              },
+              "discountAmount": {
+                "type": "number",
+                "description": "Uygulanan indirim miktarını belirtir."
+              },
+              "maxDiscountAmount": {
+                "type": "number",
+                "description": "Yüzde indirimi kampanyasında uygulanabilecek maksimum indirim tutarını belirtir.",
+                "nullable": true
+              },
+              "maxUsageAmount": {
+                "type": "number",
+                "description": "Kampanyanın maximum kullanım miktarını belirtir."
+              },
+              "remainingUsageCount": {
+                "type": "number",
+                "description": "Kalan kullanılabilir kampanya kullanım sayısını belirtir.",
+                "nullable": true
+              },
+              "iterationCount": {
+                "type": "integer",
+                "description": "Kampanyanın tekrar edilebilme sayısını belirtir.",
+                "nullable": true
+              },
+              "startDate": {
+                "type": "string",
+                "description": "Kampanyanın başlangıç tarih ve saatini belirtir.",
+                "format": "date-time"
+              },
+              "endDate": {
+                "type": "string",
+                "description": "Kampanyanın bitiş tarih ve saatini belirtir.",
+                "format": "date-time"
+              },
+              "status": {
+                "type": "integer",
+                "description": "Kampanyanın mevcut durumunu belirtir."
+              },
+              "conditionCategories": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Kampanyanın geçerli olacağı kategori ID listesini içerir.",
+                "nullable": true
+              },
+              "conditionSkus": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Kampanyanın geçerli olacağı SKU listesini içerir.",
+                "nullable": true
+              }
+            }
+          }
+        }
+      },
+      "SelfCampaignDiscountListItem": {
+        "type": "object",
+        "properties": {
+          "campaignId": {
+            "type": "integer",
+            "description": "Kampanyanın benzersiz kimliği."
+          },
+          "name": {
+            "type": "string",
+            "description": "Kampanyanın adı."
+          },
+          "description": {
+            "type": "string",
+            "description": "Kampanyaya ait detaylı açıklama."
+          },
+          "startDate": {
+            "type": "string",
+            "description": "Kampanyanın başlangıç tarih ve saati.",
+            "format": "date-time"
+          },
+          "endDate": {
+            "type": "string",
+            "description": "Kampanyanın bitiş tarih ve saati.",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "integer",
+            "description": "Kampanyanın mevcut durumunu belirtir."
+          },
+          "limit": {
+            "type": "number",
+            "description": "Kampanya için belirlenen kullanım limiti."
+          }
+        }
+      },
+      "SelfCampaignDiscountListResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "İşlemin başarılı olup olmadığını belirtir."
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "totalCount": {
+                "type": "integer"
+              },
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/SelfCampaignDiscountListItem"
+                }
+              }
+            },
+            "description": "Toplam kayıt sayısı ve kampanya listesini içerir."
+          }
+        }
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "İşlemin başarılı olup olmadığını belirtir."
+          }
+        }
+      }
+    }
+  }
+}
