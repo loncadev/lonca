@@ -1,4 +1,4 @@
-import { TokenBucketRateLimiter, ValidationError } from '@lonca/core';
+import { TokenBucketRateLimiter, ValidationError, type MutationResult } from '@lonca/core';
 import type { TrendyolTransport } from '../transport.js';
 import type { CommonLabel, CommonLabelEntry, CreateCommonLabelInput } from '../types/misc.js';
 
@@ -21,21 +21,26 @@ export class LabelsResource {
    * returns, call `getCommon()` with the same `cargoTrackingNumber` to
    * retrieve the generated label.
    *
+   * Trendyol documents this endpoint (`createCommonLabel`) as a bare
+   * `200 OK` with no response body, so the SDK returns a `MutationResult`
+   * whose `raw` is whatever the gateway sent (normally `undefined`).
+   *
    * @throws {ValidationError} when `format` is missing.
    */
   async createCommon(
     cargoTrackingNumber: string | number,
     input: CreateCommonLabelInput,
-  ): Promise<unknown> {
+  ): Promise<MutationResult> {
     if (!input?.format) {
       throw new ValidationError({ message: 'labels.createCommon: format is required' });
     }
-    return this.transport.request<unknown>({
+    const raw = await this.transport.request<unknown>({
       method: 'POST',
       path: `/integration/sellers/${this.transport.sellerId}/common-label/${encodeURIComponent(String(cargoTrackingNumber))}`,
       body: input,
       rateLimiter: this.limiter,
     });
+    return { raw };
   }
 
   /**

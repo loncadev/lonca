@@ -1,6 +1,7 @@
 import { TokenBucketRateLimiter, ValidationError, type CursorPage } from '@lonca/core';
 import type { TrendyolTransport } from '../transport.js';
 import type {
+  AnswerQuestionResult,
   ListQuestionsParams,
   Question,
   QuestionAnswer,
@@ -147,9 +148,12 @@ export class QuestionsResource {
    * Reply to a question. Trendyol enforces 10–2000 characters on the
    * answer text; the SDK pre-validates client-side.
    *
+   * Trendyol documents the response as `{ answerId: number }`; the SDK
+   * surfaces it as `answerId` and keeps the untouched body on `raw`.
+   *
    * @throws {ValidationError} when `text` is outside the 10–2000 char range.
    */
-  async answer(questionId: string | number, text: string): Promise<unknown> {
+  async answer(questionId: string | number, text: string): Promise<AnswerQuestionResult> {
     if (typeof text !== 'string' || text.length < 10) {
       throw new ValidationError({
         message: `questions.answer: text must be at least 10 chars (got ${text?.length ?? 0})`,
@@ -160,11 +164,14 @@ export class QuestionsResource {
         message: `questions.answer: text must be at most 2000 chars (got ${text.length})`,
       });
     }
-    return this.transport.request<unknown>({
+    const raw = await this.transport.request<{ answerId?: unknown } | undefined>({
       method: 'POST',
       path: `/integration/qna/sellers/${this.transport.sellerId}/questions/${encodeURIComponent(String(questionId))}/answers`,
       body: { text },
       rateLimiter: this.limiter,
     });
+    const out: AnswerQuestionResult = { raw };
+    if (typeof raw?.answerId === 'number') out.answerId = raw.answerId;
+    return out;
   }
 }

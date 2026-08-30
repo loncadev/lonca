@@ -1,6 +1,11 @@
 import { TokenBucketRateLimiter, ValidationError } from '@lonca/core';
 import type { TrendyolTransport } from '../transport.js';
-import type { CreateVideoInput, ListVideosParams, SellerVideo } from '../types/video.js';
+import type {
+  CreateVideoInput,
+  CreateVideoResult,
+  ListVideosParams,
+  SellerVideo,
+} from '../types/video.js';
 
 /**
  * Trendyol Video API (`seller-integration-video-api`) — product video
@@ -33,18 +38,25 @@ export class VideosResource {
    * Queue a video for upload. Trendyol downloads from the URL in the
    * body asynchronously; poll `list()` (filtered by id) for status.
    *
+   * Trendyol documents the response as `{ videoId: string }`; the SDK
+   * surfaces it as `videoId` (pass it to `list({ id })`) and keeps the
+   * untouched body on `raw`.
+   *
    * @throws {ValidationError} when `input` is empty / not an object.
    */
-  async create(input: CreateVideoInput): Promise<unknown> {
+  async create(input: CreateVideoInput): Promise<CreateVideoResult> {
     if (!input || typeof input !== 'object') {
       throw new ValidationError({ message: 'videos.create: input is required' });
     }
-    return this.transport.request<unknown>({
+    const raw = await this.transport.request<{ videoId?: unknown } | undefined>({
       method: 'POST',
       path: `/integration/video/sellers/${this.transport.sellerId}/videos`,
       body: input,
       rateLimiter: this.createLimiter,
     });
+    const out: CreateVideoResult = { raw };
+    if (typeof raw?.videoId === 'string') out.videoId = raw.videoId;
+    return out;
   }
 
   /** List the seller's integration videos (optionally filtered by id / status). */

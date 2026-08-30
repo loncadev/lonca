@@ -85,6 +85,16 @@ app.post('/ty/webhook', (req, res) => {
 });
 ```
 
+## Mutation results
+
+Write / action methods never resolve to a bare `unknown`. When Trendyol documents a response body the SDK returns a typed shape — `BatchAcceptedResponse` (`{ batchRequestId }`) for async product writes, `CreateWebhookResult` (`{ id }`), `AnswerQuestionResult` (`{ answerId }`), `CreateVideoResult` (`{ videoId }`), `CreateTestOrderResult` (`{ orderNumber }`). Endpoints documented as a bare `200 OK` (webhook update/delete/activate/deactivate, `labels.createCommon`, test-order status updates, claim/invoice mutations) return `MutationResult` (`{ raw: unknown }`) from `@lonca/core`. The typed results extend `MutationResult`, so `.raw` is always the untouched body:
+
+```ts
+const { id } = await client.webhooks.create({ url, authenticationType: 'API_KEY', apiKey });
+const res = await client.webhooks.deactivate(id);
+console.log(res.raw); // whatever the gateway sent — usually undefined for 200 OK
+```
+
 ## See also
 
 - [`sdks/trendyol/README.md`](https://github.com/loncadev/lonca/blob/main/sdks/trendyol/README.md) — full per-resource cheat sheet with method signatures

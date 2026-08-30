@@ -112,9 +112,9 @@ describe('QuestionsResource.list', () => {
 });
 
 describe('QuestionsResource.answer', () => {
-  it('POSTs to /questions/{id}/answers with { text }', async () => {
-    const transport = mockTransport();
-    await r(transport).answer(99, 'Çok teşekkürler, ürünümüz pamukludur.');
+  it('POSTs to /questions/{id}/answers with { text } and surfaces the documented answerId', async () => {
+    const transport = mockTransport({ answerId: 4711 });
+    const out = await r(transport).answer(99, 'Çok teşekkürler, ürünümüz pamukludur.');
 
     expect(transport.request).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -123,6 +123,21 @@ describe('QuestionsResource.answer', () => {
         body: { text: 'Çok teşekkürler, ürünümüz pamukludur.' },
       }),
     );
+    expect(out).toEqual({ answerId: 4711, raw: { answerId: 4711 } });
+  });
+
+  it('omits answerId when the body is empty or not numeric', async () => {
+    const empty = await r(mockTransport(undefined)).answer(
+      99,
+      'Çok teşekkürler, ürünümüz pamukludur.',
+    );
+    expect(empty).toEqual({ raw: undefined });
+
+    const odd = await r(mockTransport({ answerId: 'abc' })).answer(
+      99,
+      'Çok teşekkürler, ürünümüz pamukludur.',
+    );
+    expect(odd).toEqual({ raw: { answerId: 'abc' } });
   });
 
   it('throws ValidationError when text shorter than 10 chars', async () => {

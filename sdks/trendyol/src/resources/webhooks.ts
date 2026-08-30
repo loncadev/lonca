@@ -1,6 +1,6 @@
-import { TokenBucketRateLimiter, ValidationError } from '@lonca/core';
+import { TokenBucketRateLimiter, ValidationError, type MutationResult } from '@lonca/core';
 import type { TrendyolTransport } from '../transport.js';
-import type { Webhook, WebhookInput } from '../types/webhook.js';
+import type { CreateWebhookResult, Webhook, WebhookInput } from '../types/webhook.js';
 
 /** Trendyol caps webhook subscriptions per seller. */
 const MAX_WEBHOOKS_PER_SELLER = 15;
@@ -65,16 +65,24 @@ export class WebhooksResource {
    * per seller — the SDK does NOT pre-check (you'd need to call `list()`
    * first), but Trendyol returns 400 when the cap is exceeded.
    *
+   * Trendyol documents the response as `{ id: string }` — the webhook ID
+   * you need for `update` / `delete` / `activate` / `deactivate`. The SDK
+   * surfaces it as `id` and keeps the untouched body on `raw`.
+   *
    * @throws {ValidationError} when `url` or `authenticationType` is missing.
    */
-  async create(input: WebhookInput): Promise<unknown> {
+  async create(input: WebhookInput): Promise<CreateWebhookResult> {
     this.validateInput(input, 'create');
-    return this.transport.request<unknown>({
+    const raw = await this.transport.request<{ id?: unknown } | undefined>({
       method: 'POST',
       path: `/integration/sellers/${this.transport.sellerId}/webhooks`,
       body: input,
       rateLimiter: this.limiter,
     });
+    const out: CreateWebhookResult = { raw };
+    if (typeof raw?.id === 'string') out.id = raw.id;
+    else if (typeof raw?.id === 'number') out.id = String(raw.id);
+    return out;
   }
 
   /** List all registered webhook subscriptions. */
@@ -97,46 +105,60 @@ export class WebhooksResource {
   /**
    * Update a webhook subscription. Same input shape as `create`; replaces
    * the whole subscription (Trendyol does NOT partially update).
+   *
+   * Documented response is a bare `200 OK` (no body), hence `MutationResult`.
    */
-  async update(webhookId: string | number, input: WebhookInput): Promise<unknown> {
+  async update(webhookId: string | number, input: WebhookInput): Promise<MutationResult> {
     this.validateInput(input, 'update');
-    return this.transport.request<unknown>({
+    const raw = await this.transport.request<unknown>({
       method: 'PUT',
       path: this.webhookPath(webhookId),
       body: input,
       rateLimiter: this.limiter,
     });
+    return { raw };
   }
 
-  /** Permanently delete a webhook subscription. */
-  async delete(webhookId: string | number): Promise<unknown> {
-    return this.transport.request<unknown>({
+  /**
+   * Permanently delete a webhook subscription. Documented response is a
+   * bare `200 OK` (no body), hence `MutationResult`.
+   */
+  async delete(webhookId: string | number): Promise<MutationResult> {
+    const raw = await this.transport.request<unknown>({
       method: 'DELETE',
       path: this.webhookPath(webhookId),
       rateLimiter: this.limiter,
     });
+    return { raw };
   }
 
-  /** Re-activate a previously-deactivated webhook subscription. */
-  async activate(webhookId: string | number): Promise<unknown> {
-    return this.transport.request<unknown>({
+  /**
+   * Re-activate a previously-deactivated webhook subscription. Documented
+   * response is a bare `200 OK` (no body), hence `MutationResult`.
+   */
+  async activate(webhookId: string | number): Promise<MutationResult> {
+    const raw = await this.transport.request<unknown>({
       method: 'PUT',
       path: `${this.webhookPath(webhookId)}/activate`,
       rateLimiter: this.limiter,
     });
+    return { raw };
   }
 
   /**
    * Deactivate a webhook subscription. Trendyol automatically deactivates
    * a subscription after persistent delivery failures (and sends 2 emails);
    * use `activate()` to bring it back online once your endpoint is healthy.
+   *
+   * Documented response is a bare `200 OK` (no body), hence `MutationResult`.
    */
-  async deactivate(webhookId: string | number): Promise<unknown> {
-    return this.transport.request<unknown>({
+  async deactivate(webhookId: string | number): Promise<MutationResult> {
+    const raw = await this.transport.request<unknown>({
       method: 'PUT',
       path: `${this.webhookPath(webhookId)}/deactivate`,
       rateLimiter: this.limiter,
     });
+    return { raw };
   }
 
   private validateInput(input: WebhookInput, method: string): void {

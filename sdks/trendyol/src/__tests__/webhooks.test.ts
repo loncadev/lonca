@@ -14,9 +14,9 @@ const fastLimiter = () => new TokenBucketRateLimiter({ capacity: 1000, intervalM
 const r = (t: TrendyolTransport) => new WebhooksResource(t, fastLimiter());
 
 describe('WebhooksResource.create', () => {
-  it('POSTs to /webhooks with the input body', async () => {
+  it('POSTs to /webhooks with the input body and surfaces the documented id', async () => {
     const transport = mockTransport({ id: 'wh-1' });
-    await r(transport).create({
+    const out = await r(transport).create({
       url: 'https://example.com/hook',
       authenticationType: 'API_KEY',
       apiKey: 'secret-1',
@@ -35,6 +35,20 @@ describe('WebhooksResource.create', () => {
         },
       }),
     );
+    expect(out).toEqual({ id: 'wh-1', raw: { id: 'wh-1' } });
+  });
+
+  it('coerces a numeric id to string and omits it when the body is empty', async () => {
+    const input = {
+      url: 'https://example.com/hook',
+      authenticationType: 'API_KEY' as const,
+      apiKey: 'k',
+    };
+    const numeric = await r(mockTransport({ id: 123 })).create(input);
+    expect(numeric).toEqual({ id: '123', raw: { id: 123 } });
+
+    const empty = await r(mockTransport(undefined)).create(input);
+    expect(empty).toEqual({ raw: undefined });
   });
 
   it('throws ValidationError on missing url', async () => {
@@ -108,7 +122,7 @@ describe('WebhooksResource.list', () => {
 describe('WebhooksResource.update', () => {
   it('PUTs to /webhooks/{id} with the input body', async () => {
     const transport = mockTransport();
-    await r(transport).update('wh-1', {
+    const out = await r(transport).update('wh-1', {
       url: 'https://example.com/v2',
       authenticationType: 'BASIC_AUTHENTICATION',
       username: 'u',
@@ -127,6 +141,8 @@ describe('WebhooksResource.update', () => {
         },
       }),
     );
+    // Documented as a bare 200 OK — MutationResult with an empty raw.
+    expect(out).toEqual({ raw: undefined });
   });
 
   it('url-encodes the webhook id', async () => {
@@ -151,30 +167,34 @@ describe('WebhooksResource.update', () => {
 describe('WebhooksResource.delete', () => {
   it('DELETEs /webhooks/{id} with no body', async () => {
     const transport = mockTransport();
-    await r(transport).delete('wh-1');
+    const out = await r(transport).delete('wh-1');
 
     const call = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0];
     expect(call.method).toBe('DELETE');
     expect(call.path).toBe('/integration/sellers/42/webhooks/wh-1');
     expect(call.body).toBeUndefined();
+    expect(out).toEqual({ raw: undefined });
   });
 });
 
 describe('WebhooksResource.activate / deactivate', () => {
   it('activate PUTs to /webhooks/{id}/activate with no body', async () => {
     const transport = mockTransport();
-    await r(transport).activate('wh-1');
+    const out = await r(transport).activate('wh-1');
     const call = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0];
     expect(call.method).toBe('PUT');
     expect(call.path).toBe('/integration/sellers/42/webhooks/wh-1/activate');
     expect(call.body).toBeUndefined();
+    expect(out).toEqual({ raw: undefined });
   });
 
   it('deactivate PUTs to /webhooks/{id}/deactivate with no body', async () => {
-    const transport = mockTransport();
-    await r(transport).deactivate('wh-1');
+    const transport = mockTransport('200 OK');
+    const out = await r(transport).deactivate('wh-1');
     const call = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0];
     expect(call.method).toBe('PUT');
     expect(call.path).toBe('/integration/sellers/42/webhooks/wh-1/deactivate');
+    // A text/plain "200 OK" body is passed through untouched on raw.
+    expect(out).toEqual({ raw: '200 OK' });
   });
 });

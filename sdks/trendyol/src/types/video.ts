@@ -6,7 +6,7 @@
  * Endpoints under `/integration/video/sellers/{sellerId}/videos`.
  */
 
-import type { OffsetPaginationParams } from '@lonca/core';
+import type { MutationResult, OffsetPaginationParams } from '@lonca/core';
 
 /**
  * Status of a seller integration video as Trendyol processes it. Open
@@ -17,6 +17,16 @@ export type SellerIntegrationStatus =
 
 /** Body for `videos.create()` — initiates an async download + processing. */
 export type CreateVideoInput = Record<string, unknown>;
+
+/**
+ * Result of `videos.create()`. Trendyol documents the response as
+ * `{ videoId: string }` (a UUID you can pass to `videos.list({ id })`);
+ * `raw` keeps the untouched body.
+ */
+export interface CreateVideoResult extends MutationResult {
+  /** ID of the queued video (absent when the body had none). */
+  videoId?: string;
+}
 
 /** Query parameters for `videos.list()`. */
 export interface ListVideosParams extends OffsetPaginationParams {
