@@ -150,14 +150,65 @@ export type ChangeCargoCompanyInput = {
   cargoCompany?: string;
 } & Record<string, unknown>;
 
-/** Body for `orders.updateLineItemLaborCost()`. */
-export type LaborCostInput = Record<string, unknown>;
+/**
+ * Body for `orders.updateLineItemLaborCost()` — the spec's
+ * `UpdateLaborCostRequest` (`oms-external.json`).
+ */
+export type LaborCostInput = {
+  /** Labor cost per unit. */
+  unitLaborCost?: number;
+} & Record<string, unknown>;
 
-/** Body for `orders.sendInvoiceLink()` — `{ invoiceUrl?, invoiceNumber?, … }`. */
-export type InvoiceLinkInput = Record<string, unknown>;
+/** One invoice entry in {@link InvoiceLinkInput}'s `invoices` list. */
+export type InvoiceLinkItem = {
+  /** Invoice issue date. */
+  arrangementDate?: string;
+  /** Invoice content type (`pdf` / `html`); when set the link is not re-queried. */
+  contentType?: string;
+  /** Invoice URL. */
+  invoiceLink?: string;
+  /** Order number the invoice belongs to. */
+  orderNumber?: string;
+  /** Invoice row number. */
+  rowNumber?: string;
+  /** Invoice serial number. */
+  serialNumber?: string;
+} & Record<string, unknown>;
 
-/** Body for `orders.updateParcelInfo()` — `{ desi?, width?, height?, length?, weight? }`. */
-export type ParcelInfoInput = Record<string, unknown>;
+/**
+ * Body for `orders.sendInvoiceLink()` — the spec's `AddInvoiceOfPackageRequest`:
+ * either a single link (`invoiceLink` + `serialNumber` / `rowNumber`) or a
+ * multi-invoice `invoices` list.
+ */
+export type InvoiceLinkInput = {
+  /** Invoice issue date. */
+  arrangementDate?: string;
+  /** Invoice URL. */
+  invoiceLink?: string;
+  /** Multiple invoices for the package. */
+  invoices?: InvoiceLinkItem[];
+  /** Invoice row number. */
+  rowNumber?: string;
+  /** Invoice serial number. */
+  serialNumber?: string;
+} & Record<string, unknown>;
 
-/** Body for `orders.updateWarehouse()`. */
-export type WarehouseInput = Record<string, unknown>;
+/**
+ * Body for `orders.updateParcelInfo()` — the spec's
+ * `UpdateDeliveryParcelInfoRequest`.
+ */
+export type ParcelInfoInput = {
+  /** Total volumetric weight (desi) of the package. */
+  totalDesi?: number;
+  /** Total number of parcels. */
+  totalParcel?: number;
+} & Record<string, unknown>;
+
+/**
+ * Body for `orders.updatePackageWarehouse()` — the spec's
+ * `UpdateDeliveryWarehouseRequest`.
+ */
+export type WarehouseInput = {
+  /** Short label identifying the warehouse shipping address. */
+  shippingAddressLabel?: string;
+} & Record<string, unknown>;

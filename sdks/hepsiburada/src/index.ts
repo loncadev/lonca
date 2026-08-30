@@ -82,6 +82,7 @@ export type {
   ChangeCargoCompanyInput,
   CreatePackagesInput,
   InvoiceLinkInput,
+  InvoiceLinkItem,
   LaborCostInput,
   ListOrdersParams,
   ListPackagesParams,
@@ -116,6 +117,7 @@ export type {
   FastListingInput,
   ListCatalogProductsParams,
   ListProductsByStatusParams,
+  MerchantSkuGroup,
   PreMatchActionInput,
   TrackingIdHistoryEntry,
   UploadProductsInput,
@@ -128,6 +130,7 @@ export type {
 } from './types/product-update.js';
 export type {
   CreateListingUpdateRequestInput,
+  CreateListingUpdateRequestItem,
   ListingUpdateRequestDetail,
   ListingUpdateRequestItem,
   ListingUpdateRequestReceipt,
@@ -136,6 +139,8 @@ export type {
   OpenPurchaseOrder,
   OpenPurchaseOrderSearchInput,
   OpenPurchaseOrderStatus,
+  PurchaseOrderLineRef,
+  PurchaseOrderType,
   SupplierApprovalStatus,
   SupplierEnvelope,
   SupplierListing,

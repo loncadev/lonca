@@ -34,14 +34,33 @@ export interface ListQuestionsParams {
   maxCreatedAt?: string;
 }
 
-/** Body for `questions.create()` — typically `{ productSku, question }`. */
-export type CreateQuestionInput = Record<string, unknown>;
+/**
+ * Body for `questions.create()` — the spec's `CreateIssueViewModel` ("Soru
+ * Oluşturma", a SIT test-question generator).
+ */
+export type CreateQuestionInput = {
+  /** How many test questions to create. */
+  issueCount?: number;
+} & Record<string, unknown>;
 
-/** Body for `questions.answer()` — typically `{ answer }`. */
-export type AnswerQuestionInput = Record<string, unknown>;
+/**
+ * Body for `questions.answer()`. The spec defines this endpoint as
+ * `multipart/form-data` with PascalCase part names.
+ */
+export type AnswerQuestionInput = {
+  /** Answer text — at most 2000 characters per spec. */
+  Answer?: string;
+  /** Files to send along with the answer. */
+  Files?: unknown[];
+} & Record<string, unknown>;
 
-/** Body for `questions.reject()` — typically `{ reasonCode, reason }`. */
-export type RejectQuestionInput = Record<string, unknown>;
+/** Body for `questions.reject()` — the spec's `RejectIssueViewModel`. */
+export type RejectQuestionInput = {
+  /** Why the question is being rejected — at most 2000 characters per spec. */
+  rejectReason?: string;
+  /** Id of the conversation the rejection relates to, if any. */
+  rejectConversationId?: string;
+} & Record<string, unknown>;
 
 /** One question row. */
 export interface Question {

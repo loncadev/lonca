@@ -189,11 +189,33 @@ export type UploadProductsInput = unknown[];
 /** Body for `catalog.uploadFastListing()`. */
 export type FastListingInput = unknown[] | Record<string, unknown>;
 
-/** Body for `catalog.approvePreMatch()` / `catalog.rejectPreMatch()`. */
-export type PreMatchActionInput = Record<string, unknown>;
+/**
+ * One `{ merchant, merchantSkuList }` group — the spec's
+ * `MerchantAndMerchantSkuListDTO` (`mpop-catalog.json`). Both fields are
+ * required per spec; the hints stay optional in TS and extra fields pass
+ * through.
+ */
+export type MerchantSkuGroup = {
+  /** Merchant id (GUID). Required per spec. */
+  merchant?: string;
+  /** Merchant SKUs to act on. Required per spec. */
+  merchantSkuList?: string[];
+} & Record<string, unknown>;
+
+/**
+ * Body for `catalog.approvePreMatch()` / `catalog.rejectPreMatch()` — the
+ * spec (`integratorApprovePreMatch` / `integratorRejectPreMatch`) takes an
+ * **array** of {@link MerchantSkuGroup}; a plain object also passes through
+ * unchanged for backwards compatibility.
+ */
+export type PreMatchActionInput = MerchantSkuGroup[] | MerchantSkuGroup;
 
 /** Body for `catalog.deleteByMerchantSkuList()` — Hepsiburada wants an SKU list. */
 export type DeleteBySkuInput = { merchantSkuList?: string[]; [key: string]: unknown };
 
-/** Body for `catalog.checkProductStatus()` — `{ trackingIds?: string[] }`. */
-export type CheckProductStatusInput = Record<string, unknown>;
+/**
+ * Body for `catalog.checkProductStatus()` — the spec (`checkProductStatus`)
+ * takes an **array** of {@link MerchantSkuGroup}; a plain object also passes
+ * through unchanged for backwards compatibility.
+ */
+export type CheckProductStatusInput = MerchantSkuGroup[] | MerchantSkuGroup;

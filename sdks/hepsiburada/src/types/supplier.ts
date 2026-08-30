@@ -7,9 +7,9 @@
  * Five endpoints — open purchase orders search, supplier listings search,
  * listing-update-requests CRUD (search list / get / create).
  *
- * All search endpoints are POST with `{ pageNumber, pageSize, … }` style
- * bodies; the SDK accepts loose `Record<string, unknown>` payloads — see
- * the portal docs for the documented field set per request.
+ * All search endpoints are POST with `{ limit, offset, … }` style bodies;
+ * the inputs carry typed hints for the spec-documented fields and any extra
+ * fields still pass through untouched.
  *
  * Every response is wrapped in the supplier API's own envelope
  * `{ data, message, errorCode }`. The SDK unwraps `data` into the typed
@@ -17,17 +17,129 @@
  * (envelope included) is always on `raw`.
  */
 
-/** Body for `suppliers.searchOpenPurchaseOrders()`. */
-export type OpenPurchaseOrderSearchInput = Record<string, unknown>;
+/** Purchase-order (SAS) type — values documented on `purchaseOrderTypes` in the spec. */
+export type PurchaseOrderType = 'ConsignmentPurchaseOrder' | 'StandardPurchaseOrder';
 
-/** Body for `suppliers.searchSupplierListings()`. */
-export type SupplierListingSearchInput = Record<string, unknown>;
+/** One `{ purchaseOrderNumber, lineNumber }` pair in {@link OpenPurchaseOrderSearchInput}. */
+export type PurchaseOrderLineRef = {
+  /** Purchase order (SAS) number. */
+  purchaseOrderNumber?: string;
+  /** Line number within the purchase order. */
+  lineNumber?: number;
+} & Record<string, unknown>;
 
-/** Body for `suppliers.searchListingUpdateRequests()`. */
-export type ListingUpdateRequestSearchInput = Record<string, unknown>;
+/**
+ * Body for `suppliers.searchOpenPurchaseOrders()` — the spec's "Açık
+ * Siparişleri Listeleme" request. All fields optional per spec.
+ */
+export type OpenPurchaseOrderSearchInput = {
+  /** Due-date range start (`yyyy-MM-dd`). */
+  dueDateStart?: string;
+  /** Due-date range end (`yyyy-MM-dd`). */
+  dueDateEnd?: string;
+  /** Purchase-order creation-date range start (`yyyy-MM-dd`). */
+  createdDateStart?: string;
+  /** Purchase-order creation-date range end (`yyyy-MM-dd`). */
+  createdDateEnd?: string;
+  /** SKU filter. */
+  skus?: string[];
+  /** Brand filter. */
+  brands?: string[];
+  /** Buying-category filter. */
+  buyingCategories?: string[];
+  /** Product-type filter. */
+  definitionNames?: string[];
+  /** Purchase-order type filter; strings outside the documented union pass through. */
+  purchaseOrderTypes?: Array<PurchaseOrderType | (string & {})>;
+  /** Warehouse gate-id filter. */
+  warehouseGateIds?: string[];
+  /** Specific purchase-order lines to match. */
+  purchaseOrderLines?: PurchaseOrderLineRef[];
+  /** Whether a purchase-order operation is still in progress. */
+  inProgressPurchaseOrdersOperation?: boolean;
+  /** Whether the line was marked as sent. */
+  isSent?: boolean;
+  /** Free-text search. */
+  searchText?: string;
+  /** Field to sort by. */
+  sortField?: string;
+  /** Sort direction. */
+  sortDirection?: string;
+  /** Max rows to return (0–1000). */
+  limit?: number;
+  /** Start index of the rows to return (defaults to `0`). */
+  offset?: number;
+} & Record<string, unknown>;
 
-/** Body for `suppliers.createListingUpdateRequest()`. */
-export type CreateListingUpdateRequestInput = Record<string, unknown>;
+/**
+ * Body for `suppliers.searchSupplierListings()` — the spec's "Envanter
+ * Bilgilerini Listeleme" request. All fields optional per spec.
+ */
+export type SupplierListingSearchInput = {
+  /** Listing-type filter; strings outside the documented union pass through. */
+  listingType?: SupplierListingType | (string & {});
+  /** Listing-status filter; strings outside the documented union pass through. */
+  status?: SupplierListingStatus | (string & {});
+  /** Purchase-price change-date range start (`yyyy-MM-dd`). */
+  lastPurchasePriceUpdateStartDate?: string;
+  /** Purchase-price change-date range end (`yyyy-MM-dd`). */
+  lastPurchasePriceUpdateEndDate?: string;
+  /** Free-text search over SKU / supplier stock code. */
+  searchText?: string;
+  /** Max rows to return (0–1000). */
+  limit?: number;
+  /** Start index of the rows to return (defaults to `0`). */
+  offset?: number;
+} & Record<string, unknown>;
+
+/**
+ * Body for `suppliers.searchListingUpdateRequests()` — the spec's "Teklifleri
+ * Listeleme" request. All fields optional per spec.
+ */
+export type ListingUpdateRequestSearchInput = {
+  /** Offer-date range start (`yyyy-MM-dd`). */
+  startDate?: string;
+  /** Offer-date range end (`yyyy-MM-dd`). */
+  endDate?: string;
+  /** Max rows to return (0–1000). */
+  limit?: number;
+  /** Start index of the rows to return (defaults to `0`). */
+  offset?: number;
+} & Record<string, unknown>;
+
+/**
+ * One offered product line in {@link CreateListingUpdateRequestInput} — the
+ * spec's `AddListingUpdateRequestItem`.
+ */
+export type CreateListingUpdateRequestItem = {
+  /** Trace id (UUID). */
+  traceId?: string;
+  /** Offered supplier stock code. */
+  merchantSku?: string;
+  /** SKU the offer is for. */
+  sku?: string;
+  /** Offered price. */
+  price?: number;
+  /** Date the offered price takes effect (ISO 8601). */
+  priceEffectiveDate?: string;
+  /** Offered stock. */
+  stock?: number;
+  /** Currency of the offered price — required by the API when `price` is set; strings outside the documented union pass through. */
+  currencyCode?: 'TRY' | 'USD' | 'EUR' | (string & {});
+  /** Offered salable flag. */
+  salable?: boolean;
+  /** Offered units per package (case size). */
+  unitPerPackage?: number;
+} & Record<string, unknown>;
+
+/**
+ * Body for `suppliers.createListingUpdateRequest()` — the spec's
+ * `AddListingUpdateRequestCommand`.
+ */
+export type CreateListingUpdateRequestInput = {
+  /** Product lines of the offer. */
+  requestItems?: CreateListingUpdateRequestItem[];
+} & Record<string, unknown>;
 
 /** `operationStatus` of an open purchase-order line (spec enum `OpenPurchaseOrderResponseStatus`). */
 export type OpenPurchaseOrderStatus = 'Actionable' | 'Pending' | 'DraftShipment';

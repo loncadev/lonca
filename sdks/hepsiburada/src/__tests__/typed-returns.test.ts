@@ -19,6 +19,14 @@ import { ShippingResource } from '../resources/shipping.js';
 import { SuppliersResource } from '../resources/suppliers.js';
 import { TestOrdersResource } from '../resources/test-orders.js';
 import type { HepsiburadaTransport } from '../transport.js';
+import type {
+  CreateListingUpdateRequestInput,
+  CreateTlDiscountInput,
+  InvoiceLinkInput,
+  LaborCostInput,
+  ParcelInfoInput,
+  WarehouseInput,
+} from '../index.js';
 
 function mockTransport(response: unknown = undefined, merchantId = 'M-typed') {
   return {
@@ -61,9 +69,9 @@ describe('orders — typed return surface', () => {
     ['markPackageDelivered', {}],
     ['markPackageUndelivered', { reason: 'x' }],
     ['updatePackageCargoCompany', { cargoCompany: 'MNG' }],
-    ['sendInvoiceLink', { invoiceUrl: 'https://x' }],
-    ['updateParcelInfo', { desi: 1 }],
-    ['updatePackageWarehouse', { warehouseId: 'W' }],
+    ['sendInvoiceLink', { invoiceLink: 'https://x' } satisfies InvoiceLinkInput],
+    ['updateParcelInfo', { totalDesi: 1 } satisfies ParcelInfoInput],
+    ['updatePackageWarehouse', { shippingAddressLabel: 'W' } satisfies WarehouseInput],
   ] as const)('%s resolves to a MutationResult (200 string / 204 empty)', async (name, body) => {
     expect(await method(r(mockTransport('OK')), name)('HBP-1', body)).toEqual({ raw: 'OK' });
     expect(await method(r(mockTransport()), name)('HBP-1', body)).toEqual({ raw: undefined });
@@ -72,7 +80,7 @@ describe('orders — typed return surface', () => {
   it.each([
     ['cancelLineItem', { reason: 'out-of-stock' }],
     ['updateLineItemCargoCompany', { cargoCompany: 'MNG' }],
-    ['updateLineItemLaborCost', { laborCost: 1 }],
+    ['updateLineItemLaborCost', { unitLaborCost: 1 } satisfies LaborCostInput],
   ] as const)('%s resolves to a MutationResult (200 string / 204 empty)', async (name, body) => {
     expect(await method(r(mockTransport('OK')), name)('L1', body)).toEqual({ raw: 'OK' });
     expect(await method(r(mockTransport()), name)('L1', body)).toEqual({ raw: undefined });
@@ -88,7 +96,12 @@ describe('promotions — typed return surface', () => {
     '%s maps CreateSelfCampaignResponse onto DiscountReceipt',
     async (name) => {
       const body = { success: true, data: { campaignId: 4711 } };
-      expect(await method(r(mockTransport(body)), name)({ amount: 50 })).toEqual({
+      expect(
+        await method(
+          r(mockTransport(body)),
+          name,
+        )({ discountAmount: 50 } satisfies CreateTlDiscountInput),
+      ).toEqual({
         success: true,
         campaignId: 4711,
         raw: body,
@@ -306,7 +319,8 @@ describe('suppliers — typed return surface', () => {
       message: null,
       errorCode: null,
     };
-    expect(await r(mockTransport(body)).createListingUpdateRequest({ items: [] })).toEqual({
+    const input = { requestItems: [] } satisfies CreateListingUpdateRequestInput;
+    expect(await r(mockTransport(body)).createListingUpdateRequest(input)).toEqual({
       id: '3f2c9a2e-0000-4000-8000-000000000002',
       raw: body,
     });
