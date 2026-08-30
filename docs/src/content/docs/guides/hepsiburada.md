@@ -76,10 +76,14 @@ The same pattern applies to `uploadInventory`, `uploadStock`, `uploadShippingInf
 // 1. Find paid orders awaiting packaging
 const open = await client.orders.list({ limit: 100 });
 
-// 2. Package + transition status
-await client.orders.createPackages({ lineItems: ['L1', 'L2'], cargoCompany: 'ARAS' });
-await client.orders.markPackageInTransit('HBP-123', { trackingNumber: 'TR-456' });
-await client.orders.markPackageDelivered('HBP-123');
+// 2. Package + transition status. createPackages resolves to a PackageReceipt
+//    ({ packageNumber, barcode, raw }); the transitions resolve to MutationResult ({ raw }).
+const { packageNumber } = await client.orders.createPackages({
+  lineItems: ['L1', 'L2'],
+  cargoCompany: 'ARAS',
+});
+await client.orders.markPackageInTransit(packageNumber!, { trackingNumber: 'TR-456' });
+await client.orders.markPackageDelivered(packageNumber!);
 
 // 3. Reconcile invoice attachment
 const missingInvoice = await client.orders.listMissingInvoicePackages({ limit: 100 });
