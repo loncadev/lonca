@@ -11,6 +11,8 @@ Type-safe TypeScript SDK for the [Trendyol Marketplace API](https://developers.t
 > [!IMPORTANT]
 > **Unofficial.** This is an independent, community-maintained SDK. It is not affiliated with, endorsed by, or supported by Trendyol. "Trendyol" and related names are trademarks of their respective owners.
 
+See [Stability & versioning](https://loncadev.github.io/lonca/stability/) for the semver policy and what counts as the public API.
+
 > **Trendyol surface complete.** 16 resources spanning catalog, orders, claims, finance, webhooks, and Export Center, plus a `parseWebhookEvent` helper for inbound event handling. Every endpoint a non-AutoFT non-V1 seller can hit is covered. See the [npm badge](https://www.npmjs.com/package/@lonca/trendyol) above for the current release.
 
 ## Coverage

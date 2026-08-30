@@ -11,6 +11,8 @@ Shared primitives for Lonca marketplace SDKs.
 > [!IMPORTANT]
 > **Unofficial.** Part of Lonca, an independent, community-maintained project — not affiliated with, endorsed by, or supported by any marketplace. All marketplace names and trademarks belong to their respective owners.
 
+See [Stability & versioning](https://loncadev.github.io/lonca/stability/) for the semver policy and what counts as the public API.
+
 ## Install
 
 ```bash

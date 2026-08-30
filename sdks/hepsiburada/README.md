@@ -11,6 +11,8 @@ Type-safe TypeScript SDK for the [Hepsiburada Marketplace API](https://developer
 > [!IMPORTANT]
 > **Unofficial.** This is an independent, community-maintained SDK. It is not affiliated with, endorsed by, or supported by Hepsiburada. "Hepsiburada" and related names are trademarks of their respective owners.
 
+See [Stability & versioning](https://loncadev.github.io/lonca/stability/) for the semver policy and what counts as the public API.
+
 ## Coverage
 
 | Resource         | Methods | Host                                   | Source                         |
