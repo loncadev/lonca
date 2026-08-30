@@ -326,14 +326,15 @@ const reasons = await client.claims.getIssueReasons();
 const audits = await client.claims.getItemAudits(claimItemId);
 
 // webhooks
-await client.webhooks.create({
+const { id } = await client.webhooks.create({
+  // CreateWebhookResult — `id` is the documented `{ id }`; `raw` is the untouched body
   url: 'https://my-app/hook',
   authenticationType: 'API_KEY',
   apiKey: 'rotatable-secret',
   subscribedStatuses: ['CREATED', 'SHIPPED'],
 });
 const subs = await client.webhooks.list();
-await client.webhooks.update(id, { ...updated });
+await client.webhooks.update(id, { ...updated }); // MutationResult ({ raw }) — Trendyol answers 200 OK
 await client.webhooks.delete(id);
 await client.webhooks.activate(id);
 await client.webhooks.deactivate(id);
@@ -341,7 +342,7 @@ await client.webhooks.deactivate(id);
 // questions
 const q = await client.questions.get(questionId);
 const pending = await client.questions.list({ status: 'WAITING_FOR_ANSWER' });
-await client.questions.answer(questionId, 'Cevap metni (10–2000 chars).');
+const { answerId } = await client.questions.answer(questionId, 'Cevap metni (10–2000 chars).'); // AnswerQuestionResult
 
 // invoices
 await client.invoices.uploadFile({ shipmentPackageId: 100, file: pdfBlob });
@@ -353,16 +354,19 @@ await client.finance.getSettlements({ startDate, endDate, transactionType: 'Sale
 await client.finance.getOtherFinancials({ transactionType: 'DeductionInvoices' });
 
 // labels
-await client.labels.createCommon(trackingNumber, { format: 'ZPL', boxQuantity: 2 });
+await client.labels.createCommon(trackingNumber, { format: 'ZPL', boxQuantity: 2 }); // MutationResult (200 OK, no body)
 const label = await client.labels.getCommon(trackingNumber);
 console.log(label.labels[0]?.label); // ZPL string
 
 // test orders (STAGE-only)
-await client.testOrders.create({
+const { orderNumber } = await client.testOrders.create({
   /* CreateTestOrderInput */
-});
-await client.testOrders.updateStatus(pkgId, 'Shipped');
-await client.testOrders.setClaimsWaitingInAction();
+}); // CreateTestOrderResult — documented `{ orderNumber }`
+await client.testOrders.updateStatus(pkgId, 'Shipped'); // MutationResult
+await client.testOrders.setClaimsWaitingInAction({ shipmentPackageId }); // MutationResult; body optional
+
+// videos
+const { videoId } = await client.videos.create({ title, videoUrl, productContentIds }); // CreateVideoResult — documented `{ videoId }`
 
 // locations (no sellerId — utility lookup)
 const countries = await client.locations.getCountries();
@@ -370,6 +374,15 @@ const cities = await client.locations.getTurkeyCities();
 const districts = await client.locations.getTurkeyDistricts(cityCode);
 const neighborhoods = await client.locations.getTurkeyNeighborhoods(cityCode, districtCode);
 ```
+
+## Mutation results
+
+No method returns a bare `unknown`. Every write / action call resolves to one of:
+
+- a **documented typed shape** when Trendyol publishes a response body — `BatchAcceptedResponse` (`{ batchRequestId }`) for the async product writes, `CreateWebhookResult` (`{ id }`), `AnswerQuestionResult` (`{ answerId }`), `CreateVideoResult` (`{ videoId }`), `CreateTestOrderResult` (`{ orderNumber }`);
+- a **`MutationResult`** (`{ raw: unknown }`, from `@lonca/core`) when the endpoint is documented as a bare `200 OK` or the body is undocumented — `webhooks.update/delete/activate/deactivate`, `labels.createCommon`, `testOrders.updateStatus/setClaimsWaitingInAction`, the claim/invoice mutations.
+
+The typed results also extend `MutationResult`, so `.raw` is always the untouched body and the documented fields are optional (Trendyol occasionally answers `200 OK` with an empty body).
 
 ## Async batch + polling
 

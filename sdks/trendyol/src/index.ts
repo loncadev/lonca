@@ -74,6 +74,7 @@ export type {
 } from './types/export-center.js';
 export type {
   CreateVideoInput,
+  CreateVideoResult,
   ListVideosParams,
   SellerIntegrationStatus,
   SellerVideo,
@@ -150,12 +151,18 @@ export type {
 } from './types/returns.js';
 export type { SupplierAddress, SupplierAddressType } from './types/supplier-address.js';
 export type {
+  AnswerQuestionResult,
   ListQuestionsParams,
   Question,
   QuestionAnswer,
   QuestionStatus,
 } from './types/question.js';
-export type { Webhook, WebhookAuthenticationType, WebhookInput } from './types/webhook.js';
+export type {
+  CreateWebhookResult,
+  Webhook,
+  WebhookAuthenticationType,
+  WebhookInput,
+} from './types/webhook.js';
 export type { PackageCreatedBy, WebhookEvent, WebhookEventStatus } from './types/webhook-event.js';
 export type {
   City,
@@ -164,6 +171,7 @@ export type {
   Country,
   CreateCommonLabelInput,
   CreateTestOrderInput,
+  CreateTestOrderResult,
   DeleteInvoiceLinkInput,
   District,
   FinancialTransaction,
@@ -171,6 +179,7 @@ export type {
   Neighborhood,
   OtherFinancialRow,
   SendInvoiceLinkInput,
+  SetClaimsWaitingInActionInput,
   SettlementRow,
   TestOrderStatus,
   UploadInvoiceFileInput,
