@@ -126,11 +126,10 @@ That `200` means **accepted, not applied**: Trendyol queues the batch and hands 
 ```ts
 import { pollBatchStatus } from '@lonca/trendyol';
 
-const settled = await pollBatchStatus(
-  (id) => client.products.getBatchStatus(id),
-  batchRequestId,
-  { pollIntervalMs: 2000, timeoutMs: 120_000 },
-);
+const settled = await pollBatchStatus((id) => client.products.getBatchStatus(id), batchRequestId, {
+  pollIntervalMs: 2000,
+  timeoutMs: 120_000,
+});
 console.log(settled.status, settled.failedItemCount); // 'COMPLETED' | 'FAILED'
 ```
 
@@ -218,10 +217,9 @@ console.log(res.raw); // whatever the gateway sent — usually undefined for 200
 import { createFakeTrendyolClient } from '@lonca/trendyol/testing';
 
 const fake = createFakeTrendyolClient({ batchRequestId: 'b-1', batchStatus: 'COMPLETED' });
-const [result] = await fake.inventory.updateAndWait(
-  [{ barcode: 'X', quantity: 1 }],
-  { pollIntervalMs: 1 },
-);
+const [result] = await fake.inventory.updateAndWait([{ barcode: 'X', quantity: 1 }], {
+  pollIntervalMs: 1,
+});
 console.log(result?.status); // 'COMPLETED'
 ```
 
