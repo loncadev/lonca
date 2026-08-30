@@ -28,6 +28,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "clean": "turbo run clean",
+    "health:packages": "tsx scripts/health-packages.mts",
+    "api:check": "tsx scripts/api-surface.mts --check",
+    "api:update": "tsx scripts/api-surface.mts --update",
     "docs:dev": "pnpm --filter @lonca/docs dev",
     "docs:build": "pnpm --filter @lonca/docs build",
     "docs:preview": "pnpm --filter @lonca/docs preview",
@@ -49,6 +52,7 @@
     "release": "turbo run build && changeset publish"
   },
   "devDependencies": {
+    "@arethetypeswrong/cli": "0.18.5",
     "@changesets/changelog-github": "^1.0.0",
     "@changesets/cli": "^3.0.1",
     "@eslint/js": "^10.0.1",
@@ -56,6 +60,7 @@
     "eslint": "^10.9.0",
     "globals": "^17.11.0",
     "prettier": "^3.9.6",
+    "publint": "0.3.24",
     "tsx": "^4.23.12",
     "turbo": "^2.10.11",
     "typescript": "^6.0.3",

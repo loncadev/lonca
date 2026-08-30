@@ -1,0 +1,154 @@
+export { A as AccountingResource, a as AccountingTransaction, b as AdditionalInfoUploadItem, c as AnswerQuestionInput, B as BulkUnlockInput, d as BuyboxOrderRow, C as CancelDiscountInput, e as CancelLineItemInput, f as CargoCompanyOption, g as CargoFirm, h as CatalogField, i as CatalogPage, j as CatalogPagingParams, k as CatalogProduct, l as CatalogProductLifecycleStatus, m as CatalogProductStatus, n as CatalogResource, o as CatalogResult, p as CatalogTrackingReceipt, q as CategoriesResource, r as Category, s as CategoryAttribute, t as CategoryAttributeValue, u as ChangeCargoCompanyInput, v as CheckProductStatusInput, w as Claim, x as ClaimActionInput, y as ClaimStatus, z as ClaimsResource, D as CommissionRow, E as CreateClaimInput, F as CreateClientOptions, G as CreateListingUpdateRequestInput, H as CreateListingUpdateRequestItem, I as CreatePackagesInput, J as CreatePercentDiscountInput, K as CreateQuestionInput, L as CreateTestOrderInput, M as CreateTlDiscountInput, N as CreateXyDiscountInput, O as CustomizableProperty, P as DeleteBySkuInput, Q as Discount, R as DiscountBudgets, S as DiscountLimits, T as DiscountReceipt, U as FastListingInput, V as GetAttributesParams, W as HepsiburadaCapabilities, X as HepsiburadaClient, Y as HepsiburadaEnvironment, Z as InventoryUploadItem, _ as InvoiceLinkInput, $ as InvoiceLinkItem, a0 as LaborCostInput, a1 as ListCatalogProductsParams, a2 as ListCategoriesParams, a3 as ListClaimsByStatusParams, a4 as ListClaimsParams, a5 as ListDiscountsParams, a6 as ListListingsParams, a7 as ListOrdersParams, a8 as ListPackagesParams, a9 as ListProductsByStatusParams, aa as ListQuestionsParams, ab as ListTransactionsParams, ac as Listing, ad as ListingPricing, ae as ListingUpdateRequestDetail, af as ListingUpdateRequestItem, ag as ListingUpdateRequestReceipt, ah as ListingUpdateRequestSearchInput, ai as ListingUpdateRequestSummary, aj as ListingsPage, ak as ListingsResource, al as MerchantSkuGroup, am as OpenPurchaseOrder, an as OpenPurchaseOrderSearchInput, ao as OpenPurchaseOrderStatus, ap as Order, aq as OrdersPage, ar as OrdersResource, as as PackageLabel, at as PackageReceipt, au as PackageStatusInput, av as ParcelInfoInput, aw as PreMatchActionInput, ax as PriceUploadItem, ay as PriceUploadResult, az as PriceValidation, aA as ProductUpdateHistoryEntry, aB as ProductUpdateInput, aC as ProductUpdateReceipt, aD as ProductUpdateStatus, aE as ProductUpdatesResource, aF as PromotionCategory, aG as PromotionsResource, aH as PurchaseOrderLineRef, aI as PurchaseOrderType, aJ as Question, aK as QuestionCountSummary, aL as QuestionsResource, aM as RejectQuestionInput, aN as ShippingInfoUploadItem, aO as ShippingPackage, aP as ShippingProfile, aQ as ShippingProfileInput, aR as ShippingResource, aS as SplitPackageInput, aT as StockUploadItem, aU as SupplierApprovalStatus, aV as SupplierEnvelope, aW as SupplierListing, aX as SupplierListingSearchInput, aY as SupplierListingStatus, aZ as SupplierListingType, a_ as SupplierSearchResult, a$ as SuppliersResource, b0 as TestOrdersResource, b1 as TrackingIdHistoryEntry, b2 as UpdateListingInput, b3 as UploadError, b4 as UploadProductsInput, b5 as UploadReceipt, b6 as UploadResult, b7 as UploadStatus, b8 as WarehouseInput, b9 as createHepsiburadaClient, ba as hepsiburadaCapabilities } from './client-BHoJv4QZ.js';
+import * as _lonca_core from '@lonca/core';
+import { NormalizedOrderStatus } from '@lonca/core';
+export { CursorPage, CursorPaginationParams, MutationResult, OffsetPage, OffsetPaginationParams, paginate, paginateOffset } from '@lonca/core';
+
+/**
+ * Hepsiburada order / package statuses the SDK maps exhaustively.
+ *
+ * Hepsiburada types `status` as a free string on the wire (no enum), so this is
+ * the SDK-owned known set. It is intentionally conservative — only statuses
+ * confirmed against the API are listed — and extended as more are confirmed.
+ * Any value not in the map degrades to `{ normalized: 'unknown', mapped: false }`
+ * (never a silent default), so an unrecognized status is visible, not hidden.
+ */
+type KnownHepsiburadaOrderStatus = 'Open' | 'Shipped' | 'Delivered' | 'Cancelled' | 'Returned';
+/**
+ * Exhaustive map over {@link KnownHepsiburadaOrderStatus} → the
+ * marketplace-agnostic {@link NormalizedOrderStatus} vocabulary. Adding a value
+ * to the union without mapping it here is a compile-time error.
+ */
+declare const statusMap: Record<KnownHepsiburadaOrderStatus, NormalizedOrderStatus>;
+/**
+ * Normalize a raw Hepsiburada order/package status into the
+ * {@link NormalizedOrderStatus} vocabulary. Unknown values resolve to
+ * `{ normalized: 'unknown', mapped: false }` with the raw string preserved.
+ */
+declare const normalizeStatus: (raw: string) => _lonca_core.NormalizedStatusResult;
+
+/**
+ * Hepsiburada webhook event types.
+ *
+ * Source: developers.hepsiburada.com — `siparis-olusturma-entegrasyonu`
+ * "Sipariş Webhook Modeli" + `talep-entegrasyonu` "Talep Webhook Modelleri"
+ * sections (2026-05).
+ *
+ * Hepsiburada's webhook model is **endpoint-per-event** (different from
+ * Trendyol's body-discriminated single endpoint): merchants register one
+ * base URL with Hepsiburada and Hepsiburada `PUT`s to
+ * `<baseUrl>/<eventName>` when each event happens. So callers already
+ * know the event name from their route handler — the SDK provides:
+ *
+ *   1. The exhaustive event-name unions (`OrderWebhookEvent`,
+ *      `ClaimWebhookEvent`, `HepsiburadaWebhookEvent`) for compile-time
+ *      switch exhaustiveness.
+ *   2. A `parseHepsiburadaWebhookEvent()` helper that accepts a raw JSON
+ *      string or an already-parsed object and returns a typed envelope
+ *      `{ event, body, raw }`. Per-event body shapes are intentionally
+ *      typed as `Record<string, unknown>` — Hepsiburada documents the
+ *      field set per event in HTML tables; the SDK keeps `body` loose so
+ *      undocumented fields stay accessible, and surfaces the raw payload
+ *      verbatim.
+ *
+ * Success-response contract per Hepsiburada's "Webhook Önemli Bilgiler":
+ *   - `2xx` ack within ~5s; 201/204 are the documented success codes
+ *   - Implementation must be idempotent (Hepsiburada may retry)
+ *   - Default IIS PUT must be enabled if hosted on IIS
+ */
+/**
+ * Order webhook events. Each corresponds to a separate `PUT
+ * <baseUrl>/<eventName>` endpoint on the merchant side.
+ *
+ *   - `createOrder`   — a new order has been paid for; one body per order
+ *   - `createPackages` — Hepsiburada packaged your line items (alternative to
+ *                       merchant-driven packaging via `orders.createPackages`)
+ *   - `orderCancel`   — the buyer cancelled before shipment
+ *   - `unpack`        — a previously-created package was unpacked
+ *   - `intransit`     — package handed over to cargo
+ *   - `deliver`       — package delivered to buyer
+ *   - `undeliver`     — delivery failed
+ *   - `changeShippingAddressOrder` — buyer updated the delivery address
+ */
+type OrderWebhookEvent = 'createOrder' | 'createPackages' | 'orderCancel' | 'unpack' | 'intransit' | 'deliver' | 'undeliver' | 'changeShippingAddressOrder';
+/** Exhaustive list of order webhook event names — runtime use. */
+declare const ORDER_WEBHOOK_EVENTS: readonly ["createOrder", "createPackages", "orderCancel", "unpack", "intransit", "deliver", "undeliver", "changeShippingAddressOrder"];
+/**
+ * Claim webhook events. As with orders, each corresponds to a separate
+ * `PUT <baseUrl>/<eventName>` endpoint on the merchant side.
+ *
+ *   - `awaitingAction`         — a claim needs the merchant's accept/reject
+ *   - `awaitingPreApproval`    — claim entered the pre-approval flow
+ *   - `disputedClaimResult`    — disputed-claim decision (accept/reject) by Hepsiburada
+ *   - `packageFromClaimResult` — a new return package was created after claim approval
+ */
+type ClaimWebhookEvent = 'awaitingAction' | 'awaitingPreApproval' | 'disputedClaimResult' | 'packageFromClaimResult';
+/** Exhaustive list of claim webhook event names — runtime use. */
+declare const CLAIM_WEBHOOK_EVENTS: readonly ["awaitingAction", "awaitingPreApproval", "disputedClaimResult", "packageFromClaimResult"];
+/** All Hepsiburada webhook event names — union over orders + claims. */
+type HepsiburadaWebhookEvent = OrderWebhookEvent | ClaimWebhookEvent;
+/** Exhaustive list of every Hepsiburada webhook event — runtime use. */
+declare const HEPSIBURADA_WEBHOOK_EVENTS: readonly ["createOrder", "createPackages", "orderCancel", "unpack", "intransit", "deliver", "undeliver", "changeShippingAddressOrder", "awaitingAction", "awaitingPreApproval", "disputedClaimResult", "packageFromClaimResult"];
+/**
+ * Parsed envelope returned by `parseHepsiburadaWebhookEvent()`.
+ *
+ * Per-event body shapes are typed as `Record<string, unknown>` because
+ * Hepsiburada documents field sets in HTML tables (no machine-readable
+ * spec). Use `.raw` to grab the original payload verbatim when you need
+ * an undocumented field; use the documented field set per
+ * developers.hepsiburada.com for routine work.
+ */
+interface ParsedHepsiburadaWebhookEvent<E extends HepsiburadaWebhookEvent = HepsiburadaWebhookEvent> {
+    /** The event name as routed by the merchant — matches the URL path segment. */
+    event: E;
+    /** Parsed JSON body. */
+    body: Record<string, unknown>;
+    /** Untouched raw payload for forward-compat access. */
+    raw: Record<string, unknown>;
+}
+
+/**
+ * Parse a Hepsiburada webhook PUT body into a typed envelope.
+ *
+ * @param event   The event name. Hepsiburada's webhook model is
+ *   endpoint-per-event — you already know the name from your route
+ *   handler (e.g. `app.put('/hb/createOrder', ...)`). Must be one of
+ *   {@link HEPSIBURADA_WEBHOOK_EVENTS}.
+ * @param rawBody The raw request body — either a JSON string (Node's
+ *   `req.body` when no body parser is mounted) or an already-parsed
+ *   object (after `express.json()` etc.).
+ *
+ * @returns `{ event, body, raw }`. Both `body` and `raw` are the same
+ *   parsed object; `raw` is provided as the forward-compat accessor for
+ *   undocumented fields.
+ *
+ * @throws {ValidationError} when `event` isn't a recognized event name,
+ *   when `rawBody` is a string but not valid JSON, or when `rawBody`
+ *   doesn't parse to an object.
+ *
+ * @example
+ * ```ts
+ * import express from 'express';
+ * import { parseHepsiburadaWebhookEvent } from '@lonca/hepsiburada';
+ *
+ * const app = express();
+ * app.use(express.json());
+ *
+ * app.put('/hb/createOrder', (req, res) => {
+ *   const { event, body } = parseHepsiburadaWebhookEvent('createOrder', req.body);
+ *   // process the order...
+ *   res.status(204).end();
+ * });
+ * ```
+ */
+declare function parseHepsiburadaWebhookEvent<E extends HepsiburadaWebhookEvent>(event: E, rawBody: string | Record<string, unknown> | null | undefined): ParsedHepsiburadaWebhookEvent<E>;
+/**
+ * Short alias for {@link parseHepsiburadaWebhookEvent}. The Trendyol SDK
+ * exports the same name, so each SDK's `parseWebhookEvent` is the
+ * canonical entry point when callers import the helper via the
+ * marketplace-specific package.
+ *
+ * Use whichever name reads better. The two are referentially identical.
+ */
+declare const parseWebhookEvent: typeof parseHepsiburadaWebhookEvent;
+
+export { CLAIM_WEBHOOK_EVENTS, type ClaimWebhookEvent, HEPSIBURADA_WEBHOOK_EVENTS, type HepsiburadaWebhookEvent, type KnownHepsiburadaOrderStatus, ORDER_WEBHOOK_EVENTS, type OrderWebhookEvent, type ParsedHepsiburadaWebhookEvent, normalizeStatus, parseHepsiburadaWebhookEvent, parseWebhookEvent, statusMap };

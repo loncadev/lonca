@@ -1,0 +1,114 @@
+import { aZ as ShipmentPackage, a7 as KnownShipmentPackageStatus } from './client-Dnfjvwah.js';
+export { A as AnswerQuestionResult, a as ApproveClaimLineItemsInput, b as ApprovedProductStatus, B as BarcodeCategoryLookup, c as BatchAcceptedResponse, d as BatchPollOptions, e as BatchRequestItemResult, f as BatchRequestResult, g as BatchRequestStatus, h as Brand, i as BrandsResource, j as BuyboxInfo, C as CancelPackageItemInput, k as CareInstruction, l as CargoInvoiceItem, m as CategoriesResource, n as Category, o as CategoryAttribute, p as CategoryAttributeValue, q as City, r as Claim, s as ClaimIssueReason, t as ClaimItemAudit, u as ClaimItemStatus, v as ClaimsResource, w as CommonLabel, x as CommonLabelEntry, y as CompensationItemDetail, z as CompensationTicket, D as CompensationTicketState, E as Country, F as CreateClaimInput, G as CreateClaimIssueInput, H as CreateClaimItemInput, I as CreateClientOptions, J as CreateCommonLabelInput, K as CreateProductV2Input, L as CreateTestOrderInput, M as CreateTestOrderResult, N as CreateVideoInput, O as CreateVideoResult, P as CreateWebhookResult, Q as DeleteInvoiceLinkInput, R as DeliveryOptionInput, S as District, T as ExportBatchAcceptedResponse, U as ExportBatchStatus, V as ExportCategoryAttribute, W as ExportCenterResource, X as ExportPackage, Y as ExportPackageItem, Z as ExportPackageStatus, _ as ExportPriceUpdateInput, $ as ExportProduct, a0 as ExportProductInput, a1 as ExportStockUpdateInput, a2 as FinanceResource, a3 as FinancialTransaction, a4 as GetExportPackageItemsParams, a5 as InventoryResource, a6 as InvoicesResource, a8 as LabelsResource, a9 as LaborCostInput, aa as ListCategoryAttributeValuesParams, ab as ListClaimsParams, ac as ListCompensationTicketsParams, ad as ListExportPackagesV2Params, ae as ListExportPackagesV3Params, af as ListExportProductsParams, ag as ListFinanceParams, ah as ListInventoryAndPriceParams, ai as ListOrdersParams, aj as ListOrdersStreamParams, ak as ListProductsParams, al as ListQuestionsParams, am as ListUnapprovedProductsParams, an as ListVideosParams, ao as LocationsResource, ap as NamedRef, aq as Neighborhood, ar as OrderAddress, as as OrderAddressLines, at as OrderCustomer, au as OrderLine, av as OrderLineDiscountDetail, aw as OrdersResource, ax as OtherFinancialRow, ay as PackageDetail, az as PackageHistoryEntry, aA as PackageLineUpdate, aB as PriceInventoryUpdate, aC as ProcessAlternativeDeliveryInput, aD as Product, aE as ProductAttribute, aF as ProductAttributeV2Input, aG as ProductBase, aH as ProductComposition, aI as ProductContentBase, aJ as ProductImageInput, aK as ProductOrigin, aL as ProductStockPrice, aM as ProductStockPriceVariant, aN as ProductVariant, aO as ProductsResource, aP as QuantitySplit, aQ as Question, aR as QuestionAnswer, aS as QuestionStatus, aT as QuestionsResource, aU as SellerIntegrationStatus, aV as SellerVideo, aW as SendInvoiceLinkInput, aX as SetClaimsWaitingInActionInput, aY as SettlementRow, a_ as ShipmentPackageStatus, a$ as SplitGroup, b0 as SplitPackagePlan, b1 as SupplierAddress, b2 as SupplierAddressType, b3 as SuppliersResource, b4 as SuppliersResourceOptions, b5 as TestOrderStatus, b6 as TestOrderStatusLine, b7 as TestOrdersResource, b8 as TrendyolCapabilities, b9 as TrendyolCargoProvider, ba as TrendyolClient, bb as TrendyolEnvironment, bc as UnapprovedDateQueryType, bd as UnapprovedProduct, be as UnapprovedProductRejectReason, bf as UnapprovedProductStatus, bg as UpdateBoxInfoInput, bh as UpdateContentInput, bi as UpdateDeliveryInfoInput, bj as UpdatePackageStatusInput, bk as UpdatePriceInventoryResponse, bl as UpdateTestOrderStatusOptions, bm as UpdateUnapprovedInput, bn as UpdateVariantInput, bo as UploadInvoiceFileInput, bp as VideoContentType, bq as VideosResource, br as Webhook, bs as WebhookAuthenticationType, bt as WebhookInput, bu as WebhooksResource, bv as createTrendyolClient, bw as normalizeShipmentPackage, bx as pollBatchStatus, by as trendyolCapabilities } from './client-Dnfjvwah.js';
+import * as _lonca_core from '@lonca/core';
+import { NormalizedOrderStatus } from '@lonca/core';
+export { CursorPage, CursorPaginationParams, MutationResult, OffsetPage, OffsetPaginationParams, paginate, paginateOffset } from '@lonca/core';
+
+/**
+ * Inbound webhook event payloads — what Trendyol POSTs to YOUR endpoint
+ * when a subscribed shipment-package status event fires.
+ *
+ * Per Trendyol's "Webhook Model" doc:
+ *   - Method: POST, body: JSON
+ *   - Wire shape: identical to `getShipmentPackages` response envelope
+ *     (`{ totalElements, totalPages, page, size, content: [...] }`)
+ *   - Sent on every status transition for a subscribed status (see
+ *     `WebhookEventStatus` below) — the full order data is delivered
+ *     each time, not a delta.
+ *
+ * Trendyol authenticates against YOUR endpoint using the method you
+ * configured on the subscription (BASIC_AUTHENTICATION or API_KEY). The
+ * SDK does NOT validate auth on its end — handle that in your request
+ * middleware before passing the body to `parseWebhookEvent`.
+ *
+ * Retry: on a non-2xx response, Trendyol retries every 5 minutes; after
+ * persistent failures the subscription is auto-deactivated (you'll get
+ * 2 emails). Reactivate via `client.webhooks.activate(id)` once your
+ * endpoint is healthy again.
+ */
+
+/**
+ * Status values Trendyol sends as the event trigger. Note the
+ * **upper-snake-case** spelling here, distinct from `ShipmentPackageStatus`
+ * (which uses PascalCase on the API read responses).
+ */
+type WebhookEventStatus = 'CREATED' | 'PICKING' | 'INVOICED' | 'SHIPPED' | 'CANCELLED' | 'DELIVERED' | 'UNDELIVERED' | 'RETURNED' | 'UNSUPPLIED' | 'AWAITING' | 'UNPACKED' | 'AT_COLLECTION_POINT' | 'VERIFIED' | (string & {});
+/**
+ * Origin of a package, surfaced as `ShipmentPackage.createdBy` on the
+ * normalized event payload. Useful for routing logic (e.g. trigger a
+ * different flow for `'split'` packages than `'order-creation'`).
+ */
+type PackageCreatedBy = 'order-creation' | 'cancel' | 'split' | 'transfer' | (string & {});
+/**
+ * The parsed webhook event body. `packages` is the normalized
+ * `content[]` from the inbound JSON; `pageInfo` carries Trendyol's
+ * pagination envelope verbatim so you can log / surface it.
+ *
+ * In practice `packages.length === 1` for status-change events, but the
+ * model is defined as a page so the same handler can absorb future
+ * batch events without breaking.
+ */
+interface WebhookEvent {
+    packages: ShipmentPackage[];
+    pageInfo: {
+        totalElements?: number;
+        totalPages?: number;
+        page?: number;
+        size?: number;
+    };
+    /** Raw inbound body — fall back here for fields the SDK doesn't surface. */
+    raw: Record<string, unknown>;
+}
+
+/**
+ * Top-level helper for parsing incoming Trendyol webhook event bodies
+ * into the SDK's typed shape.
+ *
+ * Usage in an Express route:
+ *
+ * ```ts
+ * import { parseWebhookEvent } from '@lonca/trendyol';
+ *
+ * app.post('/trendyol/webhook', express.json(), (req, res) => {
+ *   const event = parseWebhookEvent(req.body);
+ *   for (const pkg of event.packages) {
+ *     // pkg: typed ShipmentPackage — same shape as orders.list()
+ *     await myQueue.enqueue({ packageId: pkg.id, status: pkg.status });
+ *   }
+ *   res.sendStatus(200);
+ * });
+ * ```
+ */
+
+/**
+ * Parse an inbound webhook body into a typed `WebhookEvent`.
+ *
+ * Accepts either an already-parsed object or a JSON string. Returns
+ * normalized `ShipmentPackage[]` (the same shape `orders.list()`
+ * produces), plus the page envelope and the raw body for fallthrough.
+ *
+ * @throws {ValidationError} when the body isn't an object / valid JSON,
+ *   or when `content` is missing or not an array.
+ */
+declare function parseWebhookEvent(rawBody: unknown): WebhookEvent;
+
+/**
+ * Exhaustive map from Trendyol's known shipment-package statuses to the
+ * marketplace-agnostic {@link NormalizedOrderStatus} vocabulary.
+ *
+ * Because the key type is the **closed** {@link KnownShipmentPackageStatus}
+ * union, adding a value there without mapping it here is a compile-time error.
+ * Some Trendyol states have no exact normalized equivalent and are folded onto
+ * the nearest lifecycle stage (noted inline).
+ */
+declare const statusMap: Record<KnownShipmentPackageStatus, NormalizedOrderStatus>;
+/**
+ * Normalize a raw Trendyol shipment-package status into the
+ * {@link NormalizedOrderStatus} vocabulary.
+ *
+ * Unknown raw values resolve to `{ normalized: 'unknown', mapped: false }` with
+ * the raw string preserved — never silently coerced to a valid-looking default.
+ */
+declare const normalizeStatus: (raw: string) => _lonca_core.NormalizedStatusResult;
+
+export { KnownShipmentPackageStatus, type PackageCreatedBy, ShipmentPackage, type WebhookEvent, type WebhookEventStatus, normalizeStatus, parseWebhookEvent, statusMap };
