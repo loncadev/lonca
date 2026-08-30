@@ -7,7 +7,7 @@
  *                       → reported by another seller / Trendyol → `REPORTED`
  *                       → rejected by Trendyol moderation → `REJECTED`
  */
-import type { CursorPaginationParams } from '@lonca/core';
+import type { CursorPaginationParams, MutationResult } from '@lonca/core';
 
 export type QuestionStatus =
   'WAITING_FOR_ANSWER' | 'ANSWERED' | 'REJECTED' | 'REPORTED' | (string & {});
@@ -17,6 +17,16 @@ export interface QuestionAnswer {
   /** ISO 8601 UTC (converted from `creationDate` ms-epoch). */
   createdAt?: string;
   status?: string;
+}
+
+/**
+ * Result of `questions.answer()`. Trendyol's `answerQuestion` reference
+ * documents the response as `{ answerId: number }`; `raw` keeps the
+ * untouched body in case the gateway returns more (or nothing).
+ */
+export interface AnswerQuestionResult extends MutationResult {
+  /** ID of the answer Trendyol created (absent when the body had none). */
+  answerId?: number;
 }
 
 export interface Question {
