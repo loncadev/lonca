@@ -26,3 +26,6 @@ docs/dist/
 docs/src/content/docs/api/
 # Fetched by docs/scripts/sync-brand.mjs (source-of-truth: loncadev/.github/brand)
 docs/public/brand/
+
+# Fresh contract-probe output (scripts/probe/run.mts --out-dir); the committed baseline lives in probe-snapshots/
+probe-output/

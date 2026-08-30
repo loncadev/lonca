@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    // Scripts import each other by their real `.mts` names (tsx resolves them as-is).
+    "allowImportingTsExtensions": true
+  },
+  "include": ["**/*.mts", "**/*.ts"]
+}
