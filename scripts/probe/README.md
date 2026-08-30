@@ -146,3 +146,18 @@ OpenAPI documents put them on dedicated hosts, the script calls the SDK method a
 raw-GETs the same path on both the SDK host and the spec host with the SDK's exact header set.
 It prints a Markdown table of status codes only and refuses to run when `HB_ENV` is not `sit`.
 The findings are recorded in [`probe-snapshots/README.md`](../../probe-snapshots/README.md).
+
+## Running locally (the default)
+
+Marketplace credentials are intentionally **not** stored as GitHub secrets, so the
+workflow only runs when dispatched manually (and no-ops without secrets). The
+supported way to check for drift is local:
+
+```bash
+pnpm probe:check   # exits 1 and prints a structural diff when the API drifted
+pnpm probe -- --update   # accept the new shape after reviewing the diff
+```
+
+Run it before releases and whenever an SDK behaves unexpectedly. To automate it
+on your own machine, schedule `pnpm probe:check` (e.g. Windows Task Scheduler /
+cron) from a checkout that has a valid .env.
