@@ -12,7 +12,7 @@
 
 Open-source SDKs and tooling for Turkish e-commerce marketplaces.
 
-> Type-safe TypeScript SDKs and integration utilities for Trendyol and Hepsiburada today. n11, Amazon TR, Pazarama and Çiçeksepeti SDKs and a curated OpenAPI spec collection are planned — see [Vision](#vision).
+> Type-safe TypeScript SDKs and integration utilities for Trendyol and Hepsiburada today, plus a curated OpenAPI spec collection (Hepsiburada available in [`specs/`](specs/), Trendyol planned). n11, Amazon TR, Pazarama and Çiçeksepeti SDKs are planned — see [Vision](#vision).
 
 > [!IMPORTANT]
 > **Unofficial & independent.** Lonca is a community-maintained project. It is **not** an official SDK and is not affiliated with, endorsed by, or supported by Trendyol, Hepsiburada, or any other marketplace named here. All product names, logos, and trademarks are the property of their respective owners.
@@ -52,6 +52,8 @@ Lonca aims to fill this gap with a community-maintained open standard.
 | `@lonca/core`        | Shared types, error hierarchy, retry / logger / rate-limiter                        | [![npm](https://img.shields.io/npm/v/@lonca/core.svg)](https://www.npmjs.com/package/@lonca/core)               |
 | `@lonca/trendyol`    | Trendyol Marketplace SDK — full surface (14 resources, ~70 methods, webhook helper) | [![npm](https://img.shields.io/npm/v/@lonca/trendyol.svg)](https://www.npmjs.com/package/@lonca/trendyol)       |
 | `@lonca/hepsiburada` | Hepsiburada Marketplace SDK — full dev-portal coverage (12 resources, 95 methods)   | [![npm](https://img.shields.io/npm/v/@lonca/hepsiburada.svg)](https://www.npmjs.com/package/@lonca/hepsiburada) |
+
+📄 **OpenAPI specs**: [`specs/`](specs/) — curated per-service OpenAPI 3.0 documents for Hepsiburada (7 files, 67 operations, captured from the developer portal and redistributed under Hepsiburada's copyright); Trendyol is planned. See [`specs/README.md`](specs/README.md).
 
 📚 **Docs & API reference**: [loncadev.github.io/lonca](https://loncadev.github.io/lonca) — guides, end-to-end flows, and full TypeDoc API reference. Built with [Astro Starlight](https://starlight.astro.build), regenerated on each push to `main`.
 

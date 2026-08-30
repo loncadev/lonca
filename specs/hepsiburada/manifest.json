@@ -1,0 +1,99 @@
+{
+  "marketplace": "hepsiburada",
+  "portal": "https://developers.hepsiburada.com",
+  "capturedAt": "2026-05-31",
+  "generator": "scripts/specs/split-hepsiburada.mjs",
+  "files": [
+    {
+      "file": "asktoseller-merchant.json",
+      "productSlug": "saticiya-sor-entegrasyonu",
+      "categorySlug": "saticiya-sor-entegrasyonu",
+      "title": "Hepsiburada saticiya-sor-entegrasyonu",
+      "servers": [
+        "https://api-asktoseller-merchant-sit.hepsiburada.com"
+      ],
+      "paths": 5,
+      "operations": 6,
+      "schemas": 16,
+      "portalUpdatedAt": "2026-05-07T21:13:20.274Z"
+    },
+    {
+      "file": "diskonto-external.json",
+      "productSlug": "satici-promosyonu-entegrasyonu",
+      "categorySlug": "satici-promosyonu-entegrasyonu",
+      "title": "Hepsiburada satici-promosyonu-entegrasyonu",
+      "servers": [
+        "https://diskonto-external-sit.hepsiburada.com"
+      ],
+      "paths": 9,
+      "operations": 9,
+      "schemas": 16,
+      "portalUpdatedAt": "2026-05-07T12:22:16.102Z"
+    },
+    {
+      "file": "mpfinance-external.json",
+      "productSlug": "muhasebe-entegrasyonu",
+      "categorySlug": "muhasebe-entegrasyonu",
+      "title": "Hepsiburada muhasebe-entegrasyonu",
+      "servers": [
+        "https://mpfinance-external-sit.hepsiburada.com"
+      ],
+      "paths": 2,
+      "operations": 2,
+      "schemas": 0,
+      "portalUpdatedAt": "2026-05-12T10:59:55.739Z"
+    },
+    {
+      "file": "mpop-catalog.json",
+      "productSlug": "katalog-urun-entegrasyonu",
+      "categorySlug": "katalog-urun-entegrasyonu",
+      "title": "Hepsiburada katalog-urun-entegrasyonu",
+      "servers": [
+        "https://mpop-sit.hepsiburada.com/product"
+      ],
+      "paths": 14,
+      "operations": 14,
+      "schemas": 28,
+      "portalUpdatedAt": "2026-05-07T12:25:35.783Z"
+    },
+    {
+      "file": "mpop-product-updates.json",
+      "productSlug": "urun-guncelleme-entegrasyonu",
+      "categorySlug": "katalog-urun-entegrasyonu",
+      "title": "Hepsiburada urun-guncelleme-entegrasyonu",
+      "servers": [
+        "https://mpop-sit.hepsiburada.com/ticket-api"
+      ],
+      "paths": 3,
+      "operations": 3,
+      "schemas": 8,
+      "portalUpdatedAt": "2026-05-11T07:06:56.417Z"
+    },
+    {
+      "file": "oms-external.json",
+      "productSlug": "siparis-olusturma-entegrasyonu",
+      "categorySlug": "siparis-yonetimi",
+      "title": "Hepsiburada siparis-olusturma-entegrasyonu",
+      "servers": [
+        "https://oms-external-sit.hepsiburada.com"
+      ],
+      "paths": 27,
+      "operations": 28,
+      "schemas": 55,
+      "portalUpdatedAt": "2026-05-04T18:16:19.405Z"
+    },
+    {
+      "file": "supplier-api-external.json",
+      "productSlug": "tedarikci-entegrasyonu",
+      "categorySlug": "tedarikci-entegrasyonu",
+      "title": "Hepsiburada tedarikci-entegrasyonu",
+      "servers": [
+        "https://supplier-api-external-sit.hepsiburada.com"
+      ],
+      "paths": 5,
+      "operations": 5,
+      "schemas": 25,
+      "portalUpdatedAt": "2026-05-07T07:43:51.129Z"
+    }
+  ]
+}

@@ -1,0 +1,556 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Hepsiburada urun-guncelleme-entegrasyonu",
+    "version": "v1.0",
+    "description": "Hepsiburada developer-portal API definition for product \"urun-guncelleme-entegrasyonu\" (category \"katalog-urun-entegrasyonu\"), redistributed unchanged for interoperability. Copyright Hepsiburada; not covered by the lonca repository licence. See specs/hepsiburada/README.md.",
+    "x-lonca-source": {
+      "portal": "https://developers.hepsiburada.com",
+      "companySlug": "hepsiburada",
+      "categorySlug": "katalog-urun-entegrasyonu",
+      "productSlug": "urun-guncelleme-entegrasyonu",
+      "versionLabel": "v1.0",
+      "capturedAt": "2026-05-31",
+      "portalUpdatedAt": "2026-05-11T07:06:56.417Z",
+      "generator": "scripts/specs/split-hepsiburada.mjs"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://mpop-sit.hepsiburada.com/ticket-api",
+      "description": "Sandbox (SIT) host as published in the portal code samples"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Ürün Güncelleme"
+    }
+  ],
+  "paths": {
+    "/api/integrator/import": {
+      "post": {
+        "tags": [
+          "Ürün Güncelleme"
+        ],
+        "summary": "Ürün Güncelleme Servisi",
+        "description": "Ürün güncelleme servisi ile Hepsiburada sisteminde kayıtlı Merchantların listelediği ürünler için entegratör firmalar tarafından güncelleme talebi oluşturulabilecektir. Ürün bilgilerini bir json dosyasına yazdıktan sonra, o dosyayı bu istek içerisinde göndermeniz gerekmektedir. Hepsiburada tarafından zenginleştirilmiş ve düzeltilmiş ürün bilgilerinin ezilmemesi için sadece güncellenmek istenen alanların iletilmesi önemlidir. <br/> Json dosyası örneği: integrator-ticket-upload.json\n```\n  {\n    \"merchantId\": \"9b3e3fa8-cb96-4056-a83c-3192a4299f59\",\n    \"items\": [\n       {\n         \"hbSku\": \"SAMPLE-SKU-INT-0\",\n         \"productName\": \"Hizlimarket1\",\n         \"productDescription\": \"Duis enim duis magna ex veniam elit id Lorem cillum minim nisi id aliquip. Laboris magna id est et deserunt adipisicing tempor eu ea officia ipsum deserunt. Irure occaecat sit aliquip elit ipsum sint dolore quis est amet aute pariatur cupidatat fugiat. Cillum pariatur pariatur occaecat sint. Aliqua qui in exercitation nulla aliquip id ipsum aliquip ad ut excepteur culpa consequat aliquip. Nisi ut ex tempor enim adipisicing anim irure pariatur.\\r\\n\",\n         \"image1\": \"https://productimages.hepsiburada.net/s/27/552/10194862145586.jpg\",\n         \"image2\": \"https://productimages.hepsiburada.net/s/27/552/10194862145586.jpg\",\n         \"image3\": \"https://productimages.hepsiburada.net/s/27/552/10194862145586.jpg\",\n         \"image4\": \"https://productimages.hepsiburada.net/s/27/552/10194862145586.jpg\",\n         \"image5\": \"https://productimages.hepsiburada.net/s/27/552/10194862145586.jpg\",\n         \"image6\": \"https://productimages.hepsiburada.net/s/27/552/10194862145586.jpg\",\n         \"image7\": \"https://productimages.hepsiburada.net/s/27/552/10194862145586.jpg\",\n         \"image8\": \"https://productimages.hepsiburada.net/s/27/552/10194862145586.jpg\",\n         \"image9\": \"https://productimages.hepsiburada.net/s/27/552/10194862145586.jpg\",\n         \"image10\": \"https://productimages.hepsiburada.net/s/27/552/10194862145586.jpg\",\n         \"video\": \"https://images.hepsiburada.net/assets/videos/ProductVideos/iPhone_14_Pro_PDP_Video_16x9__TR.mp4\",\n         \"attributes\": {\n             \"renk_variant_property\": \"Siyah\",\n             \"numara_variant_property\": \"44\",\n             \"malzeme\": \"Rugan\"\n          }\n       },\n       {\n         \"hbSku\": \"SAMPLE-SKU-INT-1\",\n         \"productName\": \"Hizlimarket2\",\n         \"productDescription\": \"Duis enim duis magna ex veniam elit id Lorem cillum minim nisi id aliquip. Laboris magna id est et deserunt adipisicing tempor eu ea officia ipsum deserunt. Irure occaecat sit aliquip elit ipsum sint dolore quis est amet aute pariatur cupidatat fugiat. Cillum pariatur pariatur occaecat sint. Aliqua qui in exercitation nulla aliquip id ipsum aliquip ad ut excepteur culpa consequat aliquip. Nisi ut ex tempor enim adipisicing anim irure pariatur.\\r\\n\",\n         \"image1\": \"https://productimages.hepsiburada.net/s/27/552/10194862145586.jpg\",\n         \"image2\": \"https://productimages.hepsiburada.net/s/27/552/10194862145586.jpg\",\n         \"image3\": \"https://productimages.hepsiburada.net/s/27/552/10194862145586.jpg\",\n         \"image4\": \"https://productimages.hepsiburada.net/s/27/552/10194862145586.jpg\",\n         \"image5\": \"https://productimages.hepsiburada.net/s/27/552/10194862145586.jpg\",\n         \"image6\": \"https://productimages.hepsiburada.net/s/27/552/10194862145586.jpg\",\n         \"image7\": \"https://productimages.hepsiburada.net/s/27/552/10194862145586.jpg\",\n         \"image8\": \"https://productimages.hepsiburada.net/s/27/552/10194862145586.jpg\",\n         \"image9\": \"https://productimages.hepsiburada.net/s/27/552/10194862145586.jpg\",\n         \"image10\": \"https://productimages.hepsiburada.net/s/27/552/10194862145586.jpg\",\n         \"video\": \"https://images.hepsiburada.net/assets/videos/ProductVideos/iPhone_14_Pro_PDP_Video_16x9__TR.mp4\",\n         \"attributes\": {\n             \"renk_variant_property\": \"Siyah\",\n             \"numara_variant_property\": \"44\",\n             \"malzeme\": \"\", // Değeri silmek için boş gönderiyoruz\n             \"desen\": \"Desenli\" // Varolan bir özellik olduğu için bunun talebi oluşmayacak\n          }\n       }\n    ]\n  }\n```",
+        "operationId": "uploadTicketViaFile",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "version",
+            "in": "query",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "default": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "required": [
+                  "file"
+                ],
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json;charset=UTF-8": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDTO"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDTO"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Method Not Allowed",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDTO"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-11T07:06:56.417Z"
+      }
+    },
+    "/api/integrator/merchant/{merchantId}/hbSku/{hbSku}": {
+      "get": {
+        "tags": [
+          "Ürün Güncelleme"
+        ],
+        "summary": "Ürün Güncelleme Geçmişi Sorgulama",
+        "description": "Oluşturulan ürün güncelleme talepleri için trackingId ve createdAt bilgilerinin alınması için kullanılır. Servise parametre olarak MerchantId ve Sku girilmesi zorunludur.",
+        "operationId": "getMerchantProcessesByMerchantIdAndSku",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "merchantId",
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "hbSku",
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json;charset=UTF-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseObject"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDTO"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDTO"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Method Not Allowed",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDTO"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-11T07:06:56.417Z"
+      }
+    },
+    "/api/integrator/status/{trackingId}": {
+      "get": {
+        "tags": [
+          "Ürün Güncelleme"
+        ],
+        "summary": "Ürün Güncelleme Talep Durumu Sorgulama",
+        "description": "Tracking Id verilerek ürün güncelleme talebinin durumunu sorgular.",
+        "operationId": "getTicketProductsStatusByTrackingId",
+        "deprecated": false,
+        "parameters": [
+          {
+            "name": "trackingId",
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "default": 1
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Datasını görmek istediğiniz sayfa numarası",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "title": "Sayfa numarası",
+              "type": "integer",
+              "description": "Datasını görmek istediğiniz sayfa numarası",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "Her sayfada görmek istediğiniz data sayısı",
+            "required": false,
+            "deprecated": false,
+            "schema": {
+              "title": "Sayfa boyutu",
+              "type": "integer",
+              "description": "Her sayfada görmek istediğiniz data sayısı",
+              "default": 1000
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseIntegratorImportStatusDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDTO"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDTO"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Method Not Allowed",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDTO"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-lonca-portal-updated-at": "2026-05-11T07:06:56.417Z"
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "ErrorDTO": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "fieldErrors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorDTO"
+            }
+          }
+        }
+      },
+      "FieldErrorDTO": {
+        "type": "object",
+        "properties": {
+          "objectName": {
+            "type": "string"
+          },
+          "field": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "IntegratorImportStatusDto": {
+        "type": "object",
+        "properties": {
+          "merchantId": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IntegratorImportStatusItemDto"
+            }
+          }
+        }
+      },
+      "IntegratorImportStatusItemDto": {
+        "type": "object",
+        "properties": {
+          "hbSku": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "productStatus": {
+            "enum": [
+              "COMPLETED",
+              "UNCOMPLETED"
+            ],
+            "type": "string"
+          },
+          "updateResults": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IntegratorUpdateResultsDto"
+            }
+          }
+        }
+      },
+      "IntegratorUpdateResultAttributeDto": {
+        "type": "object",
+        "properties": {
+          "attributeId": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "rejectReason": {
+            "type": "string"
+          },
+          "attributeType": {
+            "enum": [
+              "MANDATORY",
+              "OPTIONAL",
+              "VARIANT_TYPE"
+            ],
+            "type": "string"
+          },
+          "fieldResult": {
+            "enum": [
+              "APPROVED",
+              "REJECTED",
+              "IN_PROGRESS",
+              "PARTIAL_APPROVED"
+            ],
+            "type": "string"
+          }
+        }
+      },
+      "IntegratorUpdateResultsDto": {
+        "type": "object",
+        "properties": {
+          "fieldName": {
+            "enum": [
+              "NAME",
+              "DESCRIPTION",
+              "KDV",
+              "BARCODE",
+              "IS_CUSTOMIZABLE",
+              "BRAND",
+              "DESI",
+              "WARRANTY_PERIOD",
+              "MEDIA",
+              "ATTRIBUTE"
+            ],
+            "type": "string"
+          },
+          "rejectReason": {
+            "type": "string"
+          },
+          "fieldResult": {
+            "enum": [
+              "APPROVED",
+              "REJECTED",
+              "IN_PROGRESS",
+              "PARTIAL_APPROVED"
+            ],
+            "type": "string"
+          },
+          "attributes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IntegratorUpdateResultAttributeDto"
+            }
+          }
+        }
+      },
+      "PageResponseIntegratorImportStatusDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "message": {
+            "type": "string"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "first": {
+            "type": "boolean"
+          },
+          "last": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IntegratorImportStatusDto"
+            }
+          }
+        }
+      },
+      "ResponseObject": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  }
+}

@@ -18,6 +18,8 @@ coverage/
 *.tgz
 .eslintcache
 eslint-results.sarif
+# Raw Hepsiburada developer-portal dumps stay out of git; the curated per-service
+# OpenAPI documents generated from them live in specs/hepsiburada/ (see specs/README.md).
 hb-phase2b-*.json
 docs/.astro/
 docs/dist/
