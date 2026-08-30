@@ -1,6 +1,6 @@
 {
   "name": "@lonca/hepsiburada",
-  "version": "0.13.1",
+  "version": "1.0.0",
   "description": "Type-safe TypeScript SDK for the Hepsiburada Marketplace API",
   "license": "MIT",
   "repository": {

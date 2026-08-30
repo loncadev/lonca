@@ -1,5 +1,12 @@
 # @lonca/core
 
+## 1.0.1
+
+### Patch Changes
+
+- [#139](https://github.com/loncadev/lonca/pull/139) [`da9ff38`](https://github.com/loncadev/lonca/commit/da9ff38928b5a953bad249fe740bd263f3e5f50a) Thanks [@keparlak](https://github.com/keparlak)! - README: replace the stale "0.x — alpha" stability note with the 1.x stable
+  policy wording (the package has been 1.0 since the previous release).
+
 ## 1.0.0
 
 ### Major Changes
