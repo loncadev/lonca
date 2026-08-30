@@ -11,7 +11,7 @@ Before opening a PR:
 
 ## Requirements
 
-- Node.js >= 20 (LTS)
+- Node.js >= 22 (active LTS; `.nvmrc` pins 24)
 - pnpm >= 10 ([Corepack](https://nodejs.org/api/corepack.html) recommended)
 - Git >= 2.40
 

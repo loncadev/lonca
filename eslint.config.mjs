@@ -8,7 +8,7 @@ import globals from 'globals';
 // For an empty workspace we use the non-type-checked recommended preset.
 export default tseslint.config(
   {
-    ignores: ['**/dist/**', '**/.turbo/**', '**/node_modules/**', '**/coverage/**'],
+    ignores: ['**/dist/**', '**/.turbo/**', '**/node_modules/**', '**/coverage/**', '**/.astro/**'],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
