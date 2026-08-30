@@ -244,13 +244,13 @@ describe('CatalogResource', () => {
         fields: { Barcode: { value: 'TEST-SIT', mandatory: true } },
       },
     ]);
-    const rows = await r(transport).listProducts({ page: 0, size: 100 });
+    const { items: rows } = await r(transport).listProducts({ page: 0, size: 100 });
     expect(transport.request).toHaveBeenCalledWith(
       expect.objectContaining({
         method: 'GET',
         service: 'mpop',
         path: '/product/api/products/all-products-of-merchant/M-2a',
-        query: { page: 0, size: 100 },
+        query: expect.objectContaining({ page: 0, size: 100 }),
       }),
     );
     expect(rows[0]).toMatchObject({
@@ -263,9 +263,11 @@ describe('CatalogResource', () => {
     expect(rows[0]!.raw).toBeDefined();
   });
 
-  it('listProducts returns [] on non-array', async () => {
-    const rows = await r(mockTransport(null)).listProducts();
-    expect(rows).toEqual([]);
+  it('listProducts returns an empty page on non-array', async () => {
+    const page = await r(mockTransport(null)).listProducts();
+    expect(page.items).toEqual([]);
+    expect(page.totalCount).toBe(0);
+    expect(page.pageCount).toBe(0);
   });
 
   it('listProducts URL-encodes the merchantId path segment', async () => {

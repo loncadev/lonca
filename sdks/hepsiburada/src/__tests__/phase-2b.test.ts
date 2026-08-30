@@ -231,7 +231,7 @@ describe('CatalogResource — Phase 2b mutations + tracking', () => {
         },
       },
     ]);
-    const [p] = await r(transport).listProducts({ page: 0, size: 1 });
+    const [p] = (await r(transport).listProducts({ page: 0, size: 1 })).items;
     expect(p!.title).toBe('Kırmızı Tişört');
     expect(p!.categoryId).toBe('18021982');
     expect(p!.categoryName).toBe('Tişört');
@@ -245,7 +245,7 @@ describe('CatalogResource — Phase 2b mutations + tracking', () => {
 
   it('listProducts leaves content undefined when no known key matches (never guesses)', async () => {
     const transport = mockTransport([{ id: 'CP-2', fields: { randomAttr: { value: 'x' } } }]);
-    const [p] = await r(transport).listProducts({ page: 0, size: 1 });
+    const [p] = (await r(transport).listProducts({ page: 0, size: 1 })).items;
     expect(p!.title).toBeUndefined();
     expect(p!.categoryId).toBeUndefined();
     expect(p!.brand).toBeUndefined();
@@ -276,9 +276,11 @@ describe('CatalogResource — Phase 2b mutations + tracking', () => {
         },
       ],
     });
-    const rows = await r(transport).listProducts({ page: 0, size: 5 });
-    expect(rows).toHaveLength(1); // envelope unwrapped (was silently [] pre-fix)
-    const p = rows[0]!;
+    const page = await r(transport).listProducts({ page: 0, size: 5 });
+    expect(page.items).toHaveLength(1); // envelope unwrapped (was silently [] pre-fix)
+    expect(page.totalCount).toBe(928378);
+    expect(page.pageCount).toBe(185676);
+    const p = page.items[0]!;
     expect(p.title).toBe('My Collection 6520 Çanta'); // from top-level productName
     expect(p.brand).toBe('My Collection');
     expect(p.images).toEqual(['https://img/a.jpg', 'https://img/b.jpg']);
@@ -293,7 +295,7 @@ describe('CatalogResource — Phase 2b mutations + tracking', () => {
     const transport = mockTransport([
       { id: 'CP-3', name: 'Mavi Pantolon', images: 'https://a.jpg, https://b.jpg' },
     ]);
-    const [p] = await r(transport).listProducts({ page: 0, size: 1 });
+    const [p] = (await r(transport).listProducts({ page: 0, size: 1 })).items;
     expect(p!.title).toBe('Mavi Pantolon'); // falls back to `name`, then raw
     expect(p!.images).toEqual(['https://a.jpg', 'https://b.jpg']);
   });

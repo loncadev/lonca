@@ -105,6 +105,7 @@ export type {
 } from './types/category.js';
 export type {
   CatalogField,
+  CatalogPagingParams,
   CatalogProduct,
   CatalogProductLifecycleStatus,
   CatalogProductStatus,

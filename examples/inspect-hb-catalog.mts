@@ -56,10 +56,13 @@ console.log(`\n🚀 Inspecting ${env.toUpperCase()} catalog…\n`);
 // ─── 1. listProducts: row shape + the 5 most-used fields ────────────────
 
 console.log('── 1. catalog.listProducts (first 50 rows) ────────────');
-let sampleProducts: Awaited<ReturnType<typeof client.catalog.listProducts>> = [];
+let sampleProducts: Awaited<ReturnType<typeof client.catalog.listProducts>>['items'] = [];
 try {
-  sampleProducts = await client.catalog.listProducts({ page: 0, size: 50 });
-  console.log(`   ✓ ${sampleProducts.length} catalog row(s) on the first page`);
+  const page = await client.catalog.listProducts({ page: 0, size: 50 });
+  sampleProducts = page.items;
+  console.log(
+    `   ✓ ${page.items.length} catalog row(s) on the first page — ${page.totalCount} total over ${page.pageCount} page(s)`,
+  );
 } catch (err) {
   console.log(`   ✖ ${formatError(err)}`);
 }
@@ -85,8 +88,10 @@ if (sampleProducts[0]) {
 console.log(`\n── 2. catalog.listProductsByStatus per documented status ──`);
 for (const status of STATUSES) {
   try {
-    const rows = await client.catalog.listProductsByStatus({ status, page: 0, size: 5 });
-    console.log(`   ${status.padEnd(20)} ${rows.length} row(s)`);
+    const page = await client.catalog.listProductsByStatus({ status, page: 0, size: 5 });
+    console.log(
+      `   ${status.padEnd(20)} ${page.totalCount} row(s) total, ${page.items.length} on this page`,
+    );
   } catch (err) {
     console.log(`   ${status.padEnd(20)} ✖ ${formatError(err)}`);
   }
