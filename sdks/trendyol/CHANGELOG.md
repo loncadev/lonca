@@ -1,5 +1,54 @@
 # @lonca/trendyol
 
+## 0.15.0
+
+### Minor Changes
+
+- [#128](https://github.com/loncadev/lonca/pull/128) [`0c0436b`](https://github.com/loncadev/lonca/commit/0c0436b2d183edb341b00cc26ddf3b1ad4de37f6) Thanks [@keparlak](https://github.com/keparlak)! - Map non-JSON 401/403 responses to `AuthError`, and add typed hints to
+  `CreateVideoInput` and `testOrders.updateStatus`.
+  
+  - A `401`/`403` whose body is not JSON — e.g. the Cloudflare block page served
+    when the stage IP allowlist rejects the caller — now maps to `AuthError`
+    ("Trendyol rejected the request before it reached the API (HTTP 403,
+    non-JSON body) — check IP allowlisting / credentials / User-Agent") instead
+    of `ValidationError` (`VALIDATION_FAILED`). The raw HTML/text body is never
+    attached to the error: `error.data` carries only a `{ bodyKind, bodyLength }`
+    hint. JSON 401/403 bodies keep their existing mapping.
+  - `CreateVideoInput` is now a typed hint per the seller video API doc
+    (`title`, `description`, `videoUrl`, `productContentIds`,
+    `videoContentType` — new `VideoContentType` open union) while keeping the
+    `Record<string, unknown>` passthrough, so existing call sites compile
+    unchanged.
+  - `testOrders.updateStatus(packageId, status, { lines?, params? })` — the
+    test-order status doc shows a `{ lines, params, status }` body; pass the new
+    optional third argument (`UpdateTestOrderStatusOptions`, with
+    `TestOrderStatusLine` rows) to send it. Called with two arguments the body
+    stays `{ status }` exactly as before. `TestOrderStatus` gains the documented
+    `'AtCollectionPoint'` value.
+
+- [#125](https://github.com/loncadev/lonca/pull/125) [`bce085f`](https://github.com/loncadev/lonca/commit/bce085f942602495be919a8cb57b4b2604c26e63) Thanks [@keparlak](https://github.com/keparlak)! - The last eleven `Promise<unknown>` methods now return a typed result. Where Trendyol
+  documents a response body the SDK surfaces it as a small typed interface (every one
+  of them extends `MutationResult`, so `.raw` is still the untouched body and the
+  documented field is optional); where the docs show a bare `200 OK` the method
+  returns `MutationResult` (`{ raw: unknown }`) from `@lonca/core`:
+  
+  - `webhooks.create` → `CreateWebhookResult` (`{ id?: string }`, documented `{ id }`)
+  - `webhooks.update` / `delete` / `activate` / `deactivate` → `MutationResult`
+  - `questions.answer` → `AnswerQuestionResult` (`{ answerId?: number }`, documented `{ answerId }`)
+  - `videos.create` → `CreateVideoResult` (`{ videoId?: string }`, documented `{ videoId }`)
+  - `labels.createCommon` → `MutationResult`
+  - `testOrders.create` → `CreateTestOrderResult` (`{ orderNumber?: string }`, documented `{ orderNumber }`)
+  - `testOrders.updateStatus` / `setClaimsWaitingInAction` → `MutationResult`
+  
+  `testOrders.setClaimsWaitingInAction` also accepts an optional
+  `{ shipmentPackageId }` body (`SetClaimsWaitingInActionInput`), which is what
+  Trendyol's test-order status doc shows for that endpoint; omitted, the call is
+  unchanged.
+  
+  Migration is one line — `unknown` already forced a cast, so
+  `(await x) as T` → `(await x).raw` (or read the documented field directly:
+  `(await client.webhooks.create(...)).id`).
+
 ## 0.14.0
 
 ### Minor Changes

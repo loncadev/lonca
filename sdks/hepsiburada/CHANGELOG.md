@@ -1,5 +1,65 @@
 # @lonca/hepsiburada
 
+## 0.13.0
+
+### Minor Changes
+
+- [#123](https://github.com/loncadev/lonca/pull/123) [`460bcc1`](https://github.com/loncadev/lonca/commit/460bcc1e1ee74f82f2ea529240cd2fc0de029115) Thanks [@keparlak](https://github.com/keparlak)! - `catalog.listProducts` and `catalog.listProductsByStatus` now return `OffsetPage<CatalogProduct>` (from `@lonca/core`) instead of a bare `CatalogProduct[]`, mapped from Hepsiburada's Spring-style envelope: `totalElements` → `totalCount`, `totalPages` → `pageCount`, `data` → `items`. Both methods also accept `offset` / `limit` as an alias of `page` / `size`, so they plug straight into `paginateOffset` (pass `limit` — the API pages by number, so `offset` must be a multiple of it). `listProducts` gains the documented `barcode` / `merchantSku` / `hbSku` filters.
+  
+  Migration: `const rows = await c.catalog.listProducts()` → `const rows = (await c.catalog.listProducts()).items`.
+
+- [#129](https://github.com/loncadev/lonca/pull/129) [`8b08874`](https://github.com/loncadev/lonca/commit/8b08874d9ecd91d476b192605f3e8ed01938a2dd) Thanks [@keparlak](https://github.com/keparlak)! - Route five resources to their real service hosts (previously all five went through `oms-external`, where every call failed with 401/404 — verified against SIT):
+  
+  | Resource         | Old host       | New host                           |
+  | ---------------- | -------------- | ---------------------------------- |
+  | `accounting`     | `oms-external` | `mpfinance-external[-sit]`         |
+  | `suppliers`      | `oms-external` | `supplier-api-external[-sit]`      |
+  | `questions`      | `oms-external` | `api-asktoseller-merchant[-sit]`   |
+  | `promotions`     | `oms-external` | `diskonto-external[-sit]`          |
+  | `productUpdates` | `oms-external` | `mpop[-sit]` (`/ticket-api` base)  |
+  
+  Request-shape fixes that the real services require:
+  
+  - `questions.*` now sends the required `merchantId` **header** on every call (missing it yields 401), and `questions.list()` pages with the API's `page`/`size` parameters and filters with `minCreatedAt`/`maxCreatedAt`. The old `offset`/`limit`/`beginDate`/`endDate` params still work as deprecated aliases.
+  - `accounting.listTransactions()` sends the spec's PascalCase query parameters (`Offset`/`Limit`, defaulted to `0`/`100` since the API requires them) on the spec's lowercase `/transactions/merchantid/{id}` path, and exposes the full filter surface (`orderNumber`, `sku`, `orderDateStart`/`orderDateEnd`, `recordDateStart`/`recordDateEnd`, …). The API requires either an identifier filter or a date-range pair spanning at most 1 month. `beginDate`/`endDate` remain as deprecated aliases of `orderDateStart`/`orderDateEnd`.
+  - `promotions.listDiscounts()` now sends the required `page`/`pagesize` query parameters (defaults `1`/`100`) and accepts an optional `{ page, pageSize }` argument.
+  
+  Normalization fixes for the real services' response shapes (both verified on SIT):
+  
+  - `promotions.listCategories()` / `listDiscounts()` unwrap diskonto's PascalCase `{ Data: [...] }` envelope (previously the rows were silently dropped) and categories map the wire's `categoryName` onto `name`.
+  - `questions.getCountByStatus()` surfaces the API's flat per-status body (`{ waitingForAnswer, answered, ... }`) as `byStatus`.
+  
+  Compatibility note: no method signatures were removed, but calls to these five resources previously **always** failed with 401/404 — they now reach the real services and can return data (or real, route-level errors such as a supplier-enrollment 404).
+
+- [#130](https://github.com/loncadev/lonca/pull/130) [`5c228f6`](https://github.com/loncadev/lonca/commit/5c228f6efa51d50616fe27bd8f55857898676cc7) Thanks [@keparlak](https://github.com/keparlak)! - Typed field hints for the remaining passthrough write inputs (Faz 1.6). All 17 `Record<string, unknown>` input aliases now carry spec-sourced field hints intersected with `Record<string, unknown>` — common fields autocomplete while undocumented ones still pass through (non-breaking).
+  
+  - **Catalog** (`mpop-catalog.json`): `PreMatchActionInput` and `CheckProductStatusInput` are now `MerchantSkuGroup[] | MerchantSkuGroup` — the spec takes an array of `{ merchant, merchantSkuList }` groups (new exported `MerchantSkuGroup` type); plain objects still pass through.
+  - **Orders** (`oms-external.json`): `LaborCostInput` (`unitLaborCost`), `InvoiceLinkInput` (`invoiceLink`, `serialNumber`, `rowNumber`, `arrangementDate`, `invoices` — new exported `InvoiceLinkItem` type), `ParcelInfoInput` (`totalDesi`, `totalParcel`), `WarehouseInput` (`shippingAddressLabel`).
+  - **Promotions** (`diskonto-external.json`): `CreateTlDiscountInput`, `CreatePercentDiscountInput`, `CreateXyDiscountInput` (name/date/condition/budget/discount fields per campaign type), `CancelDiscountInput` (`campaignId`).
+  - **Questions** (`asktoseller-merchant.json`): `CreateQuestionInput` (`issueCount`), `AnswerQuestionInput` (`Answer`, `Files` — the endpoint is `multipart/form-data` per spec), `RejectQuestionInput` (`rejectReason`, `rejectConversationId`).
+  - **Suppliers** (`supplier-api-external.json`): `OpenPurchaseOrderSearchInput`, `SupplierListingSearchInput`, `ListingUpdateRequestSearchInput`, `CreateListingUpdateRequestInput` — full filter/offer field sets, with new exported `PurchaseOrderType`, `PurchaseOrderLineRef`, and `CreateListingUpdateRequestItem` types and open unions for spec enums (`currencyCode`, `listingType`, `status`, `purchaseOrderTypes`).
+  
+  No runtime changes — types and JSDoc only. No inputs remain passthrough-only: every one of the 17 had a curated spec definition.
+
+- [#127](https://github.com/loncadev/lonca/pull/127) [`b497044`](https://github.com/loncadev/lonca/commit/b497044287e3b1dc995bfe51de7c57aba433428b) Thanks [@keparlak](https://github.com/keparlak)! - No method returns `Promise<unknown>` any more. The 29 remaining return types are now modelled from the developer-portal specs (`specs/hepsiburada/*.json`), or resolve to the shared `MutationResult` (`{ raw }`) envelope from `@lonca/core` when the API documents no body worth typing (bare string, `204`, `{ success }` only, or no published spec):
+  
+  - `orders.createPackages` → `PackageReceipt` (`{ packageNumber?, barcode?, raw }` — the spec's `CreateDeliveryResponse`).
+  - `orders.splitPackage` / `unpackPackage` / `markPackageInTransit` / `markPackageDelivered` / `markPackageUndelivered` / `cancelLineItem` / `updateLineItemCargoCompany` / `updateLineItemLaborCost` / `updatePackageCargoCompany` / `sendInvoiceLink` / `updateParcelInfo` / `updatePackageWarehouse` → `MutationResult`.
+  - `promotions.createTlDiscount` / `createPercentDiscount` / `createXyDiscount` → `DiscountReceipt` (`{ success?, campaignId?, raw }`); `promotions.cancelDiscount` → `MutationResult`.
+  - `questions.create` / `answer` / `reject` → `MutationResult` (`create`'s documented `number[]` body is on `raw`).
+  - `shipping.createProfile` / `updateProfile` and `testOrders.create` → `MutationResult` (no portal response schema).
+  - `suppliers.searchOpenPurchaseOrders` → `SupplierSearchResult<OpenPurchaseOrder>`, `searchSupplierListings` → `SupplierSearchResult<SupplierListing>`, `searchListingUpdateRequests` → `SupplierSearchResult<ListingUpdateRequestSummary>` (`{ totalCount?, items, message?, errorCode?, raw }`, unwrapped from the supplier API's `{ data, message, errorCode }` envelope); `getListingUpdateRequest` → `ListingUpdateRequestDetail` (`requestItems[]` with per-field approval statuses); `createListingUpdateRequest` → `ListingUpdateRequestReceipt` (`{ id?, raw }`).
+  
+  Migration is one line per call site — `unknown` already forced a cast, so `(await x) as T` becomes `(await x).raw`, or read the typed fields directly.
+  
+  `categories.list` is now `OffsetPage`-aligned: `CatalogPage<T>` extends `OffsetPage<T>` (`items`, `totalCount`, `limit`, `offset`, `pageCount`), so it plugs straight into `paginateOffset`, and `ListCategoriesParams` accepts `offset` / `limit` as an alias of `page` / `size` (`offset` must be a multiple of `limit` — the API pages by number). The Spring fields it exposed before (`data`, `totalElements`, `totalPages`, `number`, `numberOfElements`, `first`, `last`, `success`, `code`, `message`) are still returned but **deprecated** and will be removed in a later minor: migrate `.data` → `.items`, `.totalElements` → `.totalCount`, `.totalPages` → `.pageCount`.
+  
+  `CatalogProduct.id` is now optional (`id?: string`) instead of an `''` placeholder — `catalog.listProductsByStatus` rows carry no id on the wire. Guard with `if (product.id)` wherever the empty string was relied on.
+
+### Patch Changes
+
+- [#123](https://github.com/loncadev/lonca/pull/123) [`460bcc1`](https://github.com/loncadev/lonca/commit/460bcc1e1ee74f82f2ea529240cd2fc0de029115) Thanks [@keparlak](https://github.com/keparlak)! - Fix `catalog.listProductsByStatus` returning HTTP 500 on every call. The SDK sent the filter as `status=…`, but Hepsiburada's `products-by-merchant-and-status` endpoint requires it as `productStatus` and answers 500 (not 400) when that parameter is missing or not one of its UPPER_SNAKE values. The method now sends `productStatus`, requires `status` (a `ValidationError` is thrown client-side when it is missing), types it as the documented `CatalogProductLifecycleStatus` union (`'WAITING' | 'MATCHED' | 'MISSING_INFO' | …`, with an open string escape hatch), passes the documented optional `taskStatus` / `version` parameters through, and no longer sends the undocumented `modifiedAtSince` (now deprecated). The previously documented `'Active'` / `'WaitingApproval'` values were never accepted by the API — replace them with the UPPER_SNAKE vocabulary.
+
 ## 0.12.0
 
 ### Minor Changes
