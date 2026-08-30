@@ -10,6 +10,9 @@
  * - Action endpoints (deliver, intransit, undeliver, cancel, etc.) accept
  *   loose `Record<string, unknown>` bodies — Hepsiburada's portal docs the
  *   exact field set per endpoint; the SDK passes payloads through unchanged.
+ *   They answer with a bare string (`200`) or no body (`204`), so they resolve
+ *   to `MutationResult` (`{ raw }`) — except `createPackages`, whose
+ *   documented `201` body is surfaced as `PackageReceipt`.
  */
 
 import type { OffsetPage } from '@lonca/core';
@@ -94,6 +97,21 @@ export interface PackageLabel {
   format?: string;
   /** Untouched raw response. */
   raw: Record<string, unknown>;
+}
+
+/**
+ * Receipt returned by `orders.createPackages()` — the spec's
+ * `CreateDeliveryResponse` (`201`): the number of the package that was just
+ * created and its cargo barcode. Both are optional on the wire; the untouched
+ * body is on `raw`.
+ */
+export interface PackageReceipt {
+  /** Number of the newly created package (`packageNumber`). */
+  packageNumber?: string;
+  /** Cargo barcode / delivery code of the new package. */
+  barcode?: string;
+  /** Untouched parsed response body. */
+  raw: unknown;
 }
 
 /**

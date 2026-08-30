@@ -143,6 +143,11 @@ describe('CategoriesResource', () => {
   it('list normalizes empty response', async () => {
     const page = await r(mockTransport(null)).list();
     expect(page).toEqual({
+      totalCount: 0,
+      limit: 0,
+      offset: 0,
+      pageCount: 0,
+      items: [],
       number: 0,
       totalPages: 0,
       totalElements: 0,

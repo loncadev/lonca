@@ -1,4 +1,4 @@
-import { TokenBucketRateLimiter, ValidationError } from '@lonca/core';
+import { TokenBucketRateLimiter, ValidationError, type MutationResult } from '@lonca/core';
 import type { HepsiburadaTransport } from '../transport.js';
 import type {
   CancelDiscountInput,
@@ -7,6 +7,7 @@ import type {
   CreateXyDiscountInput,
   Discount,
   DiscountBudgets,
+  DiscountReceipt,
   DiscountLimits,
   PromotionCategory,
 } from '../types/promotion.js';
@@ -122,52 +123,60 @@ export class PromotionsResource {
 
   // ─── Create / cancel ─────────────────────────────────────────────────────
 
-  /** Create a fixed-TL basket discount. */
-  async createTlDiscount(input: CreateTlDiscountInput): Promise<unknown> {
+  /** Create a fixed-TL basket discount. Resolves to a {@link DiscountReceipt} (`campaignId` of the new campaign). */
+  async createTlDiscount(input: CreateTlDiscountInput): Promise<DiscountReceipt> {
     this.assertInput(input, 'promotions.createTlDiscount');
-    return this.transport.request<unknown>({
+    const data = await this.transport.request<unknown>({
       method: 'POST',
       service: SERVICE,
       path: `/self-campaign/${this.merchantSegment()}/tl-discount`,
       body: input,
       rateLimiter: this.limiter,
     });
+    return normalizeDiscountReceipt(data);
   }
 
-  /** Create a percentage basket discount. */
-  async createPercentDiscount(input: CreatePercentDiscountInput): Promise<unknown> {
+  /** Create a percentage basket discount. Resolves to a {@link DiscountReceipt} (`campaignId` of the new campaign). */
+  async createPercentDiscount(input: CreatePercentDiscountInput): Promise<DiscountReceipt> {
     this.assertInput(input, 'promotions.createPercentDiscount');
-    return this.transport.request<unknown>({
+    const data = await this.transport.request<unknown>({
       method: 'POST',
       service: SERVICE,
       path: `/self-campaign/${this.merchantSegment()}/percent-discount`,
       body: input,
       rateLimiter: this.limiter,
     });
+    return normalizeDiscountReceipt(data);
   }
 
-  /** Create an X-buy-Y-pay basket discount. */
-  async createXyDiscount(input: CreateXyDiscountInput): Promise<unknown> {
+  /** Create an X-buy-Y-pay basket discount. Resolves to a {@link DiscountReceipt} (`campaignId` of the new campaign). */
+  async createXyDiscount(input: CreateXyDiscountInput): Promise<DiscountReceipt> {
     this.assertInput(input, 'promotions.createXyDiscount');
-    return this.transport.request<unknown>({
+    const data = await this.transport.request<unknown>({
       method: 'POST',
       service: SERVICE,
       path: `/self-campaign/${this.merchantSegment()}/xy-discount`,
       body: input,
       rateLimiter: this.limiter,
     });
+    return normalizeDiscountReceipt(data);
   }
 
-  /** Cancel an existing discount. */
-  async cancelDiscount(input: CancelDiscountInput): Promise<unknown> {
+  /**
+   * Cancel an existing discount. The API only answers `{ success }`, so this
+   * resolves to a `MutationResult` — the body is on `raw`.
+   */
+  async cancelDiscount(input: CancelDiscountInput): Promise<MutationResult> {
     this.assertInput(input, 'promotions.cancelDiscount');
-    return this.transport.request<unknown>({
-      method: 'POST',
-      service: SERVICE,
-      path: `/self-campaign/${this.merchantSegment()}/cancel-discount`,
-      body: input,
-      rateLimiter: this.limiter,
-    });
+    return {
+      raw: await this.transport.request<unknown>({
+        method: 'POST',
+        service: SERVICE,
+        path: `/self-campaign/${this.merchantSegment()}/cancel-discount`,
+        body: input,
+        rateLimiter: this.limiter,
+      }),
+    };
   }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────
@@ -191,5 +200,21 @@ function normalizeDiscount(row: unknown): Discount {
   if (typeof r.status === 'string') out.status = r.status;
   if (typeof r.startDate === 'string') out.startDate = r.startDate;
   if (typeof r.endDate === 'string') out.endDate = r.endDate;
+  return out;
+}
+
+/**
+ * Map a create-discount response onto {@link DiscountReceipt}. The documented
+ * shape nests the id as `data.campaignId`; a top-level `campaignId` is
+ * accepted too because Hepsiburada's envelopes are not uniform across
+ * surfaces. Nothing else is guessed.
+ */
+function normalizeDiscountReceipt(data: unknown): DiscountReceipt {
+  const out: DiscountReceipt = { raw: data };
+  if (!data || typeof data !== 'object') return out;
+  const r = data as Record<string, unknown>;
+  if (typeof r.success === 'boolean') out.success = r.success;
+  const inner = r.data && typeof r.data === 'object' ? (r.data as Record<string, unknown>) : r;
+  if (typeof inner.campaignId === 'number') out.campaignId = inner.campaignId;
   return out;
 }

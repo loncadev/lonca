@@ -88,6 +88,7 @@ export type {
   Order,
   OrdersPage,
   PackageLabel,
+  PackageReceipt,
   PackageStatusInput,
   ParcelInfoInput,
   ShippingPackage,
@@ -127,9 +128,21 @@ export type {
 } from './types/product-update.js';
 export type {
   CreateListingUpdateRequestInput,
+  ListingUpdateRequestDetail,
+  ListingUpdateRequestItem,
+  ListingUpdateRequestReceipt,
   ListingUpdateRequestSearchInput,
+  ListingUpdateRequestSummary,
+  OpenPurchaseOrder,
   OpenPurchaseOrderSearchInput,
+  OpenPurchaseOrderStatus,
+  SupplierApprovalStatus,
+  SupplierEnvelope,
+  SupplierListing,
   SupplierListingSearchInput,
+  SupplierListingStatus,
+  SupplierListingType,
+  SupplierSearchResult,
 } from './types/supplier.js';
 export type { AccountingTransaction, ListTransactionsParams } from './types/accounting.js';
 export type {
@@ -148,5 +161,6 @@ export type {
   Discount,
   DiscountBudgets,
   DiscountLimits,
+  DiscountReceipt,
   PromotionCategory,
 } from './types/promotion.js';

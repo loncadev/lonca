@@ -117,11 +117,12 @@ for (const order of open.items) {
 
   const peers = await client.orders.getPackageableLineItems(lineId);
 
-  // 3. Package the items
-  await client.orders.createPackages({
+  // 3. Package the items — the receipt carries the new package number + barcode
+  const receipt = await client.orders.createPackages({
     lineItems: [lineId, ...peers.map((p) => (p as { id: string }).id)],
     cargoCompany: 'ARAS',
   });
+  console.log(`packaged as ${receipt.packageNumber} (barcode ${receipt.barcode})`);
 }
 
 // 4. As the cargo firm scans / delivers, transition status
@@ -306,6 +307,7 @@ await client.listings.uploadAdditionalInfo([
 ```ts
 const firms = await client.shipping.getCargoFirms();
 const profiles = await client.shipping.listProfiles();
+// Both resolve to MutationResult ({ raw }) — the portal publishes no response schema
 await client.shipping.createProfile({ profileName: 'Express', cargoFirms: 'ARAS,MNG' });
 await client.shipping.updateProfile({ profileName: 'Express', cargoFirms: 'ARAS' });
 ```
@@ -329,8 +331,13 @@ await client.orders.listMissingInvoicePackages({ limit: 100 });
 await client.orders.getPackage('HBP-1');
 await client.orders.getPackageLabel('HBP-1'); // PDF / barcode
 
-// Packaging mutations
-await client.orders.createPackages({ lineItems: ['L1', 'L2'], cargoCompany: 'ARAS' });
+// Packaging mutations — createPackages resolves to a PackageReceipt
+// ({ packageNumber, barcode, raw }); every other action below resolves to
+// MutationResult ({ raw }) because the API answers with a bare string or 204.
+const { packageNumber, barcode } = await client.orders.createPackages({
+  lineItems: ['L1', 'L2'],
+  cargoCompany: 'ARAS',
+});
 await client.orders.splitPackage('HBP-1', { lineItems: ['L1'] });
 await client.orders.unpackPackage('HBP-1');
 
@@ -383,15 +390,24 @@ Dates use `yyyy-MM-dd HH:mm` format.
 ### `categories` — Hepsiburada catalog tree (3 methods)
 
 ```ts
-// ~27,000 categories — paginate; filter to leaves for listable ones
+// ~27,000 categories — paginate; filter to leaves for listable ones.
+// Returns an OffsetPage-compatible page (items / totalCount / pageCount / limit / offset);
+// the old Spring fields (data, totalElements, …) are still there but deprecated.
 const page = await client.categories.list({ page: 0, size: 100, leaf: true });
-console.log(`${page.numberOfElements}/${page.totalElements} leaf categories`);
+console.log(`${page.items.length}/${page.totalCount} leaf categories`);
+
+// …or drive it with paginateOffset (offset/limit alias; offset must be a multiple of limit)
+for await (const category of paginateOffset((p) => client.categories.list({ ...p, leaf: true }), {
+  limit: 500,
+})) {
+  if (category.available) break;
+}
 
 // Attribute definitions — leaf categories only
-const attrs = await client.categories.getAttributes(page.data[0].categoryId);
+const attrs = await client.categories.getAttributes(page.items[0].categoryId);
 
 // Enum values for an attribute (for dropdowns like Color, Size)
-const values = await client.categories.getAttributeValues(page.data[0].categoryId, attrs[0].id!);
+const values = await client.categories.getAttributeValues(page.items[0].categoryId, attrs[0].id!);
 ```
 
 ### `catalog` — merchant product CRUD (11 methods)
@@ -433,11 +449,19 @@ await client.productUpdates.getUpdateHistory('HB-1');
 ### `suppliers` — supplier offers + inventory (5 methods)
 
 ```ts
-await client.suppliers.searchOpenPurchaseOrders({ pageNumber: 0, pageSize: 50 });
-await client.suppliers.searchSupplierListings({ pageNumber: 0, pageSize: 50 });
-await client.suppliers.searchListingUpdateRequests({ pageNumber: 0, pageSize: 50 });
-await client.suppliers.getListingUpdateRequest('REQ-1');
-await client.suppliers.createListingUpdateRequest({/* ... */});
+// Searches resolve to SupplierSearchResult<T> — { totalCount, items, message?, errorCode?, raw },
+// unwrapped from the supplier API's { data, message, errorCode } envelope.
+const open = await client.suppliers.searchOpenPurchaseOrders({ pageNumber: 0, pageSize: 50 });
+open.items[0]?.purchaseOrderNumber; // OpenPurchaseOrder rows
+const stock = await client.suppliers.searchSupplierListings({ pageNumber: 0, pageSize: 50 });
+stock.items[0]?.status; // SupplierListing rows ('Active' | 'Inactive' | 'Suspended')
+const offers = await client.suppliers.searchListingUpdateRequests({ pageNumber: 0, pageSize: 50 });
+offers.items[0]?.requestId; // ListingUpdateRequestSummary rows
+
+const offer = await client.suppliers.getListingUpdateRequest('REQ-1');
+offer.requestItems[0]?.priceApprovalStatus; // per-field approval on each ListingUpdateRequestItem
+
+const { id } = await client.suppliers.createListingUpdateRequest({/* ... */}); // ListingUpdateRequestReceipt
 ```
 
 ### `accounting` — record-level transactions (1 method)
@@ -457,9 +481,12 @@ await client.accounting.listTransactions({
 await client.questions.list({ status: 'Open', limit: 50 });
 await client.questions.get('Q-1');
 await client.questions.getCountByStatus();
+// The three actions resolve to MutationResult ({ raw }) — the API acknowledges with a bare string
 await client.questions.answer('Q-1', { answer: 'Stokumuzda var, 2 günde teslim ediyoruz.' });
 await client.questions.reject('Q-1', { reasonCode: 'inappropriate' });
-await client.questions.create({/* rarely needed — buyer normally creates */});
+await client.questions.create({
+  /* SIT-only — seeds a test question; raw holds the returned number[] */
+});
 ```
 
 ### `promotions` — self-service basket campaigns (9 methods)
@@ -471,12 +498,15 @@ await client.promotions.getLimits();
 await client.promotions.listDiscounts();
 await client.promotions.getDiscount('C-1');
 
-// Three discount types
-await client.promotions.createTlDiscount({ amount: 50, minBasket: 200 /* ... */ });
+// Three discount types — each resolves to a DiscountReceipt ({ success, campaignId, raw })
+const { campaignId } = await client.promotions.createTlDiscount({
+  amount: 50,
+  minBasket: 200 /* ... */,
+});
 await client.promotions.createPercentDiscount({ percent: 10, minBasket: 200 /* ... */ });
 await client.promotions.createXyDiscount({ buyQty: 3, payQty: 2 /* ... */ });
 
-await client.promotions.cancelDiscount({ campaignId: 'C-1' });
+await client.promotions.cancelDiscount({ campaignId }); // MutationResult — the API only answers { success }
 ```
 
 ### `testOrders` — sandbox-only test order creation (1 method)
@@ -484,10 +514,10 @@ await client.promotions.cancelDiscount({ campaignId: 'C-1' });
 ```ts
 // SIT only — guard your code so it never runs against prod
 if (env === 'sit') {
-  await client.testOrders.create({
+  const { raw } = await client.testOrders.create({
     customer: {/* ... */},
     lines: [/* ... */],
-  });
+  }); // MutationResult — the stub publishes no response schema
 }
 ```
 
@@ -535,10 +565,12 @@ const orders = new OrdersResource(
 Hepsiburada doesn't ship a single uniform envelope across its surfaces — the key holding the rows differs per endpoint. The SDK unwraps each one for you and returns a consistent typed shape; the table below is what the wire actually sends (verified live):
 
 - **`{ totalCount, limit, offset, pageCount, items[] }`** — OMS list endpoints (`orders.list*`, `orders.listShippedPackages`, …). SDK returns an `OffsetPage` (`.items`, `.pageCount`).
-- **`{ totalElements, totalPages, number, …, data[] }`** — Spring-style envelope used by the catalog surface. `catalog.listProducts` / `catalog.listProductsByStatus` map it onto an `OffsetPage` (`totalElements` → `.totalCount`, `totalPages` → `.pageCount`, `data` → `.items`); `categories.list` returns it as a `CatalogPage` with rows under **`.data`**. An empty result arrives as HTTP 200 `success: false` (`code` 4008 / 4014) with `data: []` — surfaced as an empty page, not an error.
+- **`{ totalElements, totalPages, number, …, data[] }`** — Spring-style envelope used by the catalog surface. `catalog.listProducts` / `catalog.listProductsByStatus` map it onto an `OffsetPage` (`totalElements` → `.totalCount`, `totalPages` → `.pageCount`, `data` → `.items`); `categories.list` maps it the same way onto a `CatalogPage` — an `OffsetPage` that, for one more minor, still carries the deprecated Spring fields (`data`, `totalElements`, …). An empty result arrives as HTTP 200 `success: false` (`code` 4008 / 4014) with `data: []` — surfaced as an empty page, not an error.
 - **`{ success, code, message, data }`** — non-paged catalog responses. For `categories.getAttributes`, `data` is an object with three buckets (`baseAttributes`, `attributes`, `variantAttributes`) — the SDK flattens them into one `CategoryAttribute[]`, each tagged with a `group`. A non-leaf category returns `success: false, code: 1003` → surfaced as `ValidationError`.
 - **Endpoint-specific key** — `shipping.getCargoFirms` returns `{ cargoFirms[] }`, `shipping.listProfiles` returns `{ profiles[] }`. SDK unwraps the named key.
 - **Raw `T[]` (bare array)** — `orders.listPackages` (unfiltered `/packages`), `orders.getPackageableLineItems`.
+- **`{ data, message, errorCode }`** — the supplier API. `suppliers.search*` unwrap `data.rows` → `.items` (with `data.totalCount` → `.totalCount`), `getListingUpdateRequest` / `createListingUpdateRequest` unwrap `data` into the typed result; `message` / `errorCode` stay alongside.
+- **Mutations** — no method returns a bare `unknown`. Actions whose response the portal documents are typed (`orders.createPackages` → `PackageReceipt`, `promotions.create*Discount` → `DiscountReceipt`, `suppliers.createListingUpdateRequest` → `ListingUpdateRequestReceipt`); everything else — bare-string `200`s, `204`s, `{ success }`-only bodies, and surfaces with no published schema (`shipping`, `testOrders`, `claims`) — resolves to `MutationResult` from `@lonca/core`, the API body untouched on `.raw`.
 
 Every row carries an untouched `raw: Record<string, unknown>` for fields the SDK doesn't surface — undocumented fields stay available without an SDK release.
 

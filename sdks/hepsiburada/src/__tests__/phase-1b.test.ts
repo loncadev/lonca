@@ -239,7 +239,7 @@ describe('TestOrdersResource', () => {
         body: { customer: {}, lines: [] },
       }),
     );
-    expect(out).toEqual({ orderNumber: 'TO-1' });
+    expect(out).toEqual({ raw: { orderNumber: 'TO-1' } });
   });
 
   it('create throws on falsy input', async () => {

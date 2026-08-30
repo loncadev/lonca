@@ -7,19 +7,45 @@
  * The catalog API uses a **Spring-style** wrapped pagination envelope
  * (`{ success, code, version, message, totalElements, totalPages, number,
  * numberOfElements, first, last, data: T[] }`) distinct from the OMS shape.
+ * `categories.list` maps it onto the shared `OffsetPage<T>` (see
+ * {@link CatalogPage}).
  */
 
-/** Spring-style wrapped response from the catalog API. */
-export interface CatalogPage<T> {
+import type { OffsetPage } from '@lonca/core';
+import type { CatalogPagingParams } from './catalog-product.js';
+
+/**
+ * Page returned by `categories.list()` — the shared `OffsetPage<T>` shape from
+ * `@lonca/core` (`items`, `totalCount`, `limit`, `offset`, `pageCount`, so it
+ * plugs straight into `paginateOffset`) mapped from Hepsiburada's Spring
+ * envelope: `totalElements` → `totalCount`, `totalPages` → `pageCount`,
+ * `data` → `items`, `number × limit` → `offset`.
+ *
+ * The Spring fields the SDK exposed before are still present but
+ * **deprecated** — they will be dropped in a later minor, at which point this
+ * becomes a plain alias of `OffsetPage<T>`. Migrate `.data` → `.items`,
+ * `.totalElements` → `.totalCount`, `.totalPages` → `.pageCount`.
+ */
+export interface CatalogPage<T> extends OffsetPage<T> {
+  /** @deprecated Use `offset / limit` — the zero-based page index. */
   number: number;
+  /** @deprecated Use `pageCount`. */
   totalPages: number;
+  /** @deprecated Use `totalCount`. */
   totalElements: number;
+  /** @deprecated Use `items.length`. */
   numberOfElements: number;
+  /** @deprecated Derive from `offset === 0`. */
   first: boolean;
+  /** @deprecated Derive from `offset + limit >= totalCount`. */
   last: boolean;
+  /** @deprecated An empty result is surfaced as an empty page; `success` carries no extra signal. */
   success: boolean;
+  /** @deprecated Hepsiburada's own status code (`0` on success; `4008` / `4014` for an empty result). */
   code: number;
+  /** @deprecated Hepsiburada's own status message. */
   message: string | null;
+  /** @deprecated Use `items`. */
   data: T[];
 }
 
@@ -31,10 +57,12 @@ export interface CatalogResult<T> {
   data: T;
 }
 
-/** Query parameters for `categories.list()`. */
-export interface ListCategoriesParams {
-  page?: number;
-  size?: number;
+/**
+ * Query parameters for `categories.list()`. Paging is either Hepsiburada's
+ * `page` / `size` or the `paginateOffset`-style `offset` / `limit` alias —
+ * see {@link CatalogPagingParams}.
+ */
+export interface ListCategoriesParams extends CatalogPagingParams {
   /** Restrict to leaf (listable) categories. */
   leaf?: boolean;
   /** Filter by status string (`ACTIVE`, `INACTIVE`, …). */

@@ -20,6 +20,22 @@ export type CreateXyDiscountInput = Record<string, unknown>;
 /** Body for `promotions.cancelDiscount()` — `{ campaignId, ... }`. */
 export type CancelDiscountInput = Record<string, unknown>;
 
+/**
+ * Receipt returned by `promotions.createTlDiscount()` /
+ * `createPercentDiscount()` / `createXyDiscount()` — the spec's
+ * `CreateSelfCampaignResponse`: `{ success, data: { campaignId } }`.
+ * `cancelDiscount()` only gets `{ success }` back and therefore resolves to a
+ * plain `MutationResult`.
+ */
+export interface DiscountReceipt {
+  /** Whether Hepsiburada accepted the campaign. */
+  success?: boolean;
+  /** Id of the campaign that was created (`data.campaignId` on the wire). */
+  campaignId?: number;
+  /** Untouched parsed response body (envelope included). */
+  raw: unknown;
+}
+
 /** One seller-product-category row. */
 export interface PromotionCategory {
   categoryId?: number | string;

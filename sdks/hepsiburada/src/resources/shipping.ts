@@ -1,4 +1,4 @@
-import { TokenBucketRateLimiter, ValidationError } from '@lonca/core';
+import { TokenBucketRateLimiter, ValidationError, type MutationResult } from '@lonca/core';
 import type { HepsiburadaTransport } from '../transport.js';
 import type { CargoFirm, ShippingProfile, ShippingProfileInput } from '../types/shipping.js';
 
@@ -95,34 +95,40 @@ export class ShippingResource {
   }
 
   /**
-   * Create a new shipping profile.
+   * Create a new shipping profile. Resolves to a `MutationResult` — the
+   * portal publishes no response schema for this surface, so the body is
+   * left untouched on `raw`.
    *
    * @throws {ValidationError} when `input` is empty / missing fields HB requires.
    */
-  async createProfile(input: ShippingProfileInput): Promise<unknown> {
+  async createProfile(input: ShippingProfileInput): Promise<MutationResult> {
     if (!input || typeof input !== 'object') {
       throw new ValidationError({ message: 'shipping.createProfile: input is required' });
     }
-    return this.transport.request<unknown>({
-      method: 'POST',
-      service: SERVICE,
-      path: `/profile/createByMerchantId`,
-      body: input,
-      rateLimiter: this.limiter,
-    });
+    return {
+      raw: await this.transport.request<unknown>({
+        method: 'POST',
+        service: SERVICE,
+        path: `/profile/createByMerchantId`,
+        body: input,
+        rateLimiter: this.limiter,
+      }),
+    };
   }
 
-  /** Update an existing shipping profile. Same body shape as `createProfile`. */
-  async updateProfile(input: ShippingProfileInput): Promise<unknown> {
+  /** Update an existing shipping profile. Same body shape (and `MutationResult`) as `createProfile`. */
+  async updateProfile(input: ShippingProfileInput): Promise<MutationResult> {
     if (!input || typeof input !== 'object') {
       throw new ValidationError({ message: 'shipping.updateProfile: input is required' });
     }
-    return this.transport.request<unknown>({
-      method: 'PUT',
-      service: SERVICE,
-      path: `/profile/updateByMerchantId`,
-      body: input,
-      rateLimiter: this.limiter,
-    });
+    return {
+      raw: await this.transport.request<unknown>({
+        method: 'PUT',
+        service: SERVICE,
+        path: `/profile/updateByMerchantId`,
+        body: input,
+        rateLimiter: this.limiter,
+      }),
+    };
   }
 }

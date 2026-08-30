@@ -1,4 +1,4 @@
-import { TokenBucketRateLimiter, ValidationError } from '@lonca/core';
+import { TokenBucketRateLimiter, ValidationError, type MutationResult } from '@lonca/core';
 import type { HepsiburadaTransport } from '../transport.js';
 import type {
   AnswerQuestionInput,
@@ -81,46 +81,59 @@ export class QuestionsResource {
     return out;
   }
 
-  /** Create a new buyer question (rare — usually the buyer creates it). */
-  async create(input: CreateQuestionInput): Promise<unknown> {
+  /**
+   * Create a new buyer question. SIT-only: Hepsiburada exposes it so
+   * integrators can seed test data (the buyer normally creates questions).
+   *
+   * Resolves to a `MutationResult`. The spec documents the `201` body as a
+   * bare `number[]` without naming the elements, so it is left on `raw`
+   * rather than modelled as a field.
+   */
+  async create(input: CreateQuestionInput): Promise<MutationResult> {
     this.assertInput(input, 'questions.create');
-    return this.transport.request<unknown>({
-      method: 'POST',
-      service: SERVICE,
-      path: BASE_PATH,
-      body: input,
-      rateLimiter: this.limiter,
-    });
+    return {
+      raw: await this.transport.request<unknown>({
+        method: 'POST',
+        service: SERVICE,
+        path: BASE_PATH,
+        body: input,
+        rateLimiter: this.limiter,
+      }),
+    };
   }
 
-  /** Answer a question. */
-  async answer(number: string, input: AnswerQuestionInput): Promise<unknown> {
+  /** Answer a question. Resolves to a `MutationResult` (`201`, bare string on `raw`). */
+  async answer(number: string, input: AnswerQuestionInput): Promise<MutationResult> {
     if (!number) {
       throw new ValidationError({ message: 'questions.answer: number is required' });
     }
     this.assertInput(input, 'questions.answer');
-    return this.transport.request<unknown>({
-      method: 'POST',
-      service: SERVICE,
-      path: `${BASE_PATH}/${encodeURIComponent(number)}/answer`,
-      body: input,
-      rateLimiter: this.limiter,
-    });
+    return {
+      raw: await this.transport.request<unknown>({
+        method: 'POST',
+        service: SERVICE,
+        path: `${BASE_PATH}/${encodeURIComponent(number)}/answer`,
+        body: input,
+        rateLimiter: this.limiter,
+      }),
+    };
   }
 
-  /** Reject a question (mark as inappropriate / spam). */
-  async reject(number: string, input: RejectQuestionInput): Promise<unknown> {
+  /** Reject a question (mark as inappropriate / spam). Resolves to a `MutationResult` (`201`, bare string on `raw`). */
+  async reject(number: string, input: RejectQuestionInput): Promise<MutationResult> {
     if (!number) {
       throw new ValidationError({ message: 'questions.reject: number is required' });
     }
     this.assertInput(input, 'questions.reject');
-    return this.transport.request<unknown>({
-      method: 'POST',
-      service: SERVICE,
-      path: `${BASE_PATH}/${encodeURIComponent(number)}/reject`,
-      body: input,
-      rateLimiter: this.limiter,
-    });
+    return {
+      raw: await this.transport.request<unknown>({
+        method: 'POST',
+        service: SERVICE,
+        path: `${BASE_PATH}/${encodeURIComponent(number)}/reject`,
+        body: input,
+        rateLimiter: this.limiter,
+      }),
+    };
   }
 
   private assertInput(input: unknown, methodLabel: string): void {
