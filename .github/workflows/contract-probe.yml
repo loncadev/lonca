@@ -1,4 +1,4 @@
-# Nightly read-only contract probe. Calls the main read endpoints of every
+# On-demand read-only contract probe. Calls the main read endpoints of every
 # marketplace SDK against the sandbox / stage accounts, reduces the responses
 # to key-set + JSON-type shapes (never values) and compares them with the
 # committed baseline in probe-snapshots/. Structural drift opens or updates a
@@ -6,9 +6,10 @@
 name: Contract probe
 
 on:
-  schedule:
-    # 03:00 UTC nightly.
-    - cron: "0 3 * * *"
+  # Manual runs only. Decision 2026-08-30: the repo owner keeps marketplace
+  # credentials out of GitHub secrets, so the nightly cron was removed —
+  # drift checks run locally via `pnpm probe:check` (see scripts/probe/README.md).
+  # workflow_dispatch stays functional should secrets ever be added.
   workflow_dispatch:
 
 permissions:
@@ -23,7 +24,7 @@ jobs:
   probe:
     name: Probe live contracts
     # Secrets are not available on forks and the schedule must not fan out.
-    if: github.repository == 'loncadev/lonca'
+    if: github.repository == 'loncadev/lonca' && (secrets.HB_API_USER != '' || secrets.TY_API_KEY != '')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:

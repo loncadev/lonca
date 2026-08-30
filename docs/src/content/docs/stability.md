@@ -36,7 +36,7 @@ That surface is locked in CI: the rolled-up type declarations of all five entry 
 ## What does NOT count
 
 - **Wire-level details behind normalisers.** The contents of `raw` payload fields mirror whatever the marketplace returned. They are passed through for debugging, not normalised, and may change whenever the marketplace changes.
-- **Marketplace behaviour itself.** Trendyol and Hepsiburada can change their APIs without notice. The nightly [contract-probe workflow](https://github.com/loncadev/lonca/blob/main/.github/workflows/contract-probe.yml) detects that drift against live endpoints, but drift is not a Lonca breaking change.
+- **Marketplace behaviour itself.** Trendyol and Hepsiburada can change their APIs without notice. The [contract-probe suite](https://github.com/loncadev/lonca/tree/main/scripts/probe) (`pnpm probe:check`, run locally against live endpoints) detects that drift, but drift is not a Lonca breaking change.
 - **Undocumented passthrough fields on inputs.** If a field is not in an input's type, sending it may happen to work — that is not covered by semver.
 
 ## Supported runtimes
