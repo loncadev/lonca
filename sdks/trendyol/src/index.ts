@@ -78,6 +78,7 @@ export type {
   ListVideosParams,
   SellerIntegrationStatus,
   SellerVideo,
+  VideoContentType,
 } from './types/video.js';
 export type {
   CancelPackageItemInput,
@@ -182,5 +183,7 @@ export type {
   SetClaimsWaitingInActionInput,
   SettlementRow,
   TestOrderStatus,
+  TestOrderStatusLine,
+  UpdateTestOrderStatusOptions,
   UploadInvoiceFileInput,
 } from './types/misc.js';

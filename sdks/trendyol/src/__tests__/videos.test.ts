@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { TokenBucketRateLimiter, ValidationError } from '@lonca/core';
 import { VideosResource } from '../resources/videos.js';
+import type { CreateVideoInput } from '../types/video.js';
 import type { TrendyolTransport } from '../transport.js';
 
 function mockTransport(response: unknown = undefined, sellerId = 42) {
@@ -30,6 +31,27 @@ describe('VideosResource.create', () => {
     });
   });
 
+  it('sends the documented typed fields and extra passthrough keys verbatim', async () => {
+    const transport = mockTransport({ videoId: 'v-1' });
+    await r(transport).create({
+      title: 'Ürün Tanıtım Videosu',
+      description: 'Yeni sezon',
+      videoUrl: 'https://cdn.example/v.mp4',
+      productContentIds: ['123456', 789012],
+      videoContentType: 'PRODUCT_PROMOTION',
+      undocumentedFlag: true,
+    });
+    const call = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0];
+    expect(call.body).toEqual({
+      title: 'Ürün Tanıtım Videosu',
+      description: 'Yeni sezon',
+      videoUrl: 'https://cdn.example/v.mp4',
+      productContentIds: ['123456', 789012],
+      videoContentType: 'PRODUCT_PROMOTION',
+      undocumentedFlag: true,
+    });
+  });
+
   it('omits videoId when the body is empty or has an unexpected shape', async () => {
     const empty = await r(mockTransport(undefined)).create({ url: 'https://cdn.example/v.mp4' });
     expect(empty).toEqual({ raw: undefined });
@@ -40,10 +62,10 @@ describe('VideosResource.create', () => {
 
   it('throws ValidationError on falsy input', async () => {
     const resource = r(mockTransport());
-    await expect(
-      resource.create(null as unknown as Record<string, unknown>),
-    ).rejects.toBeInstanceOf(ValidationError);
-    await expect(resource.create(null as unknown as Record<string, unknown>)).rejects.toThrow(
+    await expect(resource.create(null as unknown as CreateVideoInput)).rejects.toBeInstanceOf(
+      ValidationError,
+    );
+    await expect(resource.create(null as unknown as CreateVideoInput)).rejects.toThrow(
       /input is required/,
     );
   });

@@ -19,12 +19,26 @@ export { parseRetryAfter };
  *
  * - `401` → `AuthError` (bad credentials)
  * - `403` → `ValidationError` (usually missing/malformed `User-Agent` header, or wrong endpoint path)
+ * - `401`/`403` with a **non-JSON** (HTML/text) body → `AuthError` — an edge
+ *   proxy (e.g. Cloudflare's stage IP allowlist) blocked the request before it
+ *   reached the API. The raw body is never attached to the error; `data`
+ *   carries only a `{ bodyKind, bodyLength }` hint.
  * - `404` → `NotFoundError`
  * - `429` → `RateLimitError` (carries `retryAfterMs` if the server provided `Retry-After`)
  * - `5xx` → `ServerError` (retryable)
  * - other → `LoncaError` with code `UNKNOWN` (non-retryable)
  */
 export function mapHttpError(status: number, body: unknown, retryAfterMs?: number): LoncaError {
+  if ((status === 401 || status === 403) && typeof body === 'string') {
+    // Cloudflare (stage IP allowlist) and similar edge blocks answer every
+    // endpoint with an HTML/text page instead of Trendyol's JSON envelope.
+    // Redaction rule: never leak the server body — keep only a shape hint.
+    return new AuthError({
+      message: `Trendyol rejected the request before it reached the API (HTTP ${status}, non-JSON body) — check IP allowlisting / credentials / User-Agent`,
+      status,
+      data: { bodyKind: /^\s*</.test(body) ? 'html' : 'text', bodyLength: body.length },
+    });
+  }
   const data = { body } as Record<string, unknown>;
   const issues = normalizeErrorIssues(body);
   switch (status) {
