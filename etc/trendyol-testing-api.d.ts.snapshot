@@ -1,0 +1,46 @@
+import { g as BatchRequestStatus, ba as TrendyolClient } from './client-Dnfjvwah.js';
+import '@lonca/core';
+
+/** A request the fake client received, normalized for matching in a `handler`. */
+interface FakeTrendyolRequest {
+    method: string;
+    /** URL path only — no host, no query string. */
+    path: string;
+    /** Parsed query parameters. */
+    query: URLSearchParams;
+    /** Parsed JSON request body, when present. */
+    body?: unknown;
+}
+interface TrendyolFakeSeed {
+    /**
+     * Return the raw JSON the Trendyol API would respond with for a request, or
+     * `undefined` to fall through to the built-in hot-path defaults.
+     */
+    handler?: (req: FakeTrendyolRequest) => unknown;
+    /** `batchRequestId` returned by `inventory.update` and echoed by `getBatchStatus`. Default: `'fake-batch-1'`. */
+    batchRequestId?: string;
+    /** Terminal status `getBatchStatus` reports. Default: `'COMPLETED'`. */
+    batchStatus?: BatchRequestStatus;
+}
+/**
+ * Build an in-memory {@link TrendyolClient} for unit tests.
+ *
+ * It is the real client graph wired over a fake `fetch`, so your tests exercise
+ * the SDK's real request building and response normalization — no network, no
+ * structural-compat guessing. The batch hot-path
+ * (`inventory.update` → `products.getBatchStatus` → `inventory.updateAndWait`)
+ * works out of the box; drive any other endpoint with `seed.handler`.
+ *
+ * @example
+ * ```ts
+ * const client = createFakeTrendyolClient({ batchRequestId: 'b1' });
+ * const [result] = await client.inventory.updateAndWait(
+ *   [{ barcode: 'X', quantity: 1 }],
+ *   { pollIntervalMs: 1 },
+ * );
+ * result.status; // 'COMPLETED'
+ * ```
+ */
+declare function createFakeTrendyolClient(seed?: TrendyolFakeSeed): TrendyolClient;
+
+export { type FakeTrendyolRequest, type TrendyolFakeSeed, createFakeTrendyolClient };

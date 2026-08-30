@@ -45,6 +45,23 @@ pnpm --filter @lonca/core build
 
 `pnpm test:coverage` runs the suite with V8 coverage (`pnpm --filter @lonca/trendyol test:coverage` for one package). Each published package pins its own `coverage.thresholds` in `vitest.config.ts`, calibrated as a regression floor (measured coverage rounded down to the nearest 5). CI runs `test:coverage`, so a change that drops a package below its floor fails the build. Raising a floor after adding tests is welcome — lowering one needs a reason in the PR. The HTML report lands in each package's gitignored `coverage/` directory.
 
+### API surface lock
+
+The public `.d.ts` surface of every published package is snapshotted under `etc/` and checked in
+CI (`pnpm api:check`, after `pnpm build`). If the check fails, your change altered the public API
+surface:
+
+1. Run `pnpm build && pnpm api:update` to regenerate the snapshots.
+2. Commit the updated `etc/*.api.d.ts.snapshot` files with your change and mention the surface
+   diff in the PR description.
+3. If the change is a removal or an incompatible signature change, it is breaking — pick a major
+   bump in your changeset (minor while we are pre-1.0).
+
+An unintentional diff usually means something leaked into the public surface — prefer narrowing
+the export over updating the snapshot. CI also runs `pnpm health:packages`
+([publint](https://publint.dev) + [arethetypeswrong](https://arethetypeswrong.github.io)) against
+each published package, which guards the `exports` map and type resolution.
+
 ## Pull Request flow
 
 1. Fork the repo and create a feature branch (`git checkout -b fix/trendyol-rate-limit`).

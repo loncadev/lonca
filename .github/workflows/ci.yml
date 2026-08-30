@@ -49,5 +49,11 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: Package health (publint + attw)
+        run: pnpm health:packages
+
+      - name: API surface check
+        run: pnpm api:check
+
       - name: Test (with coverage thresholds)
         run: pnpm test:coverage

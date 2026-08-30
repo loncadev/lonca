@@ -1,0 +1,44 @@
+import { X as HepsiburadaClient } from './client-BHoJv4QZ.js';
+import '@lonca/core';
+
+/** A request the fake client received, normalized for matching in a `handler`. */
+interface FakeHepsiburadaRequest {
+    method: string;
+    /** URL path only — no host, no query string. */
+    path: string;
+    /** Parsed query parameters. */
+    query: URLSearchParams;
+    /** Parsed JSON request body, when present. */
+    body?: unknown;
+}
+interface HepsiburadaFakeSeed {
+    /**
+     * Return the raw JSON Hepsiburada would respond with for a request, or
+     * `undefined` to fall through to a permissive empty default (empty lists /
+     * pages) so untouched endpoints don't throw.
+     */
+    handler?: (req: FakeHepsiburadaRequest) => unknown;
+}
+/**
+ * Build an in-memory {@link HepsiburadaClient} for unit tests.
+ *
+ * It is the real client graph wired over a fake `fetch`, so your tests exercise
+ * the SDK's real request building and response normalization — no network, no
+ * structural-compat guessing. Unhandled endpoints return empty lists/pages;
+ * drive the endpoints your test touches with `seed.handler`.
+ *
+ * @example
+ * ```ts
+ * const client = createFakeHepsiburadaClient({
+ *   handler: (req) =>
+ *     req.path.includes('/listings/merchantid/')
+ *       ? { listings: [{ listingId: 'L1' }], totalCount: 1, limit: 50, offset: 0 }
+ *       : undefined,
+ * });
+ * const page = await client.listings.list({ offset: 0, limit: 50 });
+ * page.items[0].listingId; // 'L1'
+ * ```
+ */
+declare function createFakeHepsiburadaClient(seed?: HepsiburadaFakeSeed): HepsiburadaClient;
+
+export { type FakeHepsiburadaRequest, type HepsiburadaFakeSeed, createFakeHepsiburadaClient };
