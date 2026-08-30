@@ -7,7 +7,7 @@
 - [#91](https://github.com/loncadev/lonca/pull/91) [`e9a3332`](https://github.com/loncadev/lonca/commit/e9a3332cb939071f7b53b0ae34a3fb190d1f5833) Thanks [@keparlak](https://github.com/keparlak)! - Add a shared `ProductContentBase` interface, extended by both `Product` and
   `UnapprovedProduct`, so callers can read the common content surface
   (`productMainId`, `title`, `description`, `brand`, `category`, `images`,
-  `attributes`) from either shape without branching (feedback [#8](https://github.com/loncadev/lonca/issues/8)). The concrete
+  `attributes`) from either shape without branching (feedback item 8). The concrete
   types are otherwise unchanged — `Product` keeps `variants[]`, `UnapprovedProduct`
   stays flat — so this is purely additive.
 
