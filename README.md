@@ -20,6 +20,8 @@ Open-source SDKs and tooling for Turkish e-commerce marketplaces.
 > [!WARNING]
 > 🚧 **Alpha** — APIs are not stable. Do not use in production. Minor versions may contain breaking changes until `1.0.0`.
 
+See [Stability & versioning](https://loncadev.github.io/lonca/stability/) for the semver policy, deprecation windows, and what counts as the public API.
+
 ## Table of contents
 
 - [Vision](#vision)

@@ -63,6 +63,7 @@ export default defineConfig({
             { label: 'Overview', slug: 'overview' },
             { label: 'Installation', slug: 'installation' },
             { label: 'Authentication', slug: 'authentication' },
+            { label: 'Stability & versioning', slug: 'stability' },
           ],
         },
         {
