@@ -7,20 +7,21 @@ import type {
   ProductUpdateStatus,
 } from '../types/product-update.js';
 
-const SERVICE = 'oms' as const;
-const BASE_PATH = '/api/integrator';
+const SERVICE = 'mpop' as const;
+// The portal spec's base URL is `mpop[-sit].hepsiburada.com/ticket-api`; the
+// SDK's `mpop` service entry carries no path prefix (the catalog surface uses
+// `/product/...`), so the prefix lives here in the resource paths.
+const BASE_PATH = '/ticket-api/api/integrator';
 
 /**
  * Hepsiburada Product Updates (`urun-guncelleme-entegrasyonu`).
  *
- * **Service base URL**: `oms-external[-sit].hepsiburada.com`. 3-endpoint
- * surface — submit updates, poll status, query update history per
- * (merchantId, hbSku) pair.
- *
- * NOTE: Sandbox `beekod_dev` merchant doesn't have permission for this
- * surface; SIT calls return `403`. Behavior verified against the
- * developer-portal spec; live-tested in production by integrators with
- * the right scope.
+ * **Service base URL**: `mpop[-sit].hepsiburada.com` with the `/ticket-api`
+ * base path (per the portal spec — routing through `oms-external` returns 401
+ * because the routes don't exist there; verified on SIT 2026-08-30, where
+ * `/ticket-api/api/integrator/status/{id}` answers 200). 3-endpoint surface —
+ * submit updates, poll status, query update history per (merchantId, hbSku)
+ * pair.
  */
 export class ProductUpdatesResource {
   private readonly limiter: TokenBucketRateLimiter;

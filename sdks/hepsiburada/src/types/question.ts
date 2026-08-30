@@ -7,14 +7,31 @@
  * for buyer questions posted on product pages.
  */
 
-/** Query parameters for `questions.list()`. */
+/**
+ * Query parameters for `questions.list()`.
+ *
+ * The Ask-the-Seller API pages with `page`/`size` and filters creation dates
+ * with `minCreatedAt`/`maxCreatedAt` (verified on SIT 2026-08-30).
+ */
 export interface ListQuestionsParams {
-  /** Filter by status (`Open`, `Answered`, `Rejected`, …). */
+  /** Filter by status (`WaitingForAnswer`, `Answered`, `Reported`, …). */
   status?: string;
+  /** @deprecated Alias of {@link minCreatedAt}. */
   beginDate?: string;
+  /** @deprecated Alias of {@link maxCreatedAt}. */
   endDate?: string;
+  /** @deprecated Alias of {@link page}. */
   offset?: number;
+  /** @deprecated Alias of {@link size}. */
   limit?: number;
+  /** Zero-based page number. */
+  page?: number;
+  /** Page size. */
+  size?: number;
+  /** ISO date-time — questions created at/after this instant. */
+  minCreatedAt?: string;
+  /** ISO date-time — questions created at/before this instant. */
+  maxCreatedAt?: string;
 }
 
 /** Body for `questions.create()` — typically `{ productSku, question }`. */

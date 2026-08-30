@@ -11,6 +11,18 @@ import type { ProbeSet } from '../registry.mts';
 
 const PAGE = { offset: 0, limit: 10 } as const;
 
+/**
+ * `mpfinance-external` requires a date-range filter (max 1 month) when no
+ * order/package/SKU identifier is given. A rolling 27-day window keeps the
+ * nightly probe valid forever; only the response shape is snapshotted.
+ */
+function accountingWindow(): { recordDateStart: string; recordDateEnd: string } {
+  const end = new Date();
+  const start = new Date(end.getTime() - 27 * 24 * 60 * 60 * 1000);
+  const day = (d: Date): string => d.toISOString().slice(0, 10);
+  return { recordDateStart: day(start), recordDateEnd: day(end) };
+}
+
 function env(): HepsiburadaEnvironment {
   return (process.env.HB_ENV ?? 'sit') as HepsiburadaEnvironment;
 }
@@ -51,6 +63,10 @@ export const hepsiburadaProbes: ProbeSet<HepsiburadaClient> = {
     { name: 'questions.list', call: (c) => c.questions.list(PAGE) },
     { name: 'shipping.getCargoFirms', call: (c) => c.shipping.getCargoFirms() },
     { name: 'shipping.listProfiles', call: (c) => c.shipping.listProfiles() },
-    { name: 'accounting.listTransactions', call: (c) => c.accounting.listTransactions(PAGE) },
+    {
+      name: 'accounting.listTransactions',
+      call: (c) => c.accounting.listTransactions({ ...PAGE, ...accountingWindow() }),
+    },
+    { name: 'promotions.listCategories', call: (c) => c.promotions.listCategories() },
   ],
 };

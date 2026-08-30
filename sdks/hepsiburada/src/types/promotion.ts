@@ -21,6 +21,18 @@ export type CreateXyDiscountInput = Record<string, unknown>;
 export type CancelDiscountInput = Record<string, unknown>;
 
 /**
+ * Query parameters for `promotions.listDiscounts()`. Both are required by
+ * the API (`page` / `pagesize` on the wire); the SDK defaults them to
+ * `page=1`, `pagesize=100`.
+ */
+export interface ListDiscountsParams {
+  /** Page number (defaults to `1`). */
+  page?: number;
+  /** Page size (sent as `pagesize`; defaults to `100`). */
+  pageSize?: number;
+}
+
+/**
  * Receipt returned by `promotions.createTlDiscount()` /
  * `createPercentDiscount()` / `createXyDiscount()` — the spec's
  * `CreateSelfCampaignResponse`: `{ success, data: { campaignId } }`.

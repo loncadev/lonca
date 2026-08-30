@@ -162,5 +162,6 @@ export type {
   DiscountBudgets,
   DiscountLimits,
   DiscountReceipt,
+  ListDiscountsParams,
   PromotionCategory,
 } from './types/promotion.js';

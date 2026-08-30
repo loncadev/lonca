@@ -106,12 +106,13 @@ for (const claim of awaiting) {
 
 Hepsiburada's hosts disagree on `merchantId` path-segment casing — the SDK picks the casing each host actually serves so you don't need to think about it:
 
-| Host                      | Lowercase `/merchantid/` | CamelCase `/merchantId/` | SDK uses  |
-| ------------------------- | :----------------------: | :----------------------: | --------- |
-| `listing-external[-sit]`  |          ✓ 200           |          ✗ 400           | lowercase |
-| `oms-external[-sit]`      |          ✓ 200           |          ✓ 200           | camelCase |
-| `mpop[-sit]` (catalog)    |       n/a (query)        |            ✓             | camelCase |
-| `shipping-external[-sit]` |           n/a            |            ✓             | camelCase |
+| Host                       | Lowercase `/merchantid/` | CamelCase `/merchantId/` | SDK uses  |
+| -------------------------- | :----------------------: | :----------------------: | --------- |
+| `listing-external[-sit]`   |          ✓ 200           |          ✗ 400           | lowercase |
+| `oms-external[-sit]`       |          ✓ 200           |          ✓ 200           | camelCase |
+| `mpop[-sit]` (catalog)     |       n/a (query)        |            ✓             | camelCase |
+| `shipping-external[-sit]`  |           n/a            |            ✓             | camelCase |
+| `mpfinance-external[-sit]` |          ✓ 200           |          ✓ 200           | lowercase |
 
 ## Webhook events
 
