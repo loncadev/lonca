@@ -1,5 +1,17 @@
 # @lonca/hepsiburada
 
+## 0.13.1
+
+### Patch Changes
+
+- [#136](https://github.com/loncadev/lonca/pull/136) [`e09d4d5`](https://github.com/loncadev/lonca/commit/e09d4d52b89d42d7cbdde34b2c82b46193274146) Thanks [@keparlak](https://github.com/keparlak)! - Fix TypeScript type resolution for CommonJS consumers ("Masquerading as ESM"):
+  the `exports` maps now declare per-condition types (`import` resolves
+  `dist/index.d.ts`, `require` resolves `dist/index.d.cts`, including the SDKs'
+  `./testing` subpath). Runtime behaviour is unchanged; `publint` and
+  `arethetypeswrong` now verify the packages in CI.
+- Updated dependencies [[`e09d4d5`](https://github.com/loncadev/lonca/commit/e09d4d52b89d42d7cbdde34b2c82b46193274146), [`e09d4d5`](https://github.com/loncadev/lonca/commit/e09d4d52b89d42d7cbdde34b2c82b46193274146)]:
+  - @lonca/core@1.0.0
+
 ## 0.13.0
 
 ### Minor Changes

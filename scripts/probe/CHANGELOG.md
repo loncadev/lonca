@@ -1,5 +1,14 @@
 # @lonca/probe
 
+## 0.0.3
+
+### Patch Changes
+
+- Updated dependencies [[`e09d4d5`](https://github.com/loncadev/lonca/commit/e09d4d52b89d42d7cbdde34b2c82b46193274146), [`e09d4d5`](https://github.com/loncadev/lonca/commit/e09d4d52b89d42d7cbdde34b2c82b46193274146)]:
+  - @lonca/core@1.0.0
+  - @lonca/trendyol@0.15.1
+  - @lonca/hepsiburada@0.13.1
+
 ## 0.0.2
 
 ### Patch Changes
