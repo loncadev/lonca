@@ -13,11 +13,13 @@ catalog:
   vitest: ^4.1.11
   tsup: ^8.3.5
 
-# pnpm 10 denies postinstall scripts by default.
+# pnpm denies postinstall scripts by default and (since pnpm 11) fails the
+# install unless every package with a build script has an explicit decision
+# here. `allowBuilds` replaces pnpm 10's `onlyBuiltDependencies`.
 # Entries below are trusted, build-time native modules.
-onlyBuiltDependencies:
-  - esbuild
-  - sharp
+allowBuilds:
+  esbuild: true
+  sharp: true
 
 # Allow Astro's deeper deps (tsconfck, zod-to-ts) to accept TypeScript 6 even
 # though their published peer range maxes out at ^5 — the only reason they pin
@@ -29,3 +31,13 @@ packageExtensions:
   zod-to-ts:
     peerDependencies:
       typescript: ">=4.9.4"
+
+# Dependency version overrides. Moved here from package.json's `pnpm.overrides`
+# field, which pnpm 11 no longer reads.
+# js-yaml@4 is floored at 4.3.1 to close GHSA-5p4m-2wfm-xmqj / GHSA-52cp-r559-cp3m
+# for transitive consumers (astro, eslint 8 via eslint-formatter-sarif). No 3.x
+# copy is resolved any more (changesets 3.x dropped it), so no 3.x pin is needed.
+overrides:
+  esbuild: ^0.28.1
+  vite: ^8.0.16
+  js-yaml@4: ^4.3.1
