@@ -14,9 +14,9 @@ const r = (t: TrendyolTransport) =>
   new VideosResource(t, { createLimiter: fastLimiter(), listLimiter: fastLimiter() });
 
 describe('VideosResource.create', () => {
-  it('POSTs to /integration/video/sellers/{id}/videos with body', async () => {
-    const transport = mockTransport({ id: 'V-1' });
-    await r(transport).create({ contentId: 'C1', url: 'https://cdn.example/v.mp4' });
+  it('POSTs to /integration/video/sellers/{id}/videos with body and surfaces the documented videoId', async () => {
+    const transport = mockTransport({ videoId: '627b8a1b-7bad-4eaf-9abb-99a9958540c2' });
+    const out = await r(transport).create({ contentId: 'C1', url: 'https://cdn.example/v.mp4' });
     expect(transport.request).toHaveBeenCalledWith(
       expect.objectContaining({
         method: 'POST',
@@ -24,6 +24,18 @@ describe('VideosResource.create', () => {
         body: { contentId: 'C1', url: 'https://cdn.example/v.mp4' },
       }),
     );
+    expect(out).toEqual({
+      videoId: '627b8a1b-7bad-4eaf-9abb-99a9958540c2',
+      raw: { videoId: '627b8a1b-7bad-4eaf-9abb-99a9958540c2' },
+    });
+  });
+
+  it('omits videoId when the body is empty or has an unexpected shape', async () => {
+    const empty = await r(mockTransport(undefined)).create({ url: 'https://cdn.example/v.mp4' });
+    expect(empty).toEqual({ raw: undefined });
+
+    const odd = await r(mockTransport({ id: 'V-1' })).create({ url: 'https://cdn.example/v.mp4' });
+    expect(odd).toEqual({ raw: { id: 'V-1' } });
   });
 
   it('throws ValidationError on falsy input', async () => {
