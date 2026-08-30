@@ -6,9 +6,17 @@ export default defineConfig({
     include: ['src/**/*.test.ts'],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'html'],
+      reporter: ['text', 'html', 'json-summary'],
       include: ['src/**/*.ts'],
       exclude: ['src/**/*.test.ts', 'src/index.ts'],
+      // Regression floor, not a target: measured coverage rounded DOWN to the
+      // nearest 5. Raise these whenever real coverage goes up; CI fails below.
+      thresholds: {
+        lines: 85,
+        functions: 95,
+        branches: 70,
+        statements: 80,
+      },
     },
   },
 });

@@ -30,6 +30,7 @@ pnpm typecheck    # TypeScript
 pnpm lint         # ESLint
 pnpm format       # Prettier
 pnpm test         # Vitest
+pnpm test:coverage # Vitest + per-package coverage thresholds (what CI runs)
 pnpm build        # Build via Turborepo
 ```
 
@@ -39,6 +40,10 @@ Work on a single package:
 pnpm --filter @lonca/trendyol test
 pnpm --filter @lonca/core build
 ```
+
+### Coverage
+
+`pnpm test:coverage` runs the suite with V8 coverage (`pnpm --filter @lonca/trendyol test:coverage` for one package). Each published package pins its own `coverage.thresholds` in `vitest.config.ts`, calibrated as a regression floor (measured coverage rounded down to the nearest 5). CI runs `test:coverage`, so a change that drops a package below its floor fails the build. Raising a floor after adding tests is welcome — lowering one needs a reason in the PR. The HTML report lands in each package's gitignored `coverage/` directory.
 
 ## Pull Request flow
 
