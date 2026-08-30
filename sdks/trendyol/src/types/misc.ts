@@ -5,7 +5,7 @@
  * shapes here are wide and seldom-evolved; callers drill into `raw` for
  * fields beyond the stable surface.
  */
-import type { CursorPaginationParams } from '@lonca/core';
+import type { CursorPaginationParams, MutationResult } from '@lonca/core';
 
 // ─── Invoices ─────────────────────────────────────────────────────────────
 
@@ -161,6 +161,25 @@ export interface CreateTestOrderInput {
   seller: Record<string, unknown>;
   lines: Array<Record<string, unknown>>;
   [key: string]: unknown;
+}
+
+/**
+ * Result of `testOrders.create()`. Trendyol's `createTestOrder` reference
+ * documents the response as `{ orderNumber: string }`; `raw` keeps the
+ * untouched body.
+ */
+export interface CreateTestOrderResult extends MutationResult {
+  /** Order number of the created test order (absent when the body had none). */
+  orderNumber?: string;
+}
+
+/**
+ * Optional body for `testOrders.setClaimsWaitingInAction()`. Trendyol's
+ * `updateTestOrderStatus` doc shows `{ shipmentPackageId }` — the
+ * `orderShipmentPackageId` returned by `claims.list`.
+ */
+export interface SetClaimsWaitingInActionInput {
+  shipmentPackageId: string | number;
 }
 
 export type TestOrderStatus =

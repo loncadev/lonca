@@ -191,7 +191,7 @@ describe('LabelsResource', () => {
 
   it('createCommon POSTs to /common-label/{tracking} with input body', async () => {
     const transport = mockTransport();
-    await r(transport).createCommon('TRK1', { format: 'ZPL', boxQuantity: 2 });
+    const out = await r(transport).createCommon('TRK1', { format: 'ZPL', boxQuantity: 2 });
     expect(transport.request).toHaveBeenCalledWith(
       expect.objectContaining({
         method: 'POST',
@@ -199,6 +199,14 @@ describe('LabelsResource', () => {
         body: { format: 'ZPL', boxQuantity: 2 },
       }),
     );
+    // Documented as a bare 200 OK — MutationResult with an empty raw.
+    expect(out).toEqual({ raw: undefined });
+  });
+
+  it('createCommon keeps an unexpected body on raw', async () => {
+    const transport = mockTransport({ message: 'queued' });
+    const out = await r(transport).createCommon('TRK1', { format: 'ZPL' });
+    expect(out).toEqual({ raw: { message: 'queued' } });
   });
 
   it('createCommon throws on missing format', async () => {
@@ -253,9 +261,9 @@ describe('TestOrdersResource', () => {
     lines: [{}],
   };
 
-  it('create POSTs to /test/order/orders/core', async () => {
-    const transport = mockTransport();
-    await r(transport).create(minimal);
+  it('create POSTs to /test/order/orders/core and surfaces the documented orderNumber', async () => {
+    const transport = mockTransport({ orderNumber: '123456789' });
+    const out = await r(transport).create(minimal);
     expect(transport.request).toHaveBeenCalledWith(
       expect.objectContaining({
         method: 'POST',
@@ -263,6 +271,16 @@ describe('TestOrdersResource', () => {
         body: minimal,
       }),
     );
+    expect(out).toEqual({ orderNumber: '123456789', raw: { orderNumber: '123456789' } });
+  });
+
+  it('create coerces a numeric orderNumber to string and omits it when missing', async () => {
+    const numeric = await r(mockTransport({ orderNumber: 987 })).create(minimal);
+    expect(numeric.orderNumber).toBe('987');
+
+    const empty = await r(mockTransport(undefined)).create(minimal);
+    expect(empty).toEqual({ raw: undefined });
+    expect('orderNumber' in empty).toBe(false);
   });
 
   it('create throws on missing customer', async () => {
@@ -277,7 +295,7 @@ describe('TestOrdersResource', () => {
 
   it('updateStatus PUTs to /test/order/.../status with { status }', async () => {
     const transport = mockTransport();
-    await r(transport).updateStatus(99, 'Shipped');
+    const out = await r(transport).updateStatus(99, 'Shipped');
     expect(transport.request).toHaveBeenCalledWith(
       expect.objectContaining({
         method: 'PUT',
@@ -285,15 +303,31 @@ describe('TestOrdersResource', () => {
         body: { status: 'Shipped' },
       }),
     );
+    // Documented as a bare 200 OK — MutationResult with an empty raw.
+    expect(out).toEqual({ raw: undefined });
   });
 
   it('setClaimsWaitingInAction PUTs to /claims/waiting-in-action with no body', async () => {
     const transport = mockTransport();
-    await r(transport).setClaimsWaitingInAction();
+    const out = await r(transport).setClaimsWaitingInAction();
     const call = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0];
     expect(call.method).toBe('PUT');
     expect(call.path).toBe('/integration/test/order/sellers/42/claims/waiting-in-action');
     expect(call.body).toBeUndefined();
+    expect(out).toEqual({ raw: undefined });
+  });
+
+  it('setClaimsWaitingInAction forwards the documented { shipmentPackageId } body when given', async () => {
+    const transport = mockTransport({ ok: true });
+    const out = await r(transport).setClaimsWaitingInAction({ shipmentPackageId: 56526451 });
+    expect(transport.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: 'PUT',
+        path: '/integration/test/order/sellers/42/claims/waiting-in-action',
+        body: { shipmentPackageId: 56526451 },
+      }),
+    );
+    expect(out).toEqual({ raw: { ok: true } });
   });
 });
 
