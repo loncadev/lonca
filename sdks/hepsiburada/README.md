@@ -609,7 +609,7 @@ The script calls one read endpoint per resource and reports `✓` for `200 OK`, 
 
 ## Stability
 
-`0.x` — alpha. Surface is stable; the only changes between minor versions are new resources or stricter types backed by live observation.
+`1.x` — stable, verified read-only against the production API. Breaking changes ship only in major versions; see [Stability & versioning](https://loncadev.github.io/lonca/stability/).
 
 - **`0.6.0`** (Phase 2d) — webhook event parser + casing regression tests + smoke script
 - **`0.5.0`** (Phase 2c) — ergonomics + strict types: `ClaimStatus` union, `skuList` required, per-host path casing

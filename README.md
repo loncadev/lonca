@@ -17,8 +17,8 @@ Open-source SDKs and tooling for Turkish e-commerce marketplaces.
 > [!IMPORTANT]
 > **Unofficial & independent.** Lonca is a community-maintained project. It is **not** an official SDK and is not affiliated with, endorsed by, or supported by Trendyol, Hepsiburada, or any other marketplace named here. All product names, logos, and trademarks are the property of their respective owners.
 
-> [!WARNING]
-> 🚧 **Alpha** — APIs are not stable. Do not use in production. Minor versions may contain breaking changes until `1.0.0`.
+> [!NOTE]
+> ✅ **Stable** — all three packages (`@lonca/core`, `@lonca/trendyol`, `@lonca/hepsiburada`) are `1.0`. Breaking changes ship only in major versions.
 
 See [Stability & versioning](https://loncadev.github.io/lonca/stability/) for the semver policy, deprecation windows, and what counts as the public API.
 

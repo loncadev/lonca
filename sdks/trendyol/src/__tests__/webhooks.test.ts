@@ -26,7 +26,7 @@ describe('WebhooksResource.create', () => {
     expect(transport.request).toHaveBeenCalledWith(
       expect.objectContaining({
         method: 'POST',
-        path: '/integration/sellers/42/webhooks',
+        path: '/integration/webhook/sellers/42/webhooks',
         body: {
           url: 'https://example.com/hook',
           authenticationType: 'API_KEY',
@@ -93,7 +93,7 @@ describe('WebhooksResource.list', () => {
     const result = await r(transport).list();
 
     expect(transport.request).toHaveBeenCalledWith(
-      expect.objectContaining({ method: 'GET', path: '/integration/sellers/42/webhooks' }),
+      expect.objectContaining({ method: 'GET', path: '/integration/webhook/sellers/42/webhooks' }),
     );
     expect(result).toHaveLength(2);
     expect(result[0]).toMatchObject({ id: '1', url: 'https://x/h1', active: true });
@@ -132,7 +132,7 @@ describe('WebhooksResource.update', () => {
     expect(transport.request).toHaveBeenCalledWith(
       expect.objectContaining({
         method: 'PUT',
-        path: '/integration/sellers/42/webhooks/wh-1',
+        path: '/integration/webhook/sellers/42/webhooks/wh-1',
         body: {
           url: 'https://example.com/v2',
           authenticationType: 'BASIC_AUTHENTICATION',
@@ -153,7 +153,7 @@ describe('WebhooksResource.update', () => {
       apiKey: 'k',
     });
     const call = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0];
-    expect(call.path).toBe('/integration/sellers/42/webhooks/weird%20id%2F1');
+    expect(call.path).toBe('/integration/webhook/sellers/42/webhooks/weird%20id%2F1');
   });
 
   it('runs the same validation as create', async () => {
@@ -171,7 +171,7 @@ describe('WebhooksResource.delete', () => {
 
     const call = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0];
     expect(call.method).toBe('DELETE');
-    expect(call.path).toBe('/integration/sellers/42/webhooks/wh-1');
+    expect(call.path).toBe('/integration/webhook/sellers/42/webhooks/wh-1');
     expect(call.body).toBeUndefined();
     expect(out).toEqual({ raw: undefined });
   });
@@ -183,7 +183,7 @@ describe('WebhooksResource.activate / deactivate', () => {
     const out = await r(transport).activate('wh-1');
     const call = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0];
     expect(call.method).toBe('PUT');
-    expect(call.path).toBe('/integration/sellers/42/webhooks/wh-1/activate');
+    expect(call.path).toBe('/integration/webhook/sellers/42/webhooks/wh-1/activate');
     expect(call.body).toBeUndefined();
     expect(out).toEqual({ raw: undefined });
   });
@@ -193,7 +193,7 @@ describe('WebhooksResource.activate / deactivate', () => {
     const out = await r(transport).deactivate('wh-1');
     const call = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0];
     expect(call.method).toBe('PUT');
-    expect(call.path).toBe('/integration/sellers/42/webhooks/wh-1/deactivate');
+    expect(call.path).toBe('/integration/webhook/sellers/42/webhooks/wh-1/deactivate');
     // A text/plain "200 OK" body is passed through untouched on raw.
     expect(out).toEqual({ raw: '200 OK' });
   });

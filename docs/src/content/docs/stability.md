@@ -9,8 +9,8 @@ This page is the contract between Lonca and your integration: what we promise to
 
 All packages follow [Semantic Versioning](https://semver.org/).
 
-:::caution[Pre-1.0]
-While packages are on `0.x`, **minor versions may contain breaking changes**. Patch releases stay backwards-compatible. This is the current state — pin a minor range (`~0.x.y`) if you need stability today.
+:::note[All packages are 1.0+]
+`@lonca/core`, `@lonca/trendyol`, and `@lonca/hepsiburada` are all at `1.0.0` or later, so the policy below applies to every published package. Historical `0.x` releases allowed breaking changes in minor versions — pin a minor range (`~0.x.y`) only if you are still on one.
 :::
 
 From `1.0.0` onwards:

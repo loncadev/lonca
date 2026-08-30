@@ -42,7 +42,7 @@ pnpm add @lonca/core
 
 ## Stability
 
-`0.x` — alpha. Public APIs may change between minor versions until `1.0.0`.
+`1.x` — stable. Breaking changes ship only in major versions; see [Stability & versioning](https://loncadev.github.io/lonca/stability/).
 
 ## License
 
