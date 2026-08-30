@@ -32,13 +32,35 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # 2026-08-30: Why this is pinned to changesets/action v2 (commit SHA).
+      #
+      # changesets/action@v1 detected published packages by parsing the stdout
+      # of the publish script for "New tag:" lines. @changesets/cli v3 switched
+      # to clack-style spinner output ("◇ Successfully published: ..."), which
+      # v1 cannot parse. Result: after the cli 3.0.1 bump, `changeset publish`
+      # succeeded (npm got the packages via OIDC trusted publishing) but the
+      # action's publishedPackages output stayed empty, so git tags were never
+      # pushed and GitHub releases were never created (run 33331258681:
+      # @lonca/hepsiburada@0.13.0 and @lonca/trendyol@0.15.0; tags/releases had
+      # to be created manually).
+      #
+      # v2 of the action replaces stdout parsing with a shared output file via
+      # the CHANGESETS_OUTPUT env var (supported by cli v3, and inherited by
+      # `changeset publish` inside our custom `pnpm run release` script). v1 is
+      # only for cli v2 users. Pinned to the v2.1.1 release commit SHA per
+      # supply-chain policy; bump deliberately, not via floating tag.
+      #
+      # v2 renamed the inputs (version -> version-script, publish ->
+      # publish-script, commit -> commit-message, title -> pr-title) and takes
+      # the token as the `github-token` input — the GITHUB_TOKEN env var no
+      # longer configures it. Tags/release commits are now pushed through the
+      # GitHub API by default (covered by `contents: write` above).
       - name: Create Release Pull Request or Publish to npm
         id: changesets
-        uses: changesets/action@v1
+        uses: changesets/action@8488615a623b1b9c987934bb89eae8af6a946ac1 # v2.1.1
         with:
-          version: pnpm run version-packages
-          publish: pnpm run release
-          commit: "chore: release packages"
-          title: "chore: release packages"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          version-script: pnpm run version-packages
+          publish-script: pnpm run release
+          commit-message: "chore: release packages"
+          pr-title: "chore: release packages"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
