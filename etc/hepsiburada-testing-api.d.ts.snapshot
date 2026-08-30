@@ -1,4 +1,4 @@
-import { X as HepsiburadaClient } from './client-BHoJv4QZ.js';
+import { X as HepsiburadaClient } from './client-DHQ5hXhz.js';
 import '@lonca/core';
 
 /** A request the fake client received, normalized for matching in a `handler`. */
