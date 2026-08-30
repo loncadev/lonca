@@ -11,6 +11,7 @@ catalog:
   typescript: ^6.0.3
   "@types/node": ^24.13.3
   vitest: ^4.1.11
+  "@vitest/coverage-v8": ^4.1.11
   tsup: ^8.3.5
 
 # pnpm denies postinstall scripts by default and (since pnpm 11) fails the
