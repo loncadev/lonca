@@ -8,6 +8,7 @@
  * (rotatable; recommended).
  */
 
+import type { MutationResult } from '@lonca/core';
 import type { ShipmentPackageStatus } from './order.js';
 
 /** Auth method Trendyol uses when calling your webhook URL. */
@@ -35,6 +36,16 @@ export interface WebhookInput {
    * from the read-side `'Created'`/`'Picking'`).
    */
   subscribedStatuses?: string[];
+}
+
+/**
+ * Result of `webhooks.create()`. Trendyol's `createWebhook` reference
+ * documents the response as `{ id: string }` — keep it for `update` /
+ * `delete` / `activate` / `deactivate`. `raw` keeps the untouched body.
+ */
+export interface CreateWebhookResult extends MutationResult {
+  /** ID of the created subscription (absent when the body had none). */
+  id?: string;
 }
 
 /** A registered webhook subscription as returned by `webhooks.list`. */
