@@ -41,3 +41,15 @@ overrides:
   esbuild: ^0.28.1
   vite: ^8.0.16
   js-yaml@4: ^4.3.1
+  # Security pins for transitive deps that upstream has not bumped yet. Each
+  # entry is range-scoped to the affected major so unrelated lines are
+  # untouched, and can be dropped once the named parent resolves a patched
+  # version on its own.
+  # GHSA-2v37-7h3g-55p8 / GHSA-28wg-ghj8-5hjv — via @expressive-code/core > postcss > nanoid
+  "nanoid@3": ^3.3.18
+  # GHSA-fxqj-rqcc-2cmp / GHSA-r28c-9q8g-f849 — via @expressive-code/core > postcss
+  "postcss@8": ^8.5.23
+  # GHSA-2p49-hgcm-8545 — via astro > svgo
+  "svgo@4": ^4.0.2
+  # GHSA-rgw5-rvv9-x895 / GHSA-mh99-v99m-4gvg — via typedoc > minimatch > brace-expansion
+  "brace-expansion@>=4": ^5.0.9
