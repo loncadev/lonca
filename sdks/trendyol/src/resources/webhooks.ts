@@ -75,7 +75,7 @@ export class WebhooksResource {
     this.validateInput(input, 'create');
     const raw = await this.transport.request<{ id?: unknown } | undefined>({
       method: 'POST',
-      path: `/integration/sellers/${this.transport.sellerId}/webhooks`,
+      path: `/integration/webhook/sellers/${this.transport.sellerId}/webhooks`,
       body: input,
       rateLimiter: this.limiter,
     });
@@ -89,7 +89,7 @@ export class WebhooksResource {
   async list(): Promise<Webhook[]> {
     const data = await this.transport.request<unknown>({
       method: 'GET',
-      path: `/integration/sellers/${this.transport.sellerId}/webhooks`,
+      path: `/integration/webhook/sellers/${this.transport.sellerId}/webhooks`,
       rateLimiter: this.limiter,
     });
     const rows = Array.isArray(data)
@@ -194,6 +194,6 @@ export class WebhooksResource {
   }
 
   private webhookPath(webhookId: string | number): string {
-    return `/integration/sellers/${this.transport.sellerId}/webhooks/${encodeURIComponent(String(webhookId))}`;
+    return `/integration/webhook/sellers/${this.transport.sellerId}/webhooks/${encodeURIComponent(String(webhookId))}`;
   }
 }

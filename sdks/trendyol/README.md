@@ -443,7 +443,7 @@ Override per resource by passing a `TokenBucketRateLimiter` from `@lonca/core` w
 
 ## Stability
 
-`0.x` — alpha. The Trendyol surface is feature-complete and STAGE-verified, but public types may still adjust between minor versions until `1.0.0`.
+`1.x` — stable. The Trendyol surface is feature-complete and verified read-only against the production API. Breaking changes ship only in major versions; see [Stability & versioning](https://loncadev.github.io/lonca/stability/).
 
 ## License
 

@@ -31,7 +31,8 @@ const SERVICE = 'supplier-api' as const;
  *
  * NOTE: A merchant that is not enrolled as a supplier gets a route-level
  * `404` with `errorCode: "E4201"` ("Tedarikçi bulunamadı") — the SIT sandbox
- * merchant behaves this way. Endpoints typed from the developer-portal spec
+ * merchant behaves this way, and so does a non-enrolled production merchant
+ * (verified on prod 2026-08-30). Endpoints typed from the developer-portal spec
  * (`specs/hepsiburada/supplier-api-external.json`).
  */
 export class SuppliersResource {
