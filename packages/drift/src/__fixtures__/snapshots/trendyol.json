@@ -1,0 +1,87 @@
+{
+  "$comment": "TEST FIXTURE for packages/drift (cli.test.ts), hand-written, not a capture. The orders wire shape follows the contradictions specs/trendyol/README.md documents (shipmentNumber / cargoTrackingNumber observed as number, taxNumber as null) and adds two deliberate test cases that are NOT API facts: customerId as string and fixtureUndocumentedField.",
+  "marketplace": "trendyol",
+  "env": "prod",
+  "shapeOptions": { "maxDepth": 6, "maxKeys": 80 },
+  "probes": {
+    "fixture.unmatched": {
+      "status": "ok",
+      "wire": [
+        {
+          "operation": {
+            "key": "GET apigw.trendyol.com/integration/fixture-only/{}",
+            "unmatched": true,
+            "method": "GET",
+            "host": "apigw.trendyol.com",
+            "path": "/integration/fixture-only/{}"
+          },
+          "status": 200,
+          "contentType": "application/json",
+          "body": "json",
+          "shape": { "types": ["object"], "keys": {} }
+        }
+      ]
+    },
+    "orders.list": {
+      "status": "ok",
+      "shape": { "types": ["object"], "keys": { "items": { "types": ["array"] } } },
+      "wire": [
+        {
+          "operation": {
+            "key": "GET /integration/order/sellers/{sellerId}/orders",
+            "spec": "trendyol/marketplace.json",
+            "operationId": "getShipmentPackages",
+            "method": "GET",
+            "path": "/integration/order/sellers/{sellerId}/orders",
+            "specPath": "/order/sellers/{sellerId}/orders",
+            "server": "https://apigw.trendyol.com/integration"
+          },
+          "status": 200,
+          "contentType": "application/json",
+          "body": "json",
+          "shape": {
+            "types": ["object"],
+            "keys": {
+              "content": {
+                "types": ["array"],
+                "items": {
+                  "types": ["object"],
+                  "keys": {
+                    "cargoTrackingNumber": { "types": ["number"] },
+                    "customerId": { "types": ["string"] },
+                    "fixtureUndocumentedField": { "types": ["string"] },
+                    "id": { "types": ["number"] },
+                    "lines": { "types": ["array"] },
+                    "orderDate": { "types": ["number"] },
+                    "orderNumber": { "types": ["string"] },
+                    "packageHistories": {
+                      "types": ["array"],
+                      "items": {
+                        "types": ["object"],
+                        "keys": {
+                          "createdDate": { "types": ["number"] },
+                          "status": { "types": ["string"] }
+                        }
+                      }
+                    },
+                    "shipmentAddress": { "types": ["object"], "depthCapped": true },
+                    "shipmentNumber": { "types": ["number"] },
+                    "taxNumber": { "types": ["null"] }
+                  }
+                }
+              },
+              "page": { "types": ["number"] },
+              "size": { "types": ["number"] },
+              "totalElements": { "types": ["number"] },
+              "totalPages": { "types": ["number"] }
+            }
+          }
+        }
+      ]
+    },
+    "webhooks.list": {
+      "status": "ok",
+      "shape": { "types": ["array"] }
+    }
+  }
+}

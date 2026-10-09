@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@lonca/core": "workspace:*",
+    "@lonca/drift": "workspace:*",
     "@lonca/hepsiburada": "workspace:*",
     "@lonca/trendyol": "workspace:*"
   },

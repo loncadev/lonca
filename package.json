@@ -47,6 +47,7 @@
     "probe": "tsx --env-file-if-exists=.env scripts/probe/run.mts",
     "probe:check": "tsx --env-file-if-exists=.env scripts/probe/run.mts --check",
     "probe:hosts": "tsx --env-file-if-exists=.env scripts/probe/host-check.mts",
+    "drift": "tsx packages/drift/src/bin.ts",
     "specs:trendyol:fetch": "node scripts/specs/fetch-trendyol.mjs --out trendyol-reference-capture.json",
     "specs:trendyol:build": "node scripts/specs/build-trendyol.mjs trendyol-reference-capture.json",
     "specs:trendyol:check": "node scripts/specs/build-trendyol.mjs trendyol-reference-capture.json --check",

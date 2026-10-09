@@ -6,8 +6,11 @@ The collection exists so that:
 - developers can read (or generate clients from) a machine-readable definition instead of scraping
   a developer portal;
 - the SDKs in [`sdks/`](../sdks/) can be checked against the published contract;
-- the planned drift-detection job ([Vision](../README.md#vision), stage 2) has a tracked baseline
-  to diff a fresh capture against.
+- drift detection ([Vision](../README.md#vision), stage 2) has a tracked baseline to diff live
+  responses against: [`pnpm drift`](../packages/drift/) compares the wire shapes recorded by the
+  contract probes (`probe-snapshots/`) with the response schemas documented here, and reports
+  undocumented fields, missing required fields and type contradictions per operation.
+  Properties annotated `x-lonca-observed` / `x-lonca-observed-types` are reported as `known`.
 
 ## Layout
 

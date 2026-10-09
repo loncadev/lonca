@@ -3,9 +3,12 @@
 Read-only, deterministic probes that call the main read endpoints of each marketplace SDK
 against a live account and reduce every response to its **structure** — the key set of each
 object level and the JSON type(s) seen at each position. The structures are committed under
-[`probe-snapshots/`](../../probe-snapshots/) and re-checked nightly by
-[`.github/workflows/contract-probe.yml`](../../.github/workflows/contract-probe.yml); a
-difference is the drift signal (roadmap Faz 2.3 / 2.4).
+[`probe-snapshots/`](../../probe-snapshots/) and re-checked **locally** with `pnpm probe:check`
+(see [Running locally](#running-locally-the-default)); a difference is the drift signal
+(roadmap Faz 2.3 / 2.4). Each probe records two structures: `shape`, the SDK's normalised
+return value, and `wire`, the raw HTTP responses behind it, matched to the operations in
+[`specs/`](../../specs/) so that [`pnpm drift`](../../packages/drift/) can compare them with
+the documented schemas (roadmap Faz 4).
 
 ## Usage
 
@@ -108,6 +111,56 @@ name is the snapshot key, so keep it stable.
 `"customerName": { "types": ["string"] }`; an address becomes its key set. There is no
 masking step to get wrong.
 
+### Wire capture (`wire`)
+
+`shape` describes what the **SDK returns**, which is normalised (`brands.list` →
+`{ items: [{ id, name }] }`) and therefore cannot be compared with the marketplace's OpenAPI
+definitions. So each probe entry also carries `wire`: one entry per HTTP exchange the call
+caused, recorded by a `fetch` wrapper (`createWireRecorder` in
+[`@lonca/drift`](../../packages/drift/)):
+
+```jsonc
+"orders.list": {
+  "status": "ok",
+  "shape": { "…": "SDK output, as before" },
+  "wire": [
+    {
+      "operation": {
+        "key": "GET /integration/order/sellers/{sellerId}/orders",
+        "spec": "trendyol/marketplace.json",
+        "operationId": "getShipmentPackages",
+        "method": "GET",
+        "path": "/integration/order/sellers/{sellerId}/orders",
+        "specPath": "/order/sellers/{sellerId}/orders",
+        "server": "https://apigw.trendyol.com/integration",
+      },
+      "status": 200,
+      "contentType": "application/json",
+      "body": "json", // json | non-json | empty | not-recorded
+      "shape": { "types": ["object"], "keys": { "…": {} } },
+    },
+  ],
+}
+```
+
+- The request URL is matched against every `specs/<marketplace>/*.json` operation (server URL +
+  path template, `{param}` segments as wildcards, literal segments case-insensitive; Hepsiburada
+  production hosts also match the `-sit` servers the portal documents). What is recorded is the
+  **template**, never the concrete path, so seller ids, merchant UUIDs and package ids do not
+  reach the snapshot. A URL no spec describes is recorded as
+  `{ "key": "GET <host><path>", "unmatched": true, … }` with every value-like path segment
+  (numbers, UUIDs, codes, anything not a plain lower-case word) replaced by `{}`. Query strings
+  are never recorded.
+- The body is read from `response.clone()`, so the SDK consumes the original response exactly
+  as before. Only **2xx** bodies are summarised (same `summarize()`, same caps); error bodies are
+  not read at all (`body: "not-recorded"`) because marketplaces echo request data into them.
+- Retries are collapsed: a `503` followed by a `200` for the same operation records only the
+  `200`; several successful calls of one operation merge their shapes.
+- The SDK factories take no `fetch` option, but both transports bind `fetch` when they are
+  constructed, so the runner builds each client while the recorder is temporarily installed as
+  the global `fetch` (`withGlobalFetch`). No SDK code changes; a unit test in
+  `packages/drift/src/wire.test.ts` pins that behaviour for `@lonca/trendyol`.
+
 ## Drift detection
 
 `--check` compares the fresh shape of each probe with the committed one and reports:
@@ -122,18 +175,27 @@ information but does not block — with a 10-row sample a nullable field is ofte
 run and populated in the next. Array element shapes are compared only when both sides saw at
 least one element; an empty page is data churn, not drift.
 
+The `wire` lists are compared the same way and reported in their own **Wire (raw
+responses)** section of `report.md`: an operation that appeared or disappeared, a changed
+status / content type / body kind, and `added` / `removed` / `type-changed` keys (paths are
+prefixed with the operation key) block; `nullability` is informational. A committed snapshot
+taken before wire capture has no `wire` field: `--check` prints "no wire baseline yet" and does
+**not** treat it as drift. Running `pnpm probe` once writes the baseline.
+
 Known limitation: a key that is only present on some rows (e.g. a cancellation field) can
 appear or disappear with the sample. When that happens, `pnpm probe` and commit the widened
-snapshot; the merged key set only grows. Finer-grained comparison against `specs/` is roadmap
-Faz 4.
+snapshot; the merged key set only grows. Comparing the wire shapes with the documented schemas
+in `specs/` is `pnpm drift` ([`packages/drift`](../../packages/drift/), roadmap Faz 4).
 
-## Nightly workflow
+## Workflow (manual only)
 
-`.github/workflows/contract-probe.yml` runs `pnpm probe:check --require-credentials` at 03:00
-UTC (and on `workflow_dispatch`). On drift it uploads `probe-output/` as an artifact and opens
-an issue titled **Contract drift detected** labelled `drift` — or comments on the open one, so
-there is never more than one. It needs the ten `HB_*` / `TY_*` repository secrets listed above
-and only runs in `loncadev/lonca`.
+`.github/workflows/contract-probe.yml` has **no schedule**: the nightly cron was removed on
+2026-08-30 because marketplace credentials are deliberately not stored as GitHub secrets. It
+runs only on `workflow_dispatch`, and a first job checks for the `HB_*` / `TY_*` secrets and
+skips the probe (with a notice) when none are configured — which is the current state. Should
+secrets ever be added, it runs `pnpm probe:check --require-credentials`, uploads
+`probe-output/` as an artifact on drift and opens (or comments on) a single issue titled
+**Contract drift detected** labelled `drift`. It only runs in `loncadev/lonca`.
 
 Note that Trendyol `stage` is behind an IP allowlist (Cloudflare 403 for unlisted addresses);
 either allowlist the runner egress or point `TY_ENV` at `prod` — all probes are GETs.
@@ -154,10 +216,12 @@ workflow only runs when dispatched manually (and no-ops without secrets). The
 supported way to check for drift is local:
 
 ```bash
-pnpm probe:check   # exits 1 and prints a structural diff when the API drifted
+pnpm build               # the probes import the built SDKs and @lonca/drift
+pnpm probe:check         # exits 1 and prints a structural diff when the API drifted
 pnpm probe -- --update   # accept the new shape after reviewing the diff
+pnpm drift               # compare the committed wire shapes with specs/ (no network)
 ```
 
-Run it before releases and whenever an SDK behaves unexpectedly. To automate it
+Run it before releases (`pnpm probe && pnpm drift`) and whenever an SDK behaves unexpectedly. To automate it
 on your own machine, schedule `pnpm probe:check` (e.g. Windows Task Scheduler /
 cron) from a checkout that has a valid .env.

@@ -5,28 +5,41 @@ Committed structural baselines produced by [`scripts/probe/run.mts`](../scripts/
 and JSON types — and never a value. Regenerate with `pnpm probe`, review the diff, commit.
 Format and drift rules are documented in [`scripts/probe/README.md`](../scripts/probe/README.md).
 
-| File               | Environment                | Captured   | Result                                                      |
-| ------------------ | -------------------------- | ---------- | ----------------------------------------------------------- |
-| `hepsiburada.json` | SIT                        | 2026-08-30 | 12 ok / 0 error (host-routing fix applied — see host notes) |
-| `trendyol.json`    | stage (non-allowlisted IP) | 2026-08-30 | 0 ok / 9 error — placeholder, see below                     |
+| File               | Environment | Captured   | Result          | Wire baseline (`wire`) |
+| ------------------ | ----------- | ---------- | --------------- | ---------------------- |
+| `hepsiburada.json` | prod        | 2026-08-30 | 12 ok / 0 error | not yet — see below    |
+| `trendyol.json`    | prod        | 2026-08-30 | 9 ok / 0 error  | not yet — see below    |
+
+Both baselines were regenerated against **production** (read-only GETs) in #139, when the SDKs
+were verified for 1.0.0; the earlier SIT (Hepsiburada) and stage-placeholder (Trendyol) captures
+are only in git history.
 
 ## Notes
 
-### Trendyol baseline is a placeholder
+### Wire baseline pending
 
-Trendyol `stage` sits behind a Cloudflare IP allowlist: every request from an unlisted address
-gets `403 text/html`, which the SDK currently surfaces as `ValidationError` /
-`VALIDATION_FAILED`. The committed `trendyol.json` therefore records nine identical 403 errors
-and no shapes. The same credentials return `200` on `prod`, so the baseline should be
-regenerated either from an allowlisted address or with `TY_ENV=prod` (every probe is a GET):
+Wire capture (the per-probe `wire` list that [`pnpm drift`](../packages/drift/) compares with
+`specs/`) was added after these files were captured, so neither snapshot has a `wire` field
+yet. `pnpm probe:check` treats that as "no wire baseline yet" (a warning, not drift) and
+`pnpm drift` exits 0 with a message. To record the first wire baseline, run against prod from a
+checkout with a valid `.env` (`HB_ENV=prod`, `TY_ENV=prod`):
 
 ```bash
-pnpm probe -- --only trendyol   # then commit probe-snapshots/trendyol.json
+pnpm build && pnpm probe   # rewrites both files: shape (unchanged contract) + wire
+pnpm drift                 # then review drift-output/report.md
 ```
 
-`pnpm probe:check` prints a warning while a baseline has no successful probe, and flags an
-environment mismatch as drift, so switching `TY_ENV` in the workflow secrets will be caught on
-the first nightly run.
+Review the diff before committing — `wire` must contain only spec path templates or `{}`-redacted
+paths, key names and JSON types.
+
+### Trendyol stage is IP-allowlisted
+
+Trendyol `stage` sits behind a Cloudflare IP allowlist: every request from an unlisted address
+gets `403 text/html` (surfaced by the SDK at the time as `ValidationError` / `VALIDATION_FAILED`). That is
+why the first Trendyol capture (2026-08-30, stage) recorded nine identical 403 errors and no
+shapes, and why the baseline is taken from `prod` (every probe is a GET). `pnpm probe:check`
+still prints a warning when a baseline has no successful probe, and flags an environment
+mismatch (`stage` baseline vs `prod` run) as drift.
 
 ### Hepsiburada host discrepancy (roadmap 2.1a — RESOLVED by 1.7b)
 
