@@ -151,6 +151,11 @@ pnpm probe:check    # compare a fresh run with the committed snapshots; exit 1 o
 pnpm drift          # compare the committed wire shapes with specs/ (offline); exit 1 on breaking drift
 ```
 
+Findings that are understood and accepted (the marketplace's docs are wrong and the SDK copes)
+are listed with a reason in
+[`probe-snapshots/known-discrepancies.json`](./probe-snapshots/known-discrepancies.json) and
+reported as `accepted` instead of failing the run.
+
 These run locally (before releases: `pnpm probe && pnpm drift`). Marketplace credentials are not
 stored as GitHub secrets, so [`contract-probe.yml`](./.github/workflows/contract-probe.yml) is
 manual-only and skips without them. Details in [`scripts/probe/README.md`](./scripts/probe/README.md)

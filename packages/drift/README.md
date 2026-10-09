@@ -26,7 +26,8 @@ pnpm probe                       # read-only GETs against prod; rewrites probe-s
 pnpm drift                       # compare wire shapes with specs/, write drift-output/
 ```
 
-Review `git diff probe-snapshots/` and `drift-output/report.md` before committing the snapshots.
+Review `git diff probe-snapshots/` and `drift-output/report.md` before committing the snapshots;
+drop [overlay](#known-discrepancy-overlay) entries the report lists as stale.
 
 ## CLI
 
