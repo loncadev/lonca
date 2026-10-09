@@ -46,6 +46,7 @@
     "try:inspect-inventory-and-price": "tsx --env-file=.env examples/inspect-inventory-and-price.mts",
     "probe": "tsx --env-file-if-exists=.env scripts/probe/run.mts",
     "probe:check": "tsx --env-file-if-exists=.env scripts/probe/run.mts --check",
+    "probe:prod": "tsx --env-file=.env.prod scripts/probe/run.mts",
     "probe:hosts": "tsx --env-file-if-exists=.env scripts/probe/host-check.mts",
     "drift": "tsx packages/drift/src/bin.ts",
     "specs:trendyol:fetch": "node scripts/specs/fetch-trendyol.mjs --out trendyol-reference-capture.json",

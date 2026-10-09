@@ -1,36 +1,37 @@
 # Probe snapshots
 
 Committed structural baselines produced by [`scripts/probe/run.mts`](../scripts/probe/run.mts)
-(`pnpm probe`). Each `<marketplace>.json` holds, per probe, the response **shape** — key sets
-and JSON types — and never a value. Regenerate with `pnpm probe`, review the diff, commit.
-Format and drift rules are documented in [`scripts/probe/README.md`](../scripts/probe/README.md).
+(`pnpm probe:prod`). Each `<marketplace>.json` holds, per probe, the response **shape** — key
+sets and JSON types — and never a value. Format and drift rules are documented in
+[`scripts/probe/README.md`](../scripts/probe/README.md).
 
-| File               | Environment | Captured   | Result          | Wire baseline (`wire`) |
-| ------------------ | ----------- | ---------- | --------------- | ---------------------- |
-| `hepsiburada.json` | prod        | 2026-08-30 | 12 ok / 0 error | not yet — see below    |
-| `trendyol.json`    | prod        | 2026-08-30 | 9 ok / 0 error  | not yet — see below    |
+| File               | Environment | Captured   | Result          | Wire baseline (`wire`)                |
+| ------------------ | ----------- | ---------- | --------------- | ------------------------------------- |
+| `hepsiburada.json` | prod        | 2026-10-09 | 12 ok / 0 error | 12 operations, 4 with no spec match   |
+| `trendyol.json`    | prod        | 2026-10-09 | 9 ok / 0 error  | 9 operations, all matched to `specs/` |
 
-Both baselines were regenerated against **production** (read-only GETs) in #139, when the SDKs
-were verified for 1.0.0; the earlier SIT (Hepsiburada) and stage-placeholder (Trendyol) captures
-are only in git history.
+Both baselines are taken against **production** (every probe is a read-only GET). The earlier
+SIT (Hepsiburada) and stage-placeholder (Trendyol) captures are only in git history.
 
-## Notes
+## Regenerating
 
-### Wire baseline pending
-
-Wire capture (the per-probe `wire` list that [`pnpm drift`](../packages/drift/) compares with
-`specs/`) was added after these files were captured, so neither snapshot has a `wire` field
-yet. `pnpm probe:check` treats that as "no wire baseline yet" (a warning, not drift) and
-`pnpm drift` exits 0 with a message. To record the first wire baseline, run against prod from a
-checkout with a valid `.env` (`HB_ENV=prod`, `TY_ENV=prod`):
+Keep `.env` on stage / SIT and put production credentials in a separate, gitignored
+`.env.prod` (same variable names as [`.env.example`](../.env.example), with `TY_ENV=prod` and
+`HB_ENV=prod`). Production is then only reached when that file is passed explicitly:
 
 ```bash
-pnpm build && pnpm probe   # rewrites both files: shape (unchanged contract) + wire
-pnpm drift                 # then review drift-output/report.md
+pnpm build
+pnpm probe:prod    # = tsx --env-file=.env.prod scripts/probe/run.mts — rewrites both files
+pnpm drift         # compare the wire shapes with specs/, review drift-output/report.md
 ```
 
-Review the diff before committing — `wire` must contain only spec path templates or `{}`-redacted
-paths, key names and JSON types.
+Before committing, check that both files say `"env": "prod"` and every probe is `ok` — a plain
+`pnpm probe` reads `.env` and would replace the prod baseline with stage / SIT shapes. Review the
+diff: `wire` must contain only spec path templates or `{}`-redacted paths, key names and JSON
+types. Shapes are sample-dependent: a list that happens to be empty (e.g. no webhooks, no open
+questions) records no item shape, so a shrinking shape is not necessarily drift.
+
+## Notes
 
 ### Trendyol stage is IP-allowlisted
 

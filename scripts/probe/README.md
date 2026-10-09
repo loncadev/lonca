@@ -17,7 +17,12 @@ pnpm probe                       # run every probe set that has credentials, wri
 pnpm probe:check                 # run, compare with the committed snapshots, exit 1 on drift
 pnpm probe -- --only trendyol    # one marketplace (repeatable)
 pnpm probe:hosts                 # Hepsiburada host-discrepancy report (SIT only, see below)
+pnpm probe:prod                  # same as `pnpm probe`, but reads `.env.prod` instead of `.env`
 ```
+
+The committed baselines are production captures. Keep `.env` on stage / SIT and regenerate them
+with `pnpm probe:prod`, which loads a separate gitignored `.env.prod` (see
+[`probe-snapshots/README.md`](../../probe-snapshots/README.md#regenerating)).
 
 Credentials are read from the environment; the root scripts load `.env` when it exists
 (`tsx --env-file-if-exists=.env`). The variable names are the ones in
