@@ -243,7 +243,8 @@ const HOW_TO_ACT = [
   'Regenerate the inputs with `pnpm probe` (read-only, against prod) and re-run `pnpm drift`.',
 ];
 
-function code(s: string): string {
+/** Inline Markdown code span (backticks in `s` become quotes). */
+export function code(s: string): string {
   return `\`${s.replace(/`/g, "'")}\``;
 }
 
@@ -254,7 +255,8 @@ function findingLine(f: Finding): string {
   return `- ${code(f.kind)} ${code(displayPath(f.path))}: ${f.message}`;
 }
 
-function knownBlock(known: KnownSummary): string[] {
+/** The overlay summary (and stale entries) block shared by both Markdown reports. */
+export function knownBlock(known: KnownSummary): string[] {
   const lines = [
     `Known-discrepancy overlay ${code(known.source)}: ${known.entries} entr${known.entries === 1 ? 'y' : 'ies'}, ${known.accepted} finding(s) accepted, ${known.stale.length} stale.`,
     '',
@@ -310,7 +312,7 @@ function operationBlock(op: OperationReport): string {
   return lines.join('\n');
 }
 
-function bytes(s: string): number {
+export function bytes(s: string): number {
   return Buffer.byteLength(s, 'utf8');
 }
 

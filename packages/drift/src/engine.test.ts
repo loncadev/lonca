@@ -573,6 +573,9 @@ describe('severity table', () => {
       accepted: 'info',
       'not-observed': 'info',
       uncomparable: 'info',
+      'sdk-type-mismatch': 'warning',
+      'sdk-unknown-field': 'warning',
+      'sdk-missing-field': 'info',
     });
   });
 });

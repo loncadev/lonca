@@ -19,6 +19,9 @@ import { addCounts, countFindings, emptyCounts, type DriftReport } from './repor
 /** Default file name, resolved inside the snapshots directory. */
 export const KNOWN_DISCREPANCIES_FILE = 'known-discrepancies.json';
 
+/** Finding kinds of the SDK-types report (`pnpm drift:types`) an overlay entry may accept. */
+export const SDK_TYPE_KINDS: readonly FindingKind[] = ['sdk-type-mismatch', 'sdk-unknown-field'];
+
 /** Finding kinds an overlay entry may accept (the ones that need attention). */
 export const ACCEPTABLE_KINDS: readonly FindingKind[] = [
   'type-mismatch',
@@ -26,7 +29,18 @@ export const ACCEPTABLE_KINDS: readonly FindingKind[] = [
   'undocumented-field',
   'undocumented-null',
   'unmatched-operation',
+  ...SDK_TYPE_KINDS,
 ];
+
+/**
+ * Which report an overlay entry belongs to: `sdk-*` kinds are matched (and
+ * judged stale) only by `pnpm drift:types`, every other kind only by `pnpm drift`.
+ */
+export type OverlayScope = 'wire' | 'sdk-types';
+
+export function overlayScopeOf(kind: FindingKind): OverlayScope {
+  return SDK_TYPE_KINDS.includes(kind) ? 'sdk-types' : 'wire';
+}
 
 export interface KnownDiscrepancy {
   /** Marketplace id, as in the snapshot (`trendyol`, `hepsiburada`). */
@@ -155,33 +169,63 @@ export function loadKnownDiscrepancies(
 }
 
 /**
+ * Matches the findings of one report against the overlay entries in its
+ * {@link OverlayScope}, counting hits so unmatched entries can be reported as
+ * stale. Shared by the wire report and the SDK-types report.
+ */
+export interface OverlayMatcher {
+  /** The finding itself, or its `accepted` replacement when an entry matches. */
+  accept(marketplace: string, operation: string, f: Finding): Finding;
+  /** What the overlay did so far; only entries for one of `marketplaces` can be stale. */
+  summary(source: string, marketplaces: readonly string[]): KnownSummary;
+}
+
+export function createOverlayMatcher(
+  entries: readonly KnownDiscrepancy[],
+  scope: OverlayScope,
+): OverlayMatcher {
+  const scoped = entries.filter((e) => overlayScopeOf(e.kind) === scope);
+  const hits = new Map<KnownDiscrepancy, number>(scoped.map((e) => [e, 0]));
+  let accepted = 0;
+  return {
+    accept(marketplace, operation, f) {
+      const entry = scoped.find(
+        (e) =>
+          e.marketplace === marketplace &&
+          e.operation === operation &&
+          e.kind === f.kind &&
+          (e.path === '*' || e.path === displayPath(f.path)),
+      );
+      if (!entry) return f;
+      hits.set(entry, hits.get(entry)! + 1);
+      accepted += 1;
+      return acceptedFinding(f, entry);
+    },
+    summary(source, marketplaces) {
+      const stale = scoped.filter((e) => marketplaces.includes(e.marketplace) && hits.get(e) === 0);
+      return { source, entries: scoped.length, accepted, stale };
+    },
+  };
+}
+
+/**
  * Downgrade every finding an overlay entry matches to `accepted` (info) and
  * recompute the counts. Returns a new report with `known` set; the input is
  * not modified. Only entries for a marketplace present in the report can be
- * stale, so `--only` does not flag the other marketplaces' entries.
+ * stale, so `--only` does not flag the other marketplaces' entries. Entries
+ * for `sdk-*` kinds belong to `pnpm drift:types` and are left out here.
  */
 export function applyKnownDiscrepancies(
   report: DriftReport,
   entries: readonly KnownDiscrepancy[],
   source: string,
 ): DriftReport {
-  const hits = new Map<KnownDiscrepancy, number>(entries.map((e) => [e, 0]));
-  let accepted = 0;
+  const matcher = createOverlayMatcher(entries, 'wire');
   const counts = emptyCounts();
   const marketplaces = report.marketplaces.map((m) => {
-    const mine = entries.filter((e) => e.marketplace === m.marketplace);
     const mCounts = emptyCounts();
     const operations = m.operations.map((op) => {
-      const forOp = mine.filter((e) => e.operation === op.key);
-      const findings = op.findings.map((f) => {
-        const entry = forOp.find(
-          (e) => e.kind === f.kind && (e.path === '*' || e.path === displayPath(f.path)),
-        );
-        if (!entry) return f;
-        hits.set(entry, hits.get(entry)! + 1);
-        accepted += 1;
-        return acceptedFinding(f, entry);
-      });
+      const findings = op.findings.map((f) => matcher.accept(m.marketplace, op.key, f));
       const opCounts = countFindings(findings);
       addCounts(mCounts, opCounts);
       return { ...op, findings, counts: opCounts };
@@ -189,13 +233,14 @@ export function applyKnownDiscrepancies(
     addCounts(counts, mCounts);
     return { ...m, operations, counts: mCounts };
   });
-  const inReport = new Set(report.marketplaces.map((m) => m.marketplace));
-  const stale = entries.filter((e) => inReport.has(e.marketplace) && hits.get(e) === 0);
   return {
     ...report,
     marketplaces,
     counts,
-    known: { source, entries: entries.length, accepted, stale },
+    known: matcher.summary(
+      source,
+      report.marketplaces.map((m) => m.marketplace),
+    ),
   };
 }
 
