@@ -38,7 +38,7 @@ See [Stability & versioning](https://loncadev.github.io/lonca/stability/) for th
 Three-stage roadmap:
 
 1. **SDK + OpenAPI Spec Collection** — Type-safe TypeScript SDKs and curated OpenAPI specs for Turkish marketplaces (current stage)
-2. **API Drift Detection** — A monitoring layer that proactively detects breaking changes in marketplace APIs. v1 runs locally: the contract probes record the raw wire shapes of live read calls and [`pnpm drift`](packages/drift/) compares them with the documented schemas in [`specs/`](specs/)
+2. **API Drift Detection** — A monitoring layer that proactively detects breaking changes in marketplace APIs. v1 runs locally: the contract probes record the raw wire shapes of live read calls and [`pnpm drift`](packages/drift/) compares them with the documented schemas in [`specs/`](specs/); [`pnpm drift:types`](packages/drift/README.md#sdk-types-vs-specs) checks the SDKs' own TypeScript response types against the same schemas on every CI run (warn-only)
 3. **Unified Marketplace API Gateway** — A Plaid-style abstraction that puts every marketplace behind a single API
 
 ## Why?
@@ -149,6 +149,7 @@ Live contract probes (read-only, credentials from `.env` — see [`.env.example`
 pnpm probe          # call the main read endpoints, write key-set/type snapshots to probe-snapshots/
 pnpm probe:check    # compare a fresh run with the committed snapshots; exit 1 on drift
 pnpm drift          # compare the committed wire shapes with specs/ (offline); exit 1 on breaking drift
+pnpm drift:types    # compare the SDKs' TypeScript response types with specs/ (offline, warn-only; also in CI)
 ```
 
 Findings that are understood and accepted (the marketplace's docs are wrong and the SDK copes)
