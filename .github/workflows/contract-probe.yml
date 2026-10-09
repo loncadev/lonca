@@ -21,10 +21,33 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # `secrets` cannot be referenced in a job-level `if`, so a tiny job checks
+  # whether any marketplace credentials are configured and the probe job
+  # gates on its output. Forks never have the secrets.
+  credentials:
+    name: Check credentials
+    if: github.repository == 'loncadev/lonca'
+    runs-on: ubuntu-latest
+    outputs:
+      present: ${{ steps.check.outputs.present }}
+    steps:
+      - name: Check for marketplace secrets
+        id: check
+        env:
+          HB_API_USER: ${{ secrets.HB_API_USER }}
+          TY_API_KEY: ${{ secrets.TY_API_KEY }}
+        run: |
+          if [ -n "$HB_API_USER" ] || [ -n "$TY_API_KEY" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No HB_* / TY_* secrets configured; skipping the contract probe. Run \`pnpm probe:check\` locally instead."
+          fi
+
   probe:
     name: Probe live contracts
-    # Secrets are not available on forks and the schedule must not fan out.
-    if: github.repository == 'loncadev/lonca' && (secrets.HB_API_USER != '' || secrets.TY_API_KEY != '')
+    needs: credentials
+    if: needs.credentials.outputs.present == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -94,7 +117,7 @@ jobs:
             if (report.length > 60000) report = report.slice(0, 60000) + '\n\n… (truncated, see artifact)';
             const stamp = new Date().toISOString().slice(0, 10);
             const body = [
-              `Nightly contract probe found structural drift on ${stamp}.`,
+              `Contract probe found structural drift on ${stamp}.`,
               '',
               `Run: ${runUrl}`,
               `Fresh snapshots + report are attached to the run as the \`probe-output-${context.runId}\` artifact.`,
