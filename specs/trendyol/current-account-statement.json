@@ -1,0 +1,767 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Trendyol Yurtiçi Cari Hesap Ekstresi Entegrasyonu",
+    "description": "Trendyol sisteminde oluşan muhasebesel kayıtlarınızı bu servis aracılığı ile entegrasyon üzerinden çekebilirsiniz.\n\n- Finansal kayıtlar sipariş teslim edildikten sonra oluşmaktadır.\n- transactionType veya transactionTypes girilmesi zorunludur. 1 istekte yalnızca 1 type girilebilir. transactionTypes ile birden fazla type gönderilebilir. İkisi birlikte gönderilirse transactionTypes geçerlidir.\n- paymentOrderId siparişin ödemesi yapıldıktan sonra oluşmaktadır. İstisnalar hariç, her çarşamba, ilgili haftada vadesi gelen siparişler için ödeme emri oluşur.\n- paymentOrderId ile sipariş ve ödemelerinizi eşleştirebilirsiniz.\n- Tarih filtresi için startDate+endDate, paymentDate veya paymentOrderId gönderilmelidir. startDate ve endDate arasındaki süre **15** günden uzun **olamaz**. paymentDate (yyyy-MM-dd) gönderildiğinde kayıtlar işlem tarihi yerine ödeme/vade tarihine göre filtrelenir.\n- Store bilgileri Marketplace satıcıları için \"null\" olarak dönecektir.\n- \"affiliate\" alanı \"TRENDYOLTR\" yada \"TRENDYOLAZJV\" dönebilir.\n\n**Kullanılacak olan servisler (settlements, otherfinancials, payment-order) birbirinden ayrı işlem kayıtlarını vermektedir.**\n- \"Settlements\" servisinden satış, iade, indirim, kupon, provizyon işlemlerinin detaylarına ulaşabilirsiniz.\n- \"Other Financial\" servisinden tedarikçi finansmanı, virman, ödemeler (hakediş), faturalar, tedarikçi faturaları, gelen havale, komisyon mutabakat faturaları işlemlerinin detaylarına ulaşabilirsiniz.\n- \"Payment Order\" servisinden belirli bir ödeme tarihindeki hakediş kayıtlarını sorgulayabilirsiniz. Dönen `id` değeri paymentOrderId'dir; settlements ve otherfinancials bu id ile startDate/endDate olmadan filtrelenebilir. Hakediş dönemi için paymentDate satır filtresi değil, bu iki adımlı paymentOrderId akışı kullanılmalıdır.\n",
+    "version": "1.1.0",
+    "contact": {
+      "name": "Trendyol Entegrasyon Destek",
+      "email": "entegrasyon@trendyol.com"
+    },
+    "x-lonca-source": {
+      "kind": "api-reference",
+      "portal": "https://developers.trendyol.com",
+      "definition": "Trendyol Yurtiçi Cari Hesap Ekstresi Entegrasyonu",
+      "pages": 3,
+      "capturedAt": "2026-10-09",
+      "portalUpdatedAt": "2026-08-25T09:48:58.000Z",
+      "generator": "scripts/specs/build-trendyol.mjs"
+    },
+    "x-lonca-observed-source": {
+      "snapshot": "probe-snapshots/trendyol.json",
+      "env": "prod",
+      "note": "Properties marked x-lonca-observed were seen in production responses but are not in the API reference schema; x-lonca-guide-example names the guide page whose example payload shows the same key (absent: not documented anywhere). x-lonca-observed-types lists the JSON types seen where they disagree with the documented type."
+    }
+  },
+  "servers": [
+    {
+      "url": "https://apigw.trendyol.com/integration/finance/che",
+      "description": "Canlı Ortam"
+    },
+    {
+      "url": "https://stageapigw.trendyol.com/integration/finance/che",
+      "description": "Test Ortamı"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Other Financials",
+      "description": "Tedarikçi finansmanı, virman, ödemeler, faturalar, gelen havale, komisyon mutabakat faturaları"
+    },
+    {
+      "name": "Payment Order",
+      "description": "Ödeme tarihine göre hakediş (payment order) sorgulama"
+    },
+    {
+      "name": "Settlements",
+      "description": "Satış, iade, indirim, kupon, provizyon işlemleri"
+    }
+  ],
+  "paths": {
+    "/sellers/{sellerId}/otherfinancials": {
+      "get": {
+        "tags": [
+          "Other Financials"
+        ],
+        "summary": "Other Financials Servisi",
+        "description": "Tedarikçi finansmanı, virman, ödemeler (hakediş), faturalar (Trendyoldan tedarikçiye),\ntedarikçi faturaları (Tedarikçiden Trendyola), gelen havale, komisyon mutabakat faturaları işlemlerinin detaylarına ulaşabilirsiniz.\n",
+        "operationId": "getOtherFinancials",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "Satıcı ID"
+          },
+          {
+            "name": "transactionType",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/OtherFinancialTransactionType"
+            },
+            "description": "Finansal işlem türüdür. transactionType veya transactionTypes gönderilmelidir."
+          },
+          {
+            "name": "transactionTypes",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/OtherFinancialTransactionType"
+              }
+            },
+            "description": "Birden fazla işlem türü (virgülle ayrılmış). transactionType ile birlikte gönderilirse transactionTypes geçerli kabul edilir."
+          },
+          {
+            "name": "transactionSubType",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PlatformServiceFee"
+              ]
+            },
+            "description": "Platform hizmet bedeli kayıtlarını filtrelemek için kullanılır. transactionType veya transactionTypes içinde DeductionInvoices olmalıdır."
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "İşlem tarihi aralığının başlangıcı. Timestamp millisecond olarak gönderilmelidir. paymentDate yoksa startDate ve endDate zorunludur."
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "İşlem tarihi aralığının bitişi. Timestamp millisecond olarak gönderilmelidir. Aralık 15 günden uzun olamaz."
+          },
+          {
+            "name": "paymentDate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2025-01-10"
+            },
+            "description": "Ödemeye girebileceği en erken tarih (yyyy-MM-dd, Europe/Istanbul). Gönderildiğinde kayıtlar işlem tarihi yerine ödeme/vade tarihine göre filtrelenir; startDate ve endDate kullanılmaz."
+          },
+          {
+            "name": "paymentOrderId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "payment-order servisinden dönen id. Hakediş dönemindeki kayıtları startDate/endDate olmadan çekmek için kullanılır."
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0
+            },
+            "description": "Sadece belirtilen sayfadaki bilgileri döndürür"
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 500,
+              "enum": [
+                500,
+                1000
+              ]
+            },
+            "description": "Bir sayfada listelenecek maksimum adeti belirtir."
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Başarılı yanıt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettlementPageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Hatalı İstek",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Yetkisiz",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/getotherfinancials",
+        "x-lonca-portal-updated-at": "2026-02-16T13:44:40.000Z"
+      }
+    },
+    "/sellers/{sellerId}/payment-order": {
+      "get": {
+        "tags": [
+          "Payment Order"
+        ],
+        "summary": "Payment Order List Servisi",
+        "description": "Satıcının PAID ödeme emirlerini sayfalı listeler. Varsayılan ve maksimum size 10'dur. Cevaptaki id alanı paymentOrderId'dir; settlements ve otherfinancials bu değerle startDate/endDate olmadan sorgulanır. Tarih alanı payoutDate'tir.\n",
+        "operationId": "getPaymentOrders",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "Satıcı ID"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0
+            },
+            "description": "Sayfa numarası (0'dan başlar)"
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 10,
+              "maximum": 10
+            },
+            "description": "Sayfa boyutu (varsayılan ve maksimum 10)"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Başarılı yanıt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentOrderPagedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Hatalı İstek",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Yetkisiz",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/getpaymentorder",
+        "x-lonca-portal-updated-at": "2026-08-25T09:48:58.000Z"
+      }
+    },
+    "/sellers/{sellerId}/settlements": {
+      "get": {
+        "tags": [
+          "Settlements"
+        ],
+        "summary": "Settlements Servisi",
+        "description": "Satış, iade, indirim, kupon, provizyon işlemlerinin detaylarına ulaşabilirsiniz.\nTransaction Type, SellerRevenuePositive ve CommissionNegative birlikte değerlendirilmelidir.\nTransaction Type, SellerRevenueNegative ve CommissionPositive birlikte değerlendirilmelidir.\nTransaction Type, SellerRevenuePositiveCancel ve CommissionNegativeCancel birlikte değerlendirilmelidir.\nTransaction Type, SellerRevenueNegativeCancel ve CommissionPositiveCancel birlikte değerlendirilmelidir.\n",
+        "operationId": "getSettlements",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "Satıcı ID"
+          },
+          {
+            "name": "transactionType",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/SettlementTransactionType"
+            },
+            "description": "Finansal işlem türüdür. transactionType veya transactionTypes gönderilmelidir."
+          },
+          {
+            "name": "transactionTypes",
+            "in": "query",
+            "required": false,
+            "style": "form",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/SettlementTransactionType"
+              }
+            },
+            "description": "Birden fazla işlem türü (virgülle ayrılmış). transactionType ile birlikte gönderilirse transactionTypes geçerli kabul edilir."
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "İşlem tarihi aralığının başlangıcı. Timestamp milisecond olarak gönderilmelidir. paymentDate yoksa startDate ve endDate zorunludur."
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "İşlem tarihi aralığının bitişi. Timestamp milisecond olarak gönderilmelidir. Aralık 15 günden uzun olamaz."
+          },
+          {
+            "name": "paymentDate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2025-01-10"
+            },
+            "description": "Ödemeye girebileceği en erken tarih (yyyy-MM-dd, Europe/Istanbul). Gönderildiğinde kayıtlar işlem tarihi yerine ödeme/vade tarihine göre filtrelenir; startDate ve endDate kullanılmaz."
+          },
+          {
+            "name": "paymentOrderId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "payment-order servisinden dönen id. Hakediş dönemindeki kayıtları startDate/endDate olmadan çekmek için kullanılır."
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0
+            },
+            "description": "Sadece belirtilen sayfadaki bilgileri döndürür"
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 500,
+              "enum": [
+                500,
+                1000
+              ]
+            },
+            "description": "Bir sayfada listelenecek maksimum adeti belirtir."
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Başarılı yanıt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettlementPageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Hatalı İstek",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Yetkisiz",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/getsettlements",
+        "x-lonca-portal-updated-at": "2026-02-16T13:44:40.000Z"
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "UserAgent": {
+        "name": "User-Agent",
+        "in": "header",
+        "required": true,
+        "description": "Trendyol Partner API isteklerinde zorunludur; User-Agent bilgisi olmayan istekler 403 ile engellenir. Aracı (entegratör) firma ile çalışılıyorsa \"{sellerId} - {Entegratör Firma İsmi}\", entegrasyon yazılımı firmaya aitse \"{sellerId} - SelfIntegration\" gönderilmelidir. Entegratör firma ismi alfanumerik, en fazla 30 karakter olmalıdır.",
+        "schema": {
+          "type": "string"
+        },
+        "example": "1234 - SelfIntegration",
+        "x-lonca-doc-url": "https://developers.trendyol.com/docs/2-authorization"
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "FinancialTransaction": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "İşlem ID"
+          },
+          "transactionDate": {
+            "type": "integer",
+            "format": "int64",
+            "description": "İşlem tarihi (Unix timestamp milisaniye)"
+          },
+          "barcode": {
+            "type": "string",
+            "nullable": true,
+            "description": "Ürün barkodu"
+          },
+          "transactionType": {
+            "type": "string",
+            "description": "İşlem türü (örn. Satış, Ödeme)"
+          },
+          "receiptId": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true,
+            "description": "Dekont No"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "description": "İşlem açıklaması"
+          },
+          "debt": {
+            "type": "number",
+            "format": "double",
+            "description": "Borç"
+          },
+          "credit": {
+            "type": "number",
+            "format": "double",
+            "description": "Alacak"
+          },
+          "paymentPeriod": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Vade süresi (gün)"
+          },
+          "commissionRate": {
+            "type": "number",
+            "format": "double",
+            "nullable": true,
+            "description": "Komisyon oranı"
+          },
+          "commissionAmount": {
+            "type": "number",
+            "format": "double",
+            "nullable": true,
+            "description": "Trendyol komisyon tutarı"
+          },
+          "commissionInvoiceSerialNumber": {
+            "type": "string",
+            "nullable": true,
+            "description": "Komisyon fatura seri numarası"
+          },
+          "sellerRevenue": {
+            "type": "number",
+            "format": "double",
+            "nullable": true,
+            "description": "Satıcı hakediş tutarı"
+          },
+          "orderNumber": {
+            "type": "string",
+            "nullable": true,
+            "description": "Sipariş numarası"
+          },
+          "paymentOrderId": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true,
+            "description": "Ödeme numarası"
+          },
+          "paymentDate": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true,
+            "description": "Ödeme tarihi (Unix timestamp milisaniye)"
+          },
+          "sellerId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Satıcı ID"
+          },
+          "storeId": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true,
+            "description": "Mağaza ID"
+          },
+          "storeName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Mağaza adı"
+          },
+          "storeAddress": {
+            "type": "string",
+            "nullable": true,
+            "description": "Mağaza adresi"
+          },
+          "country": {
+            "type": "string",
+            "description": "Ülke"
+          },
+          "orderDate": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true,
+            "description": "Sipariş tarihi (Unix timestamp milisaniye)"
+          },
+          "affiliate": {
+            "type": "string",
+            "description": "Affiliate kodu (TRENDYOLTR veya TRENDYOLAZJV)"
+          },
+          "shipmentPackageId": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true,
+            "description": "Sipariş paket numarası"
+          },
+          "currency": {
+            "type": "string",
+            "x-lonca-observed": true
+          }
+        }
+      },
+      "OtherFinancialTransactionType": {
+        "type": "string",
+        "enum": [
+          "Stoppage",
+          "CashAdvance",
+          "WireTransfer",
+          "IncomingTransfer",
+          "ReturnInvoice",
+          "CommissionAgreementInvoice",
+          "PaymentOrder",
+          "DeductionInvoices",
+          "FinancialItem"
+        ]
+      },
+      "PaymentOrderLookup": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "paymentOrderId. settlements ve otherfinancials filtre parametresi."
+          },
+          "status": {
+            "type": "string",
+            "description": "Ödeme emri durumu"
+          },
+          "amount": {
+            "type": "number",
+            "format": "double",
+            "description": "Ödeme tutarı"
+          },
+          "payoutDate": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true,
+            "description": "Ödeme emrinin oluştuğu tarih (Unix timestamp milisaniye)"
+          },
+          "paymentType": {
+            "type": "string",
+            "nullable": true,
+            "description": "Ödeme tipi"
+          },
+          "sellerId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Satıcı ID"
+          },
+          "regionId": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true,
+            "description": "Ödeme bölgesi ID"
+          },
+          "regionName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Ödeme bölgesi adı"
+          },
+          "regionCode": {
+            "type": "string",
+            "nullable": true,
+            "description": "Ödeme bölgesi kodu"
+          }
+        }
+      },
+      "PaymentOrderPagedResponse": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer"
+          },
+          "size": {
+            "type": "integer"
+          },
+          "totalPages": {
+            "type": "integer"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentOrderLookup"
+            }
+          }
+        }
+      },
+      "SettlementPageResponse": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "description": "Mevcut sayfa numarası"
+          },
+          "size": {
+            "type": "integer",
+            "description": "Sayfa başına öğe sayısı"
+          },
+          "totalPages": {
+            "type": "integer",
+            "description": "Toplam sayfa sayısı"
+          },
+          "totalElements": {
+            "type": "integer",
+            "description": "Toplam öğe sayısı"
+          },
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FinancialTransaction"
+            }
+          }
+        }
+      },
+      "SettlementTransactionType": {
+        "type": "string",
+        "enum": [
+          "Sale",
+          "Return",
+          "Discount",
+          "DiscountCancel",
+          "Coupon",
+          "CouponCancel",
+          "ProvisionPositive",
+          "ProvisionNegative",
+          "ManualRefund",
+          "ManualRefundCancel",
+          "TyDiscount",
+          "TyDiscountCancel",
+          "TyCoupon",
+          "TyCouponCancel",
+          "SellerRevenuePositive",
+          "SellerRevenueNegative",
+          "CommissionPositive",
+          "CommissionNegative",
+          "SellerRevenuePositiveCancel",
+          "SellerRevenueNegativeCancel",
+          "CommissionPositiveCancel",
+          "CommissionNegativeCancel",
+          "DeliveryFee",
+          "DeliveryFeeCancel",
+          "PayByLink"
+        ]
+      }
+    },
+    "securitySchemes": {
+      "apiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Authorization",
+        "description": "Bearer token kimlik doğrulama"
+      },
+      "basicAuth": {
+        "type": "http",
+        "scheme": "basic",
+        "description": "Basic Auth ile Satıcı API Key ve API Secret"
+      }
+    }
+  },
+  "security": [
+    {
+      "basicAuth": []
+    },
+    {
+      "apiKeyAuth": []
+    }
+  ]
+}

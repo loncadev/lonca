@@ -1,0 +1,3257 @@
+{
+  "openapi": "3.0.3",
+  "x-owner-team": "spm-core",
+  "info": {
+    "title": "Trendyol Marketplace - Ürün Entegrasyonu API",
+    "description": "Trendyol Marketplace ürün entegrasyonu API servisleri. Ürün yaratma (V2), filtreleme, güncelleme, silme, arşivleme, stok-fiyat güncelleme, buybox, kilit kaldırma ve toplu işlem kontrolü servislerini kapsar.\n",
+    "version": "2.0.0",
+    "contact": {
+      "name": "Trendyol Entegrasyon Destek",
+      "email": "entegrasyon@trendyol.com"
+    },
+    "x-lonca-source": {
+      "kind": "api-reference",
+      "portal": "https://developers.trendyol.com",
+      "definition": "Trendyol Marketplace - Ürün Entegrasyonu API",
+      "pages": 23,
+      "capturedAt": "2026-10-09",
+      "portalUpdatedAt": "2026-08-10T14:48:15.000Z",
+      "generator": "scripts/specs/build-trendyol.mjs"
+    },
+    "x-lonca-observed-source": {
+      "snapshot": "probe-snapshots/trendyol.json",
+      "env": "prod",
+      "note": "Properties marked x-lonca-observed were seen in production responses but are not in the API reference schema; x-lonca-guide-example names the guide page whose example payload shows the same key (absent: not documented anywhere). x-lonca-observed-types lists the JSON types seen where they disagree with the documented type."
+    }
+  },
+  "x-domain-key": "marketplace-product",
+  "servers": [
+    {
+      "url": "https://apigw.trendyol.com/integration",
+      "description": "Canlı Ortam"
+    },
+    {
+      "url": "https://stageapigw.trendyol.com/integration",
+      "description": "Test Ortamı"
+    }
+  ],
+  "tags": [
+    {
+      "name": "BatchRequests",
+      "description": "Toplu işlem kontrolü servisleri",
+      "x-module-key": "batch_requests"
+    },
+    {
+      "name": "Brands",
+      "description": "Marka listeleme servisleri",
+      "x-module-key": "brands"
+    },
+    {
+      "name": "Categories",
+      "description": "Kategori, özellik ve özellik değerleri servisleri",
+      "x-module-key": "categories"
+    },
+    {
+      "name": "Inventory",
+      "description": "Stok ve fiyat güncelleme servisleri",
+      "x-module-key": "inventory"
+    },
+    {
+      "name": "Lookup",
+      "description": "Kargo firması listeleme servisleri",
+      "x-module-key": "lookup"
+    },
+    {
+      "name": "Products",
+      "description": "Ürün yaratma, filtreleme, silme, arşivleme, buybox ve kilit kaldırma servisleri",
+      "x-module-key": "products"
+    },
+    {
+      "name": "Updates",
+      "description": "Ürün güncelleme servisleri (onaylı/onaysız)",
+      "x-module-key": "updates"
+    }
+  ],
+  "paths": {
+    "/inventory/sellers/{sellerId}/products/price-and-inventory": {
+      "post": {
+        "tags": [
+          "Inventory"
+        ],
+        "x-module-key": "inventory",
+        "summary": "Stok ve Fiyat Güncelleme (updatePriceAndInventory)",
+        "description": "Trendyol'a aktarılan ve onaylanan ürünlerin fiyat ve stok bilgilerini günceller. Aynı isteği 15 dakika boyunca tekrarlı olarak atamazsınız. Maksimum 1000 item, ürün başına maksimum 20.000 stok.\n",
+        "operationId": "updatePriceAndInventory",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/sellerId"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PriceAndInventoryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "İstek kuyruğa alındı",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchRequestResponse"
+                },
+                "example": {
+                  "batchRequestId": "fa75dfd5-6ce6-4730-a09e-97563500000-1529854840"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/updatepriceandinventory",
+        "x-lonca-portal-updated-at": "2026-06-09T08:58:38.000Z"
+      }
+    },
+    "/product/brands": {
+      "get": {
+        "tags": [
+          "Brands"
+        ],
+        "x-module-key": "brands",
+        "summary": "Marka Listesi (getBrands)",
+        "description": "createProduct servisine yapılacak isteklerde gönderilecek brandId bilgisi bu servis kullanılarak alınır. Bir sayfada minimum 1000 adet brand bilgisi alınabilmektedir.\n",
+        "operationId": "getBrands",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Hangi sayfadaki markaların getirileceği bilgisi",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "Bir servis cevabında yer alacak marka sayısı",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Başarılı",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrandsResponse"
+                },
+                "example": {
+                  "brands": [
+                    {
+                      "id": 10,
+                      "name": "TrendyolMilla"
+                    },
+                    {
+                      "id": 19,
+                      "name": "Milla"
+                    },
+                    {
+                      "id": 20,
+                      "name": "Trendyol"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/getbrands",
+        "x-lonca-portal-updated-at": "2026-06-09T08:58:38.000Z"
+      }
+    },
+    "/product/brands/by-name": {
+      "get": {
+        "tags": [
+          "Brands"
+        ],
+        "x-module-key": "brands",
+        "summary": "Marka Arama (getBrandsByName)",
+        "description": "İsme göre marka arama. BÜYÜK/küçük harf ayrımına dikkat edilmelidir.",
+        "operationId": "getBrandsByName",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "required": true,
+            "description": "Aranacak marka adı (büyük/küçük harf duyarlı)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Başarılı",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Brand"
+                  }
+                },
+                "example": [
+                  {
+                    "id": 40,
+                    "name": "TRENDYOLMİLLA"
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/getbrandsbyname",
+        "x-lonca-portal-updated-at": "2026-06-09T08:58:38.000Z"
+      }
+    },
+    "/product/categories/{categoryId}/attributes": {
+      "get": {
+        "tags": [
+          "Categories"
+        ],
+        "x-module-key": "categories",
+        "summary": "Kategori Özellik Listesi (getCategoryAttributes)",
+        "description": "Ürün Yaratma servisine yapılacak isteklerde gönderilecek attributes bilgileri bu servis kullanılarak alınır. allowMultipleAttributeValues alanı ile çoklu değer desteği kontrol edilir. En alt seviyedeki kategori ID kullanılmalıdır.\n",
+        "operationId": "getCategoryAttributes",
+        "parameters": [
+          {
+            "name": "categoryId",
+            "in": "path",
+            "required": true,
+            "description": "Trendyol kategori ID",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "required",
+            "in": "query",
+            "description": "true gönderildiğinde yalnızca zorunlu özellikler, false gönderildiğinde yalnızca zorunlu olmayan özellikler döner. Gönderilmezse tüm özellikler döner.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/storefrontcode"
+          },
+          {
+            "$ref": "#/components/parameters/acceptLanguage"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Başarılı",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryAttributesResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/getcategoryattributes",
+        "x-lonca-portal-updated-at": "2026-06-09T08:58:38.000Z"
+      }
+    },
+    "/product/categories/{categoryId}/attributes/{attributeId}/values": {
+      "get": {
+        "tags": [
+          "Categories"
+        ],
+        "x-module-key": "categories",
+        "summary": "Kategori Özellik Değerleri Listesi (getCategoryAttributeValues)",
+        "description": "Ürün Yaratma servisine yapılacak isteklerde gönderilecek attributes values bilgileri bu servis kullanılarak alınır.\n",
+        "operationId": "getCategoryAttributeValues",
+        "parameters": [
+          {
+            "name": "categoryId",
+            "in": "path",
+            "required": true,
+            "description": "Trendyol kategori ID",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "attributeId",
+            "in": "path",
+            "required": true,
+            "description": "Özellik ID",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Sayfa numarası (max 1000)",
+            "schema": {
+              "type": "integer",
+              "maximum": 1000
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "Bir sayfada listelenecek maksimum adet (max 1000)",
+            "schema": {
+              "type": "integer",
+              "maximum": 1000
+            }
+          },
+          {
+            "$ref": "#/components/parameters/storefrontcode"
+          },
+          {
+            "$ref": "#/components/parameters/acceptLanguage"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Başarılı",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttributeValuesPageResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/getcategoryattributevalues",
+        "x-lonca-portal-updated-at": "2026-06-09T08:58:38.000Z"
+      }
+    },
+    "/product/lookup/cargo-providers": {
+      "get": {
+        "tags": [
+          "Lookup"
+        ],
+        "x-module-key": "lookup",
+        "summary": "Kargo Firması Filtreleme Servisi (getCargoProviders)",
+        "description": "Kullanılabilecek kargo sağlayıcılarını listeler. Dönen code değerleri ürün yaratma ve güncelleme isteklerindeki cargoProviders alanında gönderilebilir. Liste storefront bilgisine göre değişir; storefrontcode header'ı gönderilmezse varsayılan olarak TR kullanılır.\n",
+        "operationId": "getCargoProviders",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/storefrontcode"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Başarılı",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CargoProvider"
+                  }
+                },
+                "example": [
+                  {
+                    "code": "KOLAYGELSINMP",
+                    "name": "Kolay Gelsin"
+                  },
+                  {
+                    "code": "YKMP",
+                    "name": "Yurtiçi Kargo"
+                  },
+                  {
+                    "code": "SURATMP",
+                    "name": "Sürat Kargo"
+                  }
+                ]
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/getcargoproviders",
+        "x-lonca-portal-updated-at": "2026-08-10T14:48:15.000Z"
+      }
+    },
+    "/product/product-categories": {
+      "get": {
+        "tags": [
+          "Categories"
+        ],
+        "x-module-key": "categories",
+        "summary": "Kategori Listesi (getCategoryTree)",
+        "description": "createProduct servisine yapılacak isteklerde gönderilecek categoryId bilgisi bu servis kullanılarak alınır. En alt seviyedeki kategori ID bilgisi kullanılmalıdır. Kategori ağacı belirli aralıklarla güncellenmektedir, haftalık olarak güncel listeyi almanız önerilir.\n",
+        "operationId": "getCategoryTree",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "description": "Kategori adı filtresi. Girilen kelimenin geçtiği tüm seviyelerdeki kategoriler döner.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/storefrontcode"
+          },
+          {
+            "$ref": "#/components/parameters/acceptLanguage"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Başarılı",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Category"
+                  }
+                },
+                "example": [
+                  {
+                    "id": 1162,
+                    "name": "Atkı & Bere & Eldiven",
+                    "parentId": 368,
+                    "subCategories": [
+                      {
+                        "id": 382,
+                        "name": "Atkı",
+                        "parentId": 1162,
+                        "subCategories": []
+                      },
+                      {
+                        "id": 384,
+                        "name": "Bere",
+                        "parentId": 1162,
+                        "subCategories": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/getcategorytree",
+        "x-lonca-portal-updated-at": "2026-06-09T08:58:38.000Z"
+      }
+    },
+    "/product/sellers/{sellerId}/brands": {
+      "post": {
+        "tags": [
+          "Brands"
+        ],
+        "x-module-key": "brands",
+        "summary": "Marka Yaratma Servisi (createBrand)",
+        "description": "Trendyol Marka Listesi'nde bulunmayan markaların yaratılması için kullanılır. İstek JSON body ile değil form-data ile gönderilir. Marka ismi \"name\" alanı ile text olarak, marka görselleri \"images\" alanı ile file olarak iletilmelidir. Minimum 1, maksimum 3 görsel gönderilebilir.\n",
+        "operationId": "createBrand",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/sellerId"
+          },
+          {
+            "name": "storeFrontCode",
+            "in": "header",
+            "required": true,
+            "description": "Markanın yaratılacağı ülke kodu (Türkiye için TR)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBrandRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Marka yaratıldı",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateBrandResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/createbrand",
+        "x-lonca-portal-updated-at": "2026-08-10T14:48:15.000Z"
+      }
+    },
+    "/product/sellers/{sellerId}/product/{barcode}": {
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "x-module-key": "products",
+        "summary": "Ürün Filtreleme - Temel Bilgiler (getProductBase)",
+        "description": "Trendyol mağazanızdaki ürününüzün temel durum bilgisini döner.",
+        "operationId": "getProductBase",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/sellerId"
+          },
+          {
+            "name": "barcode",
+            "in": "path",
+            "required": true,
+            "description": "Ürün barkodu",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Başarılı",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductBaseResponse"
+                },
+                "example": {
+                  "barcode": "smoketest-250049",
+                  "approved": true,
+                  "approvedDate": 1763622556000,
+                  "archived": false,
+                  "listingId": "a089a30ed1632032913b28099e49d948",
+                  "contentId": 9511264
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/getproductbase",
+        "x-lonca-portal-updated-at": "2026-06-09T08:58:38.000Z"
+      }
+    },
+    "/product/sellers/{sellerId}/products": {
+      "delete": {
+        "tags": [
+          "Products"
+        ],
+        "x-module-key": "products",
+        "summary": "Ürün Silme (deleteProducts)",
+        "description": "Ürünleri Trendyol sisteminden kaldırır. Tekli ve çoklu ürün silme işlemini destekler. Onay bekleyen ürünler ve arşivde bir günden fazla bulunmuş, Trendyol tarafından satışa durdurulmamış onaylı ürünler silinebilir.\n",
+        "operationId": "deleteProducts",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/sellerId"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteProductsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "İstek kuyruğa alındı",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchRequestResponse"
+                },
+                "example": {
+                  "batchRequestId": "c0bd29e1-003d-455a-9d74-3a00d868ce9d-1678194595"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/deleteproducts",
+        "x-lonca-portal-updated-at": "2026-06-09T08:58:38.000Z"
+      }
+    },
+    "/product/sellers/{sellerId}/products/approved": {
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "x-module-key": "products",
+        "summary": "Ürün Filtreleme - Onaylı Ürün (filterApprovedProducts)",
+        "description": "Trendyol mağazanızdaki onaylı ürünleri listeler. Content bazlı yapıda döner, her content altında variants dizisi bulunur. nextPageToken 10.000'den fazla content olması halinde kullanılır. page x size maksimum 10.000 değerini alabilir.\n",
+        "operationId": "filterApprovedProducts",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/sellerId"
+          },
+          {
+            "name": "barcode",
+            "in": "query",
+            "description": "Tekil barkod sorgusu",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "description": "Başlangıç tarihi (timestamp)",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "description": "Bitiş tarihi (timestamp)",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Sayfa numarası",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "dateQueryType",
+            "in": "query",
+            "description": "Tarih filtresi türü",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "VARIANT_CREATED_DATE",
+                "VARIANT_MODIFIED_DATE",
+                "CONTENT_MODIFIED_DATE"
+              ]
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "Sayfa başına adet (max 100)",
+            "schema": {
+              "type": "integer",
+              "maximum": 100
+            }
+          },
+          {
+            "name": "supplierId",
+            "in": "query",
+            "description": "Tedarikçi ID",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "stockCode",
+            "in": "query",
+            "description": "Stok kodu",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productMainId",
+            "in": "query",
+            "description": "Ana ürün kodu",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "brandIds",
+            "in": "query",
+            "description": "Marka ID listesi",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Ürün durumu filtresi",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "archived",
+                "blacklisted",
+                "locked",
+                "onSale"
+              ]
+            }
+          },
+          {
+            "name": "nextPageToken",
+            "in": "query",
+            "description": "10.000+ content varsa sonraki sayfa tokeni",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Başarılı",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApprovedProductsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/filterapprovedproducts",
+        "x-lonca-portal-updated-at": "2026-06-09T08:58:38.000Z"
+      }
+    },
+    "/product/sellers/{sellerId}/products/approved/inventory-and-price": {
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "x-module-key": "products",
+        "summary": "Ürün Filtreleme - Onaylı Ürün Stok ve Fiyat (filterApprovedProductsInventoryAndPrice)",
+        "description": "Onaylı ürünlerin yalnızca stok ve fiyat bilgilerini döner. nextPageToken 10.000'den fazla onaylı content olması halinde kullanılır. page x size maksimum 10.000 değerini alabilir. stockLastModifiedDate alanı yalnızca ürüne stok güncellemesi yapılmışsa değer döner, aksi halde null döner.\n",
+        "operationId": "filterApprovedProductsInventoryAndPrice",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/sellerId"
+          },
+          {
+            "name": "barcode",
+            "in": "query",
+            "description": "Tekil barkod sorgusu",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "barcodes",
+            "in": "query",
+            "description": "Çoklu barkod sorgusu (max 50 barcode)",
+            "schema": {
+              "type": "array",
+              "maxItems": 50,
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "contentId",
+            "in": "query",
+            "description": "Tekil content ID sorgusu",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "stockCode",
+            "in": "query",
+            "description": "Stok kodu",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productMainId",
+            "in": "query",
+            "description": "Ana ürün kodu",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Ürün durumu filtresi",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "archived",
+                "blacklisted",
+                "locked",
+                "onSale",
+                "notOnSale"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Sayfa numarası",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "Sayfa başına adet (max 100)",
+            "schema": {
+              "type": "integer",
+              "maximum": 100
+            }
+          },
+          {
+            "name": "orderByDirection",
+            "in": "query",
+            "description": "sellerCreatedDate alanına göre sıralama yönü. asc eskiden yeniye, desc yeniden eskiye sıralar.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "nextPageToken",
+            "in": "query",
+            "description": "10.000+ content varsa sonraki sayfa tokeni",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Başarılı",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryAndPriceResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/filterapprovedproductsinventoryandprice",
+        "x-lonca-portal-updated-at": "2026-08-10T14:48:15.000Z"
+      }
+    },
+    "/product/sellers/{sellerId}/products/archive-state": {
+      "put": {
+        "tags": [
+          "Products"
+        ],
+        "x-module-key": "products",
+        "summary": "Ürün Arşivleme (archiveProducts)",
+        "description": "Ürünleri Trendyol sisteminde arşivler veya arşivden çıkarır. Tekli ve çoklu ürün arşivleme işlemlerini destekler. Her istek içerisinde gönderilebilecek maksimum item sayısı 1.000'dir.\n",
+        "operationId": "archiveProducts",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/sellerId"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArchiveProductsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "İstek kuyruğa alındı",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchRequestResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/archiveproducts",
+        "x-lonca-portal-updated-at": "2026-06-09T08:58:38.000Z"
+      }
+    },
+    "/product/sellers/{sellerId}/products/batch-requests/{batchRequestId}": {
+      "get": {
+        "tags": [
+          "BatchRequests"
+        ],
+        "x-module-key": "batch_requests",
+        "summary": "Toplu İşlem Kontrolü (getBatchRequestResult)",
+        "description": "batchRequestId ile alınan işlemlerin sonuç kontrolü yapılır. status alanı kontrol edilerek toplu işlemin tamamlanıp tamamlanmadığı kontrol edilir. Batch request sonuçları 4 saat sonrasına kadar görüntülenebilir.\n",
+        "operationId": "getBatchRequestResult",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/sellerId"
+          },
+          {
+            "name": "batchRequestId",
+            "in": "path",
+            "required": true,
+            "description": "Toplu işlem ID bilgisi",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Başarılı",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchRequestResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/getbatchrequestresult",
+        "x-lonca-portal-updated-at": "2026-06-09T08:58:38.000Z"
+      }
+    },
+    "/product/sellers/{sellerId}/products/buybox-information": {
+      "post": {
+        "tags": [
+          "Products"
+        ],
+        "x-module-key": "products",
+        "summary": "Ürün Buybox Kontrol Servisi (getBuyboxInformation)",
+        "description": "Ürünlerin buybox bilgisini döner: buybox sırası, buybox fiyatı ve birden fazla satıcı olup olmadığı. Maksimum 10 barcode gönderilebilir. Servis limiti 1000 req/min.\n",
+        "operationId": "getBuyboxInformation",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/sellerId"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BuyboxRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Başarılı",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BuyboxResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/getbuyboxinformation",
+        "x-lonca-portal-updated-at": "2026-06-09T08:58:38.000Z"
+      }
+    },
+    "/product/sellers/{sellerId}/products/content-bulk-update": {
+      "post": {
+        "tags": [
+          "Updates"
+        ],
+        "x-module-key": "updates",
+        "summary": "Ürün Güncelleme - Onaylı Content (updateContentBulk)",
+        "description": "Onaylı ürünlerin content bilgilerini günceller. Attribute değerleri hariç partial update desteklenir. Attribute'lardan herhangi biri güncellenecekse tüm attribute ve değerleri gönderilmelidir. Her istek içerisinde maksimum 1.000 item.\n",
+        "operationId": "updateContentBulk",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/sellerId"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContentBulkUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "İstek kuyruğa alındı",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchRequestResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/updatecontentbulk",
+        "x-lonca-portal-updated-at": "2026-06-09T08:58:38.000Z"
+      }
+    },
+    "/product/sellers/{sellerId}/products/delivery-info-bulk-update": {
+      "post": {
+        "tags": [
+          "Updates"
+        ],
+        "x-module-key": "updates",
+        "summary": "Ürün Güncelleme - Teslimat Bilgisi (updateDeliveryInfoBulk)",
+        "description": "Onaylı ürünlerin teslimat bilgilerini günceller. barcode alanı hariç tüm alanlar güncellenebilir. Maksimum 1.000 item.\n",
+        "operationId": "updateDeliveryInfoBulk",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/sellerId"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeliveryInfoBulkUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "İstek kuyruğa alındı",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchRequestResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/updatedeliveryinfobulk",
+        "x-lonca-portal-updated-at": "2026-06-09T08:58:38.000Z"
+      }
+    },
+    "/product/sellers/{sellerId}/products/unapproved": {
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "x-module-key": "products",
+        "summary": "Ürün Filtreleme - Onaysız Ürün (filterUnapprovedProducts)",
+        "description": "Trendyol mağazanızdaki onaysız (draft) ürünleri listeler. Onay süreci devam eden ve reddedilen ürünleri içerir. nextPageToken 10.000'den fazla onaysız barcode olması halinde kullanılır. page x size maksimum 10.000 değerini alabilir.\n",
+        "operationId": "filterUnapprovedProducts",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/sellerId"
+          },
+          {
+            "name": "barcode",
+            "in": "query",
+            "description": "Tekil barkod sorgusu",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "description": "Başlangıç tarihi (timestamp)",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "description": "Bitiş tarihi (timestamp)",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Sayfa numarası",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "dateQueryType",
+            "in": "query",
+            "description": "Tarih filtresi türü",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "CREATED_DATE",
+                "LAST_MODIFIED_DATE"
+              ]
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "Sayfa başına adet (max 1000)",
+            "schema": {
+              "type": "integer",
+              "maximum": 1000
+            }
+          },
+          {
+            "name": "supplierId",
+            "in": "query",
+            "description": "Tedarikçi ID",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "stockCode",
+            "in": "query",
+            "description": "Stok kodu",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productMainId",
+            "in": "query",
+            "description": "Ana ürün kodu",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "brandIds",
+            "in": "query",
+            "description": "Marka ID listesi",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Ürün onay durumu",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "rejected",
+                "pendingApproval"
+              ]
+            }
+          },
+          {
+            "name": "nextPageToken",
+            "in": "query",
+            "description": "10.000+ ürün varsa sonraki sayfa tokeni",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Başarılı",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnapprovedProductsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/filterunapprovedproducts",
+        "x-lonca-portal-updated-at": "2026-06-09T08:58:38.000Z"
+      }
+    },
+    "/product/sellers/{sellerId}/products/unapproved-bulk-update": {
+      "post": {
+        "tags": [
+          "Updates"
+        ],
+        "x-module-key": "updates",
+        "summary": "Ürün Güncelleme - Onaysız Ürün (updateUnapprovedProducts)",
+        "description": "Trendyol mağazanızdaki onaysız ürünleri günceller. Her istek içerisinde gönderilebilecek maksimum item sayısı 1.000'dir.\n",
+        "operationId": "updateUnapprovedProducts",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/sellerId"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUnapprovedRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "İstek kuyruğa alındı",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchRequestResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/updateunapprovedproducts",
+        "x-lonca-portal-updated-at": "2026-06-09T08:58:38.000Z"
+      }
+    },
+    "/product/sellers/{sellerId}/products/unlock": {
+      "put": {
+        "tags": [
+          "Products"
+        ],
+        "x-module-key": "products",
+        "summary": "Ürün Kilit Kaldırma Servisi (unlockProducts)",
+        "description": "Kilitli ürünlerin kilidini kaldırır. Düşük/yüksek fiyatlandırma, kritik fiyat hatası veya tedarik edememe sebepleriyle satışı durdurulan ürünlerin kilitleri bu servis ile açılabilir.\n",
+        "operationId": "unlockProducts",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/sellerId"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnlockProductsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "İstek kuyruğa alındı",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchRequestResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/unlockproducts",
+        "x-lonca-portal-updated-at": "2026-06-09T08:58:38.000Z"
+      }
+    },
+    "/product/sellers/{sellerId}/products/variant-bulk-update": {
+      "post": {
+        "tags": [
+          "Updates"
+        ],
+        "x-module-key": "updates",
+        "summary": "Ürün Güncelleme - Onaylı Varyant (updateVariantBulk)",
+        "description": "Onaylı ürünlerin varyant bilgilerini günceller. barcode alanı hariç tüm alanlar güncellenebilir. Partial update desteklenmez. Maksimum 1.000 item.\n",
+        "operationId": "updateVariantBulk",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/sellerId"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VariantBulkUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "İstek kuyruğa alındı",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchRequestResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/updatevariantbulk",
+        "x-lonca-portal-updated-at": "2026-06-09T08:58:38.000Z"
+      }
+    },
+    "/product/sellers/{sellerId}/products/{contentId}/update-audits": {
+      "get": {
+        "tags": [
+          "Updates"
+        ],
+        "x-module-key": "updates",
+        "summary": "Ürün Bilgileri Güncelleme Sonucu Kontrol Servisi (getUpdateAudits)",
+        "description": "Ürün bilgilerini güncelleme servislerinden yapılan ve başarılı sonuçlanan isteklerin, ürün kontrol adımı sonucunu döner. Güncelleme reddedilmişse rejectReasons alanı ile red sebepleri iletilir. Dönen updates alanının içeriği güncelleme tipine (type) göre değişir.\n",
+        "operationId": "getUpdateAudits",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/sellerId"
+          },
+          {
+            "name": "contentId",
+            "in": "path",
+            "required": true,
+            "description": "Ürün content ID bilgisi",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Sayfa numarası",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "Sayfa başına adet",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Güncelleme durumu filtresi (SUCCESS, FAIL, RUNNING)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/storefrontcode"
+          },
+          {
+            "$ref": "#/components/parameters/acceptLanguage"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Başarılı",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateAuditsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/getupdateaudits",
+        "x-lonca-portal-updated-at": "2026-08-10T14:48:15.000Z"
+      }
+    },
+    "/product/sellers/{sellerId}/v2/products": {
+      "post": {
+        "tags": [
+          "Products"
+        ],
+        "x-module-key": "products",
+        "summary": "Ürün Yaratma V2 (createProducts)",
+        "description": "Ürünleri Trendyol sistemine yükler. Attribute yapısında attributeValueIds (array) veya attributeValue (string) kullanılır. Her istek içerisinde gönderilebilecek maksimum item sayısı 1.000'dir. listPrice, salePrice'tan küçük olamaz. İşlem asenkrondur ve dönen batchRequestId ile sonuç kontrol edilmelidir.",
+        "operationId": "createProducts",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/sellerId"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProductsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "İstek kuyruğa alındı",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchRequestResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/createproducts",
+        "x-lonca-portal-updated-at": "2026-06-09T08:58:38.000Z"
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "UserAgent": {
+        "name": "User-Agent",
+        "in": "header",
+        "required": true,
+        "description": "Trendyol Partner API isteklerinde zorunludur; User-Agent bilgisi olmayan istekler 403 ile engellenir. Aracı (entegratör) firma ile çalışılıyorsa \"{sellerId} - {Entegratör Firma İsmi}\", entegrasyon yazılımı firmaya aitse \"{sellerId} - SelfIntegration\" gönderilmelidir. Entegratör firma ismi alfanumerik, en fazla 30 karakter olmalıdır.",
+        "schema": {
+          "type": "string"
+        },
+        "example": "1234 - SelfIntegration",
+        "x-lonca-doc-url": "https://developers.trendyol.com/docs/2-authorization"
+      },
+      "acceptLanguage": {
+        "name": "Accept-Language",
+        "in": "header",
+        "required": false,
+        "description": "Servis cevabının döneceği dil. TR storefront'unda cevap her zaman Türkçe döner. Diğer storefront'larda tr, en, ro, ar, el değerleri desteklenir; gönderilmediğinde veya desteklenmeyen bir değer gönderildiğinde en kullanılır.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "sellerId": {
+        "name": "sellerId",
+        "in": "path",
+        "required": true,
+        "description": "Satıcı ID",
+        "schema": {
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      "storefrontcode": {
+        "name": "storefrontcode",
+        "in": "header",
+        "required": false,
+        "description": "Ülke kodu. Gönderilmezse veya TR gönderildiğinde Türkiye storefront'u kullanılır.",
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "URL içerisinde eksik veya hatalı parametre kullanılmaktadır.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "Anlık bir hata yaşanmış olabilir. Lütfen birkaç dakika bekleyiniz."
+      },
+      "NotFound": {
+        "description": "İstek gönderilen URL bilgisi hatalıdır."
+      },
+      "Unauthorized": {
+        "description": "supplierID, API Key veya API Secure Key bilgilerinden birisi eksik/yanlış."
+      }
+    },
+    "schemas": {
+      "ApprovedAttribute": {
+        "type": "object",
+        "properties": {
+          "attributeId": {
+            "type": "integer"
+          },
+          "attributeName": {
+            "type": "string"
+          },
+          "attributeValues": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApprovedAttributeValue"
+            }
+          },
+          "attributeValue": {
+            "type": "string",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/ürün-filtreleme-onaylı-ürün-v2"
+          },
+          "attributeValueId": {
+            "type": "number",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/ürün-filtreleme-onaylı-ürün-v2"
+          }
+        }
+      },
+      "ApprovedAttributeValue": {
+        "type": "object",
+        "properties": {
+          "attributeValueId": {
+            "type": "integer",
+            "nullable": true
+          },
+          "attributeValue": {
+            "type": "string"
+          }
+        }
+      },
+      "ApprovedContent": {
+        "type": "object",
+        "properties": {
+          "contentId": {
+            "type": "integer"
+          },
+          "productMainId": {
+            "type": "string"
+          },
+          "brand": {
+            "$ref": "#/components/schemas/BrandInfo"
+          },
+          "category": {
+            "$ref": "#/components/schemas/CategoryInfo"
+          },
+          "creationDate": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "lastModifiedDate": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "lastModifiedBy": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductImage"
+            }
+          },
+          "attributes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApprovedAttribute"
+            }
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApprovedVariant"
+            }
+          }
+        }
+      },
+      "ApprovedProductsResponse": {
+        "type": "object",
+        "properties": {
+          "totalElements": {
+            "type": "integer"
+          },
+          "totalPages": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "size": {
+            "type": "integer"
+          },
+          "nextPageToken": {
+            "type": "string"
+          },
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApprovedContent"
+            }
+          }
+        }
+      },
+      "ApprovedVariant": {
+        "type": "object",
+        "properties": {
+          "variantId": {
+            "type": "integer"
+          },
+          "supplierId": {
+            "type": "integer"
+          },
+          "barcode": {
+            "type": "string"
+          },
+          "attributes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VariantAttribute"
+            }
+          },
+          "productUrl": {
+            "type": "string"
+          },
+          "onSale": {
+            "type": "boolean"
+          },
+          "deliveryOptions": {
+            "$ref": "#/components/schemas/VariantDeliveryOptions"
+          },
+          "stock": {
+            "$ref": "#/components/schemas/VariantStock"
+          },
+          "price": {
+            "$ref": "#/components/schemas/VariantPrice"
+          },
+          "stockCode": {
+            "type": "string"
+          },
+          "vatRate": {
+            "type": "integer"
+          },
+          "sellerCreatedDate": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "sellerModifiedDate": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "locked": {
+            "type": "boolean"
+          },
+          "lockReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "lockDate": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "archived": {
+            "type": "boolean"
+          },
+          "archivedDate": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "docNeeded": {
+            "type": "boolean"
+          },
+          "hasViolation": {
+            "type": "boolean"
+          },
+          "blacklisted": {
+            "type": "boolean"
+          },
+          "channels": {
+            "type": "array",
+            "items": {},
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/ürün-filtreleme-onaylı-ürün-v2"
+          },
+          "commission": {
+            "type": "number",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/ürün-filtreleme-onaylı-ürün-v2"
+          },
+          "dimensionalWeight": {
+            "type": "number",
+            "x-lonca-observed": true
+          },
+          "locationBasedDelivery": {
+            "type": "string",
+            "x-lonca-observed": true
+          },
+          "origin": {
+            "type": "string",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/ürün-filtreleme-onaylı-ürün-v2"
+          },
+          "specialConsumptionTax": {
+            "type": "number",
+            "x-lonca-observed": true
+          }
+        }
+      },
+      "ArchiveProductItem": {
+        "type": "object",
+        "required": [
+          "barcode",
+          "archived"
+        ],
+        "properties": {
+          "barcode": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "archived": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ArchiveProductsRequest": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 1000,
+            "items": {
+              "$ref": "#/components/schemas/ArchiveProductItem"
+            }
+          }
+        }
+      },
+      "AttributeValueItem": {
+        "type": "object",
+        "properties": {
+          "attributeValueId": {
+            "type": "integer"
+          },
+          "attributeValueName": {
+            "type": "string"
+          }
+        }
+      },
+      "AttributeValuesPageResponse": {
+        "type": "object",
+        "properties": {
+          "totalElements": {
+            "type": "integer"
+          },
+          "totalPages": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "size": {
+            "type": "integer"
+          },
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AttributeValueItem"
+            }
+          }
+        }
+      },
+      "BatchRequestResponse": {
+        "type": "object",
+        "properties": {
+          "batchRequestId": {
+            "type": "string"
+          }
+        }
+      },
+      "BatchRequestResult": {
+        "type": "object",
+        "properties": {
+          "batchRequestId": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "requestItem": {
+                  "type": "object"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "SUCCESS",
+                    "FAILED"
+                  ]
+                },
+                "failureReasons": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "COMPLETED",
+              "IN_PROGRESS"
+            ]
+          },
+          "creationDate": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "lastModification": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "sourceType": {
+            "type": "string",
+            "enum": [
+              "API",
+              "WEB"
+            ]
+          },
+          "itemCount": {
+            "type": "integer"
+          },
+          "failedItemCount": {
+            "type": "integer"
+          },
+          "batchRequestType": {
+            "type": "string",
+            "enum": [
+              "ProductV2OnBoarding",
+              "ProductV2Update",
+              "ProductInventoryUpdate",
+              "ProductArchiveUpdate",
+              "ProductDeletion"
+            ]
+          }
+        }
+      },
+      "Brand": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "BrandInfo": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "BrandsResponse": {
+        "type": "object",
+        "properties": {
+          "brands": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Brand"
+            }
+          }
+        }
+      },
+      "BuyboxInfo": {
+        "type": "object",
+        "properties": {
+          "barcode": {
+            "type": "string"
+          },
+          "buyboxOrder": {
+            "type": "integer"
+          },
+          "buyboxPrice": {
+            "type": "number"
+          },
+          "hasMultipleSeller": {
+            "type": "boolean"
+          }
+        }
+      },
+      "BuyboxRequest": {
+        "type": "object",
+        "required": [
+          "barcodes"
+        ],
+        "properties": {
+          "barcodes": {
+            "type": "array",
+            "maxItems": 10,
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "BuyboxResponse": {
+        "type": "object",
+        "properties": {
+          "buyboxInfo": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BuyboxInfo"
+            }
+          }
+        }
+      },
+      "CargoProvider": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Kargo sağlayıcı kodu. cargoProviders alanına bu değer gönderilir."
+          },
+          "name": {
+            "type": "string",
+            "description": "Kargo sağlayıcının görünen adı"
+          }
+        }
+      },
+      "Category": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "parentId": {
+            "type": "integer"
+          },
+          "subCategories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Category"
+            }
+          }
+        }
+      },
+      "CategoryAttribute": {
+        "type": "object",
+        "properties": {
+          "allowCustom": {
+            "type": "boolean"
+          },
+          "attribute": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "name": {
+                "type": "string"
+              }
+            }
+          },
+          "categoryId": {
+            "type": "integer"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "varianter": {
+            "type": "boolean"
+          },
+          "slicer": {
+            "type": "boolean"
+          },
+          "allowMultipleAttributeValues": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CategoryAttributesResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "categoryAttributes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CategoryAttribute"
+            }
+          }
+        }
+      },
+      "CategoryInfo": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "ContentBulkUpdateRequest": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 1000,
+            "items": {
+              "$ref": "#/components/schemas/ContentUpdateItem"
+            }
+          }
+        }
+      },
+      "ContentUpdateItem": {
+        "type": "object",
+        "required": [
+          "contentId"
+        ],
+        "properties": {
+          "contentId": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "images": {
+            "type": "array",
+            "maxItems": 8,
+            "items": {
+              "$ref": "#/components/schemas/ProductImage"
+            }
+          },
+          "attributes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductAttribute"
+            }
+          }
+        }
+      },
+      "CreateBrandRequest": {
+        "type": "object",
+        "required": [
+          "name",
+          "images"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Yaratılacak markanın ismi"
+          },
+          "images": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 3,
+            "description": "Markaya ait görseller",
+            "items": {
+              "type": "string",
+              "format": "binary"
+            }
+          }
+        }
+      },
+      "CreateBrandResponse": {
+        "type": "object",
+        "properties": {
+          "brandId": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "CreateProductItem": {
+        "type": "object",
+        "required": [
+          "barcode",
+          "title",
+          "productMainId",
+          "brandId",
+          "categoryId",
+          "quantity",
+          "stockCode",
+          "dimensionalWeight",
+          "description",
+          "listPrice",
+          "salePrice",
+          "images",
+          "vatRate",
+          "attributes"
+        ],
+        "properties": {
+          "barcode": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "productMainId": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "brandId": {
+            "type": "integer"
+          },
+          "categoryId": {
+            "type": "integer"
+          },
+          "quantity": {
+            "type": "integer"
+          },
+          "stockCode": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "dimensionalWeight": {
+            "type": "number"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 30000
+          },
+          "listPrice": {
+            "type": "number"
+          },
+          "salePrice": {
+            "type": "number"
+          },
+          "deliveryOption": {
+            "$ref": "#/components/schemas/DeliveryOption"
+          },
+          "images": {
+            "type": "array",
+            "maxItems": 8,
+            "items": {
+              "$ref": "#/components/schemas/ProductImage"
+            }
+          },
+          "vatRate": {
+            "type": "integer"
+          },
+          "lotNumber": {
+            "type": "string",
+            "maxLength": 100,
+            "nullable": true
+          },
+          "shipmentAddressId": {
+            "type": "integer"
+          },
+          "returningAddressId": {
+            "type": "integer"
+          },
+          "attributes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductAttribute"
+            }
+          }
+        }
+      },
+      "CreateProductsRequest": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 1000,
+            "items": {
+              "$ref": "#/components/schemas/CreateProductItem"
+            }
+          }
+        }
+      },
+      "DeleteProductItem": {
+        "type": "object",
+        "required": [
+          "barcode"
+        ],
+        "properties": {
+          "barcode": {
+            "type": "string"
+          }
+        }
+      },
+      "DeleteProductsRequest": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DeleteProductItem"
+            }
+          }
+        }
+      },
+      "DeliveryInfoBulkUpdateRequest": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 1000,
+            "items": {
+              "$ref": "#/components/schemas/DeliveryInfoUpdateItem"
+            }
+          }
+        }
+      },
+      "DeliveryInfoUpdateItem": {
+        "type": "object",
+        "required": [
+          "barcode"
+        ],
+        "properties": {
+          "barcode": {
+            "type": "string"
+          },
+          "deliveryOptions": {
+            "type": "object",
+            "properties": {
+              "deliveryDuration": {
+                "type": "integer"
+              },
+              "fastDeliveryType": {
+                "type": "string",
+                "enum": [
+                  "SAME_DAY_SHIPPING",
+                  "FAST_DELIVERY"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "DeliveryOption": {
+        "type": "object",
+        "properties": {
+          "deliveryDuration": {
+            "type": "integer"
+          },
+          "fastDeliveryType": {
+            "type": "string",
+            "enum": [
+              "SAME_DAY_SHIPPING",
+              "FAST_DELIVERY"
+            ]
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "errorCode": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "FastDeliveryOption": {
+        "type": "object",
+        "properties": {
+          "deliveryOptionType": {
+            "type": "string",
+            "enum": [
+              "SAME_DAY_SHIPPING",
+              "FAST_DELIVERY"
+            ]
+          },
+          "deliveryDailyCutOffHour": {
+            "type": "string"
+          }
+        }
+      },
+      "InventoryAndPriceContent": {
+        "type": "object",
+        "properties": {
+          "contentId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "productMainId": {
+            "type": "string"
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InventoryAndPriceVariant"
+            }
+          }
+        }
+      },
+      "InventoryAndPriceResponse": {
+        "type": "object",
+        "properties": {
+          "totalElements": {
+            "type": "integer"
+          },
+          "totalPages": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "size": {
+            "type": "integer"
+          },
+          "nextPageToken": {
+            "type": "string"
+          },
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InventoryAndPriceContent"
+            }
+          }
+        }
+      },
+      "InventoryAndPriceVariant": {
+        "type": "object",
+        "properties": {
+          "variantId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "barcode": {
+            "type": "string"
+          },
+          "salePrice": {
+            "type": "number"
+          },
+          "listPrice": {
+            "type": "number"
+          },
+          "quantity": {
+            "type": "integer"
+          },
+          "stockCode": {
+            "type": "string"
+          },
+          "stockLastModifiedDate": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true,
+            "description": "Ürüne stok güncellemesi yapılmamışsa null döner"
+          }
+        }
+      },
+      "PriceAndInventoryItem": {
+        "type": "object",
+        "required": [
+          "barcode"
+        ],
+        "properties": {
+          "barcode": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "integer"
+          },
+          "salePrice": {
+            "type": "number"
+          },
+          "listPrice": {
+            "type": "number"
+          }
+        }
+      },
+      "PriceAndInventoryRequest": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 1000,
+            "items": {
+              "$ref": "#/components/schemas/PriceAndInventoryItem"
+            }
+          }
+        }
+      },
+      "ProductAttribute": {
+        "type": "object",
+        "required": [
+          "attributeId"
+        ],
+        "properties": {
+          "attributeId": {
+            "type": "integer"
+          },
+          "attributeValueIds": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "attributeValue": {
+            "type": "string"
+          }
+        }
+      },
+      "ProductBaseResponse": {
+        "type": "object",
+        "properties": {
+          "barcode": {
+            "type": "string"
+          },
+          "approved": {
+            "type": "boolean"
+          },
+          "approvedDate": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "archived": {
+            "type": "boolean"
+          },
+          "listingId": {
+            "type": "string"
+          },
+          "contentId": {
+            "type": "integer"
+          }
+        }
+      },
+      "ProductImage": {
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "properties": {
+          "url": {
+            "type": "string"
+          }
+        }
+      },
+      "RejectReasonDetail": {
+        "type": "object",
+        "properties": {
+          "rejectReason": {
+            "type": "string"
+          },
+          "rejectReasonDetail": {
+            "type": "string"
+          }
+        }
+      },
+      "UnapprovedProduct": {
+        "type": "object",
+        "properties": {
+          "supplierId": {
+            "type": "integer"
+          },
+          "productMainId": {
+            "type": "string"
+          },
+          "createDateTime": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "lastUpdateDate": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "lastPriceChangeDate": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "lastStockChangeDate": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "brand": {
+            "$ref": "#/components/schemas/BrandInfo"
+          },
+          "category": {
+            "$ref": "#/components/schemas/CategoryInfo"
+          },
+          "barcode": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "integer"
+          },
+          "listPrice": {
+            "type": "number"
+          },
+          "salePrice": {
+            "type": "number"
+          },
+          "vatRate": {
+            "type": "integer"
+          },
+          "dimensionalWeight": {
+            "type": "number",
+            "nullable": true
+          },
+          "stockCode": {
+            "type": "string"
+          },
+          "media": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductImage"
+            }
+          },
+          "attributes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductAttribute"
+            }
+          },
+          "rejectReasonDetails": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RejectReasonDetail"
+            }
+          },
+          "locationBasedDelivery": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "ENABLED",
+              "DISABLED"
+            ]
+          },
+          "lotNumber": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "UnapprovedProductsResponse": {
+        "type": "object",
+        "properties": {
+          "totalElements": {
+            "type": "integer"
+          },
+          "totalPages": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "size": {
+            "type": "integer"
+          },
+          "nextPageToken": {
+            "type": "string"
+          },
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UnapprovedProduct"
+            }
+          }
+        }
+      },
+      "UnlockProductItem": {
+        "type": "object",
+        "required": [
+          "barcode"
+        ],
+        "properties": {
+          "barcode": {
+            "type": "string"
+          }
+        }
+      },
+      "UnlockProductsRequest": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UnlockProductItem"
+            }
+          }
+        }
+      },
+      "UpdateAuditAttribute": {
+        "type": "object",
+        "properties": {
+          "attributeId": {
+            "type": "integer"
+          },
+          "attributeValueId": {
+            "type": "integer"
+          },
+          "customAttributeValue": {
+            "type": "string"
+          },
+          "attributeValue": {
+            "type": "string"
+          }
+        }
+      },
+      "UpdateAuditDetail": {
+        "type": "object",
+        "description": "Güncelleme detayı. type alanının değerine göre dolan alanlar değişir: TITLE için changedTitle/existingTitle, DESCRIPTION için changedDescription/existingDescription, MEDIA için changedMedias/existingMedias, ATTRIBUTE için changedAttributes/existingAttributes.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "TITLE",
+              "DESCRIPTION",
+              "MEDIA",
+              "ATTRIBUTE"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "SUCCESS",
+              "FAIL",
+              "RUNNING"
+            ]
+          },
+          "completedDate": {
+            "type": "string"
+          },
+          "rejectReasons": {
+            "type": "array",
+            "description": "status FAIL olduğunda döner",
+            "items": {
+              "$ref": "#/components/schemas/UpdateAuditRejectReason"
+            }
+          },
+          "changedTitle": {
+            "type": "string"
+          },
+          "existingTitle": {
+            "type": "string"
+          },
+          "changedDescription": {
+            "type": "string"
+          },
+          "existingDescription": {
+            "type": "string"
+          },
+          "changedMedias": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UpdateAuditImage"
+            }
+          },
+          "existingMedias": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UpdateAuditImage"
+            }
+          },
+          "changedAttributes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UpdateAuditAttribute"
+            }
+          },
+          "existingAttributes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UpdateAuditAttribute"
+            }
+          }
+        }
+      },
+      "UpdateAuditImage": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "order": {
+            "type": "integer"
+          }
+        }
+      },
+      "UpdateAuditItem": {
+        "type": "object",
+        "properties": {
+          "barcode": {
+            "type": "string"
+          },
+          "contentId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "batchRequestId": {
+            "type": "string"
+          },
+          "requestDate": {
+            "type": "string"
+          },
+          "updates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UpdateAuditDetail"
+            }
+          }
+        }
+      },
+      "UpdateAuditRejectReason": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Red sebebi tipi"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Red sebebi özeti"
+          },
+          "detail": {
+            "type": "string",
+            "description": "Red sebebi detayı"
+          },
+          "parameters": {
+            "type": "object",
+            "description": "Red sebebine ait ek parametreler"
+          }
+        }
+      },
+      "UpdateAuditsResponse": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer"
+          },
+          "size": {
+            "type": "integer"
+          },
+          "totalPage": {
+            "type": "integer"
+          },
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UpdateAuditItem"
+            }
+          }
+        }
+      },
+      "UpdateUnapprovedItem": {
+        "type": "object",
+        "required": [
+          "barcode"
+        ],
+        "properties": {
+          "barcode": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "productMainId": {
+            "type": "string"
+          },
+          "brandId": {
+            "type": "integer"
+          },
+          "categoryId": {
+            "type": "integer"
+          },
+          "stockCode": {
+            "type": "string"
+          },
+          "dimensionalWeight": {
+            "type": "number"
+          },
+          "vatRate": {
+            "type": "integer"
+          },
+          "deliveryOption": {
+            "$ref": "#/components/schemas/DeliveryOption"
+          },
+          "locationBasedDelivery": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "ENABLED",
+              "DISABLED"
+            ]
+          },
+          "lotNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "shipmentAddressId": {
+            "type": "integer"
+          },
+          "returningAddressId": {
+            "type": "integer"
+          },
+          "images": {
+            "type": "array",
+            "maxItems": 8,
+            "items": {
+              "$ref": "#/components/schemas/ProductImage"
+            }
+          },
+          "attributes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductAttribute"
+            }
+          }
+        }
+      },
+      "UpdateUnapprovedRequest": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 1000,
+            "items": {
+              "$ref": "#/components/schemas/UpdateUnapprovedItem"
+            }
+          }
+        }
+      },
+      "VariantAttribute": {
+        "type": "object",
+        "properties": {
+          "attributeId": {
+            "type": "integer"
+          },
+          "attributeName": {
+            "type": "string"
+          },
+          "attributeValueId": {
+            "type": "integer"
+          },
+          "attributeValue": {
+            "type": "string"
+          }
+        }
+      },
+      "VariantBulkUpdateRequest": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 1000,
+            "items": {
+              "$ref": "#/components/schemas/VariantUpdateItem"
+            }
+          }
+        }
+      },
+      "VariantDeliveryOptions": {
+        "type": "object",
+        "properties": {
+          "deliveryDuration": {
+            "type": "integer"
+          },
+          "isRushDelivery": {
+            "type": "boolean"
+          },
+          "fastDeliveryOptions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FastDeliveryOption"
+            }
+          }
+        }
+      },
+      "VariantPrice": {
+        "type": "object",
+        "properties": {
+          "salePrice": {
+            "type": "number"
+          },
+          "listPrice": {
+            "type": "number"
+          }
+        }
+      },
+      "VariantStock": {
+        "type": "object",
+        "properties": {
+          "lastModifiedDate": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          }
+        }
+      },
+      "VariantUpdateItem": {
+        "type": "object",
+        "required": [
+          "barcode"
+        ],
+        "properties": {
+          "barcode": {
+            "type": "string"
+          },
+          "stockCode": {
+            "type": "string"
+          },
+          "vatRate": {
+            "type": "integer"
+          },
+          "shipmentAddressId": {
+            "type": "integer"
+          },
+          "returningAddressId": {
+            "type": "integer"
+          },
+          "dimensionalWeight": {
+            "type": "number"
+          },
+          "lotNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "locationBasedDelivery": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "ENABLED",
+              "DISABLED"
+            ]
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "basicAuth": {
+        "type": "http",
+        "scheme": "basic",
+        "description": "Basic Auth ile Satıcı API Key ve API Secret"
+      }
+    }
+  },
+  "security": [
+    {
+      "basicAuth": []
+    }
+  ]
+}

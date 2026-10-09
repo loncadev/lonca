@@ -1,0 +1,2253 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Trendyol İhracat Merkezi (AutoFT) Entegrasyonu",
+    "description": "Trendyol Pazaryeri'nde bulunan ürünlerinizi İhracat Merkezi Entegrasyonu ile Trendyol'un yurtdışı platformlarında \nve/veya Trendyol'un anlaşmalı olduğu yurtdışı platformlarında (Global Platform) satış görmesi için Trendyol'a \nsatışını gerçekleştirebilirsiniz.\n\n## İhracat Modeli Özellikleri\n* Ürünleriniz Trendyol tarafından Türkiye sınırları içerisinde satın alınmaktadır.\n* Uygunluk çerçevesinde ürünlerinizi taşıma operasyonu Trendyol tarafından yapılmakta; ürünler deponuzdan teslim alınmaktadır.\n* Ürünlerinizi toplu ve günlük olarak paketlediğiniz beklendiği için işçilik maliyetinizin düşük olacağı tahmin edilmektedir.\n* Ürünün nihai müşterisi ürünü teslim aldıktan sonra iade ettiğinde şu an için sizlere iade yansıtılmamaktadır.\n* Satışlarınız üzerinden komisyon faturası kesilmemektedir.\n\n## Zorunlu HTTP Header Alanları\nBütün isteklerde aşağıdaki header'ların gönderilmesi zorunludur:\n* **x-clientip**: İsteğin gönderildiği IPv4 adresi\n* **x-correlationid**: UUID formatında log takip kodu\n* **x-agentname**: İsteği yapan client/entegratör adı\n* **Authorization**: Basic Token (API KEY ve API SECRET ile oluşturulur)\n",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Trendyol Entegrasyon Destek",
+      "email": "entegrasyon@trendyol.com"
+    },
+    "x-lonca-source": {
+      "kind": "api-reference",
+      "portal": "https://developers.trendyol.com",
+      "definition": "Trendyol İhracat Merkezi (AutoFT) Entegrasyonu",
+      "pages": 13,
+      "capturedAt": "2026-10-09",
+      "portalUpdatedAt": "2026-02-03T08:11:45.000Z",
+      "generator": "scripts/specs/build-trendyol.mjs"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://stageapigw.trendyol.com/integration/ecgw",
+      "description": "Test Ortamı (Stage)"
+    },
+    {
+      "url": "https://apigw.trendyol.com/integration/ecgw",
+      "description": "Canlı Ortam (Production)"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Fiyat Entegrasyonu",
+      "description": "Fiyat güncelleme işlemleri"
+    },
+    {
+      "name": "Paket Entegrasyonu",
+      "description": "Paket listeleme ve detay işlemleri"
+    },
+    {
+      "name": "Stok Entegrasyonu",
+      "description": "Stok güncelleme işlemleri"
+    },
+    {
+      "name": "Ürün Entegrasyonu",
+      "description": "Ürün oluşturma ve listeleme işlemleri"
+    },
+    {
+      "name": "Ürün Lookup",
+      "description": "Menşei, materyal bileşenleri, yıkama talimatları ve kategori bilgileri"
+    },
+    {
+      "name": "İşlem Sonuç Entegrasyonu",
+      "description": "Batch ID ile işlem sonucu sorgulama"
+    }
+  ],
+  "paths": {
+    "/v1/{sellerId}/check-status": {
+      "get": {
+        "tags": [
+          "İşlem Sonuç Entegrasyonu"
+        ],
+        "summary": "Batch ID ile İşlem Sonucu Sorgulama",
+        "description": "Response olarak batchId aldığınız işlemlerin sonuçlarını bu endpoint üzerinden takip edebilirsiniz.\n\n> **Not:** İşlemler sonucunda dönen batchId **24 saat** sonra sistemden silinecektir.\n",
+        "operationId": "autoft-check-batch-status",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/sellerId"
+          },
+          {
+            "name": "batchId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Sorgulanacak batch ID"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchStatusResponse"
+                },
+                "example": {
+                  "batchId": "57a7229a-e345-4232-88ac-f4169b864293",
+                  "batchType": "ProductCreate",
+                  "items": [
+                    {
+                      "requestItem": {
+                        "product": {
+                          "barcode": "BRCD001",
+                          "price": 12.99,
+                          "rrp": 22,
+                          "gtip": "2231317",
+                          "origin": "TR",
+                          "stock": 100,
+                          "composition": "95% Cotton, 5% Elastane"
+                        }
+                      },
+                      "status": "SUCCESS",
+                      "failureReasons": []
+                    }
+                  ],
+                  "status": "COMPLETED",
+                  "creationDate": 1529734317090,
+                  "lastModification": 1529734653403,
+                  "itemCount": 1
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/autoft-check-batch-status",
+        "x-lonca-portal-updated-at": "2026-02-02T08:59:09.000Z"
+      }
+    },
+    "/v1/{sellerId}/lookup/care-instructions": {
+      "get": {
+        "tags": [
+          "Ürün Lookup"
+        ],
+        "summary": "Yıkama Talimatları",
+        "description": "[Ürün Oluşturma V2](../reference/autoft-create-products-v2) adımında, request modelde istenen yıkama talimatları değerleri bu endpointten liste olarak alınır.\n",
+        "operationId": "autoft-get-care-instructions",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/sellerId"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "description": "Yıkama talimatı tipi adı"
+                          },
+                          "description": {
+                            "type": "string",
+                            "description": "Yıkama talimatı açıklaması"
+                          },
+                          "value": {
+                            "type": "string",
+                            "description": "Yıkama talimatı kodu"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "items": [
+                    {
+                      "name": "Type 1",
+                      "description": "Maksimum 30 °C sıcaklıkta hassas yıkayınız. Ağartıcı kullanmayınız. Tamburlu kurutma yapmayınız. Düşük sıcaklıkta ütüleyiniz. Kuru temizleme yapılamaz.",
+                      "value": "T44"
+                    },
+                    {
+                      "name": "Type 2",
+                      "description": "Maksimum 40 °C sıcaklıkta yıkayınız. Ağartıcı kullanmayınız. Tamburlu kurutma yapılabilir. Orta sıcaklıkta ütüleyiniz.",
+                      "value": "T102"
+                    },
+                    {
+                      "name": "Type 3",
+                      "description": "Maksimum 60 °C sıcaklıkta yıkayınız. Oksijen bazlı ağartıcı kullanılabilir. Tamburlu kurutma yapılabilir. Yüksek sıcaklıkta ütüleyiniz.",
+                      "value": "T104"
+                    },
+                    {
+                      "name": "Type 4",
+                      "description": "Elde yıkayınız. Ağartıcı kullanmayınız. Tamburlu kurutma yapmayınız. Ütü yapmayınız.",
+                      "value": "T150"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/autoft-get-care-instructions",
+        "x-lonca-portal-updated-at": "2026-02-02T08:59:09.000Z"
+      }
+    },
+    "/v1/{sellerId}/lookup/compositions": {
+      "get": {
+        "tags": [
+          "Ürün Lookup"
+        ],
+        "summary": "Materyal Bileşenleri",
+        "description": "[Ürün Oluşturma V2](../reference/autoft-create-products-v2) adımında, request modelde istenen composition değerleri bu endpointten liste olarak alınır.\n",
+        "operationId": "autoft-get-compositions",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/sellerId"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "description": "Materyal bileşeni adı"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "items": [
+                    {
+                      "name": "Ahşap"
+                    },
+                    {
+                      "name": "Akrilik"
+                    },
+                    {
+                      "name": "Bakır"
+                    },
+                    {
+                      "name": "Deri"
+                    },
+                    {
+                      "name": "Elastan"
+                    },
+                    {
+                      "name": "İpek"
+                    },
+                    {
+                      "name": "Keten"
+                    },
+                    {
+                      "name": "Naylon"
+                    },
+                    {
+                      "name": "Pamuk"
+                    },
+                    {
+                      "name": "Plastik"
+                    },
+                    {
+                      "name": "Polyester"
+                    },
+                    {
+                      "name": "Viskon"
+                    },
+                    {
+                      "name": "Yün"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/autoft-get-compositions",
+        "x-lonca-portal-updated-at": "2026-02-02T08:59:09.000Z"
+      }
+    },
+    "/v1/{sellerId}/lookup/origins": {
+      "get": {
+        "tags": [
+          "Ürün Lookup"
+        ],
+        "summary": "Menşei Listesi",
+        "description": "[Ürün Oluşturma V2](../reference/autoft-create-products-v2) adımında, request modelde istenen origin değerleri bu endpointten liste olarak alınır.\n",
+        "operationId": "autoft-get-origins",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/sellerId"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "description": "Menşei adı"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "items": [
+                    {
+                      "name": "ABD"
+                    },
+                    {
+                      "name": "Almanya"
+                    },
+                    {
+                      "name": "Avusturya"
+                    },
+                    {
+                      "name": "Belçika"
+                    },
+                    {
+                      "name": "Çin"
+                    },
+                    {
+                      "name": "Fransa"
+                    },
+                    {
+                      "name": "Hindistan"
+                    },
+                    {
+                      "name": "İngiltere"
+                    },
+                    {
+                      "name": "İspanya"
+                    },
+                    {
+                      "name": "İtalya"
+                    },
+                    {
+                      "name": "Türkiye"
+                    },
+                    {
+                      "name": "Vietnam"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/autoft-get-origins",
+        "x-lonca-portal-updated-at": "2026-02-02T08:59:09.000Z"
+      }
+    },
+    "/v1/{sellerId}/lookup/product-categories/by-barcodes": {
+      "post": {
+        "tags": [
+          "Ürün Lookup"
+        ],
+        "summary": "Barkod ile Kategori Bilgisi Listeleme",
+        "description": "[Ürün Oluşturma V2](../reference/autoft-create-products-v2) adımında, zorunlu özellik listesini elde etmek için gerekli olan \ncategoryId bilgisi barkod bilgisi ile bu endpointten listelenebilir.\n",
+        "operationId": "autoft-get-categories-by-barcodes",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/sellerId"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "barcodes"
+                ],
+                "properties": {
+                  "barcodes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Barkod listesi"
+                  }
+                }
+              },
+              "example": {
+                "barcodes": [
+                  "barcode-1",
+                  "barcode-2",
+                  "barcode-3"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "barcodeCategories": {
+                      "type": "object",
+                      "description": "Barkod-kategori eşleştirmeleri",
+                      "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer",
+                            "description": "Kategori ID"
+                          },
+                          "displayName": {
+                            "type": "string",
+                            "description": "Kategori görünen adı"
+                          }
+                        }
+                      }
+                    },
+                    "notFound": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Kategorisi bulunamayan barkodlar"
+                    }
+                  }
+                },
+                "example": {
+                  "barcodeCategories": {
+                    "barcode-1": {
+                      "id": 123,
+                      "displayName": "Etek"
+                    },
+                    "barcode-2": {
+                      "id": 124,
+                      "displayName": "Deri Ceket"
+                    },
+                    "barcode-3": {
+                      "id": 125,
+                      "displayName": "Kot Pantolon"
+                    }
+                  },
+                  "notFound": [
+                    "barcode-4",
+                    "barcode-5"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/autoft-get-categories-by-barcodes",
+        "x-lonca-portal-updated-at": "2026-02-02T08:59:09.000Z"
+      }
+    },
+    "/v1/{sellerId}/lookup/product-categories/{categoryId}/attributes": {
+      "get": {
+        "tags": [
+          "Ürün Lookup"
+        ],
+        "summary": "Kategoriye Göre Zorunlu Özellik Listesi",
+        "description": "[Ürün Oluşturma V2](../reference/autoft-create-products-v2) adımında, request modelde istenen zorunlu özellik listesi bu endpointten alınır.\n",
+        "operationId": "autoft-get-category-attributes",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/sellerId"
+          },
+          {
+            "name": "categoryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Kategori ID"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryAttributes"
+                },
+                "example": {
+                  "categoryId": 123,
+                  "displayName": "Deri Ceket",
+                  "categoryAttributes": [
+                    {
+                      "attributeId": 200,
+                      "attributeName": "Renk",
+                      "required": true,
+                      "allowCustom": true,
+                      "multipleValues": false,
+                      "attributeValues": []
+                    },
+                    {
+                      "attributeId": 296,
+                      "attributeName": "Cinsiyet",
+                      "required": true,
+                      "allowCustom": false,
+                      "multipleValues": false,
+                      "attributeValues": [
+                        {
+                          "id": 1234,
+                          "name": "Unisex"
+                        },
+                        {
+                          "id": 1235,
+                          "name": "Erkek"
+                        },
+                        {
+                          "id": 1236,
+                          "name": "Kadın"
+                        }
+                      ]
+                    },
+                    {
+                      "attributeId": 294,
+                      "attributeName": "Yaş Grubu",
+                      "required": true,
+                      "allowCustom": false,
+                      "multipleValues": false,
+                      "attributeValues": [
+                        {
+                          "id": 2879,
+                          "name": "Yetişkin"
+                        },
+                        {
+                          "id": 2878,
+                          "name": "Genç"
+                        },
+                        {
+                          "id": 2877,
+                          "name": "Çocuk"
+                        },
+                        {
+                          "id": 2876,
+                          "name": "Bebek"
+                        }
+                      ]
+                    },
+                    {
+                      "attributeId": 59810,
+                      "attributeName": "Menşei",
+                      "required": true,
+                      "allowCustom": false,
+                      "multipleValues": false,
+                      "attributeValues": [
+                        {
+                          "id": 2178083,
+                          "name": "Abd"
+                        },
+                        {
+                          "id": 2178005,
+                          "name": "Almanya"
+                        },
+                        {
+                          "id": 2178100,
+                          "name": "Türkiye"
+                        }
+                      ]
+                    },
+                    {
+                      "attributeId": 21602,
+                      "attributeName": "Yıkama Talimatı",
+                      "required": true,
+                      "allowCustom": false,
+                      "multipleValues": false,
+                      "attributeValues": [
+                        {
+                          "id": 232837,
+                          "name": "T44"
+                        },
+                        {
+                          "id": 232838,
+                          "name": "T102"
+                        },
+                        {
+                          "id": 232839,
+                          "name": "T104"
+                        }
+                      ]
+                    },
+                    {
+                      "attributeId": 17620,
+                      "attributeName": "Materyal Bileşeni",
+                      "required": true,
+                      "allowCustom": true,
+                      "multipleValues": true,
+                      "attributeValues": [
+                        {
+                          "id": 261340,
+                          "name": "Abaka (manila kendiri)"
+                        },
+                        {
+                          "id": 261348,
+                          "name": "Air Mesh"
+                        },
+                        {
+                          "id": 228690,
+                          "name": "Akrilik"
+                        },
+                        {
+                          "id": 228691,
+                          "name": "Pamuk"
+                        },
+                        {
+                          "id": 228692,
+                          "name": "Elastan"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/autoft-get-category-attributes",
+        "x-lonca-portal-updated-at": "2026-02-02T08:59:09.000Z"
+      }
+    },
+    "/v1/{sellerId}/prices": {
+      "post": {
+        "tags": [
+          "Fiyat Entegrasyonu"
+        ],
+        "summary": "Fiyat Güncelleme",
+        "description": "İhracata açık olan ürünlerin fiyat bilgilerinin güncellenmesi ve geri beslenmesi için kullanılır. \nBurada belirlenen fiyat KDV dahil Trendyol'a satış fiyatı olmalıdır.\n\n> Barkod bazında günde **1** kez fiyat güncelleme işlemi yapılmaktadır.\n",
+        "operationId": "autoft-update-prices",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/sellerId"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "priceInfos"
+                ],
+                "properties": {
+                  "priceInfos": {
+                    "type": "array",
+                    "maxItems": 5000,
+                    "description": "Fiyat bilgilerini içeren ana dizi. Maksimum 5000 ürün fiyat bilgisi gönderilebilir",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "barcode",
+                        "buyingPrice"
+                      ],
+                      "properties": {
+                        "barcode": {
+                          "type": "string",
+                          "description": "Ürünün benzersiz tanımlayıcısı olan barkod numarası"
+                        },
+                        "rrp": {
+                          "type": "number",
+                          "format": "double",
+                          "description": "Ürünün tavsiye edilen perakende satış fiyatı. buyingPrice değerinden büyük veya eşit olmalıdır"
+                        },
+                        "buyingPrice": {
+                          "type": "number",
+                          "format": "double",
+                          "description": "Ürünün Trendyol tarafından KDV dahil satın alındığı fiyat"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "example": {
+                "priceInfos": [
+                  {
+                    "barcode": "brcd123",
+                    "rrp": 22,
+                    "buyingPrice": 5
+                  },
+                  {
+                    "barcode": "brcd1235",
+                    "rrp": 33,
+                    "buyingPrice": 5
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "İşlem başarılı",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchIdResponse"
+                },
+                "example": {
+                  "batchId": "example-batch-id-0"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/autoft-update-prices",
+        "x-lonca-portal-updated-at": "2026-02-02T08:59:09.000Z"
+      }
+    },
+    "/v1/{sellerId}/stocks": {
+      "post": {
+        "tags": [
+          "Stok Entegrasyonu"
+        ],
+        "summary": "Ürün Stok Bilgisi Güncelleme",
+        "description": "İhracata açık olan ürünlerin stok bilgilerinin güncellenmesi ve geri beslenmesi için kullanılır.\n\nÜrünlerin öncelikle Ürün Oluşturma adımında oluşturulduğundan emin olunmalıdır.\n\nEğer talep edilirse stok yönetimi Trendyol Satıcı Panel ile ortak yapılabilir. \nOrtak stok yönetimi yapan satıcılar bu endpointi kullanamazlar.\n\n> **Not:** İşlem sonucunda dönen batch ID ile sonucu mutlaka kontrol etmeniz tavsiye edilir.\n",
+        "operationId": "autoft-update-stocks",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/sellerId"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "stocks"
+                ],
+                "properties": {
+                  "stocks": {
+                    "type": "array",
+                    "maxItems": 5000,
+                    "description": "Stok bilgilerini içeren ana dizi. Maksimum 5000 ürün stock bilgisi alınabilir",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "barcode",
+                        "stock"
+                      ],
+                      "properties": {
+                        "barcode": {
+                          "type": "string",
+                          "description": "Ürünün benzersiz tanımlayıcısı olan barkod numarası"
+                        },
+                        "stock": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "description": "Ürünün mevcut stok miktarı"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "example": {
+                "stocks": [
+                  {
+                    "barcode": "brcd123",
+                    "stock": 223
+                  },
+                  {
+                    "barcode": "brcd1235",
+                    "stock": 1
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "İşlem başarılı",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchIdResponse"
+                },
+                "example": {
+                  "batchId": "example-batch-id-0"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/autoft-update-stocks",
+        "x-lonca-portal-updated-at": "2026-02-02T08:59:09.000Z"
+      }
+    },
+    "/v2/{sellerId}/packages": {
+      "get": {
+        "tags": [
+          "Paket Entegrasyonu"
+        ],
+        "summary": "Paket Listeleme V2",
+        "description": "Gün içerisinde oluşan yeni paketlerinizi buradan takip edebilirsiniz. \n\nSipariş almanız durumunda her gün 08:00 - 08:15 saatleri arasında yeni bir paketiniz oluşacaktır. \nPaketleri günlük olarak takip etmeniz ve gün içerisinde Trendyol'a göndermeniz gerekmektedir.\n\nPaket listeme adımında yeni bir paketiniz olduğunu sorguladığınızda, paket içerisinde tedarik beklenen \nürün bilgisine erişmek için Paket Detayı V2 servisi kullanılmalıdır.\n",
+        "operationId": "autoft-list-packages-v2",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/sellerId"
+          },
+          {
+            "name": "trackingNumber",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "Tedarik beklenen ürünler için oluşturulan takip numarası (paket numarası)"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "new",
+                "pending",
+                "completed",
+                "cancelled"
+              ]
+            },
+            "description": "Paketin durumu:\n- new: Yeni oluşmuş paket, henüz tedarik beklenmeyen ürünler bulunur\n- pending: Tedarik beklenen paket\n- completed: Tüm işlemler tamamlandı\n- cancelled: İptal edilen paket\n"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "minimum": 1
+            },
+            "description": "Sayfa numarası"
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "maximum": 100
+            },
+            "description": "Sayfa boyutu. Maksimum 100"
+          },
+          {
+            "name": "approvedStartDate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "Paketin onaylandığı ilk tarih (UTC +0 millisecond timestamp)"
+          },
+          {
+            "name": "approvedEndDate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "Paketin onaylandığı son tarih (UTC +0 millisecond timestamp)"
+          },
+          {
+            "name": "creationStartDate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "Paketin oluşturulduğu ilk tarih (UTC +0 millisecond timestamp)"
+          },
+          {
+            "name": "creationEndDate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "Paketin oluşturulduğu son tarih (UTC +0 millisecond timestamp)"
+          },
+          {
+            "name": "boutiqueId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Butik numarası"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackageListResponseV2"
+                },
+                "example": {
+                  "totalItemCount": 2465,
+                  "totalPageCount": 2465,
+                  "size": 1,
+                  "page": 1,
+                  "items": [
+                    {
+                      "trackingNumber": 518315,
+                      "packageId": "75243c90-55eb-45a3-a052-e227ca1465f9",
+                      "totalQuantity": 13,
+                      "totalBuyingPrice": 3802,
+                      "currency": "EUR",
+                      "status": "pending",
+                      "boutiqueId": "6783",
+                      "platformId": 150,
+                      "creationDate": 1678691613208,
+                      "approvedDate": 1678691614208,
+                      "lastModifiedDate": 1678691614208,
+                      "cargos": [
+                        {
+                          "codes": [
+                            "3ac32647-20aa-4a0b-97bc-f80de06c1692"
+                          ],
+                          "provider": "Trendyol Express"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/autoft-list-packages-v2",
+        "x-lonca-portal-updated-at": "2026-02-03T08:09:14.000Z"
+      }
+    },
+    "/v2/{sellerId}/packages/items": {
+      "get": {
+        "tags": [
+          "Paket Entegrasyonu"
+        ],
+        "summary": "Paket Detayı V2",
+        "description": "İlgili paket içerisinde bulunan ürünlerin detayları buradan alınmalıdır.\n\nHenüz oluşmayan ve bir sonraki gün oluşturulacak olan paketleriniz için bu servisi kullanabilir (status = new) \nve tedarik beklenecek olan adetleri önceden görerek stoklarınızı yönetebilirsiniz.\n\n**⚠️ ÖNEMLİ:**\n- **new** durumunda bulunan ürünler iptal edildiğinde, newQuantity değeri azalır ve cancelledQuantity değişmez.\n- **pending** durumunda bulunan ürünler iptal edildiğinde, pendingQuantity değeri azalır ve cancelledQuantity artar.\n",
+        "operationId": "autoft-get-package-items-v2",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/sellerId"
+          },
+          {
+            "name": "packageId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Paket numarası"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "new",
+                "pending",
+                "completed",
+                "cancelled"
+              ]
+            },
+            "description": "Paket durumu"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "minimum": 1
+            },
+            "description": "Sayfa numarası"
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "maximum": 100
+            },
+            "description": "Sayfa boyutu. Maksimum 100"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackageItemsResponseV2"
+                },
+                "example": {
+                  "totalItemCount": 2,
+                  "totalPageCount": 1,
+                  "size": 20,
+                  "page": 1,
+                  "items": [
+                    {
+                      "itemId": "75243c90-55eb-45a3-a052-e227ca1465f9-816701986",
+                      "name": "product-name-01",
+                      "trackingNumber": null,
+                      "sellerBarcode": "seller-barcode-01",
+                      "barcode": "barcode-01",
+                      "newQuantity": 10,
+                      "pendingQuantity": 20,
+                      "completedQuantity": 5,
+                      "unSuppliedQuantity": 5,
+                      "cancelledQuantity": 10,
+                      "unitBuyingPrice": 10,
+                      "creationDate": 1678691613222,
+                      "lastModifiedDate": 1678691613210
+                    },
+                    {
+                      "itemId": "75243c90-55eb-45a3-a052-e227ca1465f9-728609554",
+                      "name": "product-name-02",
+                      "trackingNumber": 3687712,
+                      "sellerBarcode": "seller-barcode-02",
+                      "barcode": "barcode-02",
+                      "newQuantity": 15,
+                      "pendingQuantity": 10,
+                      "completedQuantity": 7,
+                      "unSuppliedQuantity": 6,
+                      "cancelledQuantity": 3,
+                      "unitBuyingPrice": 15,
+                      "creationDate": 1678691633736,
+                      "lastModifiedDate": 1678691613210
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/autoft-get-package-items-v2",
+        "x-lonca-portal-updated-at": "2026-02-02T08:59:09.000Z"
+      }
+    },
+    "/v2/{sellerId}/products": {
+      "get": {
+        "tags": [
+          "Ürün Entegrasyonu"
+        ],
+        "summary": "Ürün Listeleme",
+        "description": "Trendyol'da ihracata açılmış ürünleri listelemek için kullanılır.\n\n> **Not:** Döviz türü (currency) bilgisi ihracat merkezine başvuru sırasında satıcı tarafından seçilmektedir.\n",
+        "operationId": "autoft-list-products",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/sellerId"
+          },
+          {
+            "name": "barcodes",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "description": "Ürün barkodları. Birden çok değer alabilir"
+          },
+          {
+            "name": "pageKey",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "İlk istekte boş gönderilir. Sonraki isteklerde önceki response header'daki \nx-paging-key değeri kullanılır\n"
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "maximum": 100
+            },
+            "description": "Listelenmek istenen ürün sayısı. Maksimum 100"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "x-paging-key": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Sonraki sayfa için kullanılacak sayfalama anahtarı"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Product"
+                  }
+                },
+                "example": [
+                  {
+                    "barcode": "8681261723738",
+                    "sellerBarcode": "example-seller-barcode",
+                    "rrpPrice": 27.25,
+                    "buyingPrice": 5.12,
+                    "stock": 8,
+                    "origin": "TR",
+                    "composition": "%5 Elastan, %95 Pamuk",
+                    "description": "Dantelli V yaka Dikişli kısa kol",
+                    "currency": "EUR",
+                    "gtip": "610831000000",
+                    "categoryId": 1000,
+                    "careInstructions": "T44",
+                    "attributes": [
+                      {
+                        "attributeId": 200,
+                        "attributeName": "Renk",
+                        "valueId": null,
+                        "valueName": "Yeşil"
+                      },
+                      {
+                        "attributeId": 300,
+                        "attributeName": "Cinsiyet",
+                        "valueId": 101,
+                        "valueName": "Erkek"
+                      },
+                      {
+                        "attributeId": 400,
+                        "attributeName": "Materyal Bileşeni",
+                        "valueId": null,
+                        "valueName": "%5 Elastan, %95 Pamuk"
+                      }
+                    ]
+                  },
+                  {
+                    "barcode": "8681261710478",
+                    "sellerBarcode": "example-seller-barcode-2",
+                    "rrpPrice": 19,
+                    "buyingPrice": 4.21,
+                    "stock": 15,
+                    "origin": "TR",
+                    "composition": "%100 Pamuk",
+                    "description": "İnce yaka işlemeli kısa kollu gömlek",
+                    "currency": "EUR",
+                    "gtip": "621210900000",
+                    "categoryId": 1001,
+                    "careInstructions": "T104",
+                    "attributes": [
+                      {
+                        "attributeId": 200,
+                        "attributeName": "Renk",
+                        "valueId": null,
+                        "valueName": "Mavi"
+                      },
+                      {
+                        "attributeId": 300,
+                        "attributeName": "Cinsiyet",
+                        "valueId": 101,
+                        "valueName": "Erkek"
+                      },
+                      {
+                        "attributeId": 400,
+                        "attributeName": "Materyal Bileşeni",
+                        "valueId": null,
+                        "valueName": "%100 Pamuk"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/autoft-list-products",
+        "x-lonca-portal-updated-at": "2026-02-02T08:59:09.000Z"
+      },
+      "post": {
+        "tags": [
+          "Ürün Entegrasyonu"
+        ],
+        "summary": "Ürün Oluşturma V2",
+        "description": "Trendyol Pazaryeri'nde onaylanmış ürünleri ihracata açmak için kullanılır. \nSatıcı Paneli'nde oluşturulmayan ürünler, İhracat Merkezi'nde oluşturulamaz.\n\n> Barkod bazında günde **1** kez fiyat güncelleme işlemi yapılmaktadır.\n",
+        "operationId": "autoft-create-products-v2",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/sellerId"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "products"
+                ],
+                "properties": {
+                  "products": {
+                    "type": "array",
+                    "maxItems": 5000,
+                    "description": "Ürünlerin listesini içeren ana dizi. Maksimum 5000 ürün girişi olabilir",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "barcode",
+                        "buyingPrice",
+                        "origin",
+                        "stock",
+                        "categoryId",
+                        "attributes"
+                      ],
+                      "properties": {
+                        "barcode": {
+                          "type": "string",
+                          "description": "Ürünün benzersiz tanımlayıcısı olan barkod numarası"
+                        },
+                        "buyingPrice": {
+                          "type": "number",
+                          "format": "double",
+                          "description": "Ürünün Trendyol tarafından KDV dahil satın alındığı fiyat"
+                        },
+                        "rrp": {
+                          "type": "number",
+                          "format": "double",
+                          "description": "Ürünün tavsiye edilen perakende satış fiyatı. buyingPrice değerinden büyük veya eşit olmalıdır"
+                        },
+                        "gtip": {
+                          "type": "string",
+                          "minLength": 4,
+                          "maxLength": 12,
+                          "description": "Ürünün GTIP numarası. Minimum 4, maksimum 12 hane olabilir"
+                        },
+                        "origin": {
+                          "type": "string",
+                          "description": "Ürünün üretildiği ülke"
+                        },
+                        "stock": {
+                          "type": "integer",
+                          "description": "Ürünün mevcut stok miktarı"
+                        },
+                        "categoryId": {
+                          "type": "integer",
+                          "description": "Ürünün Pazaryerindeki kategori bilgisi"
+                        },
+                        "attributes": {
+                          "type": "array",
+                          "description": "Zorunlu ürün özellikleri",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "attributeId": {
+                                "type": "integer",
+                                "description": "Özellik ID"
+                              },
+                              "attributeValueId": {
+                                "type": "integer",
+                                "description": "Özellik değeri ID (allowCustom=false ve multipleValues=false durumunda)"
+                              },
+                              "customAttributeValue": {
+                                "type": "string",
+                                "description": "Özel özellik değeri (allowCustom=true ve multipleValues=false durumunda)"
+                              },
+                              "customAttributeValues": {
+                                "type": "object",
+                                "description": "Çoklu özel değerler (allowCustom=true ve multipleValues=true durumunda, örn. Materyal Bileşeni)",
+                                "additionalProperties": {
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "example": {
+                "products": [
+                  {
+                    "barcode": "barcode-0",
+                    "buyingPrice": 6.95,
+                    "rrp": 30.99,
+                    "gtip": "gtip-0123",
+                    "stock": 100,
+                    "origin": "Türkiye",
+                    "categoryId": 123,
+                    "attributes": [
+                      {
+                        "attributeId": 100,
+                        "attributeValueId": 1
+                      },
+                      {
+                        "attributeId": 101,
+                        "customAttributeValue": "Custom-Value"
+                      },
+                      {
+                        "attributeId": 102,
+                        "customAttributeValues": {
+                          "1": "95",
+                          "2": "5"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "İşlem başarılı",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchIdResponse"
+                },
+                "example": {
+                  "batchId": "example-batch-id-0"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/autoft-create-products-v2",
+        "x-lonca-portal-updated-at": "2026-02-02T08:59:09.000Z"
+      }
+    },
+    "/v3/{sellerId}/packages": {
+      "get": {
+        "tags": [
+          "Paket Entegrasyonu"
+        ],
+        "summary": "Paket Listeleme V3 (Konsolide)",
+        "description": "Paket Listeleme ve Paket Detay için iki ayrı API kullanmak istemeyen iş ortaklarımız tek endpoint olarak kullanabilir.\n\n**⚠️ ÖNEMLİ:**\n- **new** durumunda bulunan ürünler iptal edildiğinde, newQuantity değeri azalır ve cancelledQuantity değişmez.\n- **pending** durumunda bulunan ürünler iptal edildiğinde, pendingQuantity değeri azalır ve cancelledQuantity artar.\n",
+        "operationId": "autoft-list-packages-v3",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/sellerId"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "new",
+                "pending",
+                "completed",
+                "cancelled"
+              ]
+            },
+            "description": "Paket ürün durumu:\n- new: Yeni oluşmuş paketteki ürün, henüz tedarik beklenmez\n- pending: Tedarik beklenen ürün\n- completed: Ürünün tedariği ve iptali tamamlanmıştır\n- cancelled: İptal edilen ürün\n"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "minimum": 1
+            },
+            "description": "Sayfa numarası"
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "maximum": 100
+            },
+            "description": "Sayfa boyutu. Maksimum 100"
+          },
+          {
+            "name": "creationStartDate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "Başlangıç tarihi (UTC +0 millisecond timestamp)"
+          },
+          {
+            "name": "creationEndDate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "Bitiş tarihi (UTC +0 millisecond timestamp)"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackageListResponseV3"
+                },
+                "example": {
+                  "totalItemCount": 2465,
+                  "totalPageCount": 2465,
+                  "size": 1,
+                  "page": 1,
+                  "items": [
+                    {
+                      "itemId": "0c8f8c74-38f3-493f-8a05-5d1dcddd",
+                      "trackingNumber": 2584135020123481600,
+                      "packageId": "0c8f8c74-38f3-493f-8a05-5d1dcddd52ef",
+                      "boutiqueId": 0,
+                      "currency": "EUR",
+                      "platformId": 150,
+                      "barcode": "cb08addb-3d82-4d0a-89d8-d4eb841290e4",
+                      "sellerBarcode": "5a4a8217-39da-4f1f-ac49-6b1c06e44869",
+                      "creationDate": 1711359070376,
+                      "lastModifiedDate": 1711359070376,
+                      "name": "5d679332-159a-41d2-8918-f928276a2421",
+                      "newQuantity": 0,
+                      "pendingQuantity": 0,
+                      "unSuppliedQuantity": 0,
+                      "cancelledQuantity": 0,
+                      "completedQuantity": 1,
+                      "unitBuyingPrice": 26214301,
+                      "status": "completed",
+                      "cargos": [
+                        {
+                          "codes": [
+                            "3ac32647-20aa-4a0b-97bc-f80de06c1692"
+                          ],
+                          "provider": "Trendyol Express"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/autoft-list-packages-v3",
+        "x-lonca-portal-updated-at": "2026-02-03T08:11:45.000Z"
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "UserAgent": {
+        "name": "User-Agent",
+        "in": "header",
+        "required": true,
+        "description": "Trendyol Partner API isteklerinde zorunludur; User-Agent bilgisi olmayan istekler 403 ile engellenir. Aracı (entegratör) firma ile çalışılıyorsa \"{sellerId} - {Entegratör Firma İsmi}\", entegrasyon yazılımı firmaya aitse \"{sellerId} - SelfIntegration\" gönderilmelidir. Entegratör firma ismi alfanumerik, en fazla 30 karakter olmalıdır.",
+        "schema": {
+          "type": "string"
+        },
+        "example": "1234 - SelfIntegration",
+        "x-lonca-doc-url": "https://developers.trendyol.com/docs/2-authorization"
+      },
+      "sellerId": {
+        "name": "sellerId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "description": "Satıcı ID"
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Bad Request",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "status": 400,
+              "type": "ValidationError",
+              "traceId": "abc123-def456-ghi789",
+              "error": {
+                "code": 1002,
+                "title": "Zorunlu Alan Hatası",
+                "detail": "Zorunlu alanları doldurunuz"
+              }
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Not Found - İstenen kaynak mevcut değil",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "status": 404,
+              "type": "NotFoundError",
+              "traceId": "abc123-def456-ghi789",
+              "error": {
+                "code": 2006,
+                "title": "Kaynak Bulunamadı",
+                "detail": "Barkod için listing bulunamadı"
+              }
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Unauthorized - Kimlik doğrulama bilgileri eksik veya yanlış",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "status": 401,
+              "type": "AuthenticationError",
+              "traceId": "abc123-def456-ghi789",
+              "error": {
+                "code": 1006,
+                "title": "Yetkisiz Erişim",
+                "detail": "Yetkisiz erişim talebi"
+              }
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "BatchIdResponse": {
+        "type": "object",
+        "properties": {
+          "batchId": {
+            "type": "string",
+            "description": "İşlem batch ID. Bu ID ile işlem sonucunu sorgulayabilirsiniz"
+          }
+        }
+      },
+      "BatchStatusResponse": {
+        "type": "object",
+        "properties": {
+          "batchId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Batch ID"
+          },
+          "batchType": {
+            "type": "string",
+            "description": "İşlem tipi (ProductCreate, StockUpdate, PriceUpdate vb.)"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "requestItem": {
+                  "type": "object",
+                  "description": "İstek içeriği"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "SUCCESS",
+                    "FAILED",
+                    "PENDING"
+                  ],
+                  "description": "İşlem durumu"
+                },
+                "failureReasons": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Hata nedenleri"
+                }
+              }
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "COMPLETED",
+              "IN_PROGRESS",
+              "FAILED"
+            ],
+            "description": "Batch durumu"
+          },
+          "creationDate": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Oluşturma tarihi (timestamp)"
+          },
+          "lastModification": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Son güncelleme tarihi (timestamp)"
+          },
+          "itemCount": {
+            "type": "integer",
+            "description": "Toplam öğe sayısı"
+          }
+        }
+      },
+      "CargoInfo": {
+        "type": "object",
+        "properties": {
+          "codes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Kargo takip numaraları"
+          },
+          "provider": {
+            "type": "string",
+            "description": "Kargo firması"
+          }
+        }
+      },
+      "CategoryAttributes": {
+        "type": "object",
+        "properties": {
+          "categoryId": {
+            "type": "integer",
+            "description": "Kategori ID"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "Kategori görünen adı"
+          },
+          "categoryAttributes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "attributeId": {
+                  "type": "integer",
+                  "description": "Özellik ID"
+                },
+                "attributeName": {
+                  "type": "string",
+                  "description": "Özellik adı"
+                },
+                "required": {
+                  "type": "boolean",
+                  "description": "Zorunlu mu?"
+                },
+                "allowCustom": {
+                  "type": "boolean",
+                  "description": "Özel değer girilebilir mi?"
+                },
+                "customValue": {
+                  "type": "boolean",
+                  "description": "Özel değer girilebilir mi? (alternatif alan)"
+                },
+                "multipleValues": {
+                  "type": "boolean",
+                  "description": "Çoklu değer destekliyor mu?"
+                },
+                "attributeValues": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer",
+                        "description": "Değer ID"
+                      },
+                      "name": {
+                        "type": "string",
+                        "description": "Değer adı"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "description": "HTTP cevap kodu (400, 401, 500 vb.)"
+          },
+          "type": {
+            "type": "string",
+            "description": "Ana hata tipi"
+          },
+          "traceId": {
+            "type": "string",
+            "description": "Hatanın takibi için kod"
+          },
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "integer",
+                "description": "Hatanın özel kod numarası:\n- 1001: İstek ulaşırken bir hata oluştu\n- 1002: Zorunlu alanları doldurunuz\n- 1003: Talebiniz gerçekleştirilemedi\n- 1004: Uygun olmayan parametre girildi\n- 1005: Sistemsel bir sorun meydana geldi\n- 1006: Yetkisiz erişim talebi\n- 2006: Barkod için listing bulunamadı\n- 2007: Ürün sistemde kayıtlı değil\n- 3001: Ürün sistemde kayıtlı değil\n- 3002: Ürün henüz onaylanmamış\n- 3003: Bazı alanlar eksik ya da hatalı\n- 3004: Geçersiz composition bilgisi\n- 3005: Teslimat tipi uygun değil\n- 3007: Barkod ile TY barkodu uyuşmazlığı\n- 3009: Ürün satışa uygun değildir\n"
+              },
+              "title": {
+                "type": "string",
+                "description": "Hatanın ana başlığı"
+              },
+              "detail": {
+                "type": "string",
+                "description": "Hatanın açıklaması"
+              }
+            }
+          }
+        }
+      },
+      "PackageItemV2": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "description": "Benzersiz ürün numarası"
+          },
+          "name": {
+            "type": "string",
+            "description": "Ürün adı"
+          },
+          "trackingNumber": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true,
+            "description": "Paketin takip numarası"
+          },
+          "sellerBarcode": {
+            "type": "string",
+            "description": "Ürünün satıcı sistemlerinde kayıtlı barkodu"
+          },
+          "barcode": {
+            "type": "string",
+            "description": "Ürünün barkodu (Gönderim Beklenen Barkod)"
+          },
+          "newQuantity": {
+            "type": "integer",
+            "description": "Yeni oluşmuş ürün sayısı"
+          },
+          "pendingQuantity": {
+            "type": "integer",
+            "description": "Güncel tedarik beklenen ürün sayısı"
+          },
+          "completedQuantity": {
+            "type": "integer",
+            "description": "Trendyol tarafından mal kabul yapılan ürün sayısı"
+          },
+          "unSuppliedQuantity": {
+            "type": "integer",
+            "description": "Tedarik edilemeyen ve artık gönderimi beklenmeyen ürün sayısı"
+          },
+          "cancelledQuantity": {
+            "type": "integer",
+            "description": "İptal edilen ürün sayısı"
+          },
+          "unitBuyingPrice": {
+            "type": "number",
+            "format": "double",
+            "description": "Ürünün Trendyol'a KDV dahil birim satış fiyatı"
+          },
+          "creationDate": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Paket item oluşturulma zaman etiketi (UTC +0)"
+          },
+          "lastModifiedDate": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Paket item son güncellenme zaman etiketi (UTC +0)"
+          }
+        }
+      },
+      "PackageItemV3": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "description": "Benzersiz ürün numarası"
+          },
+          "trackingNumber": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Tedarik beklenen ürünler için oluşturulan takip numarası"
+          },
+          "packageId": {
+            "type": "string",
+            "description": "Paket numarası"
+          },
+          "boutiqueId": {
+            "type": "integer",
+            "description": "Butik numarası"
+          },
+          "currency": {
+            "type": "string",
+            "description": "Para birimi"
+          },
+          "platformId": {
+            "type": "integer",
+            "description": "Platform (partner) numarası"
+          },
+          "barcode": {
+            "type": "string",
+            "description": "Ürünün barkodu (Gönderim Beklenen Barkod)"
+          },
+          "sellerBarcode": {
+            "type": "string",
+            "description": "Ürünün satıcı sistemlerinde kayıtlı barkodu"
+          },
+          "creationDate": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Ürünün sipariş gelme tarihi (UTC +0)"
+          },
+          "lastModifiedDate": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Ürünün son değiştirilme tarihi (UTC +0)"
+          },
+          "name": {
+            "type": "string",
+            "description": "Ürün adı"
+          },
+          "newQuantity": {
+            "type": "integer",
+            "description": "Yeni oluşmuş ürün sayısı"
+          },
+          "pendingQuantity": {
+            "type": "integer",
+            "description": "Güncel tedarik beklenen ürün sayısı"
+          },
+          "completedQuantity": {
+            "type": "integer",
+            "description": "Trendyol tarafından mal kabul yapılan ürün sayısı"
+          },
+          "unSuppliedQuantity": {
+            "type": "integer",
+            "description": "Tedarik edilemeyen ve artık gönderimi beklenmeyen ürün sayısı"
+          },
+          "cancelledQuantity": {
+            "type": "integer",
+            "description": "İptal edilen ürün sayısı"
+          },
+          "unitBuyingPrice": {
+            "type": "number",
+            "format": "double",
+            "description": "Ürünün Trendyol'a KDV dahil birim satış fiyatı"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "new",
+              "pending",
+              "completed",
+              "cancelled"
+            ],
+            "description": "Ürün durumu"
+          },
+          "cargos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CargoInfo"
+            }
+          }
+        }
+      },
+      "PackageItemsResponseV2": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "description": "Güncel sayfa numarası"
+          },
+          "size": {
+            "type": "integer",
+            "description": "Sayfa boyutu"
+          },
+          "totalItemCount": {
+            "type": "integer",
+            "description": "Toplam öğe sayısı"
+          },
+          "totalPageCount": {
+            "type": "integer",
+            "description": "Toplam sayfa sayısı"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PackageItemV2"
+            }
+          }
+        }
+      },
+      "PackageListResponseV2": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "description": "Güncel sayfa numarası"
+          },
+          "size": {
+            "type": "integer",
+            "description": "Sayfa boyutu"
+          },
+          "totalItemCount": {
+            "type": "integer",
+            "description": "Toplam paket sayısı"
+          },
+          "totalPageCount": {
+            "type": "integer",
+            "description": "Toplam sayfa sayısı"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PackageV2"
+            }
+          }
+        }
+      },
+      "PackageListResponseV3": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "description": "Güncel sayfa numarası"
+          },
+          "size": {
+            "type": "integer",
+            "description": "Sayfa boyutu"
+          },
+          "totalItemCount": {
+            "type": "integer",
+            "description": "Toplam öğe sayısı"
+          },
+          "totalPageCount": {
+            "type": "integer",
+            "description": "Toplam sayfa sayısı"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PackageItemV3"
+            }
+          }
+        }
+      },
+      "PackageV2": {
+        "type": "object",
+        "properties": {
+          "trackingNumber": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Tedarik beklenen ürünler için oluşturulan takip numarası"
+          },
+          "packageId": {
+            "type": "string",
+            "description": "Paket numarası"
+          },
+          "totalQuantity": {
+            "type": "integer",
+            "description": "Pakette bulunan toplam item sayısı"
+          },
+          "totalBuyingPrice": {
+            "type": "number",
+            "format": "double",
+            "description": "Pakette yer alan ürünlerin KDV dahil satın alındığı fiyat toplamı"
+          },
+          "currency": {
+            "type": "string",
+            "description": "Para birimi"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "new",
+              "pending",
+              "completed",
+              "cancelled"
+            ],
+            "description": "Paket durumu"
+          },
+          "boutiqueId": {
+            "type": "string",
+            "description": "Butik numarası"
+          },
+          "platformId": {
+            "type": "integer",
+            "description": "Platform (partner) numarası"
+          },
+          "creationDate": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Paketin oluşturulma tarihi (UTC +0 timestamp)"
+          },
+          "approvedDate": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Paketin onaylanma tarihi (UTC +0 timestamp)"
+          },
+          "lastModifiedDate": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Paketin son değiştirilme tarihi (UTC +0 timestamp)"
+          },
+          "cargos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CargoInfo"
+            }
+          }
+        }
+      },
+      "Product": {
+        "type": "object",
+        "properties": {
+          "barcode": {
+            "type": "string",
+            "description": "Gönderim sağlanacak barkod, Trendyol sistemlerindeki barkod"
+          },
+          "sellerBarcode": {
+            "type": "string",
+            "description": "Satıcı sistemlerindeki barkod"
+          },
+          "rrpPrice": {
+            "type": "number",
+            "format": "double",
+            "description": "Tavsiye edilen perakende fiyatı"
+          },
+          "buyingPrice": {
+            "type": "number",
+            "format": "double",
+            "description": "Trendyol'a satış fiyatı"
+          },
+          "stock": {
+            "type": "integer",
+            "description": "Stok miktarı"
+          },
+          "origin": {
+            "type": "string",
+            "description": "Menşei ülke kodu"
+          },
+          "composition": {
+            "type": "string",
+            "description": "Materyal bileşeni (örn. %5 Elastan, %95 Pamuk)"
+          },
+          "description": {
+            "type": "string",
+            "description": "Ürün açıklaması"
+          },
+          "currency": {
+            "type": "string",
+            "description": "Para birimi (EUR, USD vb.)"
+          },
+          "gtip": {
+            "type": "string",
+            "description": "GTIP numarası"
+          },
+          "categoryId": {
+            "type": "integer",
+            "description": "Kategori ID"
+          },
+          "careInstructions": {
+            "type": "string",
+            "description": "Yıkama talimatı kodu"
+          },
+          "attributes": {
+            "type": "array",
+            "description": "Zorunlu ürün özellikleri",
+            "items": {
+              "type": "object",
+              "properties": {
+                "attributeId": {
+                  "type": "integer"
+                },
+                "attributeName": {
+                  "type": "string"
+                },
+                "valueId": {
+                  "type": "integer",
+                  "nullable": true
+                },
+                "valueName": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "basicAuth": {
+        "type": "http",
+        "scheme": "basic",
+        "description": "Basic Auth ile Satıcı API Key ve API Secret"
+      }
+    }
+  },
+  "security": [
+    {
+      "basicAuth": []
+    }
+  ]
+}

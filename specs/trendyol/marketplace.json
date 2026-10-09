@@ -1,0 +1,4038 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Trendyol Marketplace Entegrasyonu",
+    "description": "Trendyol Yurtiçi Pazaryeri Sipariş ve İade Entegrasyon API'si",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Trendyol Entegrasyon Destek",
+      "email": "entegrasyon@trendyol.com"
+    },
+    "x-lonca-source": {
+      "kind": "api-reference",
+      "portal": "https://developers.trendyol.com",
+      "definition": "Trendyol Marketplace Entegrasyonu",
+      "pages": 34,
+      "capturedAt": "2026-10-09",
+      "portalUpdatedAt": "2026-04-07T07:28:05.000Z",
+      "generator": "scripts/specs/build-trendyol.mjs"
+    },
+    "x-lonca-observed-source": {
+      "snapshot": "probe-snapshots/trendyol.json",
+      "env": "prod",
+      "note": "Properties marked x-lonca-observed were seen in production responses but are not in the API reference schema; x-lonca-guide-example names the guide page whose example payload shows the same key (absent: not documented anywhere). x-lonca-observed-types lists the JSON types seen where they disagree with the documented type."
+    }
+  },
+  "servers": [
+    {
+      "url": "https://apigw.trendyol.com/integration",
+      "description": "Canlı Ortam"
+    },
+    {
+      "url": "https://stageapigw.trendyol.com/integration",
+      "description": "Test Ortamı"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Adres Bilgileri",
+      "description": "Ülke, şehir, ilçe ve mahalle bilgileri"
+    },
+    {
+      "name": "Alternatif Teslimat ile Gönderim",
+      "description": "Alternatif teslimat yöntemleri ve manuel teslimat/iade işlemleri"
+    },
+    {
+      "name": "Sipariş Entegrasyonu",
+      "description": "Sipariş paketi yönetimi ve teslimat işlemleri"
+    },
+    {
+      "name": "Sipariş Paketlerini Bölme",
+      "description": "Paket bölme işlemleri"
+    },
+    {
+      "name": "İade Entegrasyonu",
+      "description": "İade işlemleri ve yönetimi"
+    }
+  ],
+  "paths": {
+    "/member/countries": {
+      "get": {
+        "tags": [
+          "Adres Bilgileri"
+        ],
+        "summary": "Ülke Bilgisi",
+        "description": "Aşağıdaki servisten ülke bilgisini alabilirsiniz.",
+        "operationId": "getCountries",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "code": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/getcountries",
+        "x-lonca-portal-updated-at": "2026-01-27T11:58:41.000Z",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ]
+      }
+    },
+    "/member/countries/domestic/AZ/cities": {
+      "get": {
+        "tags": [
+          "Adres Bilgileri"
+        ],
+        "summary": "Azerbaycan için Şehir Bilgisi",
+        "description": "Azerbaycan için şehir bilgisini aşağıdaki servisten alabilirsiniz.",
+        "operationId": "getAzerbaijanCities",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "name": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/getazerbaijancities",
+        "x-lonca-portal-updated-at": "2026-01-27T11:58:41.000Z",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ]
+      }
+    },
+    "/member/countries/domestic/AZ/cities/{cityCode}/districts": {
+      "get": {
+        "tags": [
+          "Adres Bilgileri"
+        ],
+        "summary": "Azerbaycan için İlçe Bilgisi",
+        "description": "Azerbaycan için ilçe bilgisini aşağıdaki servisten alabilirsiniz.",
+        "operationId": "getAzerbaijanDistricts",
+        "parameters": [
+          {
+            "name": "cityCode",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Azerbaycan şehirler endpointinden gelen şehir kodu"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "name": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/getazerbaijandistricts",
+        "x-lonca-portal-updated-at": "2026-01-27T11:58:41.000Z"
+      }
+    },
+    "/member/countries/domestic/TR/cities": {
+      "get": {
+        "tags": [
+          "Adres Bilgileri"
+        ],
+        "summary": "Türkiye için Şehir Bilgisi",
+        "description": "Türkiye için şehir bilgisini aşağıdaki servisten alabilirsiniz.",
+        "operationId": "getTürkeyCities",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "code": {
+                        "type": "string",
+                        "x-lonca-observed": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/gettürkeycities",
+        "x-lonca-portal-updated-at": "2026-01-27T12:07:35.000Z",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ]
+      }
+    },
+    "/member/countries/domestic/TR/cities/{CityCode}/districts": {
+      "get": {
+        "tags": [
+          "Adres Bilgileri"
+        ],
+        "summary": "Türkiye için İlçe Bilgisi",
+        "description": "Türkiye için ilçe bilgisini aşağıdaki servisten alabilirsiniz.",
+        "operationId": "getTürkeyDistricts",
+        "parameters": [
+          {
+            "name": "CityCode",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Türkiye şehirler endpointinden gelen şehir kodu"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "name": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/gettürkeydistricts",
+        "x-lonca-portal-updated-at": "2026-01-27T12:07:35.000Z"
+      }
+    },
+    "/member/countries/domestic/TR/cities/{CityCode}/districts/{DistrictCode}/neighborhoods": {
+      "get": {
+        "tags": [
+          "Adres Bilgileri"
+        ],
+        "summary": "Türkiye için Mahalle Bilgisi",
+        "description": "Türkiye için mahalle bilgisini aşağıdaki servisten alabilirsiniz.",
+        "operationId": "getTürkeyNeighborhoods",
+        "parameters": [
+          {
+            "name": "CityCode",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Türkiye şehirler endpointinden gelen şehir kodu"
+          },
+          {
+            "name": "DistrictCode",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Türkiye ilçeler endpointinden gelen ilçe kodu"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "name": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/gettürkeyneighborhoods",
+        "x-lonca-portal-updated-at": "2026-01-27T12:07:35.000Z"
+      }
+    },
+    "/member/countries/{CountryCode}/cities": {
+      "get": {
+        "tags": [
+          "Adres Bilgileri"
+        ],
+        "summary": "GULF ve CEE Ülkeleri için Şehir Bilgisi",
+        "description": "GULF ve CEE bölgesi için şehir bilgisini aşağıdaki servisten alabilirsiniz.",
+        "operationId": "getCitiesByCountry",
+        "parameters": [
+          {
+            "name": "CountryCode",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Ülkeler endpointinden gelen ülke kodu"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "name": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/getcitiesbycountry",
+        "x-lonca-portal-updated-at": "2026-01-27T11:58:41.000Z"
+      }
+    },
+    "/member/countries/{CountryCode}/cities/{cityId}/districts": {
+      "get": {
+        "tags": [
+          "Adres Bilgileri"
+        ],
+        "summary": "GULF Ülkeleri için İlçe Bilgisi",
+        "description": "GULF ülkeleri için ilçe bilgisini aşağıdaki servisten alabilirsiniz.",
+        "operationId": "getDistrictsByCity",
+        "parameters": [
+          {
+            "name": "CountryCode",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Şehirler endpointinden gelen şehir ID"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "name": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/getdistrictsbycity",
+        "x-lonca-portal-updated-at": "2026-01-27T11:58:41.000Z"
+      }
+    },
+    "/order/claim-issue-reasons": {
+      "get": {
+        "tags": [
+          "İade Entegrasyonu"
+        ],
+        "summary": "İade Red Sebeplerini Çekme - getClaimIssueReasons",
+        "description": "createClaimIssue servisine gönderilecek claimIssueReasonId değerine bu servisi kullanarak ulaşabilirsiniz.",
+        "operationId": "getClaimIssueReasons",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer",
+                        "description": "Neden ID"
+                      },
+                      "name": {
+                        "type": "string",
+                        "description": "Türkce neden adi"
+                      }
+                    }
+                  }
+                },
+                "example": [
+                  {
+                    "id": 1,
+                    "name": "İade gelen ürün sahte"
+                  },
+                  {
+                    "id": 51,
+                    "name": "İade gelen ürün kullanilmis"
+                  },
+                  {
+                    "id": 201,
+                    "name": "İade gelen ürün yanlis"
+                  },
+                  {
+                    "id": 251,
+                    "name": "İade gelen ürün defolu / zarar gormis"
+                  },
+                  {
+                    "id": 401,
+                    "name": "Eksik ürün"
+                  },
+                  {
+                    "id": 101,
+                    "name": "Fazla ürün"
+                  },
+                  {
+                    "id": 151,
+                    "name": "Ürünun bir parcasi / aksesuari eksik"
+                  },
+                  {
+                    "id": 301,
+                    "name": "Ürün bana ait değil"
+                  },
+                  {
+                    "id": 351,
+                    "name": "İade paketi boş geldi"
+                  },
+                  {
+                    "id": 1651,
+                    "name": "İade paketi elime ulasmadi"
+                  },
+                  {
+                    "id": 1701,
+                    "name": "Ürün yanlis değil"
+                  },
+                  {
+                    "id": 1751,
+                    "name": "Ürün kusurlu değil"
+                  },
+                  {
+                    "id": 451,
+                    "name": "Diger"
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/getclaimissuereasons",
+        "x-lonca-portal-updated-at": "2026-01-27T11:58:41.000Z",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ]
+      }
+    },
+    "/order/sellers/{sellerId}/claims": {
+      "get": {
+        "tags": [
+          "İade Entegrasyonu"
+        ],
+        "summary": "İadesi Oluşturulan Siparişleri Çekme - getClaims",
+        "description": "Bu metod ile Trendyol sisteminden iade edilen siparişler hakkındaki bilgileri çekebilirsiniz.",
+        "operationId": "getClaims",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 200
+            }
+          },
+          {
+            "name": "claimItemStatus",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Created",
+                "WaitingInAction",
+                "WaitingFraudCheck",
+                "Accepted",
+                "Unresolved",
+                "Rejected",
+                "Cancelled",
+                "InAnalysis"
+              ]
+            }
+          },
+          {
+            "name": "orderNumber",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "İade paketinin sipariş numarası"
+          },
+          {
+            "name": "claimIds",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int64"
+              }
+            }
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "totalElements": {
+                      "type": "integer",
+                      "description": "Toplam eleman sayısı"
+                    },
+                    "totalPages": {
+                      "type": "integer",
+                      "description": "Toplam sayfa sayısı"
+                    },
+                    "page": {
+                      "type": "integer",
+                      "description": "Güncel sayfa numarası"
+                    },
+                    "size": {
+                      "type": "integer",
+                      "description": "Sayfa boyutu"
+                    },
+                    "content": {
+                      "type": "array",
+                      "description": "İade nesneleri dizisi",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "description": "İade ID"
+                          },
+                          "claimId": {
+                            "type": "string",
+                            "description": "İade ID"
+                          },
+                          "orderNumber": {
+                            "type": "string",
+                            "description": "Sipariş numarası"
+                          },
+                          "orderDate": {
+                            "type": "integer",
+                            "format": "int64",
+                            "description": "Sipariş tarihi (timestamp)"
+                          },
+                          "customerFirstName": {
+                            "type": "string",
+                            "description": "Müşteri adi"
+                          },
+                          "customerLastName": {
+                            "type": "string",
+                            "description": "Müşteri soyadi"
+                          },
+                          "claimDate": {
+                            "type": "integer",
+                            "format": "int64",
+                            "description": "İade tarihi (GMT timestamp)"
+                          },
+                          "cargoTrackingNumber": {
+                            "type": "integer",
+                            "format": "int64",
+                            "description": "Kargo takip numarası"
+                          },
+                          "cargoTrackingLink": {
+                            "type": "string",
+                            "description": "Kargo takip linki"
+                          },
+                          "cargoSenderNumber": {
+                            "type": "string",
+                            "description": "Kargo gönderici numarası"
+                          },
+                          "cargoProviderName": {
+                            "type": "string",
+                            "description": "Kargo firması adi"
+                          },
+                          "orderShipmentPackageId": {
+                            "type": "integer",
+                            "format": "int64",
+                            "description": "Sipariş gönderi paket ID"
+                          },
+                          "replacementOutboundpackageinfo": {
+                            "type": "object",
+                            "description": "Değişim giden paket bilgisi (değişim yoksa boş)",
+                            "properties": {
+                              "cargoTrackingNumber": {
+                                "type": "integer",
+                                "format": "int64"
+                              },
+                              "cargoProviderName": {
+                                "type": "string"
+                              },
+                              "cargoSenderNumber": {
+                                "type": "string"
+                              },
+                              "cargoTrackingLink": {
+                                "type": "string"
+                              },
+                              "packageid": {
+                                "type": "integer",
+                                "format": "int64",
+                                "description": "Değişim paket ID bilgisi"
+                              },
+                              "items": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                },
+                                "description": "İade kalemi ID'leri dizisi"
+                              }
+                            }
+                          },
+                          "rejectedpackageinfo": {
+                            "type": "object",
+                            "description": "Reddedilen paket bilgisi (varsa)",
+                            "properties": {
+                              "cargoTrackingNumber": {
+                                "type": "integer",
+                                "format": "int64"
+                              },
+                              "cargoSenderNumber": {
+                                "type": "string"
+                              },
+                              "cargoProviderName": {
+                                "type": "string"
+                              },
+                              "cargoTrackingLink": {
+                                "type": "string"
+                              },
+                              "packageid": {
+                                "type": "integer",
+                                "format": "int64",
+                                "description": "Reddedilen iade paket ID"
+                              },
+                              "items": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                },
+                                "description": "İade kalemi ID'leri dizisi"
+                              },
+                              "dontShipBack": {
+                                "type": "boolean",
+                                "description": "Ürünün geri gönderilmemesi gerektiğini belirtir"
+                              }
+                            }
+                          },
+                          "items": {
+                            "type": "array",
+                            "description": "Sipariş satır kalemleri dizisi",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "orderLine": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "integer",
+                                      "format": "int64"
+                                    },
+                                    "productName": {
+                                      "type": "string"
+                                    },
+                                    "barcode": {
+                                      "type": "string"
+                                    },
+                                    "merchantSku": {
+                                      "type": "string"
+                                    },
+                                    "productColor": {
+                                      "type": "string"
+                                    },
+                                    "productSize": {
+                                      "type": "string"
+                                    },
+                                    "price": {
+                                      "type": "number",
+                                      "format": "double"
+                                    },
+                                    "vatBaseAmount": {
+                                      "type": "number",
+                                      "format": "double"
+                                    },
+                                    "vatRate": {
+                                      "type": "number",
+                                      "format": "double"
+                                    },
+                                    "salesCampaignId": {
+                                      "type": "integer",
+                                      "format": "int64"
+                                    },
+                                    "productCategory": {
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                "claimItems": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "id": {
+                                        "type": "string",
+                                        "description": "İade satır kalemi ID"
+                                      },
+                                      "orderLineItemId": {
+                                        "type": "integer",
+                                        "format": "int64"
+                                      },
+                                      "customerClaimItemReason": {
+                                        "type": "object",
+                                        "properties": {
+                                          "name": {
+                                            "type": "string"
+                                          },
+                                          "externalReasonId": {
+                                            "type": "integer"
+                                          },
+                                          "code": {
+                                            "type": "string"
+                                          }
+                                        }
+                                      },
+                                      "trendyolClaimItemReason": {
+                                        "type": "object",
+                                        "properties": {
+                                          "name": {
+                                            "type": "string"
+                                          },
+                                          "externalReasonId": {
+                                            "type": "integer"
+                                          },
+                                          "code": {
+                                            "type": "string"
+                                          }
+                                        }
+                                      },
+                                      "claimItemStatus": {
+                                        "type": "object",
+                                        "properties": {
+                                          "name": {
+                                            "type": "string",
+                                            "description": "Statü adi"
+                                          }
+                                        }
+                                      },
+                                      "note": {
+                                        "type": "string"
+                                      },
+                                      "customerNote": {
+                                        "type": "string"
+                                      },
+                                      "resolved": {
+                                        "type": "boolean"
+                                      },
+                                      "autoAccepted": {
+                                        "type": "boolean",
+                                        "description": "48 saat beklemede kalan iadeler sistem tarafından otomatik olarak kabul edilir"
+                                      },
+                                      "acceptedBySeller": {
+                                        "type": "boolean",
+                                        "description": "Satıcı tarafından kabul edilen iadeler"
+                                      },
+                                      "acceptDetail": {
+                                        "type": "string",
+                                        "description": "SUPPLIER, DISPUTE veya SYSTEM"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "lastModifiedDate": {
+                            "type": "integer",
+                            "format": "int64",
+                            "description": "Son güncelleme tarihi (timestamp)"
+                          },
+                          "orderOutboundPackageId": {
+                            "type": "integer",
+                            "format": "int64",
+                            "description": "Sipariş giden paket ID",
+                            "x-lonca-observed-types": [
+                              "null"
+                            ]
+                          },
+                          "channelId": {
+                            "type": "number",
+                            "x-lonca-observed": true,
+                            "x-lonca-guide-example": "https://developers.trendyol.com/docs/i̇adesi-oluşturulan-siparişleri-çekme-getclaims"
+                          },
+                          "sellerCollectionPointDetails": {
+                            "type": "object",
+                            "properties": {
+                              "collectionPointId": {
+                                "type": "string"
+                              }
+                            },
+                            "x-lonca-observed": true,
+                            "x-lonca-guide-example": "https://developers.trendyol.com/docs/i̇adesi-oluşturulan-siparişleri-çekme-getclaims"
+                          },
+                          "sellerDeliveryMethod": {
+                            "type": "string",
+                            "x-lonca-observed": true,
+                            "x-lonca-guide-example": "https://developers.trendyol.com/docs/i̇adesi-oluşturulan-siparişleri-çekme-getclaims"
+                          },
+                          "sellerOtp": {
+                            "type": "string",
+                            "x-lonca-observed": true,
+                            "x-lonca-guide-example": "https://developers.trendyol.com/docs/i̇adesi-oluşturulan-siparişleri-çekme-getclaims"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "totalElements": 2099,
+                  "totalPages": 2099,
+                  "page": 0,
+                  "size": 1,
+                  "content": [
+                    {
+                      "id": "f9da2317-876b-4b86-b8f7-0535c3b65731",
+                      "claimId": "f9da2317-876b-4b86-b8f7-0535c3b65731",
+                      "orderNumber": "65745805",
+                      "orderDate": 1524826343886,
+                      "customerFirstName": "John",
+                      "customerLastName": "Doe",
+                      "claimDate": 1525844162827,
+                      "cargoTrackingNumber": 72602420957047276000,
+                      "cargoTrackingLink": "https://tracking.trendyol.com/?id=111111111-1111-1111-1111-11111111",
+                      "cargoSenderNumber": "8106459254413",
+                      "cargoProviderName": "Aras Kargo Marketplace",
+                      "orderShipmentPackageId": 3853354,
+                      "replacementOutboundpackageinfo": {
+                        "cargoTrackingNumber": 72602420957047276000,
+                        "cargoProviderName": "Aras Kargo Marketplace",
+                        "cargoSenderNumber": "733861966410",
+                        "cargoTrackingLink": "https://tracking.trendyol.com/?id=111111111-1111-1111-1111-11111111",
+                        "packageid": 28717254,
+                        "items": [
+                          "b71461e3-d1a0-4c1d-9a6d-18ecbcb5432d"
+                        ]
+                      },
+                      "rejectedpackageinfo": {
+                        "cargoTrackingNumber": 72602420957047276000,
+                        "cargoSenderNumber": "12345754875355",
+                        "cargoProviderName": "Aras Kargo Marketplace",
+                        "cargoTrackingLink": "https://tracking.trendyol.com/?id=111111111-1111-1111-1111-11111111",
+                        "packageid": 28717254,
+                        "items": [
+                          "b71461e3-d1a0-4c1d-9a6d-18ecbcb5432d"
+                        ],
+                        "dontShipBack": false
+                      },
+                      "items": [
+                        {
+                          "orderLine": {
+                            "id": 28717254,
+                            "productName": "Erkek Bebek Sandalet 8S5280Z1/GREEN CS4, 21",
+                            "barcode": "99999999999",
+                            "merchantSku": "2083667",
+                            "productColor": "GREEN CS4",
+                            "productSize": " 21",
+                            "price": 12.95,
+                            "vatBaseAmount": 8,
+                            "vatRate": 8,
+                            "salesCampaignId": 183631,
+                            "productCategory": "Sandalet"
+                          },
+                          "claimItems": [
+                            {
+                              "id": "b71461e3-d1a0-4c1d-9a6d-18ecbcb5158c",
+                              "orderLineItemId": 29815493,
+                              "customerClaimItemReason": {
+                                "name": "Beden uymama",
+                                "externalReasonId": 23,
+                                "code": "UNFIT"
+                              },
+                              "trendyolClaimItemReason": {
+                                "name": "Beden uymama",
+                                "externalReasonId": 23,
+                                "code": "UNFIT"
+                              },
+                              "claimItemStatus": {
+                                "name": "Created"
+                              },
+                              "note": "",
+                              "customerNote": "Customer note",
+                              "resolved": false,
+                              "autoAccepted": false,
+                              "acceptedBySeller": true,
+                              "acceptDetail": "SUPPLIER"
+                            }
+                          ]
+                        },
+                        {
+                          "orderLine": {
+                            "id": 28717255,
+                            "productName": "Erkek Bebek Soket Corap 4'lu 8S7346Z1/MIX YARN DYED K00, 6-12 Ay",
+                            "barcode": "99999999999",
+                            "merchantSku": "2052551",
+                            "productColor": "MIX YARN DYED K00",
+                            "productSize": " 17-18 (6-12 Ay)",
+                            "price": 9.95,
+                            "vatBaseAmount": 8,
+                            "vatRate": 8,
+                            "salesCampaignId": 183631,
+                            "productCategory": "Corap"
+                          },
+                          "claimItems": [
+                            {
+                              "id": "b71461e3-d1a0-4c1d-9a6d-18ecbcb5432d",
+                              "orderLineItemId": 29815494,
+                              "customerClaimItemReason": {
+                                "name": "Beden uymama",
+                                "externalReasonId": 23,
+                                "code": "UNFIT"
+                              },
+                              "trendyolClaimItemReason": {
+                                "name": "Beden uymama",
+                                "externalReasonId": 23,
+                                "code": "UNFIT"
+                              },
+                              "claimItemStatus": {
+                                "name": "Created"
+                              },
+                              "note": "",
+                              "customerNote": "Customer note",
+                              "resolved": false,
+                              "autoAccepted": false,
+                              "acceptedBySeller": true,
+                              "acceptDetail": "SUPPLIER"
+                            }
+                          ]
+                        }
+                      ],
+                      "lastModifiedDate": 1723275767111,
+                      "orderOutboundPackageId": 58835111
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/getclaims",
+        "x-lonca-portal-updated-at": "2026-01-27T11:58:41.000Z"
+      }
+    },
+    "/order/sellers/{sellerId}/claims/create": {
+      "post": {
+        "tags": [
+          "İade Entegrasyonu"
+        ],
+        "summary": "İade Talebi Oluşturma - createClaim",
+        "description": "İade kodu olmadan gelen sipariş paketleri için iade talebi paketleri oluşturmak için kullanabilirsiniz.",
+        "operationId": "createClaim",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "claimItems",
+                  "orderNumber"
+                ],
+                "properties": {
+                  "claimItems": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "barcode",
+                        "quantity",
+                        "reasonId"
+                      ],
+                      "properties": {
+                        "barcode": {
+                          "type": "string",
+                          "description": "Siparişteki ürünün barkod bilgisidir.",
+                          "example": "string"
+                        },
+                        "customerNote": {
+                          "type": "string",
+                          "description": "Müşteriler tarafından yazılan alandır. İsterseniz bu alana İade kodu olmadan iade gibi bir metin besleyebilirsiniz.",
+                          "example": "string"
+                        },
+                        "quantity": {
+                          "type": "integer",
+                          "description": "İade talebi oluşturmak istediğiniz ürünün adet bilgisidir.",
+                          "example": 0
+                        },
+                        "reasonId": {
+                          "type": "integer",
+                          "description": "Müşterilerin trendyol.com'da seçtiği iade nedenleridir. Bu id değerini şimdilik 401 id değeri ile Vazgectim olarak besleyebilirsiniz.",
+                          "example": 401
+                        }
+                      }
+                    }
+                  },
+                  "customerId": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "Trendyol'da siparişi alan müşterinin id değeridir.",
+                    "example": 0
+                  },
+                  "excludeListing": {
+                    "type": "boolean",
+                    "description": "Listeleme dışında tut",
+                    "example": true
+                  },
+                  "forcePackageCreation": {
+                    "type": "boolean",
+                    "description": "Paket oluşturmayi zorla",
+                    "example": true
+                  },
+                  "orderNumber": {
+                    "type": "string",
+                    "description": "Siparişlarin numarasıdir.",
+                    "example": "string"
+                  },
+                  "shipmentCompanyId": {
+                    "type": "integer",
+                    "description": "Çalıştığınız kargo firmasının id değerini kullanabilirsiniz.",
+                    "example": 4
+                  }
+                }
+              },
+              "example": {
+                "claimItems": [
+                  {
+                    "barcode": "string",
+                    "customerNote": "string",
+                    "quantity": 0,
+                    "reasonId": 401
+                  }
+                ],
+                "customerId": 888888888,
+                "excludeListing": true,
+                "forcePackageCreation": true,
+                "orderNumber": "string",
+                "shipmentCompanyId": 4
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "claimId": {
+                      "type": "string",
+                      "description": "Oluşturulan iade ID"
+                    },
+                    "cargoTrackingNumber": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "İade için kargo takip numarası"
+                    },
+                    "claimItemIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Oluşturulan iade kalemi ID'leri dizisi"
+                    }
+                  }
+                },
+                "example": {
+                  "claimId": "string",
+                  "cargoTrackingNumber": "733xxxxxxx",
+                  "claimItemIds": [
+                    "string"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/createclaim",
+        "x-lonca-portal-updated-at": "2026-01-27T11:58:41.000Z"
+      }
+    },
+    "/order/sellers/{sellerId}/claims/items/{claimItemsId}/audit": {
+      "get": {
+        "tags": [
+          "İade Entegrasyonu"
+        ],
+        "summary": "İade Audit Bilgilerini Çekme - getClaimItemAudits",
+        "description": "Bu servis ile iade siparişinin statü ilerlemesini, güncelleme tarihini, işlemi yapan kişiyi kontrol edebilirsiniz.",
+        "operationId": "getClaimItemAudits",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "claimItemsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "İade kalemi ID"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "claimId": {
+                        "type": "string",
+                        "description": "İade ID"
+                      },
+                      "claimItemId": {
+                        "type": "string",
+                        "description": "İade kalemi ID"
+                      },
+                      "previousStatus": {
+                        "type": "string",
+                        "description": "İade kaleminin önceki statüsü"
+                      },
+                      "newStatus": {
+                        "type": "string",
+                        "description": "İade kaleminin yeni statüsü"
+                      },
+                      "userInfoDocument": {
+                        "type": "object",
+                        "properties": {
+                          "executorId": {
+                            "type": "string",
+                            "description": "Yükleyici ID"
+                          },
+                          "executorApp": {
+                            "type": "string",
+                            "description": "İşlemin hangi platformdan yapıldığını gösterir"
+                          },
+                          "executorUser": {
+                            "type": "string",
+                            "description": "İşlemin hangi kullanıcı tarafından yapıldığını gösterir"
+                          }
+                        }
+                      },
+                      "date": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Güncelleme tarihi timestamp"
+                      }
+                    }
+                  }
+                },
+                "example": [
+                  {
+                    "claimId": "6101ceca-1743-4d4e-bad2-d476c22542ca",
+                    "claimItemId": "f369b0a2-1461-4c9c-b3cc-12824d65e5e6",
+                    "previousStatus": "",
+                    "newStatus": "Created",
+                    "userInfoDocument": {
+                      "executorId": "328e8073-d898-11eb-b199-d6f52af37563",
+                      "executorApp": "Seller Center Orders BFF",
+                      "executorUser": 6666666
+                    },
+                    "date": 1624943376430
+                  },
+                  {
+                    "claimId": "6101ceca-1743-4d4e-bad2-d476c22542ca",
+                    "claimItemId": "f369b0a2-1461-4c9c-b3cc-12824d65e5e6",
+                    "previousStatus": "WaitingInAction",
+                    "newStatus": "Accepted",
+                    "userInfoDocument": {
+                      "executorId": "41038394-d898-11eb-9b23-caa176587e6c",
+                      "executorApp": "SellerIntegrationApi",
+                      "executorUser": 6666666
+                    },
+                    "date": 1624943400249
+                  },
+                  {
+                    "claimId": "6101ceca-1743-4d4e-bad2-d476c22542ca",
+                    "claimItemId": "f369b0a2-1461-4c9c-b3cc-12824d65e5e6",
+                    "previousStatus": "Created",
+                    "newStatus": "WaitingInAction",
+                    "userInfoDocument": {
+                      "executorId": "328e8073-d898-11eb-b199-d6f52af37563",
+                      "executorApp": "Seller Center Orders BFF",
+                      "executorUser": 6666666
+                    },
+                    "date": 1624943381690
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/getclaimitemaudits",
+        "x-lonca-portal-updated-at": "2026-01-27T11:58:41.000Z"
+      }
+    },
+    "/order/sellers/{sellerId}/claims/{claimId}/issue": {
+      "post": {
+        "tags": [
+          "İade Entegrasyonu"
+        ],
+        "summary": "İade Siparişlerde Ret Talebi Oluşturma - createClaimIssue",
+        "description": "Trendyol sisteminde deponuzdaki iade siparişleri için ret talebi oluşturabilirsiniz.\nİadeye ait ekleri (pdf, jpeg vb.) \"form-data (file)\" olarak eklemeniz gerekmektedir.\n",
+        "operationId": "createClaimIssue",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "Satıcı ID"
+          },
+          {
+            "name": "claimId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "İade ID"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "claimIssueReasonId",
+                  "claimItemIdList",
+                  "description"
+                ],
+                "properties": {
+                  "claimIssueReasonId": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "İade ret nedeni ID"
+                  },
+                  "claimItemIdList": {
+                    "type": "string",
+                    "description": "Virgül ile ayrılmış iade kalemi ID'leri listesi"
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "description": "Red açıklaması"
+                  },
+                  "files": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    },
+                    "description": "Ekler (pdf, jpeg, vb.)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/createclaimissue",
+        "x-lonca-portal-updated-at": "2026-01-28T06:00:41.000Z"
+      }
+    },
+    "/order/sellers/{sellerId}/claims/{claimId}/items/approve": {
+      "put": {
+        "tags": [
+          "İade Entegrasyonu"
+        ],
+        "summary": "İade Siparişleri Onaylama - approveClaimLineItems",
+        "description": "Trendyol sisteminde deponuza iade edilen iade siparişlerini bu metod ile onaylayabilirsiniz.",
+        "operationId": "approveClaimLineItems",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "claimId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "İade ID"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "claimLineItemIdList"
+                ],
+                "properties": {
+                  "claimLineItemIdList": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Onaylanacak iade satır kalemi ID'leri dizisi"
+                  },
+                  "params": {
+                    "type": "object",
+                    "description": "Ek parametreler",
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "example": {
+                "claimLineItemIdList": [
+                  "f9da2317-876b-4b86-b8f7-0535c3b65731"
+                ],
+                "params": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/approveclaimlineitems",
+        "x-lonca-portal-updated-at": "2026-01-27T11:58:41.000Z"
+      }
+    },
+    "/order/sellers/{sellerId}/orders": {
+      "get": {
+        "tags": [
+          "Sipariş Entegrasyonu"
+        ],
+        "summary": "Sipariş Paketlerini Çekme - getShipmentPackages",
+        "description": "Müşteriler tarafından verilen her sipariş hakkındaki sipariş paketlerini çekebilirsiniz.",
+        "operationId": "getShipmentPackages",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "Satıcı ID"
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "Başlangıç tarihi (Unix timestamp milisaniye)"
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "Bitiş tarihi (Unix timestamp milisaniye)"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0
+            },
+            "description": "Sayfa numarası"
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 200,
+              "maximum": 200
+            },
+            "description": "Sayfa boyutu (maksimum 200)"
+          },
+          {
+            "name": "orderNumber",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Sipariş numarasına göre filtrele"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Awaiting",
+                "Created",
+                "Picking",
+                "Invoiced",
+                "Shipped",
+                "Cancelled",
+                "Delivered",
+                "UnDelivered",
+                "Returned",
+                "AtCollectionPoint",
+                "UnSupplied"
+              ]
+            },
+            "description": "Paket statüsüne göre filtrele"
+          },
+          {
+            "name": "orderByField",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PackageLastModifiedDate",
+                "CreatedDate"
+              ]
+            },
+            "description": "Sıralama alanı"
+          },
+          {
+            "name": "orderByDirection",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ASC",
+                "DESC"
+              ]
+            },
+            "description": "Sıralama yönü"
+          },
+          {
+            "name": "shipmentPackageIds",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int64"
+              }
+            },
+            "description": "Paket ID'lerine göre filtrele (maksimum 50)"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "page": {
+                      "type": "integer"
+                    },
+                    "size": {
+                      "type": "integer"
+                    },
+                    "totalPages": {
+                      "type": "integer"
+                    },
+                    "totalElements": {
+                      "type": "integer"
+                    },
+                    "content": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ShipmentPackage"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/getshipmentpackages",
+        "x-lonca-portal-updated-at": "2026-01-27T11:58:41.000Z"
+      }
+    },
+    "/order/sellers/{sellerId}/orders/stream": {
+      "get": {
+        "tags": [
+          "Sipariş Entegrasyonu"
+        ],
+        "summary": "Sipariş Paketlerini Akış ile Çekme - getShipmentPackagesStream",
+        "description": "Müşteriler tarafından verilen sipariş paketlerini cursor tabanlı sayfalama kullanarak çekebilirsiniz.\nBu yöntem, sayfa numarası tabanlı sayfalamaya kıyasla daha verimli ve güvenilir bir sipariş paketi çekme deneyimi sunar.\nVeriler sabit bir sıralama ile döner: lastModifiedDate yeniden eskiye (DESC).\n",
+        "operationId": "getShipmentPackagesStream",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "Satıcı ID"
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 200
+            },
+            "description": "Bir istekte döndürülecek maksimum paket sayısı (varsayılan 50, maksimum 200)"
+          },
+          {
+            "name": "nextCursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Sonraki sayfaya geçmek için kullanılan opak token. İlk istekte gönderilmemelidir. Yanıttaki nextCursor değeri olduğu gibi kullanılmalıdır."
+          },
+          {
+            "name": "packageItemStatuses",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Paket kalem statülerine göre filtreleme. Birden fazla statü virgülle ayrılarak gönderilebilir.\nGeçerli değerler: Created, Picking, Invoiced, Shipped, Cancelled, Delivered, UnDelivered, Returned, UnSupplied, AtCollectionPoint, UnPacked, Awaiting\n"
+          },
+          {
+            "name": "lastModifiedStartDate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "Belirli bir tarihten sonra değiştirilen paketleri getirir (Unix timestamp milisaniye)"
+          },
+          {
+            "name": "lastModifiedEndDate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "Belirtilen tarihe kadar değiştirilen paketleri getirir (Unix timestamp milisaniye)"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "content": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ShipmentPackage"
+                      }
+                    },
+                    "size": {
+                      "type": "integer",
+                      "description": "Mevcut yanıttaki paket sayısı"
+                    },
+                    "hasMore": {
+                      "type": "boolean",
+                      "description": "Daha fazla veri olup olmadığını belirtir. true ise sonraki sayfa mevcuttur."
+                    },
+                    "nextCursor": {
+                      "type": "string",
+                      "description": "Sonraki sayfayı çekmek için kullanılacak cursor değeri. hasMore false ise boş döner."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Geçersiz nextCursor değeri, geçersiz sellerId, cursor ile filtre uyumsuzluğu",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/getshipmentpackagesstream",
+        "x-lonca-portal-updated-at": "2026-04-07T07:28:05.000Z"
+      }
+    },
+    "/order/sellers/{sellerId}/shipment-packages/manual-invoice-delivery-by-tracking-number/{cargoTrackingNumber}": {
+      "put": {
+        "tags": [
+          "Alternatif Teslimat ile Gönderim"
+        ],
+        "summary": "Kargo Takip Numarasi ile Teslim - manualDeliverByTrackingNumber",
+        "description": "Kargo takip numarası ile manuel teslimat bildirimi",
+        "operationId": "manualDeliverByTrackingNumber",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "cargoTrackingNumber",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/manualdeliverbytrackingnumber",
+        "x-lonca-portal-updated-at": "2026-01-27T11:58:41.000Z"
+      }
+    },
+    "/order/sellers/{sellerId}/shipment-packages/manual-return-by-tracking-number/{cargoTrackingNumber}": {
+      "put": {
+        "tags": [
+          "Alternatif Teslimat ile Gönderim"
+        ],
+        "summary": "Kargo Takip Numarasi ile İade - manualReturnByTrackingNumber",
+        "description": "Shipped statüsünde olan ve müşteriye teslim edilemeyen siparişlerin deponuza iade edilmesi durumunda bu servisi kullanabilirsiniz.",
+        "operationId": "manualReturnByTrackingNumber",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "cargoTrackingNumber",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/manualreturnbytrackingnumber",
+        "x-lonca-portal-updated-at": "2026-01-27T12:07:35.000Z"
+      }
+    },
+    "/order/sellers/{sellerId}/shipment-packages/{packageId}": {
+      "put": {
+        "tags": [
+          "Sipariş Entegrasyonu"
+        ],
+        "summary": "Paket Statü Bildirimi - updatePackage",
+        "description": "Siparişlerin paketlerini Picking veya Invoiced statüsüne güncelleyebilirsiniz.",
+        "operationId": "updatePackageStatus",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "packageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "status"
+                ],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "Picking",
+                      "Invoiced"
+                    ],
+                    "description": "Yeni paket statüsü"
+                  },
+                  "lines": {
+                    "type": "array",
+                    "description": "Paket güncellemeleri için sipariş satır çiftleri",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "lineId": {
+                          "type": "integer",
+                          "format": "int64"
+                        },
+                        "quantity": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  },
+                  "params": {
+                    "type": "object",
+                    "description": "Ek parametreler. invoiceNumber içerebilir ancak sadece Invoiced statüsü için verilmelidir.",
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/updatepackagestatus",
+        "x-lonca-portal-updated-at": "2026-01-27T12:07:35.000Z"
+      }
+    },
+    "/order/sellers/{sellerId}/shipment-packages/{packageId}/alternative-delivery": {
+      "put": {
+        "tags": [
+          "Alternatif Teslimat ile Gönderim"
+        ],
+        "summary": "Kargo Linki ile Gönderim - processAlternativeDelivery",
+        "description": "Sipariş paketini gönderdikten sonra, sahip olduğunuz kargo takip linki veya telefon numarası ile besleyebilirsiniz. Bu isteği başarıyla gönderdikten sonra sipariş otomatik olarak Shipped statüsüne geçecektir.",
+        "operationId": "processAlternativeDelivery",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "packageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "isPhoneNumber",
+                  "trackingInfo",
+                  "params"
+                ],
+                "properties": {
+                  "isPhoneNumber": {
+                    "type": "boolean",
+                    "description": "False ise trackingInfo kargo takip linki olmalıdır. True ise trackingInfo telefon numarası olmalıdır.",
+                    "example": false
+                  },
+                  "trackingInfo": {
+                    "type": "string",
+                    "description": "Kargo takip linki (isPhoneNumber false ise) veya telefon numarası (isPhoneNumber true ise)",
+                    "example": "http://tex...."
+                  },
+                  "params": {
+                    "type": "object",
+                    "description": "Ek parametreler",
+                    "additionalProperties": {
+                      "type": "string"
+                    },
+                    "example": {}
+                  },
+                  "boxQuantity": {
+                    "type": "integer",
+                    "description": "Paketin miktari (opsiyonel)",
+                    "example": 1
+                  },
+                  "deci": {
+                    "type": "number",
+                    "format": "float",
+                    "description": "Paketin desisi (opsiyonel)",
+                    "example": 1.4
+                  }
+                }
+              },
+              "example": {
+                "isPhoneNumber": false,
+                "trackingInfo": "http://tex....",
+                "params": {},
+                "boxQuantity": 1,
+                "deci": 1.4
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/processalternativedelivery",
+        "x-lonca-portal-updated-at": "2026-01-27T12:07:35.000Z"
+      }
+    },
+    "/order/sellers/{sellerId}/shipment-packages/{packageId}/alternative-delivery-digital": {
+      "put": {
+        "tags": [
+          "Alternatif Teslimat ile Gönderim"
+        ],
+        "summary": "Dijital Ürün Teslimati ile Alternatif Teslimat - processAlternativeDelivery",
+        "description": "Bu servisi çağırdığınızda, sağladığınız bilgiler müşterilere sms ve e-posta yoluyla otomatik olarak gönderilecektir.",
+        "operationId": "processAlternativeDeliveryDigital",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "packageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "isPhoneNumber",
+                  "trackingInfo",
+                  "params"
+                ],
+                "properties": {
+                  "isPhoneNumber": {
+                    "type": "boolean",
+                    "description": "Dijital ürün teslimati için true olmalıdır",
+                    "example": true
+                  },
+                  "trackingInfo": {
+                    "type": "string",
+                    "description": "Müşteri için iletişim telefon numarası",
+                    "example": "5555555555"
+                  },
+                  "params": {
+                    "type": "object",
+                    "description": "Dijital kodu içeren ek parametreler",
+                    "required": [
+                      "digitalCode"
+                    ],
+                    "properties": {
+                      "digitalCode": {
+                        "type": "string",
+                        "description": "Dijital kod 6-120 karakter arasında olmalıdır",
+                        "minLength": 6,
+                        "maxLength": 120,
+                        "example": "AX4567fasdf"
+                      }
+                    }
+                  }
+                }
+              },
+              "example": {
+                "isPhoneNumber": true,
+                "trackingInfo": "5555555555",
+                "params": {
+                  "digitalCode": "AX4567fasdf"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/processalternativedeliverydigital",
+        "x-lonca-portal-updated-at": "2026-01-27T11:58:41.000Z"
+      }
+    },
+    "/order/sellers/{sellerId}/shipment-packages/{packageId}/box-info": {
+      "put": {
+        "tags": [
+          "Sipariş Entegrasyonu"
+        ],
+        "summary": "Desi ve Koli Bilgisi Bildirimi - updateBoxInfo",
+        "description": "Bu servis ile UPS Kargo ve CEVA Lojistik firmalarının sipariş paketleriniz için desi ve koli miktarını besleyebilirsiniz.",
+        "operationId": "updateBoxInfo",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "packageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "deci": {
+                    "type": "number",
+                    "format": "double",
+                    "description": "Desi değeri"
+                  },
+                  "boxQuantity": {
+                    "type": "integer",
+                    "description": "Koli Miktari"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/updateboxinfo",
+        "x-lonca-portal-updated-at": "2026-01-27T11:58:41.000Z"
+      }
+    },
+    "/order/sellers/{sellerId}/shipment-packages/{packageId}/cargo-providers": {
+      "put": {
+        "tags": [
+          "Sipariş Entegrasyonu"
+        ],
+        "summary": "Paket Kargo Firmasi Değiştirme - changeCargoProvider",
+        "description": "Bu servis paketlerin kargo firmasıni değiştirmek için kullanılır.",
+        "operationId": "changeCargoProvider",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "packageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "cargoProvider"
+                ],
+                "properties": {
+                  "cargoProvider": {
+                    "type": "string",
+                    "description": "Kargo firması kodu",
+                    "enum": [
+                      "YKMP",
+                      "ARASMP",
+                      "SURATMP",
+                      "HOROZMP",
+                      "DHLECOMMP",
+                      "PTTMP",
+                      "CEVAMP",
+                      "TEXMP",
+                      "KOLAYGELSINMP",
+                      "CEVATEDARIK"
+                    ]
+                  }
+                }
+              },
+              "example": {
+                "cargoProvider": "ARASMP"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/changecargoprovider",
+        "x-lonca-portal-updated-at": "2026-01-27T11:58:41.000Z"
+      }
+    },
+    "/order/sellers/{sellerId}/shipment-packages/{packageId}/delivered-by-service": {
+      "put": {
+        "tags": [
+          "Sipariş Entegrasyonu"
+        ],
+        "summary": "Yetkili Servis ile Gönderim - deliveredByService",
+        "description": "Ürünlerini yetkili servise gönderen satıcılari mızın bu servisi çağırması gerekmektedir.",
+        "operationId": "deliveredByService",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "packageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/deliveredbyservice",
+        "x-lonca-portal-updated-at": "2026-01-27T11:58:41.000Z"
+      }
+    },
+    "/order/sellers/{sellerId}/shipment-packages/{packageId}/extended-agreed-delivery-date": {
+      "put": {
+        "tags": [
+          "Sipariş Entegrasyonu"
+        ],
+        "summary": "Ek Tedarik Süresi Tanımlama - agreedDeliveryDate",
+        "description": "Satıcılari miz sipariş paketleri için ek tedarik süreleri tanımlayabilir.",
+        "operationId": "extendAgreedDeliveryDate",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "packageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "extendedDayCount"
+                ],
+                "properties": {
+                  "extendedDayCount": {
+                    "type": "integer",
+                    "enum": [
+                      1,
+                      2,
+                      3
+                    ],
+                    "description": "Uzatılacak gün sayısı (1, 2 veya 3 olabilir)"
+                  }
+                }
+              },
+              "example": {
+                "extendedDayCount": 1
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/extendagreeddeliverydate",
+        "x-lonca-portal-updated-at": "2026-01-27T11:58:41.000Z"
+      }
+    },
+    "/order/sellers/{sellerId}/shipment-packages/{packageId}/items/unsupplied": {
+      "put": {
+        "tags": [
+          "Sipariş Entegrasyonu"
+        ],
+        "summary": "Tedarik Edememe Bildirimi - updatePackage",
+        "description": "Sipariş Paketindeki bir veya daha fazla ürünü iptal etmek için bu metodu kullanabilirsiniz.",
+        "operationId": "cancelOrderPackageItem",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "packageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "lines",
+                  "reasonId"
+                ],
+                "properties": {
+                  "lines": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "lineId",
+                        "quantity"
+                      ],
+                      "properties": {
+                        "lineId": {
+                          "type": "integer",
+                          "format": "int64",
+                          "description": "İptal edilecek sipariş satır ID"
+                        },
+                        "quantity": {
+                          "type": "integer",
+                          "description": "İptal edilecek miktar"
+                        }
+                      }
+                    }
+                  },
+                  "reasonId": {
+                    "type": "integer",
+                    "description": "İptal nedeni ID",
+                    "enum": [
+                      500,
+                      501,
+                      502,
+                      504,
+                      505,
+                      506
+                    ]
+                  }
+                }
+              },
+              "example": {
+                "lines": [
+                  {
+                    "lineId": 123456,
+                    "quantity": 1
+                  }
+                ],
+                "reasonId": 500
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/cancelorderpackageitem",
+        "x-lonca-portal-updated-at": "2026-01-27T11:58:41.000Z"
+      }
+    },
+    "/order/sellers/{sellerId}/shipment-packages/{packageId}/labor-costs": {
+      "put": {
+        "tags": [
+          "Sipariş Entegrasyonu"
+        ],
+        "summary": "İşçilik Maliyeti Güncelleme - laborCosts",
+        "description": "İşçilik maliyeti tutarını beslemek için bu servisi kullanabilirsiniz.",
+        "operationId": "updateLaborCosts",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "packageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "orderLineId",
+                    "laborCostPerItem"
+                  ],
+                  "properties": {
+                    "orderLineId": {
+                      "type": "integer",
+                      "format": "int64"
+                    },
+                    "laborCostPerItem": {
+                      "type": "number",
+                      "format": "double",
+                      "description": "Tek bir ürün başına işçilik maliyeti"
+                    }
+                  }
+                }
+              },
+              "example": [
+                {
+                  "orderLineId": 3653527482,
+                  "laborCostPerItem": 32.12
+                },
+                {
+                  "orderLineId": 3653527483,
+                  "laborCostPerItem": 78.65
+                }
+              ]
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/updatelaborcosts",
+        "x-lonca-portal-updated-at": "2026-01-27T11:58:41.000Z"
+      }
+    },
+    "/order/sellers/{sellerId}/shipment-packages/{packageId}/manual-invoice-delivery": {
+      "put": {
+        "tags": [
+          "Alternatif Teslimat ile Gönderim"
+        ],
+        "summary": "Paket Numarasi ile Teslim - manualDeliverByPackageId",
+        "description": "Paket ID ile manuel teslimat bildirimi",
+        "operationId": "manualDeliverByPackageId",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "packageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/manualdeliverbypackageid",
+        "x-lonca-portal-updated-at": "2026-01-27T11:58:41.000Z"
+      }
+    },
+    "/order/sellers/{sellerId}/shipment-packages/{packageId}/manual-return": {
+      "put": {
+        "tags": [
+          "Alternatif Teslimat ile Gönderim"
+        ],
+        "summary": "Paket Numarasi ile İade - manualReturnByPackageId",
+        "description": "Shipped statüsünde olan ve müşteriye teslim edilemeyen siparişlerin deponuza iade edilmesi durumunda bu servisi kullanabilirsiniz.",
+        "operationId": "manualReturnByPackageId",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "packageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/manualreturnbypackageid",
+        "x-lonca-portal-updated-at": "2026-01-27T12:07:35.000Z"
+      }
+    },
+    "/order/sellers/{sellerId}/shipment-packages/{packageId}/multi-split": {
+      "post": {
+        "tags": [
+          "Sipariş Paketlerini Bölme"
+        ],
+        "summary": "Sipariş Paketlerini Birden Fazla Barkod İle Bölme - multiSplitShipmentPackage",
+        "description": "Bu servisi kullandiktan sonra sipariş numarasına bağlı yeni paketler asenkron olarak oluşturulacaktir.",
+        "operationId": "multiSplitShipmentPackage",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "packageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "splitGroups"
+                ],
+                "properties": {
+                  "splitGroups": {
+                    "type": "array",
+                    "description": "Ayri paketlere bölünecek sipariş satır ID grupları",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "orderLineIds"
+                      ],
+                      "properties": {
+                        "orderLineIds": {
+                          "type": "array",
+                          "description": "Yeni pakette bir araya gruplanacak sipariş satır ID'leri",
+                          "items": {
+                            "type": "integer",
+                            "format": "int64"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "example": {
+                "splitGroups": [
+                  {
+                    "orderLineIds": [
+                      3,
+                      5,
+                      6
+                    ]
+                  },
+                  {
+                    "orderLineIds": [
+                      7,
+                      8,
+                      9
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "newPackageId": {
+                            "type": "integer",
+                            "format": "int64"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/multisplitshipmentpackage",
+        "x-lonca-portal-updated-at": "2026-01-27T11:58:41.000Z"
+      }
+    },
+    "/order/sellers/{sellerId}/shipment-packages/{packageId}/quantity-split": {
+      "post": {
+        "tags": [
+          "Sipariş Paketlerini Bölme"
+        ],
+        "summary": "Sipariş Paketlerini Birden Fazla Barkod İle Bölme - splitShipmentPackageByQuantity",
+        "description": "Bu servisi kullandiktan sonra sipariş numarasına bağlı yeni paketler asenkron olarak oluşturulacaktir.",
+        "operationId": "splitShipmentPackageByQuantity",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "packageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "quantitySplit"
+                ],
+                "properties": {
+                  "quantitySplit": {
+                    "type": "array",
+                    "description": "Her sipariş satıri için miktar bölme istekleri",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "orderLineId",
+                        "quantities"
+                      ],
+                      "properties": {
+                        "orderLineId": {
+                          "type": "integer",
+                          "format": "int64",
+                          "description": "Bölünecek sipariş satır ID"
+                        },
+                        "quantities": {
+                          "type": "array",
+                          "description": "Ayri paketlere bölünecek miktarlar dizisi",
+                          "items": {
+                            "type": "integer",
+                            "minimum": 1
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "newPackageIds": {
+                      "type": "array",
+                      "description": "Yeni oluşturulan paket ID'lerinin dizisi",
+                      "items": {
+                        "type": "integer",
+                        "format": "int64"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/splitshipmentpackagebyquantity",
+        "x-lonca-portal-updated-at": "2026-01-27T11:58:41.000Z"
+      }
+    },
+    "/order/sellers/{sellerId}/shipment-packages/{packageId}/split": {
+      "post": {
+        "tags": [
+          "Sipariş Paketlerini Bölme"
+        ],
+        "summary": "Sipariş Paketlerini Bölme - splitShipmentPackage",
+        "description": "Bu servisi kullandiktan sonra sipariş numarasına bağlı yeni paketler asenkron olarak oluşturulacaktir.",
+        "operationId": "splitShipmentPackage",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "packageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "orderLineIds"
+                ],
+                "properties": {
+                  "orderLineIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "format": "int64"
+                    },
+                    "description": "Yeni pakete bölünecek sipariş satır ID'leri"
+                  }
+                }
+              },
+              "example": {
+                "orderLineIds": [
+                  123456789
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "newPackageId": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "Yeni oluşturulan paket ID"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/splitshipmentpackage",
+        "x-lonca-portal-updated-at": "2026-01-27T11:58:41.000Z"
+      }
+    },
+    "/order/sellers/{sellerId}/shipment-packages/{packageId}/split-packages": {
+      "post": {
+        "tags": [
+          "Sipariş Paketlerini Bölme"
+        ],
+        "summary": "Sipariş Paketlerini Barkod Bazlı Bölme - splitMultiPackageByQuantity",
+        "description": "Bu metod ile sipariş paketindeki ürünleri miktar ve orderLineId değerleri ile bölebilirsiniz.",
+        "operationId": "splitMultiPackagesByQuantity",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "packageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "splitPackages"
+                ],
+                "properties": {
+                  "splitPackages": {
+                    "type": "array",
+                    "description": "Oluşturulacak paket grupları dizisi",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "packageDetails"
+                      ],
+                      "properties": {
+                        "packageDetails": {
+                          "type": "array",
+                          "description": "Bu pakete dahil edilecek sipariş satırları ve miktarları",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "orderLineId",
+                              "quantities"
+                            ],
+                            "properties": {
+                              "orderLineId": {
+                                "type": "integer",
+                                "format": "int64",
+                                "description": "Sipariş satır ID"
+                              },
+                              "quantities": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "description": "Bu sipariş satıri için miktar"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "example": {
+                "splitPackages": [
+                  {
+                    "packageDetails": [
+                      {
+                        "orderLineId": 12345,
+                        "quantities": 2
+                      },
+                      {
+                        "orderLineId": 123456,
+                        "quantities": 1
+                      }
+                    ]
+                  },
+                  {
+                    "packageDetails": [
+                      {
+                        "orderLineId": 123,
+                        "quantities": 1
+                      },
+                      {
+                        "orderLineId": 1234,
+                        "quantities": 1
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success - Yeni paketler asenkron olarak oluşturulacak"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/splitmultipackagesbyquantity",
+        "x-lonca-portal-updated-at": "2026-01-27T12:07:35.000Z"
+      }
+    },
+    "/order/sellers/{sellerId}/shipment-packages/{packageId}/warehouse": {
+      "put": {
+        "tags": [
+          "Sipariş Entegrasyonu"
+        ],
+        "summary": "Depo Bilgisi Güncelleme - updateWarehouse",
+        "description": "Bu servis ile Picking Sipariş Paketlerini Çekme servisinden dönen WarehouseId alanı güncellenecektir.",
+        "operationId": "updateWarehouse",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "packageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "warehouseId"
+                ],
+                "properties": {
+                  "warehouseId": {
+                    "type": "integer",
+                    "description": "Depo ID"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad Request (paket statüsü güncelleme için uygün değil - Created, Invoiced veya Picking olmalıdır)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/updatewarehouse",
+        "x-lonca-portal-updated-at": "2026-01-27T11:58:41.000Z"
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "UserAgent": {
+        "name": "User-Agent",
+        "in": "header",
+        "required": true,
+        "description": "Trendyol Partner API isteklerinde zorunludur; User-Agent bilgisi olmayan istekler 403 ile engellenir. Aracı (entegratör) firma ile çalışılıyorsa \"{sellerId} - {Entegratör Firma İsmi}\", entegrasyon yazılımı firmaya aitse \"{sellerId} - SelfIntegration\" gönderilmelidir. Entegratör firma ismi alfanumerik, en fazla 30 karakter olmalıdır.",
+        "schema": {
+          "type": "string"
+        },
+        "example": "1234 - SelfIntegration",
+        "x-lonca-doc-url": "https://developers.trendyol.com/docs/2-authorization"
+      }
+    },
+    "schemas": {
+      "Address": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "address1": {
+            "type": "string"
+          },
+          "address2": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "cityCode": {
+            "type": "integer"
+          },
+          "district": {
+            "type": "string"
+          },
+          "districtId": {
+            "type": "integer"
+          },
+          "postalCode": {
+            "type": "string"
+          },
+          "countryCode": {
+            "type": "string"
+          },
+          "neighborhoodId": {
+            "type": "integer"
+          },
+          "neighborhood": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "fullAddress": {
+            "type": "string"
+          },
+          "addressLines": {
+            "type": "object",
+            "properties": {
+              "addressLine1": {
+                "type": "string"
+              },
+              "addressLine2": {
+                "type": "string"
+              }
+            },
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "company": {
+            "type": "string",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "countyId": {
+            "type": "number",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "countyName": {
+            "type": "string",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "phone": {
+            "description": "Yalnızca null değeriyle gözlemlendi; tipi bilinmiyor.",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "sector": {
+            "type": "string",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "shortAddress": {
+            "type": "string",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "stateName": {
+            "type": "string",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "latitude": {
+            "type": "string",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "longitude": {
+            "type": "string",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "OrderLine": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "productSize": {
+            "type": "string"
+          },
+          "productColor": {
+            "type": "string"
+          },
+          "merchantSku": {
+            "type": "string"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "productCode": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "merchantId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "amount": {
+            "type": "number",
+            "format": "double"
+          },
+          "discount": {
+            "type": "number",
+            "format": "double"
+          },
+          "tyDiscount": {
+            "type": "number",
+            "format": "double"
+          },
+          "currencyCode": {
+            "type": "string"
+          },
+          "productCategory": {
+            "type": "string"
+          },
+          "shipmentType": {
+            "type": "string"
+          },
+          "gift": {
+            "type": "boolean"
+          },
+          "fastDelivery": {
+            "type": "boolean"
+          },
+          "fastDeliveryType": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "vatBaseAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "barcode": {
+            "type": "string"
+          },
+          "orderLineItemStatusName": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number",
+            "format": "double"
+          },
+          "quantity": {
+            "type": "integer"
+          },
+          "fastDeliveryOptions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "salesCampaignId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "productSellerCode": {
+            "type": "string"
+          },
+          "deliveryFeeType": {
+            "type": "string"
+          },
+          "laborCostPerItem": {
+            "type": "number",
+            "format": "double"
+          },
+          "businessUnit": {
+            "type": "string",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "commission": {
+            "type": "number",
+            "nullable": true,
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "contentId": {
+            "type": "number",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "defectiveClaimListingInsight": {
+            "type": "string",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "discountDetails": {
+            "type": "array",
+            "items": {},
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "lineGrossAmount": {
+            "type": "number",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "lineId": {
+            "type": "number",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "lineSellerDiscount": {
+            "type": "number",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "lineTotalDiscount": {
+            "type": "number",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "lineTyDiscount": {
+            "type": "number",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "lineUnitPrice": {
+            "type": "number",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "productCategoryId": {
+            "type": "number",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "productOrigin": {
+            "type": "string",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "sellerId": {
+            "type": "number",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "stockCode": {
+            "type": "string",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "vatRate": {
+            "type": "number",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          }
+        }
+      },
+      "ShipmentPackage": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Paket ID"
+          },
+          "shipmentNumber": {
+            "type": "string",
+            "description": "Gönderi numarası",
+            "x-lonca-observed-types": [
+              "number"
+            ]
+          },
+          "orderNumber": {
+            "type": "string",
+            "description": "Sipariş numarası"
+          },
+          "grossAmount": {
+            "type": "number",
+            "format": "double",
+            "description": "Brut tutar"
+          },
+          "totalDiscount": {
+            "type": "number",
+            "format": "double",
+            "description": "Toplam indirim"
+          },
+          "totalTyDiscount": {
+            "type": "number",
+            "format": "double",
+            "description": "Toplam Trendyol indirimi"
+          },
+          "taxNumber": {
+            "type": "string",
+            "description": "Vergi numarası",
+            "x-lonca-observed-types": [
+              "null"
+            ]
+          },
+          "invoiceAddress": {
+            "$ref": "#/components/schemas/Address"
+          },
+          "customerFirstName": {
+            "type": "string"
+          },
+          "customerLastName": {
+            "type": "string"
+          },
+          "customerEmail": {
+            "type": "string"
+          },
+          "customerId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "customerTckn": {
+            "type": "string",
+            "description": "Müşteri TCKN"
+          },
+          "shipmentAddress": {
+            "$ref": "#/components/schemas/Address"
+          },
+          "shipmentPackageStatus": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Created",
+              "Picking",
+              "Invoiced",
+              "Shipped",
+              "Cancelled",
+              "Delivered",
+              "UnDelivered",
+              "Returned"
+            ]
+          },
+          "deliveryType": {
+            "type": "string"
+          },
+          "timeSlotId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "estimatedDeliveryStartDate": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "estimatedDeliveryEndDate": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalPrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "agreedDeliveryDate": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "agreedDeliveryDateExtendible": {
+            "type": "boolean"
+          },
+          "agreedDeliveryExtensionStartDate": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "agreedDeliveryExtensionEndDate": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "extendedAgreedDeliveryDate": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "deci": {
+            "type": "number",
+            "format": "double"
+          },
+          "cargoTrackingNumber": {
+            "type": "string",
+            "x-lonca-observed-types": [
+              "number"
+            ]
+          },
+          "cargoTrackingLink": {
+            "type": "string"
+          },
+          "cargoSenderNumber": {
+            "type": "string"
+          },
+          "cargoProviderName": {
+            "type": "string"
+          },
+          "cargoProviderId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderLine"
+            }
+          },
+          "packageHistory": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "createdDate": {
+                  "type": "integer",
+                  "format": "int64"
+                },
+                "status": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "warehouseId": {
+            "type": "integer"
+          },
+          "3pByTrendyol": {
+            "type": "boolean",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "channelId": {
+            "type": "number",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "commercial": {
+            "type": "boolean",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "containsDangerousProduct": {
+            "type": "boolean",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "createdBy": {
+            "type": "string",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "currencyCode": {
+            "type": "string",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "deliveredByService": {
+            "type": "boolean",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "deliveryAddressType": {
+            "type": "string",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "discountDisplays": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "discountAmount": {
+                  "type": "number"
+                },
+                "displayName": {
+                  "type": "string"
+                }
+              }
+            },
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "fastDelivery": {
+            "type": "boolean",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "fastDeliveryType": {
+            "type": "string",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "giftBoxRequested": {
+            "type": "boolean",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "identityNumber": {
+            "type": "string",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "invoiceNumber": {
+            "type": "string",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "invoiceStatus": {
+            "type": "string",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "is4P": {
+            "type": "boolean",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "isCod": {
+            "type": "boolean",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "lastModifiedDate": {
+            "type": "number",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "micro": {
+            "type": "boolean",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "orderCountryCode": {
+            "type": "string",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "orderDate": {
+            "type": "number",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "originPackageIds": {
+            "description": "Yalnızca null değeriyle gözlemlendi; tipi bilinmiyor.",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "originShipmentDate": {
+            "type": "number",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "packageGrossAmount": {
+            "type": "number",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "packageHistories": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "createdDate": {
+                  "type": "number"
+                },
+                "status": {
+                  "type": "string"
+                }
+              }
+            },
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "packageSellerDiscount": {
+            "type": "number",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "packageTotalDiscount": {
+            "type": "number",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "packageTotalPrice": {
+            "type": "number",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "packageTyDiscount": {
+            "type": "number",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "sellerDeliveryMethod": {
+            "type": "string",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "sellerOtpCode": {
+            "type": "string",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "shipmentPackageId": {
+            "type": "number",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          },
+          "supplierId": {
+            "type": "number",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/sipariş-paketlerini-çekme-getshipmentpackages"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "basicAuth": {
+        "type": "http",
+        "scheme": "basic",
+        "description": "Basic Auth ile Satıcı API Key ve API Secret"
+      }
+    }
+  },
+  "security": [
+    {
+      "basicAuth": []
+    }
+  ]
+}

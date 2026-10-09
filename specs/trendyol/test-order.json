@@ -1,0 +1,603 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Trendyol Test Sipariş API'si",
+    "description": "Test ortamında test siparişi oluşturma servisi",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Trendyol Entegrasyon Destek",
+      "email": "entegrasyon@trendyol.com"
+    },
+    "x-lonca-source": {
+      "kind": "api-reference",
+      "portal": "https://developers.trendyol.com",
+      "definition": "Trendyol Test Sipariş API'si",
+      "pages": 3,
+      "capturedAt": "2026-10-09",
+      "portalUpdatedAt": "2026-01-28T06:19:34.000Z",
+      "generator": "scripts/specs/build-trendyol.mjs"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://stageapigw.trendyol.com/integration",
+      "description": "Test Ortamı"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Test Siparişi",
+      "description": "Test siparişi oluşturma işlemleri"
+    }
+  ],
+  "paths": {
+    "/test/order/orders/core": {
+      "post": {
+        "tags": [
+          "Test Siparişi"
+        ],
+        "summary": "Test Siparişi Oluşturma",
+        "description": "Test siparişi oluşturma servisi STAGE ortamında talep edilen senaryolarda test siparişi oluşturulması için kullanılacaktır.",
+        "operationId": "createTestOrder",
+        "parameters": [
+          {
+            "name": "sellerID",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "Satıcı ID"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "customer",
+                  "invoiceAddress",
+                  "lines",
+                  "seller",
+                  "shippingAddress"
+                ],
+                "properties": {
+                  "customer": {
+                    "type": "object",
+                    "required": [
+                      "customerFirstName",
+                      "customerLastName"
+                    ],
+                    "properties": {
+                      "customerFirstName": {
+                        "type": "string",
+                        "description": "Müşteri adı"
+                      },
+                      "customerLastName": {
+                        "type": "string",
+                        "description": "Müşteri soyadı"
+                      }
+                    }
+                  },
+                  "invoiceAddress": {
+                    "type": "object",
+                    "required": [
+                      "addressText",
+                      "city",
+                      "district",
+                      "invoiceFirstName",
+                      "invoiceLastName",
+                      "phone",
+                      "email"
+                    ],
+                    "properties": {
+                      "addressText": {
+                        "type": "string",
+                        "description": "Fatura adresi"
+                      },
+                      "city": {
+                        "type": "string",
+                        "description": "Şehir"
+                      },
+                      "company": {
+                        "type": "string",
+                        "description": "Firma adı (kurumsal fatura için gerekli)"
+                      },
+                      "district": {
+                        "type": "string",
+                        "description": "İlçe"
+                      },
+                      "invoiceFirstName": {
+                        "type": "string",
+                        "description": "Fatura adı"
+                      },
+                      "invoiceLastName": {
+                        "type": "string",
+                        "description": "Fatura soyadı"
+                      },
+                      "latitude": {
+                        "type": "string",
+                        "description": "Enlem"
+                      },
+                      "longitude": {
+                        "type": "string",
+                        "description": "Boylam"
+                      },
+                      "neighborhood": {
+                        "type": "string",
+                        "description": "Mahalle"
+                      },
+                      "phone": {
+                        "type": "string",
+                        "description": "Telefon numarası"
+                      },
+                      "postalCode": {
+                        "type": "string",
+                        "description": "Posta kodu"
+                      },
+                      "email": {
+                        "type": "string",
+                        "description": "E-posta adresi"
+                      },
+                      "invoiceTaxNumber": {
+                        "type": "string",
+                        "description": "Vergi numarası (kurumsal fatura için gerekli)"
+                      },
+                      "invoiceTaxOffice": {
+                        "type": "string",
+                        "description": "Vergi dairesi (kurumsal fatura için gerekli)"
+                      }
+                    }
+                  },
+                  "lines": {
+                    "type": "array",
+                    "description": "Sipariş kalemleri",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "barcode",
+                        "quantity"
+                      ],
+                      "properties": {
+                        "barcode": {
+                          "type": "string",
+                          "description": "Ürün barkodu"
+                        },
+                        "quantity": {
+                          "type": "integer",
+                          "description": "Miktar"
+                        },
+                        "discountPercentage": {
+                          "type": "number",
+                          "format": "double",
+                          "description": "İndirim yüzdesi"
+                        }
+                      }
+                    }
+                  },
+                  "seller": {
+                    "type": "object",
+                    "required": [
+                      "sellerId"
+                    ],
+                    "properties": {
+                      "sellerId": {
+                        "type": "integer",
+                        "description": "Satıcı ID"
+                      }
+                    }
+                  },
+                  "shippingAddress": {
+                    "type": "object",
+                    "required": [
+                      "addressText",
+                      "city",
+                      "district",
+                      "phone",
+                      "shippingFirstName",
+                      "shippingLastName",
+                      "email"
+                    ],
+                    "properties": {
+                      "addressText": {
+                        "type": "string",
+                        "description": "Teslimat adresi"
+                      },
+                      "city": {
+                        "type": "string",
+                        "description": "Şehir"
+                      },
+                      "company": {
+                        "type": "string",
+                        "description": "Firma adı"
+                      },
+                      "district": {
+                        "type": "string",
+                        "description": "İlçe"
+                      },
+                      "latitude": {
+                        "type": "string",
+                        "description": "Enlem"
+                      },
+                      "longitude": {
+                        "type": "string",
+                        "description": "Boylam"
+                      },
+                      "neighborhood": {
+                        "type": "string",
+                        "description": "Mahalle"
+                      },
+                      "phone": {
+                        "type": "string",
+                        "description": "Telefon numarası"
+                      },
+                      "postalCode": {
+                        "type": "string",
+                        "description": "Posta kodu"
+                      },
+                      "shippingFirstName": {
+                        "type": "string",
+                        "description": "Teslimat adı"
+                      },
+                      "shippingLastName": {
+                        "type": "string",
+                        "description": "Teslimat soyadı"
+                      },
+                      "email": {
+                        "type": "string",
+                        "description": "E-posta adresi"
+                      }
+                    }
+                  },
+                  "commercial": {
+                    "type": "boolean",
+                    "description": "Kurumsal fatura durumu (true ise invoiceAddress içinde company, invoiceTaxNumber ve invoiceTaxOffice doldurulmalıdır)",
+                    "default": false
+                  },
+                  "microRegion": {
+                    "type": "string",
+                    "description": "Mikro ihracat bölgesi (AZ veya GULF)",
+                    "enum": [
+                      "AZ",
+                      "GULF"
+                    ]
+                  }
+                }
+              },
+              "example": {
+                "customer": {
+                  "customerFirstName": "John",
+                  "customerLastName": "Doe"
+                },
+                "invoiceAddress": {
+                  "addressText": "test deneme adresi",
+                  "city": "İzmir",
+                  "company": "",
+                  "district": "Bornova",
+                  "invoiceFirstName": "John",
+                  "invoiceLastName": "Doe",
+                  "latitude": "string",
+                  "longitude": "string",
+                  "neighborhood": "",
+                  "phone": "333333333",
+                  "postalCode": "",
+                  "email": "pf+j2jm8x99@trendyolmail.com",
+                  "invoiceTaxNumber": "Firma Tax Number",
+                  "invoiceTaxOffice": "Firma Tax Office"
+                },
+                "lines": [
+                  {
+                    "barcode": "9900000000486",
+                    "quantity": 2,
+                    "discountPercentage": 50
+                  }
+                ],
+                "seller": {
+                  "sellerId": 2738
+                },
+                "shippingAddress": {
+                  "addressText": "test deneme adresi",
+                  "city": "İzmir",
+                  "company": "",
+                  "district": "Bornova",
+                  "latitude": "string",
+                  "longitude": "string",
+                  "neighborhood": "",
+                  "phone": "333333333",
+                  "postalCode": "",
+                  "shippingFirstName": "John",
+                  "shippingLastName": "Doe",
+                  "email": "pf+j2jm8x99@trendyolmail.com"
+                },
+                "commercial": false,
+                "microRegion": "String"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "orderNumber": {
+                      "type": "string",
+                      "description": "Oluşturulan sipariş numarası"
+                    }
+                  }
+                },
+                "example": {
+                  "orderNumber": "123456789"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ],
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/createtestorder",
+        "x-lonca-portal-updated-at": "2026-01-28T06:19:34.000Z"
+      }
+    },
+    "/test/order/sellers/{sellerId}/claims/waiting-in-action": {
+      "put": {
+        "tags": [
+          "Test Siparişi"
+        ],
+        "summary": "İade Test Siparişlerini WaitingInAction Statüsüne Çekme",
+        "description": "Test senaryolarınızı gerçekleştirmek adına stage ortamda vermiş olduğunuz siparişler için yaratmış olduğunuz iade talepleri sonrasında iade statüsünü waitinginaction'a çekmek için kullanabilirsiniz.",
+        "operationId": "updateTestClaimToWaitingInAction",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "Satıcı ID"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "shipmentPackageId"
+                ],
+                "properties": {
+                  "shipmentPackageId": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "getClaims servisinden dönen \"orderShipmentPackageId\" değerine karşılık gelmektedir"
+                  }
+                }
+              },
+              "example": {
+                "shipmentPackageId": 56526451
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "example": "200 OK"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ],
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/updatetestclaimtowaitinginaction",
+        "x-lonca-portal-updated-at": "2026-01-28T06:19:34.000Z"
+      }
+    },
+    "/test/order/sellers/{sellerId}/shipment-packages/{packageId}/status": {
+      "put": {
+        "tags": [
+          "Test Siparişi"
+        ],
+        "summary": "Test Siparişlerinde Statü Güncellemeleri",
+        "description": "Test senaryolarınızı gerçekleştirmek adına stage ortamda vermiş olduğunuz siparişler için statüleri güncelleyebilirsiniz.",
+        "operationId": "updateTestOrderStatus",
+        "parameters": [
+          {
+            "name": "sellerID",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "Satıcı ID"
+          },
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "Satıcı ID"
+          },
+          {
+            "name": "packageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "Paket ID"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "lines",
+                  "status"
+                ],
+                "properties": {
+                  "lines": {
+                    "type": "array",
+                    "description": "Sipariş satırları",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "lineId",
+                        "quantity"
+                      ],
+                      "properties": {
+                        "lineId": {
+                          "type": "integer",
+                          "format": "int64",
+                          "description": "Satır ID"
+                        },
+                        "quantity": {
+                          "type": "integer",
+                          "description": "Miktar"
+                        }
+                      }
+                    }
+                  },
+                  "params": {
+                    "type": "object",
+                    "description": "Ek parametreler",
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  },
+                  "status": {
+                    "type": "string",
+                    "description": "Güncellenecek statü. Statüler sıralı ilerlemektedir.\n\n- Shipped: Paket kargoya verildi\n- AtCollectionPoint: Paket kargo firmasının dağıtım noktasına ulaştı\n- Delivered: Paket teslimat noktasına ulaştı\n- UnDelivered: Paket teslim edilemedi (kargonun dağıtım merkezine geri döndü)\n- Returned: Paket geri gönderildi\n",
+                    "enum": [
+                      "Shipped",
+                      "AtCollectionPoint",
+                      "Delivered",
+                      "UnDelivered",
+                      "Returned"
+                    ]
+                  }
+                }
+              },
+              "example": {
+                "lines": [
+                  {
+                    "lineId": 4944785,
+                    "quantity": 1
+                  }
+                ],
+                "params": {},
+                "status": "Delivered"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "example": "200 OK"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ],
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/updatetestorderstatus",
+        "x-lonca-portal-updated-at": "2026-01-28T06:19:34.000Z"
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "UserAgent": {
+        "name": "User-Agent",
+        "in": "header",
+        "required": true,
+        "description": "Trendyol Partner API isteklerinde zorunludur; User-Agent bilgisi olmayan istekler 403 ile engellenir. Aracı (entegratör) firma ile çalışılıyorsa \"{sellerId} - {Entegratör Firma İsmi}\", entegrasyon yazılımı firmaya aitse \"{sellerId} - SelfIntegration\" gönderilmelidir. Entegratör firma ismi alfanumerik, en fazla 30 karakter olmalıdır.",
+        "schema": {
+          "type": "string"
+        },
+        "example": "1234 - SelfIntegration",
+        "x-lonca-doc-url": "https://developers.trendyol.com/docs/2-authorization"
+      }
+    },
+    "securitySchemes": {
+      "BasicAuth": {
+        "type": "http",
+        "scheme": "basic",
+        "description": "Basic authentication kullanarak header içerisinde gönderilen satıcı ID ile doğrulama yapılır"
+      }
+    }
+  }
+}

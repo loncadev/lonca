@@ -1,0 +1,393 @@
+{
+  "marketplace": "trendyol",
+  "portal": "https://developers.trendyol.com",
+  "index": "https://developers.trendyol.com/llms.txt",
+  "capturedAt": "2026-10-09",
+  "generator": "scripts/specs/build-trendyol.mjs",
+  "source": "scripts/specs/trendyol/source.mjs",
+  "probeSnapshot": {
+    "file": "probe-snapshots/trendyol.json",
+    "env": "prod"
+  },
+  "files": [
+    {
+      "file": "cargo-invoice.json",
+      "kind": "api-reference",
+      "definition": "Trendyol Yurtiçi Kargo Faturası Detayları Entegrasyonu",
+      "pages": [
+        "getcargoinvoiceitems"
+      ],
+      "title": "Trendyol Yurtiçi Kargo Faturası Detayları Entegrasyonu",
+      "servers": [
+        "https://apigw.trendyol.com/integration/finance/che",
+        "https://stageapigw.trendyol.com/integration/finance/che"
+      ],
+      "paths": 1,
+      "operations": 1,
+      "schemas": 3,
+      "observed": {
+        "operations": 0,
+        "properties": 0,
+        "propertiesInGuideExamples": 0,
+        "typeMismatches": 0
+      },
+      "portalUpdatedAt": "2026-02-18T07:21:16.000Z"
+    },
+    {
+      "file": "common-label.json",
+      "kind": "api-reference",
+      "definition": "Trendyol Marketplace - Ortak Etiket Barkod Entegrasyonu",
+      "pages": [
+        "createcommonlabel",
+        "getcommonlabel"
+      ],
+      "title": "Trendyol Marketplace - Ortak Etiket Barkod Entegrasyonu",
+      "servers": [
+        "https://apigw.trendyol.com/integration",
+        "https://stageapigw.trendyol.com/integration"
+      ],
+      "paths": 1,
+      "operations": 2,
+      "schemas": 2,
+      "observed": {
+        "operations": 0,
+        "properties": 0,
+        "propertiesInGuideExamples": 0,
+        "typeMismatches": 0
+      },
+      "portalUpdatedAt": "2026-02-16T04:42:17.000Z"
+    },
+    {
+      "file": "current-account-statement.json",
+      "kind": "api-reference",
+      "definition": "Trendyol Yurtiçi Cari Hesap Ekstresi Entegrasyonu",
+      "pages": [
+        "getotherfinancials",
+        "getpaymentorder",
+        "getsettlements"
+      ],
+      "title": "Trendyol Yurtiçi Cari Hesap Ekstresi Entegrasyonu",
+      "servers": [
+        "https://apigw.trendyol.com/integration/finance/che",
+        "https://stageapigw.trendyol.com/integration/finance/che"
+      ],
+      "paths": 3,
+      "operations": 3,
+      "schemas": 7,
+      "observed": {
+        "operations": 0,
+        "properties": 1,
+        "propertiesInGuideExamples": 0,
+        "typeMismatches": 0
+      },
+      "portalUpdatedAt": "2026-08-25T09:48:58.000Z"
+    },
+    {
+      "file": "customer-questions.json",
+      "kind": "api-reference",
+      "definition": "Trendyol Pazaryeri - Müşteri Soruları Entegrasyonu",
+      "pages": [
+        "answerquestion",
+        "getquestion",
+        "getquestionfilter"
+      ],
+      "title": "Trendyol Pazaryeri - Müşteri Soruları Entegrasyonu",
+      "servers": [
+        "https://apigw.trendyol.com/integration",
+        "https://stageapigw.trendyol.com/integration"
+      ],
+      "paths": 3,
+      "operations": 3,
+      "schemas": 4,
+      "observed": {
+        "operations": 0,
+        "properties": 1,
+        "propertiesInGuideExamples": 1,
+        "typeMismatches": 0
+      },
+      "portalUpdatedAt": "2026-02-16T13:07:02.000Z"
+    },
+    {
+      "file": "export-center.json",
+      "kind": "api-reference",
+      "definition": "Trendyol İhracat Merkezi (AutoFT) Entegrasyonu",
+      "pages": [
+        "autoft-check-batch-status",
+        "autoft-create-products-v2",
+        "autoft-get-care-instructions",
+        "autoft-get-categories-by-barcodes",
+        "autoft-get-category-attributes",
+        "autoft-get-compositions",
+        "autoft-get-origins",
+        "autoft-get-package-items-v2",
+        "autoft-list-packages-v2",
+        "autoft-list-packages-v3",
+        "autoft-list-products",
+        "autoft-update-prices",
+        "autoft-update-stocks"
+      ],
+      "title": "Trendyol İhracat Merkezi (AutoFT) Entegrasyonu",
+      "servers": [
+        "https://stageapigw.trendyol.com/integration/ecgw",
+        "https://apigw.trendyol.com/integration/ecgw"
+      ],
+      "paths": 12,
+      "operations": 13,
+      "schemas": 12,
+      "observed": {
+        "operations": 0,
+        "properties": 0,
+        "propertiesInGuideExamples": 0,
+        "typeMismatches": 0
+      },
+      "portalUpdatedAt": "2026-02-03T08:11:45.000Z"
+    },
+    {
+      "file": "invoice.json",
+      "kind": "api-reference",
+      "definition": "Fatura Entegrasyonu (Invoice Integration)",
+      "pages": [
+        "deleteinvoicelink",
+        "sendinvoicelink",
+        "uploadinvoicefile"
+      ],
+      "title": "Fatura Entegrasyonu (Invoice Integration)",
+      "servers": [
+        "https://apigw.trendyol.com/integration",
+        "https://stageapigw.trendyol.com/integration"
+      ],
+      "paths": 3,
+      "operations": 3,
+      "schemas": 3,
+      "observed": {
+        "operations": 0,
+        "properties": 0,
+        "propertiesInGuideExamples": 0,
+        "typeMismatches": 0
+      },
+      "portalUpdatedAt": "2026-02-03T10:29:17.000Z"
+    },
+    {
+      "file": "marketplace.json",
+      "kind": "api-reference",
+      "definition": "Trendyol Marketplace Entegrasyonu",
+      "pages": [
+        "approveclaimlineitems",
+        "cancelorderpackageitem",
+        "changecargoprovider",
+        "createclaim",
+        "createclaimissue",
+        "deliveredbyservice",
+        "extendagreeddeliverydate",
+        "getazerbaijancities",
+        "getazerbaijandistricts",
+        "getcitiesbycountry",
+        "getclaimissuereasons",
+        "getclaimitemaudits",
+        "getclaims",
+        "getcountries",
+        "getdistrictsbycity",
+        "getshipmentpackages",
+        "getshipmentpackagesstream",
+        "gettürkeycities",
+        "gettürkeydistricts",
+        "gettürkeyneighborhoods",
+        "manualdeliverbypackageid",
+        "manualdeliverbytrackingnumber",
+        "manualreturnbypackageid",
+        "manualreturnbytrackingnumber",
+        "multisplitshipmentpackage",
+        "processalternativedelivery",
+        "processalternativedeliverydigital",
+        "splitmultipackagesbyquantity",
+        "splitshipmentpackage",
+        "splitshipmentpackagebyquantity",
+        "updateboxinfo",
+        "updatelaborcosts",
+        "updatepackagestatus",
+        "updatewarehouse"
+      ],
+      "title": "Trendyol Marketplace Entegrasyonu",
+      "servers": [
+        "https://apigw.trendyol.com/integration",
+        "https://stageapigw.trendyol.com/integration"
+      ],
+      "paths": 34,
+      "operations": 34,
+      "schemas": 4,
+      "observed": {
+        "operations": 0,
+        "properties": 64,
+        "propertiesInGuideExamples": 63,
+        "typeMismatches": 4
+      },
+      "portalUpdatedAt": "2026-04-07T07:28:05.000Z"
+    },
+    {
+      "file": "product.json",
+      "kind": "api-reference",
+      "definition": "Trendyol Marketplace - Ürün Entegrasyonu API",
+      "pages": [
+        "archiveproducts",
+        "createbrand",
+        "createproducts",
+        "deleteproducts",
+        "filterapprovedproducts",
+        "filterapprovedproductsinventoryandprice",
+        "filterunapprovedproducts",
+        "getbatchrequestresult",
+        "getbrands",
+        "getbrandsbyname",
+        "getbuyboxinformation",
+        "getcargoproviders",
+        "getcategoryattributes",
+        "getcategoryattributevalues",
+        "getcategorytree",
+        "getproductbase",
+        "getupdateaudits",
+        "unlockproducts",
+        "updatecontentbulk",
+        "updatedeliveryinfobulk",
+        "updatepriceandinventory",
+        "updateunapprovedproducts",
+        "updatevariantbulk"
+      ],
+      "title": "Trendyol Marketplace - Ürün Entegrasyonu API",
+      "servers": [
+        "https://apigw.trendyol.com/integration",
+        "https://stageapigw.trendyol.com/integration"
+      ],
+      "paths": 23,
+      "operations": 23,
+      "schemas": 62,
+      "observed": {
+        "operations": 0,
+        "properties": 8,
+        "propertiesInGuideExamples": 5,
+        "typeMismatches": 0
+      },
+      "portalUpdatedAt": "2026-08-10T14:48:15.000Z"
+    },
+    {
+      "file": "seller-info.json",
+      "kind": "api-reference",
+      "definition": "Trendyol Marketplace - Satıcı Bilgileri Entegrasyonu",
+      "pages": [
+        "getsuppliersaddresses"
+      ],
+      "title": "Trendyol Marketplace - Satıcı Bilgileri Entegrasyonu",
+      "servers": [
+        "https://apigw.trendyol.com/integration",
+        "https://stageapigw.trendyol.com/integration"
+      ],
+      "paths": 1,
+      "operations": 1,
+      "schemas": 2,
+      "observed": {
+        "operations": 0,
+        "properties": 0,
+        "propertiesInGuideExamples": 0,
+        "typeMismatches": 0
+      },
+      "portalUpdatedAt": "2026-02-05T11:19:53.000Z"
+    },
+    {
+      "file": "test-order.json",
+      "kind": "api-reference",
+      "definition": "Trendyol Test Sipariş API'si",
+      "pages": [
+        "createtestorder",
+        "updatetestclaimtowaitinginaction",
+        "updatetestorderstatus"
+      ],
+      "title": "Trendyol Test Sipariş API'si",
+      "servers": [
+        "https://stageapigw.trendyol.com/integration"
+      ],
+      "paths": 3,
+      "operations": 3,
+      "schemas": 0,
+      "observed": {
+        "operations": 0,
+        "properties": 0,
+        "propertiesInGuideExamples": 0,
+        "typeMismatches": 0
+      },
+      "portalUpdatedAt": "2026-01-28T06:19:34.000Z"
+    },
+    {
+      "file": "trendyol-express.json",
+      "kind": "api-reference",
+      "definition": "Trendyol Express Entegrasyonu",
+      "pages": [
+        "getcompensationtickets"
+      ],
+      "title": "Trendyol Express Entegrasyonu",
+      "servers": [
+        "https://apigw.trendyol.com/integration",
+        "https://stageapigw.trendyol.com/integration"
+      ],
+      "paths": 1,
+      "operations": 1,
+      "schemas": 3,
+      "observed": {
+        "operations": 0,
+        "properties": 0,
+        "propertiesInGuideExamples": 0,
+        "typeMismatches": 0
+      },
+      "portalUpdatedAt": "2026-02-16T04:43:28.000Z"
+    },
+    {
+      "file": "video.json",
+      "kind": "guide",
+      "definition": "Trendyol Video Oluşturma / Listeleme Servisi",
+      "pages": [
+        "seller-integration-video-api"
+      ],
+      "title": "Trendyol Video Oluşturma / Listeleme Servisi",
+      "servers": [
+        "https://apigw.trendyol.com/integration/video",
+        "https://stageapigw.trendyol.com/integration/video"
+      ],
+      "paths": 1,
+      "operations": 2,
+      "schemas": 4,
+      "observed": {
+        "operations": 0,
+        "properties": 0,
+        "propertiesInGuideExamples": 0,
+        "typeMismatches": 0
+      },
+      "portalUpdatedAt": "2026-07-03T07:18:02.000Z"
+    },
+    {
+      "file": "webhook.json",
+      "kind": "api-reference",
+      "definition": "Trendyol Webhook API'si",
+      "pages": [
+        "activatewebhook",
+        "createwebhook",
+        "deactivatewebhook",
+        "deletewebhook",
+        "getwebhooks",
+        "updatewebhook"
+      ],
+      "title": "Trendyol Webhook API'si",
+      "servers": [
+        "https://apigw.trendyol.com/integration/webhook",
+        "https://stageapigw.trendyol.com/integration/webhook"
+      ],
+      "paths": 4,
+      "operations": 6,
+      "schemas": 0,
+      "observed": {
+        "operations": 0,
+        "properties": 2,
+        "propertiesInGuideExamples": 0,
+        "typeMismatches": 0
+      },
+      "portalUpdatedAt": "2026-01-28T07:02:28.000Z"
+    }
+  ]
+}
