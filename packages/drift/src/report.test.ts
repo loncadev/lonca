@@ -297,6 +297,31 @@ describe('renderMarkdown', () => {
     expect(small).toContain('under 3 KB');
   });
 
+  it('renders a null-only contradiction as an undocumented-null warning that does not fail the run', () => {
+    const report = buildDriftReport(
+      [
+        snapshot({
+          p: [
+            {
+              ...itemsOk,
+              operation: op('/vendor'),
+              shape: { types: ['object'], keys: { a: { types: ['null'] } } },
+            },
+          ],
+        }),
+      ],
+      [SPEC],
+    );
+    expect(report.counts).toEqual({ breaking: 0, additive: 0, warning: 1, info: 0 });
+    expect(shouldFail(report, 'breaking')).toBe(false);
+    const md = renderMarkdown(report);
+    expect(md).toContain('| shop | prod | 1 | 0 | 0 | 1 | 0 |');
+    expect(md).toContain(
+      '**Warning (1)**\n\n- `undocumented-null` `a`: observed null where string is documented (not nullable)',
+    );
+    expect(md).toContain('- **warning** (`undocumented-null`)');
+  });
+
   it('uses the singular for a single not-observed property', () => {
     const report = buildDriftReport(
       [

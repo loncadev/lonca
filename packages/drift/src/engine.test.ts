@@ -66,17 +66,41 @@ describe('compareResponse — basics', () => {
     });
   });
 
-  it('flags null on a non-nullable property, and accepts nullable / type arrays', () => {
+  it('flags null on a non-nullable property as undocumented-null, and accepts nullable / type arrays', () => {
     const schema: SchemaObject = {
       type: 'object',
       properties: {
         a: { type: 'string' },
         b: { type: 'string', nullable: true },
         c: { type: ['string', 'null'] },
+        d: { type: 'object' },
       },
     };
-    const findings = run(schema, obj({ a: S(['null']), b: S(['null']), c: S(['null', 'string']) }));
-    expect(kinds(findings)).toEqual(['type-mismatch@a']);
+    const findings = run(
+      schema,
+      obj({ a: S(['null']), b: S(['null']), c: S(['null', 'string']), d: S(['null', 'object']) }),
+    );
+    expect(kinds(findings)).toEqual(['undocumented-null@a', 'undocumented-null@d']);
+    expect(findings[0]).toMatchObject({
+      kind: 'undocumented-null',
+      severity: 'warning',
+      observed: ['null'],
+      documented: ['string'],
+      message: 'observed null where string is documented (not nullable)',
+    });
+  });
+
+  it('keeps a type-mismatch when a non-null disallowed type is observed next to null', () => {
+    const [f] = run(
+      { type: 'object', properties: { a: { type: 'string' } } },
+      obj({ a: S(['null', 'object']) }),
+    );
+    expect(f).toMatchObject({
+      kind: 'type-mismatch',
+      severity: 'breaking',
+      observed: ['null', 'object'],
+      documented: ['string'],
+    });
   });
 
   it('accepts any type where the schema declares none', () => {
@@ -422,6 +446,27 @@ describe('compareResponse — x-lonca annotations (known)', () => {
     ]);
   });
 
+  it('reports null as known when x-lonca-observed-types allows it', () => {
+    const schema: SchemaObject = {
+      type: 'object',
+      properties: { taxNumber: { type: 'string', 'x-lonca-observed-types': ['null'] } },
+    };
+    expect(kinds(run(schema, obj({ taxNumber: S(['null', 'string']) })))).toEqual([
+      'known@taxNumber',
+    ]);
+  });
+
+  it('reports the unexplained null next to an explained type as undocumented-null', () => {
+    const schema: SchemaObject = {
+      type: 'object',
+      properties: { n: { type: 'string', 'x-lonca-observed-types': ['number'] } },
+    };
+    expect(kinds(run(schema, obj({ n: S(['null', 'number']) })))).toEqual([
+      'known@n',
+      'undocumented-null@n',
+    ]);
+  });
+
   it('ignores unknown names in x-lonca-observed-types', () => {
     const schema: SchemaObject = {
       type: 'object',
@@ -513,6 +558,7 @@ describe('severity table', () => {
       'missing-required': 'breaking',
       'type-mismatch': 'breaking',
       'undocumented-field': 'additive',
+      'undocumented-null': 'warning',
       'unmatched-operation': 'warning',
       known: 'info',
       'not-observed': 'info',

@@ -59,15 +59,16 @@ Outputs:
 
 ## Findings
 
-| Kind                  | Severity | Meaning                                                                                                                               |
-| --------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `type-mismatch`       | breaking | A JSON type was observed that the schema does not allow (including `null` on a non-nullable property).                                |
-| `missing-required`    | breaking | A `required` property was never observed although its parent object was.                                                              |
-| `undocumented-field`  | additive | An observed key the schema does not list (and no `additionalProperties` allows).                                                      |
-| `unmatched-operation` | warning  | A wire call no spec operation describes (or whose operation has since left the spec).                                                 |
-| `known`               | info     | Explained by Lonca's own annotations: the property is `x-lonca-observed`, or the observed type is listed in `x-lonca-observed-types`. |
-| `not-observed`        | info     | Optional documented properties never seen in the sample — one collapsed entry per object, with a count.                               |
-| `uncomparable`        | info     | Nothing to compare: depth / key cap hit, empty arrays only, non-JSON or error body, no documented JSON schema, unresolvable `$ref`.   |
+| Kind                  | Severity | Meaning                                                                                                                                |
+| --------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `type-mismatch`       | breaking | A JSON type was observed that the schema does not allow (other than `null` alone — e.g. `object` where `string` is documented).        |
+| `missing-required`    | breaking | A `required` property was never observed although its parent object was.                                                               |
+| `undocumented-field`  | additive | An observed key the schema does not list (and no `additionalProperties` allows).                                                       |
+| `undocumented-null`   | warning  | `null` was observed on a property that is not nullable, and no other disallowed type was — the upstream spec usually omits `nullable`. |
+| `unmatched-operation` | warning  | A wire call no spec operation describes (or whose operation has since left the spec).                                                  |
+| `known`               | info     | Explained by Lonca's own annotations: the property is `x-lonca-observed`, or the observed type is listed in `x-lonca-observed-types`.  |
+| `not-observed`        | info     | Optional documented properties never seen in the sample — one collapsed entry per object, with a count.                                |
+| `uncomparable`        | info     | Nothing to compare: depth / key cap hit, empty arrays only, non-JSON or error body, no documented JSON schema, unresolvable `$ref`.    |
 
 Paths are JSON-pointer-ish relative to the body: `content[].shipmentNumber`, `(root)`.
 
@@ -83,7 +84,9 @@ the wire and the definition really disagree:
 - `oneOf` / `anyOf`: union of the alternatives — a key or type is fine if any alternative allows
   it; a key is required only if every alternative requires it.
 - `nullable: true` and `type: [..., "null"]` allow `null`; `integer` is the JSON type `number`; a
-  node without `type` accepts any type.
+  node without `type` accepts any type. When `null` is the only disallowed type observed at a
+  position the finding is `undocumented-null` (warning); `null` next to another disallowed type
+  (`null|object` where `string` is documented) is one `type-mismatch`.
 - `additionalProperties: true` or a schema allows extra keys (a schema is compared against
   them); absent or `false` means `properties` is the documented key set. An object schema
   with no properties at all documents nothing, so its keys are `uncomparable`, not undocumented.
@@ -100,7 +103,9 @@ the wire and the definition really disagree:
 - **additive** — the field is real but undocumented. Expose it in the SDK if useful, and mark
   the spec property `x-lonca-observed: true` (Trendyol: the observation pass of
   `pnpm specs:trendyol:build`, see [`specs/trendyol/README.md`](../../specs/trendyol/README.md)).
-- **warning** — add the missing definition to `specs/`, or fix the SDK path.
+- **warning** — `undocumented-null`: make sure the SDK type allows `null` (or normalises it
+  away); the spec most likely just lacks `nullable`. `unmatched-operation`: add the missing
+  definition to `specs/`, or fix the SDK path.
 
 ## Library
 

@@ -233,6 +233,7 @@ const HOW_TO_ACT = [
   '',
   '- **breaking** (`type-mismatch`, `missing-required`): the wire contradicts the definition. Check the SDK types and normalisers for that field and fix the SDK if it relies on the documented shape; if the marketplace is simply wrong about its own API, record the observed type on the property with `x-lonca-observed-types` so it shows up as `known` next time.',
   '- **additive** (`undocumented-field`): the field is real but undocumented. Expose it in the SDK if it is useful, and mark the spec property with `x-lonca-observed: true` so it shows up as `known` next time (for Trendyol the observation pass of `pnpm specs:trendyol:build` writes these annotations; see `specs/trendyol/README.md`).',
+  '- **warning** (`undocumented-null`): the property was `null` on the wire but the schema is not nullable — usually the upstream spec just omits `nullable`. Make sure the SDK type allows `null` (or normalises it away), then record it with `x-lonca-observed-types: ["null"]` (it shows up as `known`).',
   '- **warning** (`unmatched-operation`): the SDK calls an endpoint `specs/` does not document. Add the definition, or fix the SDK path.',
   '- **info** (`known`, `not-observed`, `uncomparable`): no action needed; `not-observed` only means this sample did not contain the optional field.',
   '',
