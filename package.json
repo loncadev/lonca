@@ -47,6 +47,10 @@
     "probe": "tsx --env-file-if-exists=.env scripts/probe/run.mts",
     "probe:check": "tsx --env-file-if-exists=.env scripts/probe/run.mts --check",
     "probe:hosts": "tsx --env-file-if-exists=.env scripts/probe/host-check.mts",
+    "specs:trendyol:fetch": "node scripts/specs/fetch-trendyol.mjs --out trendyol-reference-capture.json",
+    "specs:trendyol:build": "node scripts/specs/build-trendyol.mjs trendyol-reference-capture.json",
+    "specs:trendyol:check": "node scripts/specs/build-trendyol.mjs trendyol-reference-capture.json --check",
+    "specs:trendyol:coverage": "node scripts/specs/coverage-trendyol.mjs",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "turbo run build && changeset publish"
