@@ -364,6 +364,15 @@ describe('compareResponse — arrays', () => {
     expect(kinds(findings)).toEqual(['type-mismatch@[].id']);
   });
 
+  it('compares element shapes carried from the baseline like observed ones', () => {
+    const schema: SchemaObject = {
+      type: 'array',
+      items: { type: 'object', properties: { id: { type: 'string' } } },
+    };
+    const carried: Shape = { ...arr(obj({ id: S(['number']) })), itemsFromBaseline: true };
+    expect(kinds(run(schema, carried))).toEqual(['type-mismatch@[].id']);
+  });
+
   it('reports empty arrays (no element shape) as uncomparable', () => {
     expect(run(list, arr())).toEqual([
       expect.objectContaining({

@@ -14,6 +14,7 @@
  */
 import { isUnmatched, type OperationIndex, type WireOperation } from './operations.js';
 import {
+  carryEmptyArrayItems,
   DEFAULT_SUMMARIZE_OPTIONS,
   describe,
   diffShapes,
@@ -218,6 +219,26 @@ function mergeExchange(a: WireExchange, b: WireExchange): WireExchange {
 
 export function isSuccess(status: number): boolean {
   return status >= 200 && status < 300;
+}
+
+/**
+ * Apply {@link carryEmptyArrayItems} to a fresh wire list: each exchange's
+ * shape keeps the element shapes the committed exchange with the same
+ * operation key and status knew, wherever the fresh sample only had empty
+ * arrays. Exchanges without a baseline counterpart are returned unchanged.
+ */
+export function carryWireItems(
+  fresh: readonly WireExchange[],
+  baseline: readonly WireExchange[] | undefined,
+): WireExchange[] {
+  return fresh.map((ex) => {
+    const before = baseline?.find(
+      (b) => b.operation.key === ex.operation.key && b.status === ex.status,
+    );
+    if (!ex.shape || !before?.shape) return ex;
+    const shape = carryEmptyArrayItems(ex.shape, before.shape);
+    return shape === ex.shape ? ex : { ...ex, shape };
+  });
 }
 
 /** Comparison of a committed wire list with a fresh one. */

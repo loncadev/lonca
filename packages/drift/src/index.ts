@@ -1,7 +1,9 @@
 export {
+  carryEmptyArrayItems,
   DEFAULT_SUMMARIZE_OPTIONS,
   describe,
   diffShapes,
+  isInformationalDiff,
   mergeShapes,
   summarize,
   type JsonType,
@@ -33,6 +35,7 @@ export {
   type WireOperation,
 } from './operations.js';
 export {
+  carryWireItems,
   collapseExchanges,
   createWireRecorder,
   diffWire,

@@ -97,6 +97,8 @@ the wire and the definition really disagree:
   with no properties at all documents nothing, so its keys are `uncomparable`, not undocumented.
 - Below a `depthCapped` marker nothing is compared; on an object with `droppedKeys`, the
   missing / not-observed checks are skipped.
+- Element shapes marked `itemsFromBaseline` (kept by the probe runner from the previous
+  snapshot when the fresh sample only had empty arrays) are compared like observed ones.
 - Responses: the exact status code, then the `2XX` range; `default` is not used (it documents
   errors in these specs). Media type: `application/json`, then any `*json*` type, then `*/*`.
 
@@ -167,6 +169,9 @@ The package also provides what the probe runner uses for wire capture:
 - `withGlobalFetch(fetch, build)` — builds an SDK client while `fetch` is installed globally
   (the SDK factories expose no `fetch` option, but the transports bind it at construction).
 - `loadKnownDiscrepancies` / `applyKnownDiscrepancies` — the overlay, as the CLI uses it.
+- `carryEmptyArrayItems` / `carryWireItems` — keep known element shapes when a fresh sample
+  only had empty arrays (the probe runner's update path; see
+  [`scripts/probe/README.md`](../../scripts/probe/README.md#empty-samples-itemsfrombaseline)).
 - `summarize` / `diffShapes` / `diffWire` — the snapshot shape format (moved here from
   `scripts/probe/shape.mts`) and the comparisons `pnpm probe:check` uses.
 

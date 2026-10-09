@@ -41,7 +41,14 @@ Before committing, check that both files say `"env": "prod"` and every probe is 
 `pnpm probe` reads `.env` and would replace the prod baseline with stage / SIT shapes. Review the
 diff: `wire` must contain only spec path templates or `{}`-redacted paths, key names and JSON
 types. Shapes are sample-dependent: a list that happens to be empty (e.g. no webhooks, no open
-questions) records no item shape, so a shrinking shape is not necessarily drift.
+questions) records no item shape. Since roadmap 4.0a the update path keeps the element shape
+the committed file already had at such a position, marked `"itemsFromBaseline": true` (see
+[`scripts/probe/README.md`](../scripts/probe/README.md#empty-samples-itemsfrombaseline)); a
+key that disappears is still a removal.
+
+The 2026-10-09 baseline predates that: `webhooks.list` (Trendyol) and `questions.list`
+(Hepsiburada) were empty on that run, so their element shapes are not in these files. They
+come back on the first prod run in which those lists are non-empty, and are kept from then on.
 
 ## Notes
 

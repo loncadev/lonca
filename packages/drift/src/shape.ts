@@ -13,6 +13,11 @@
  * Element counts are deliberately *not* recorded — they change run to run and
  * would only add noise to the drift diff.
  *
+ * Shapes are sample-dependent: an array that happens to be empty has no
+ * `items`. When the probe runner rewrites a baseline it keeps the previous
+ * element shape at such positions ({@link carryEmptyArrayItems}), marked
+ * `itemsFromBaseline: true`, so an empty page does not erase a known shape.
+ *
  * Moved here from `scripts/probe/shape.mts` so the probe runner (which writes
  * shapes) and the drift engine (which reads them) share one definition of the
  * snapshot format; `scripts/probe/shape.mts` re-exports it.
@@ -25,8 +30,17 @@ export interface Shape {
   types: JsonType[];
   /** Merged, alphabetically sorted key map — present when `object` was observed. */
   keys?: Record<string, Shape>;
-  /** Merged element shape — present when a non-empty `array` was observed. */
+  /**
+   * Merged element shape — present when a non-empty `array` was observed, or
+   * carried over from the previous baseline (then `itemsFromBaseline` is set).
+   */
   items?: Shape;
+  /**
+   * Set on an array position whose `items` were not observed in this run (every
+   * array there was empty) but kept from the previous committed baseline.
+   * Consumers treat `items` as a normal element shape.
+   */
+  itemsFromBaseline?: true;
   /** Number of keys dropped by the key cap at this level, when any. */
   droppedKeys?: number;
   /** Set when recursion stopped at the depth cap (children are not described). */
@@ -111,15 +125,58 @@ export function mergeShapes(a: Shape, b: Shape): Shape {
     }
     out.keys = keys;
   }
-  if (a.items && b.items) out.items = mergeShapes(a.items, b.items);
-  else if (a.items || b.items) out.items = a.items ?? b.items;
+  if (a.items && b.items) {
+    out.items = mergeShapes(a.items, b.items);
+    // Still "from the baseline" only if no side actually observed elements.
+    if (a.itemsFromBaseline && b.itemsFromBaseline) out.itemsFromBaseline = true;
+  } else if (a.items || b.items) {
+    const side = a.items ? a : b;
+    out.items = side.items;
+    if (side.itemsFromBaseline) out.itemsFromBaseline = true;
+  }
   const dropped = Math.max(a.droppedKeys ?? 0, b.droppedKeys ?? 0);
   if (dropped > 0) out.droppedKeys = dropped;
   if (a.depthCapped || b.depthCapped) out.depthCapped = true;
   return out;
 }
 
-export type ShapeDiffKind = 'added' | 'removed' | 'type-changed' | 'nullability';
+/**
+ * Keep known element shapes when a fresh sample only had empty arrays.
+ *
+ * Wherever `fresh` has an array position without `items` (every array there
+ * was empty — not a depth cap) and `baseline` has `items` at the same
+ * position, the baseline's `items` are kept and the position is marked
+ * `itemsFromBaseline: true`. Nothing else is carried over: keys, types and
+ * caps come from `fresh` alone, so removals stay detectable. Neither input is
+ * modified.
+ */
+export function carryEmptyArrayItems(fresh: Shape, baseline: Shape | undefined): Shape {
+  if (!baseline) return fresh;
+  let out = fresh;
+  if (fresh.keys && baseline.keys) {
+    const keys: Record<string, Shape> = {};
+    let changed = false;
+    for (const [k, child] of Object.entries(fresh.keys)) {
+      keys[k] = carryEmptyArrayItems(child, baseline.keys[k]);
+      changed ||= keys[k] !== child;
+    }
+    if (changed) out = { ...out, keys };
+  }
+  if (fresh.items) {
+    const items = carryEmptyArrayItems(fresh.items, baseline.items);
+    if (items !== fresh.items) out = { ...out, items };
+  } else if (isEmptyArraySample(fresh) && baseline.items) {
+    out = { ...out, items: baseline.items, itemsFromBaseline: true };
+  }
+  return out;
+}
+
+/** An array position with no element shape because every sampled array was empty. */
+function isEmptyArraySample(shape: Shape): boolean {
+  return shape.types.includes('array') && !shape.items && !shape.depthCapped;
+}
+
+export type ShapeDiffKind = 'added' | 'removed' | 'type-changed' | 'nullability' | 'uncomparable';
 
 export interface ShapeDiff {
   /** JSONPath-ish location, e.g. `$.items[].lineItems[].sku`. */
@@ -137,6 +194,8 @@ export interface ShapeDiff {
  * - `nullability`: only the presence of `null` differs. Reported for
  *   information but *not* treated as drift — with small sample pages a
  *   nullable field is frequently null in one run and populated in the next.
+ * - `uncomparable`: the baseline knows an element shape but every array at
+ *   that position was empty in the fresh sample. Informational, not drift.
  *
  * Array element shapes are only compared when both sides observed at least
  * one element; an empty page on either side is data churn, not drift.
@@ -167,8 +226,20 @@ export function diffShapes(
   }
   if (before.items && after.items) {
     out.push(...diffShapes(before.items, after.items, `${path}[]`));
+  } else if (before.items && isEmptyArraySample(after)) {
+    out.push({
+      path: `${path}[]`,
+      kind: 'uncomparable',
+      from: describe(before.items),
+      to: 'no elements in this sample',
+    });
   }
   return out;
+}
+
+/** Diff kinds that are reported for information only and never count as drift. */
+export function isInformationalDiff(diff: ShapeDiff): boolean {
+  return diff.kind === 'nullability' || diff.kind === 'uncomparable';
 }
 
 /** One-line human summary of a shape, e.g. `array<object{12}>` or `string|null`. */
