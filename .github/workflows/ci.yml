@@ -49,6 +49,16 @@ jobs:
       - name: Build
         run: pnpm build
 
+      # Roadmap 4.3: SDK TypeScript response types vs specs/ (offline, reads committed files only).
+      # Warn-only: the report goes to the job summary and never fails the job. One matrix leg is
+      # enough — the result does not depend on the Node version.
+      - name: SDK types vs specs (warn-only)
+        if: matrix.node == 22
+        continue-on-error: true
+        run: |
+          pnpm drift:types --fail-on never
+          cat drift-output/types-report.md >> "$GITHUB_STEP_SUMMARY"
+
       - name: Package health (publint + attw)
         run: pnpm health:packages
 
