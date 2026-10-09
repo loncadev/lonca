@@ -52,7 +52,8 @@ interface IndexedOperation {
   op: Omit<MatchedOperation, 'server'>;
   server: string;
   hosts: string[];
-  segments: (string | RegExp)[];
+  segments: TemplateSegment[];
+  /** Specificity: 10 000 per literal segment + literal characters inside templated segments. */
   literals: number;
 }
 
@@ -113,7 +114,11 @@ export function buildOperationIndex(
             server: server.url,
             hosts: host ? [host, ...variants(host)].map((h) => h.toLowerCase()) : [],
             segments,
-            literals: segments.filter((s) => typeof s === 'string').length,
+            literals: segments.reduce(
+              (score, s) =>
+                score + (typeof s === 'string' ? 10_000 : s.reduce((n, p) => n + p.length, 0)),
+              0,
+            ),
           });
         }
       }
@@ -133,8 +138,9 @@ export function buildOperationIndex(
         // A server without a host (relative `servers[].url`) matches any host.
         if (e.hosts.length && !e.hosts.includes(host)) continue;
         if (!segmentsMatch(e.segments, parts)) continue;
-        // Most literal segments wins (`/claims/create` beats `/claims/{id}`);
-        // ties go to the first entry, which is stable (specs and paths are sorted).
+        // Most literal segments wins (`/claims/create` beats `/claims/{id}`),
+        // then most literal characters inside templated segments (`v{a}.{b}`
+        // beats `{a}{b}`); ties go to the first entry, which is stable.
         if (!best || e.literals > best.literals) best = e;
       }
       if (best) return { ...best.op, server: best.server };
@@ -187,18 +193,51 @@ function safeDecode(segment: string): string {
   }
 }
 
-function templateSegment(segment: string): string | RegExp {
-  if (!segment.includes('{')) return segment.toLowerCase();
-  const pattern = segment
-    .split(/(\{[^}]*\})/)
-    .map((part) => (part.startsWith('{') ? '.+' : part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
-    .join('');
-  return new RegExp(`^${pattern}$`, 'i');
+/**
+ * A template segment is either a literal (lower-cased) or, when it contains
+ * `{param}` placeholders, the literal pieces around them (`{name}.json` →
+ * `['', '.json']`). Matching is a linear glob walk rather than a generated
+ * regular expression, so a hostile URL cannot trigger polynomial backtracking.
+ */
+type TemplateSegment = string | string[];
+
+function templateSegment(segment: string): TemplateSegment {
+  const pieces: string[] = [];
+  let literal = '';
+  let i = 0;
+  while (i < segment.length) {
+    const close = segment[i] === '{' ? segment.indexOf('}', i) : -1;
+    if (close === -1) {
+      literal += segment[i];
+      i += 1;
+      continue;
+    }
+    pieces.push(literal.toLowerCase());
+    literal = '';
+    i = close + 1;
+  }
+  pieces.push(literal.toLowerCase());
+  return pieces.length === 1 ? pieces[0]! : pieces;
 }
 
-function segmentsMatch(template: (string | RegExp)[], parts: string[]): boolean {
+/** Each placeholder matches one or more characters; leftmost matching of the inner pieces is exact for this glob form. */
+function globMatch(pieces: string[], value: string): boolean {
+  const v = value.toLowerCase();
+  const first = pieces[0]!;
+  const last = pieces[pieces.length - 1]!;
+  if (!v.startsWith(first)) return false;
+  let pos = first.length;
+  for (let k = 1; k < pieces.length - 1; k++) {
+    const idx = v.indexOf(pieces[k]!, pos + 1);
+    if (idx === -1) return false;
+    pos = idx + pieces[k]!.length;
+  }
+  return v.length - last.length >= pos + 1 && v.endsWith(last);
+}
+
+function segmentsMatch(template: TemplateSegment[], parts: string[]): boolean {
   if (template.length !== parts.length) return false;
   return template.every((t, i) =>
-    typeof t === 'string' ? t === parts[i]!.toLowerCase() : t.test(parts[i]!),
+    typeof t === 'string' ? t === parts[i]!.toLowerCase() : globMatch(t, parts[i]!),
   );
 }

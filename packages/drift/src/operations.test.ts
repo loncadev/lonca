@@ -28,6 +28,9 @@ const SPECS: SpecFile[] = [
           post: ok,
         },
         '/files/{name}.json': { get: { operationId: 'getFile', ...ok } },
+        '/glob/{a}{b}': { get: { operationId: 'adjacent', ...ok } },
+        '/glob/v{major}.{minor}-x': { get: { operationId: 'versioned', ...ok } },
+        '/glob/{unclosed': { get: { operationId: 'unclosed', ...ok } },
       },
     },
   },
@@ -119,6 +122,27 @@ describe('buildOperationIndex().match', () => {
     expect(
       matched('GET', 'https://api.example.com/integration/files/report-2026.json').operationId,
     ).toBe('getFile');
+    expect(isUnmatched(index.match('GET', 'https://api.example.com/integration/files/.json'))).toBe(
+      true,
+    );
+    expect(
+      isUnmatched(index.match('GET', 'https://api.example.com/integration/files/a.jsonx')),
+    ).toBe(true);
+  });
+
+  it('matches placeholders as one-or-more characters with a linear glob walk', () => {
+    const op = (path: string) => index.match('GET', `https://api.example.com/integration${path}`);
+    expect(op('/glob/xy')).toMatchObject({ operationId: 'adjacent' });
+    expect(isUnmatched(op('/glob/x'))).toBe(true); // two placeholders need two characters
+    expect(op('/glob/v2.10-x')).toMatchObject({ operationId: 'versioned' });
+    expect(op('/glob/v2..1-x')).toMatchObject({ operationId: 'versioned' });
+    expect(op('/glob/v.1-x')).toMatchObject({ operationId: 'adjacent' }); // v{major} needs a character
+    expect(op('/glob/v21-x')).toMatchObject({ operationId: 'adjacent' }); // no '.' between placeholders
+    expect(op('/glob/{UNCLOSED')).toMatchObject({ operationId: 'unclosed' }); // a lone `{` is literal
+    // A pathological segment is rejected quickly instead of backtracking.
+    const started = performance.now();
+    expect(isUnmatched(op(`/files/${'.json'.repeat(20_000)}x`))).toBe(true);
+    expect(performance.now() - started).toBeLessThan(500);
   });
 
   it('accepts URL objects and percent-encoded segments', () => {
