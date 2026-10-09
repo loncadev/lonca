@@ -44,3 +44,12 @@ export {
   type WireRecorder,
   type WireRecorderOptions,
 } from './wire.js';
+export {
+  compareResponse,
+  DEFAULT_SEVERITY,
+  SEVERITIES,
+  type CompareInput,
+  type Finding,
+  type FindingKind,
+  type Severity,
+} from './engine.js';
