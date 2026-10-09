@@ -72,13 +72,17 @@ export class VideosResource {
       },
       rateLimiter: this.listLimiter,
     });
+    // Documented shape is `{ meta, data: [...] }`; the other envelopes are
+    // kept for tolerance.
     const rows = Array.isArray(data)
       ? data
-      : Array.isArray((data as { content?: unknown[] })?.content)
-        ? (data as { content: unknown[] }).content
-        : Array.isArray((data as { items?: unknown[] })?.items)
-          ? (data as { items: unknown[] }).items
-          : [];
+      : Array.isArray((data as { data?: unknown[] })?.data)
+        ? (data as { data: unknown[] }).data
+        : Array.isArray((data as { content?: unknown[] })?.content)
+          ? (data as { content: unknown[] }).content
+          : Array.isArray((data as { items?: unknown[] })?.items)
+            ? (data as { items: unknown[] }).items
+            : [];
     return rows.map((r) => {
       const row = (r ?? {}) as Record<string, unknown>;
       const out: SellerVideo = { raw: row };

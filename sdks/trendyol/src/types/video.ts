@@ -9,11 +9,12 @@
 import type { MutationResult, OffsetPaginationParams } from '@lonca/core';
 
 /**
- * Status of a seller integration video as Trendyol processes it. Open
- * union — Trendyol may add new statuses without an SDK release.
+ * Status of a seller integration video as Trendyol processes it:
+ * `IN_PROGRESS` (downloading / processing), `SUCCESS` (downloaded),
+ * `FAILED` (download failed). Open union — Trendyol may add new statuses
+ * without an SDK release.
  */
-export type SellerIntegrationStatus =
-  'WAITING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED' | (string & {});
+export type SellerIntegrationStatus = 'IN_PROGRESS' | 'SUCCESS' | 'FAILED' | (string & {});
 
 /**
  * Documented `videoContentType` values for `videos.create()`. Open union —

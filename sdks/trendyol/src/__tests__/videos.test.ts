@@ -100,11 +100,27 @@ describe('VideosResource.list', () => {
     });
   });
 
+  it('unwraps the documented { meta, data } envelope', async () => {
+    const rows = await r(
+      mockTransport({
+        meta: { page: 0, total: 2, totalPage: 1, size: 10 },
+        data: [
+          { id: 'V-1', status: 'SUCCESS', isApproved: true },
+          { id: 'V-2', status: 'FAILED', errorCode: 'video.format.invalid' },
+        ],
+      }),
+    ).list();
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toMatchObject({ id: 'V-1', status: 'SUCCESS' });
+    expect(rows[1]).toMatchObject({ id: 'V-2', status: 'FAILED' });
+    expect(rows[1]!.raw).toMatchObject({ errorCode: 'video.format.invalid' });
+  });
+
   it('unwraps content / items / raw array envelopes', async () => {
     const rowsContent = await r(
-      mockTransport({ content: [{ id: 'V-A', status: 'COMPLETED' }] }),
+      mockTransport({ content: [{ id: 'V-A', status: 'SUCCESS' }] }),
     ).list();
-    expect(rowsContent[0]).toMatchObject({ id: 'V-A', status: 'COMPLETED' });
+    expect(rowsContent[0]).toMatchObject({ id: 'V-A', status: 'SUCCESS' });
     const rowsItems = await r(mockTransport({ items: [{ id: 'V-B' }] })).list();
     expect(rowsItems[0]).toMatchObject({ id: 'V-B' });
     const rowsArray = await r(mockTransport([{ id: 'V-C' }])).list();
