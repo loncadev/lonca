@@ -1,0 +1,460 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Trendyol Pazaryeri - Müşteri Soruları Entegrasyonu",
+    "description": "Trendyol üzerinde satıcılara sorulan müşteri sorularının yönetilmesini sağlayan API servisidir. \nBu servis ile soruları filtreleyebilir, detaylarını görüntüleyebilir ve cevaplayabilirsiniz.\n",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Trendyol Entegrasyon Desteği",
+      "email": "entegrasyon@trendyol.com"
+    },
+    "x-lonca-source": {
+      "kind": "api-reference",
+      "portal": "https://developers.trendyol.com",
+      "definition": "Trendyol Pazaryeri - Müşteri Soruları Entegrasyonu",
+      "pages": 3,
+      "capturedAt": "2026-10-09",
+      "portalUpdatedAt": "2026-02-16T13:07:02.000Z",
+      "generator": "scripts/specs/build-trendyol.mjs"
+    },
+    "x-lonca-observed-source": {
+      "snapshot": "probe-snapshots/trendyol.json",
+      "env": "prod",
+      "note": "Properties marked x-lonca-observed were seen in production responses but are not in the API reference schema; x-lonca-guide-example names the guide page whose example payload shows the same key (absent: not documented anywhere). x-lonca-observed-types lists the JSON types seen where they disagree with the documented type."
+    }
+  },
+  "servers": [
+    {
+      "url": "https://apigw.trendyol.com/integration",
+      "description": "Canlı Ortam (PROD)"
+    },
+    {
+      "url": "https://stageapigw.trendyol.com/integration",
+      "description": "Test Ortamı (STAGE)"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Müşteri Soruları Entegrasyonu",
+      "description": "Müşteri sorularını listeleme, filtreleme ve cevaplama işlemleri."
+    }
+  ],
+  "paths": {
+    "/qna/sellers/{sellerId}/questions/filter": {
+      "get": {
+        "tags": [
+          "Müşteri Soruları Entegrasyonu"
+        ],
+        "summary": "Müşteri Sorularını Filtreleme",
+        "description": "Satıcıya gelen soruları çeşitli kriterlere göre filtreleyerek listeler. \nPagination yapısı mevcuttur.\n",
+        "operationId": "getQuestionFilter",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "Trendyol tarafından satıcıya verilen ID."
+          },
+          {
+            "name": "barcode",
+            "in": "query",
+            "description": "Belirli bir ürüne ait soruları getirmek için ürün barkodu.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "description": "Filtreleme için başlangıç tarihi. (Örn: 1767214800000 - Milisaniye cinsinden epoch)",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "description": "Filtreleme için bitiş tarihi. (Örn: 1767214800000 - Milisaniye cinsinden epoch)",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Sorunun güncel durumu.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "WAITING_FOR_ANSWER",
+                "ANSWERED",
+                "REJECTED",
+                "REPORTED"
+              ]
+            }
+          },
+          {
+            "name": "orderByField",
+            "in": "query",
+            "description": "Sıralama yapılacak alan adı.",
+            "schema": {
+              "type": "string",
+              "default": "CreatedDate",
+              "enum": [
+                "CreatedDate",
+                "LastModifiedDate"
+              ]
+            }
+          },
+          {
+            "name": "orderByDirection",
+            "in": "query",
+            "description": "Sıralama yönü.",
+            "schema": {
+              "type": "string",
+              "default": "DESC",
+              "enum": [
+                "ASC",
+                "DESC"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Kaçıncı sayfanın getirileceği (0'dan başlar).",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "Bir sayfada kaç adet soru listeleneceği.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10,
+              "maximum": 200
+            }
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sorular başarıyla listelendi.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Questions"
+                }
+              }
+            }
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/getquestionfilter",
+        "x-lonca-portal-updated-at": "2026-02-16T13:07:02.000Z"
+      }
+    },
+    "/qna/sellers/{sellerId}/questions/{id}": {
+      "get": {
+        "tags": [
+          "Müşteri Soruları Entegrasyonu"
+        ],
+        "summary": "Soru Detayını Getirme",
+        "description": "ID bilgisi verilen tek bir sorunun tüm detaylarını getirir.",
+        "operationId": "getQuestion",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "Detayı istenen sorunun ID'si."
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Soru detayı başarıyla getirildi.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Question"
+                }
+              }
+            }
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/getquestion",
+        "x-lonca-portal-updated-at": "2026-02-16T13:07:02.000Z"
+      }
+    },
+    "/qna/sellers/{sellerId}/questions/{id}/answers": {
+      "post": {
+        "tags": [
+          "Müşteri Soruları Entegrasyonu"
+        ],
+        "summary": "Soruyu Cevaplama",
+        "description": "Müşteriden gelen bir soruya cevap verilir. Cevap metni değerlendirildikten sonra yayınlanır.\n",
+        "operationId": "answerQuestion",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "Cevaplanacak sorunun ID'si."
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuestionAnswerRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cevap başarıyla kaydedildi. Değerlendirilmeye gönderildi.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "example": "Cevabınız başarıyla kaydedilmiştir."
+                }
+              }
+            }
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/answerquestion",
+        "x-lonca-portal-updated-at": "2026-02-16T13:07:02.000Z"
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "UserAgent": {
+        "name": "User-Agent",
+        "in": "header",
+        "required": true,
+        "description": "Trendyol Partner API isteklerinde zorunludur; User-Agent bilgisi olmayan istekler 403 ile engellenir. Aracı (entegratör) firma ile çalışılıyorsa \"{sellerId} - {Entegratör Firma İsmi}\", entegrasyon yazılımı firmaya aitse \"{sellerId} - SelfIntegration\" gönderilmelidir. Entegratör firma ismi alfanumerik, en fazla 30 karakter olmalıdır.",
+        "schema": {
+          "type": "string"
+        },
+        "example": "1234 - SelfIntegration",
+        "x-lonca-doc-url": "https://developers.trendyol.com/docs/2-authorization"
+      }
+    },
+    "schemas": {
+      "Answer": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "Verilen cevabın içeriği."
+          },
+          "creationDate": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Cevabın oluşturulma tarihi."
+          },
+          "status": {
+            "type": "string"
+          },
+          "id": {
+            "type": "number",
+            "x-lonca-observed": true,
+            "x-lonca-guide-example": "https://developers.trendyol.com/docs/müşteri-sorularını-çekme"
+          }
+        }
+      },
+      "Question": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Sorunun benzersiz numarası."
+          },
+          "text": {
+            "type": "string",
+            "description": "Müşterinin sorduğu soru metni."
+          },
+          "customerId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Soruyu soran müşterinin ID'si."
+          },
+          "userName": {
+            "type": "string",
+            "description": "Müşterinin maskelenmiş adı soyadı."
+          },
+          "showUserName": {
+            "type": "boolean",
+            "description": "Kullanıcı adının gösterilip gösterilmeyeceği bilgisi."
+          },
+          "status": {
+            "type": "string",
+            "description": "Sorunun durumu.",
+            "enum": [
+              "WAITING_FOR_ANSWER",
+              "ANSWERED",
+              "REJECTED",
+              "REPORTED"
+            ]
+          },
+          "public": {
+            "type": "boolean",
+            "description": "Sorunun herkes tarafından görünüp görünmediği."
+          },
+          "productMainId": {
+            "type": "string",
+            "description": "Sorunun sorulduğu ürünün ana grup numarası."
+          },
+          "productName": {
+            "type": "string",
+            "description": "Sorunun sorulduğu ürünün adı."
+          },
+          "imageUrl": {
+            "type": "string",
+            "description": "Ürünün görsel linki."
+          },
+          "webUrl": {
+            "type": "string",
+            "description": "Ürünün Trendyol üzerindeki sayfa linki."
+          },
+          "creationDate": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Sorunun oluşturulma tarihi (Epoch ms)."
+          },
+          "answeredDateMessage": {
+            "type": "string",
+            "description": "Cevaplanma tarihinin kullanıcı dostu metni. (Örn:\\ \"Cevabınız 12.02.2026 tarihinde yayınlandı.\")"
+          },
+          "answer": {
+            "$ref": "#/components/schemas/Answer"
+          },
+          "rejectedAnswer": {
+            "$ref": "#/components/schemas/Answer"
+          },
+          "rejectedDate": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Eğer soru reddedildiyse reddedilme tarihi."
+          },
+          "reason": {
+            "type": "string",
+            "description": "Reddedilme veya işlem görme nedeni."
+          },
+          "reportReason": {
+            "type": "string",
+            "description": "Bildirildiyse bildirilme nedeni."
+          },
+          "reportedDate": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "QuestionAnswerRequest": {
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 2000,
+            "description": "Verilecek cevap metni. \n- Minimum: 10 karakter\n- Maksimum: 2000 karakter\n",
+            "example": "Değerli müşterimiz, ürünümüz %100 pamukludur."
+          }
+        }
+      },
+      "Questions": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Question"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "description": "Mevcut sayfa numarası."
+          },
+          "size": {
+            "type": "integer",
+            "description": "Sayfadaki kayıt sayısı."
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Toplam soru sayısı."
+          },
+          "totalPages": {
+            "type": "integer",
+            "description": "Toplam sayfa sayısı."
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "basicAuth": {
+        "type": "http",
+        "scheme": "basic",
+        "description": "Trendyol API Key ve API Secret kullanılarak oluşturulan Basic Authentication."
+      }
+    }
+  },
+  "security": [
+    {
+      "basicAuth": []
+    }
+  ]
+}

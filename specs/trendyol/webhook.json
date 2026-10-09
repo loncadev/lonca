@@ -1,0 +1,677 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Trendyol Webhook API'si",
+    "description": "Sipariş paketleri için webhook yönetimi",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Trendyol Entegrasyon Destek",
+      "email": "entegrasyon@trendyol.com"
+    },
+    "x-lonca-source": {
+      "kind": "api-reference",
+      "portal": "https://developers.trendyol.com",
+      "definition": "Trendyol Webhook API'si",
+      "pages": 6,
+      "capturedAt": "2026-10-09",
+      "portalUpdatedAt": "2026-01-28T07:02:28.000Z",
+      "generator": "scripts/specs/build-trendyol.mjs"
+    },
+    "x-lonca-observed-source": {
+      "snapshot": "probe-snapshots/trendyol.json",
+      "env": "prod",
+      "note": "Properties marked x-lonca-observed were seen in production responses but are not in the API reference schema; x-lonca-guide-example names the guide page whose example payload shows the same key (absent: not documented anywhere). x-lonca-observed-types lists the JSON types seen where they disagree with the documented type."
+    }
+  },
+  "servers": [
+    {
+      "url": "https://apigw.trendyol.com/integration/webhook",
+      "description": "Canlı Ortam"
+    },
+    {
+      "url": "https://stageapigw.trendyol.com/integration/webhook",
+      "description": "Test Ortamı"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Webhook",
+      "description": "Webhook oluşturma, listeleme ve güncelleme işlemleri"
+    }
+  ],
+  "paths": {
+    "/sellers/{sellerId}/webhooks": {
+      "get": {
+        "tags": [
+          "Webhook"
+        ],
+        "summary": "Webhook Listeleme - getWebhook",
+        "description": "Bu servis ile daha önce yaratmış olduğunuz webhook methodlarını listeleyebilirsiniz.",
+        "operationId": "getWebhooks",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "Satıcı ID"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "Webhook ID'si"
+                      },
+                      "createdDate": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Webhook talebinin yaratıldığı tarih (timestamp GMT +3)"
+                      },
+                      "lastModifiedDate": {
+                        "type": "integer",
+                        "format": "int64",
+                        "nullable": true,
+                        "description": "Webhook talebinin son güncellendiği tarih (timestamp GMT +3)"
+                      },
+                      "url": {
+                        "type": "string",
+                        "description": "Webhook Servis URL Bilgisi"
+                      },
+                      "username": {
+                        "type": "string",
+                        "description": "Basic Authentication için kullanılacak olan kullanıcı adı"
+                      },
+                      "authenticationType": {
+                        "type": "string",
+                        "description": "BASIC_AUTHENTICATION ya da API_KEY değerini alabilir"
+                      },
+                      "status": {
+                        "type": "string",
+                        "description": "ACTIVE ya da PASSIVE olabilir"
+                      },
+                      "subscribedStatuses": {
+                        "type": "array",
+                        "nullable": true,
+                        "items": {
+                          "type": "string"
+                        },
+                        "description": "Sipariş bilgisi alınması istenilen statü listesi"
+                      },
+                      "countryCodes": {
+                        "description": "Yalnızca null değeriyle gözlemlendi; tipi bilinmiyor.",
+                        "x-lonca-observed": true
+                      },
+                      "storeFrontCode": {
+                        "type": "string",
+                        "x-lonca-observed": true
+                      }
+                    }
+                  }
+                },
+                "example": [
+                  {
+                    "id": "5297c986-6e09-4615-9f16-0deff65a0890",
+                    "createdDate": 1733317686667,
+                    "lastModifiedDate": 1734010262454,
+                    "url": "https://testwebhook1.com",
+                    "username": "test1",
+                    "authenticationType": "BASIC_AUTHENTICATION",
+                    "status": "PASSIVE",
+                    "subscribedStatuses": [
+                      "CREATED",
+                      "CANCELLED",
+                      "SHIPPED",
+                      "DELIVERED",
+                      "UNPACKED"
+                    ]
+                  },
+                  {
+                    "id": "4f9429b9-ef13-4d7c-94cf-9eee3ce7273a",
+                    "createdDate": 1733917501531,
+                    "lastModifiedDate": 1733920106237,
+                    "url": "https://testwebhook2.com",
+                    "username": "test2",
+                    "authenticationType": "API_KEY",
+                    "status": "PASSIVE",
+                    "subscribedStatuses": null
+                  },
+                  {
+                    "id": "2ba10e5d-5176-416b-9770-5d9c85a81a5e",
+                    "createdDate": 1734087820902,
+                    "lastModifiedDate": null,
+                    "url": "https://testwebhook3.com",
+                    "username": "test3",
+                    "authenticationType": "API_KEY",
+                    "status": "ACTIVE",
+                    "subscribedStatuses": [
+                      "CREATED",
+                      "PICKING"
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ],
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/getwebhooks",
+        "x-lonca-portal-updated-at": "2026-01-28T07:02:28.000Z"
+      },
+      "post": {
+        "tags": [
+          "Webhook"
+        ],
+        "summary": "Webhook Yaratma - createWebhook",
+        "description": "Bu servis ile sipariş paketleriniz için webhook yapısı kurabilirsiniz.",
+        "operationId": "createWebhook",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "Satıcı ID"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "url",
+                  "authenticationType"
+                ],
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "description": "Webhook Servis URL Bilgisi"
+                  },
+                  "username": {
+                    "type": "string",
+                    "description": "Basic Authentication için kullanılacak olan kullanıcı adı"
+                  },
+                  "password": {
+                    "type": "string",
+                    "description": "Basic Authentication için kullanılacak olan şifre"
+                  },
+                  "authenticationType": {
+                    "type": "string",
+                    "description": "BASIC_AUTHENTICATION ya da API_KEY değerini alabilir",
+                    "enum": [
+                      "BASIC_AUTHENTICATION",
+                      "API_KEY"
+                    ]
+                  },
+                  "apiKey": {
+                    "type": "string",
+                    "description": "Authorization için kullanılacak olan apikey bilgisi"
+                  },
+                  "subscribedStatuses": {
+                    "type": "array",
+                    "description": "Sipariş bilgisi alınması istenilen statü listesi.\n\nBoş gönderilirse tüm statüler otomatik atanır:\n- CREATED\n- PICKING\n- INVOICED\n- SHIPPED\n- CANCELLED\n- DELIVERED\n- UNDELIVERED\n- RETURNED\n- UNSUPPLIED\n- AWAITING\n- UNPACKED\n- AT_COLLECTION_POINT\n- VERIFIED\n",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "CREATED",
+                        "PICKING",
+                        "INVOICED",
+                        "SHIPPED",
+                        "CANCELLED",
+                        "DELIVERED",
+                        "UNDELIVERED",
+                        "RETURNED",
+                        "UNSUPPLIED",
+                        "AWAITING",
+                        "UNPACKED",
+                        "AT_COLLECTION_POINT",
+                        "VERIFIED"
+                      ]
+                    }
+                  }
+                }
+              },
+              "example": {
+                "url": "https://testwebhook.com",
+                "username": "user",
+                "password": "password",
+                "authenticationType": "API_KEY",
+                "apiKey": "123456",
+                "subscribedStatuses": [
+                  "CREATED",
+                  "PICKING"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "Webhook ID"
+                    }
+                  }
+                },
+                "example": {
+                  "id": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ],
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/createwebhook",
+        "x-lonca-portal-updated-at": "2026-01-28T07:02:28.000Z"
+      }
+    },
+    "/sellers/{sellerId}/webhooks/{Id}": {
+      "put": {
+        "tags": [
+          "Webhook"
+        ],
+        "summary": "Webhook Güncelleme - updateWebhook",
+        "description": "Bu servis ile daha önce yaratmış olduğunuz webhook methodlarını güncelleyebilirsiniz.",
+        "operationId": "updateWebhook",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "Satıcı ID"
+          },
+          {
+            "name": "Id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Webhook ID"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "url",
+                  "authenticationType"
+                ],
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "description": "Webhook Servis URL Bilgisi"
+                  },
+                  "username": {
+                    "type": "string",
+                    "description": "Basic Authentication için kullanılacak olan kullanıcı adı"
+                  },
+                  "password": {
+                    "type": "string",
+                    "description": "Basic Authentication için kullanılacak olan şifre"
+                  },
+                  "authenticationType": {
+                    "type": "string",
+                    "description": "BASIC_AUTHENTICATION ya da API_KEY değerini alabilir",
+                    "enum": [
+                      "BASIC_AUTHENTICATION",
+                      "API_KEY"
+                    ]
+                  },
+                  "apiKey": {
+                    "type": "string",
+                    "description": "Authorization için kullanılacak olan apikey bilgisi"
+                  },
+                  "subscribedStatuses": {
+                    "type": "array",
+                    "description": "Sipariş bilgisi alınması istenilen statü listesi",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "CREATED",
+                        "PICKING",
+                        "INVOICED",
+                        "SHIPPED",
+                        "CANCELLED",
+                        "DELIVERED",
+                        "UNDELIVERED",
+                        "RETURNED",
+                        "UNSUPPLIED",
+                        "AWAITING",
+                        "UNPACKED",
+                        "AT_COLLECTION_POINT",
+                        "VERIFIED"
+                      ]
+                    }
+                  }
+                }
+              },
+              "example": {
+                "url": "https://testwebhook.com",
+                "username": "user",
+                "password": "password",
+                "authenticationType": "API_KEY",
+                "apiKey": "123456",
+                "subscribedStatuses": [
+                  "CREATED",
+                  "PICKING"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "example": "200 OK"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ],
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/updatewebhook",
+        "x-lonca-portal-updated-at": "2026-01-28T07:02:28.000Z"
+      },
+      "delete": {
+        "tags": [
+          "Webhook"
+        ],
+        "summary": "Webhook Silme - deleteWebhook",
+        "description": "Bu servis ile daha önce yaratmış olduğunuz webhook methodlarını silebilirsiniz.",
+        "operationId": "deleteWebhook",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "Satıcı ID"
+          },
+          {
+            "name": "Id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Webhook ID"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "example": "200 OK"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ],
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/deletewebhook",
+        "x-lonca-portal-updated-at": "2026-01-28T07:02:28.000Z"
+      }
+    },
+    "/sellers/{sellerId}/webhooks/{Id}/activate": {
+      "put": {
+        "tags": [
+          "Webhook"
+        ],
+        "summary": "Webhook Aktife Alma - activate",
+        "description": "Bu servis ile pasif durumunda olan webhook methodlarını aktife alabilirsiniz.",
+        "operationId": "activateWebhook",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "Satıcı ID"
+          },
+          {
+            "name": "Id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Webhook ID"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "example": "200 OK"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ],
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/activatewebhook",
+        "x-lonca-portal-updated-at": "2026-01-28T07:02:28.000Z"
+      }
+    },
+    "/sellers/{sellerId}/webhooks/{Id}/deactivate": {
+      "put": {
+        "tags": [
+          "Webhook"
+        ],
+        "summary": "Webhook Pasife Alma - deactivate",
+        "description": "Bu servis aktif durumunda olan webhook methodlarını pasife alabilirsiniz.",
+        "operationId": "deactivateWebhook",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "Satıcı ID"
+          },
+          {
+            "name": "Id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Webhook ID"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "example": "200 OK"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ],
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/deactivatewebhook",
+        "x-lonca-portal-updated-at": "2026-01-28T07:02:28.000Z"
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "UserAgent": {
+        "name": "User-Agent",
+        "in": "header",
+        "required": true,
+        "description": "Trendyol Partner API isteklerinde zorunludur; User-Agent bilgisi olmayan istekler 403 ile engellenir. Aracı (entegratör) firma ile çalışılıyorsa \"{sellerId} - {Entegratör Firma İsmi}\", entegrasyon yazılımı firmaya aitse \"{sellerId} - SelfIntegration\" gönderilmelidir. Entegratör firma ismi alfanumerik, en fazla 30 karakter olmalıdır.",
+        "schema": {
+          "type": "string"
+        },
+        "example": "1234 - SelfIntegration",
+        "x-lonca-doc-url": "https://developers.trendyol.com/docs/2-authorization"
+      }
+    },
+    "securitySchemes": {
+      "BasicAuth": {
+        "type": "http",
+        "scheme": "basic",
+        "description": "Basic authentication kullanarak satıcı API KEY ve API SECRET KEY ile doğrulama yapılır"
+      }
+    }
+  }
+}

@@ -1,0 +1,456 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Fatura Entegrasyonu (Invoice Integration)",
+    "description": "Trendyol Satıcı Fatura Entegrasyon API'si - E-Fatura ve E-Arşiv fatura yönetimi için entegrasyon servisleri",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Trendyol Entegrasyon Destek",
+      "email": "entegrasyon@trendyol.com"
+    },
+    "x-lonca-source": {
+      "kind": "api-reference",
+      "portal": "https://developers.trendyol.com",
+      "definition": "Fatura Entegrasyonu (Invoice Integration)",
+      "pages": 3,
+      "capturedAt": "2026-10-09",
+      "portalUpdatedAt": "2026-02-03T10:29:17.000Z",
+      "generator": "scripts/specs/build-trendyol.mjs"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://apigw.trendyol.com/integration",
+      "description": "Canlı Ortam (PROD)"
+    },
+    {
+      "url": "https://stageapigw.trendyol.com/integration",
+      "description": "Test Ortamı (STAGE)"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Fatura Dosyası Yönetimi",
+      "description": "Fatura dosyası yükleme işlemleri"
+    },
+    {
+      "name": "Fatura Linki Yönetimi",
+      "description": "Fatura linki gönderme ve silme işlemleri"
+    }
+  ],
+  "paths": {
+    "/sellers/{sellerId}/seller-invoice-file": {
+      "post": {
+        "tags": [
+          "Fatura Dosyası Yönetimi"
+        ],
+        "summary": "Fatura Dosyası Gönderme - uploadInvoiceFile",
+        "description": "Satıcıların sipariş paketleri için fatura dosyalarını (PDF, JPEG, PNG) yüklemelerini sağlar.\n\n### Önemli Kurallar\n- Dosya boyutu 10 MB'dan büyük olamaz\n- İleri tarihli fatura eklenemez\n- Desteklenen dosya formatları: PDF, JPEG, PNG\n- Mikro ihracat siparişleri için invoiceDateTime ve invoiceNumber zorunludur\n\n### Hata Durumları\n- Gönderi paketi başka satıcıya aitse: \"Gönderi paketi, belirtilen satıcıya ait değil. sellerId: X\"\n- Faturası oluşmuş bir pakete yüklenmek istenirse: \"{paketNo} numaralı pakete ait fatura önceden gönderilmiş\"\n- Paket bulunamazsa: \"{paketNo} IDli kargo paketi bulunamadı\"\n- Geçersiz dosya formatı: \"Dosya türü (.txt) desteklenmiyor. Desteklenen dosya türleri: application/pdf,image/jpeg,image/png\"\n- Dosya gönderilmezse: \"Dosya gönderilmedi. Lütfen fatura dosyasını seçip tekrar deneyin\"\n- Mikro için fatura numarası eksikse: \"Micro export type'ları için fatura bilgisi zorunludur\"\n- Mikro için tarih eksikse: \"Micro export type'ları için fatura bilgisi zorunludur\"\n\n### TR (Türkiye) Siparişleri\nHerhangi bir JSON request body bulunmamaktadır. Aşağıdaki alanları form-data olarak göndermeniz gerekmektedir:\n- shipmentPackageId: form-data (Text) olarak\n- file: form-data (File) olarak - PDF, JPEG veya PNG\n\n### Mikro İhracat Siparişleri\nAşağıdaki alanları form-data olarak göndermeniz gerekmektedir:\n- shipmentPackageId: form-data (Text) olarak\n- invoiceDateTime: form-data (Text) olarak - Unix timestamp (saniye veya milisaniye)\n- invoiceNumber: form-data (Text) olarak\n- file: form-data (File) olarak - PDF, JPEG veya PNG\n",
+        "operationId": "uploadInvoiceFile",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "Satıcı ID"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "shipmentPackageId",
+                  "file"
+                ],
+                "properties": {
+                  "shipmentPackageId": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "Sipariş paket ID (zorunlu)"
+                  },
+                  "invoiceDateTime": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "Fatura tarihi - Unix timestamp formatında, 0'dan büyük, 10 haneli (saniye) veya 13 haneli (milisaniye).\nMikro ihracat siparişleri için zorunlu, diğerleri için opsiyonel.\n"
+                  },
+                  "invoiceNumber": {
+                    "type": "string",
+                    "description": "Fatura numarası - Mikro ihracat siparişleri için zorunlu, diğerleri için opsiyonel.\nFormat kuralları: İlk 3 hane alfanumerik, 4-7. haneler yıl (2020-2099), son 9 hane numerik.\n",
+                    "pattern": "^[A-Za-z0-9]{3}(20[2-9][0-9])\\d{9}$"
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Fatura dosyası (PDF, JPEG veya PNG formatında, maksimum 10 MB)"
+                  }
+                }
+              },
+              "encoding": {
+                "file": {
+                  "contentType": "application/pdf, image/jpeg, image/png"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success - Fatura dosyası başarıyla yüklendi"
+          },
+          "201": {
+            "description": "Created - Fatura dosyası başarıyla oluşturuldu"
+          },
+          "400": {
+            "description": "Bad Request - Geçersiz istek parametreleri. Olası hatalar:\n- Dosya boyutu 10 MB'dan büyük\n- İleri tarihli fatura\n- Geçersiz dosya formatı\n- Dosya gönderilmedi\n- Mikro sipariş için eksik bilgi (invoiceDateTime veya invoiceNumber)\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Kimlik doğrulama hatası",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Gönderi paketi belirtilen satıcıya ait değil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Belirtilen paket ID bulunamadı",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict - Pakete ait fatura daha önce gönderilmiş",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/uploadinvoicefile",
+        "x-lonca-portal-updated-at": "2026-02-03T10:29:17.000Z"
+      }
+    },
+    "/sellers/{sellerId}/seller-invoice-links": {
+      "post": {
+        "tags": [
+          "Fatura Linki Yönetimi"
+        ],
+        "summary": "Fatura Linki Gönderme - sendInvoiceLink",
+        "description": "Tedarikçi tarafından kendi sisteminde yaratılmış e-Arşiv ya da e-Fatura bilgisinin LİNK detayını Trendyol sistemine transfer etmek için bu method kullanılacaktır.\n\n**YASAL ZORUNLULUK**: Bu servis ile gönderilen fatura bağlantılarının hukuki zorunluluk gereği 10 yıl boyunca erişilebilir durumda olması gereklidir.\n\n### Kullanım Şartları\n- Eğer ilgili siparişe ait fatura gönderimini siparişteki kriptolu mail adresine **PDF** ekleyerek gönderim **yapamıyorsanız** bu servisi kullanmanız gerekmektedir.\n- Bu servisin tetiklenmesi ile birlikte ilgili sipariş paketi için Trendyol müşterilerine e-Fatura linki kontrol edilerek gönderilir.\n- Kriptolu mail adresleri müşteri bazlı sabit değildir, her sipariş için unique mail üretilmektedir.\n\n### Zorunlu Alanlar\n- \"invoiceNumber\" ve \"invoiceDateTime\" alanları mikro ihracat paketleri için zorunlu ancak diğer paket türleri için opsiyoneldir.\n- Azerbaycan ve GULF ülkelerinin sipariş faturaları için entegrasyondan yapacağınız yüklemelerde, fatura üzerinde yazılı olan fatura numarası ile sistem üzerinden ileteceğiniz fatura numarası aynı olmalıdır.\n\n### Fatura Numarası Formatı\nFatura numarasının geçerli olabilmesi için aşağıdaki koşullara uyması gerekmektedir:\n- İlk üç hane: alfa numeric olmalı (Harf veya rakam)\n- Dört, beş, altı ve yedinci hane: bir yıla eşit olmalı (2020'den 2099'a kadar)\n- Sekizinci haneden itibaren (son dokuz hane): numeric olmalı\n\nFormat: [3 digit(alphanumeric)][4 digit(year)][9 digit(numeric)]\n\n**Geçerli Örnekler:**\n- FRY2024567890123\n- FR12024567890123\n- F1Y2024567890123\n- 1RY2024567890123\n- 12Y2024567890123\n- 1232024567890123\n- F232024567890123\n\n**Geçersiz Örnek:**\n- FRY12345 (eksik hane)\n",
+        "operationId": "sendInvoiceLink",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "Satıcı ID"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvoiceLinkRequest"
+              },
+              "example": {
+                "invoiceLink": "https://developers.trendyolefaturam.com/invoice-example.pdf",
+                "shipmentPackageId": 435346,
+                "invoiceDateTime": 1678788898,
+                "invoiceNumber": "TY42024567890123"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success - Fatura linki başarıyla kaydedildi"
+          },
+          "400": {
+            "description": "Bad Request - Geçersiz istek parametreleri",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Kimlik doğrulama hatası",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict - İki durumda bu hata döner:\n1. Gönderilen ShipmentPackageId'ye ait bir fatura zaten beslenmiş olabilir\n2. Gönderilen link daha önce başka bir ShipmentPackageId'ye zaten beslenmiş olabilir\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/sendinvoicelink",
+        "x-lonca-portal-updated-at": "2026-02-03T10:28:48.000Z"
+      }
+    },
+    "/sellers/{sellerId}/seller-invoice-links/delete": {
+      "post": {
+        "tags": [
+          "Fatura Linki Yönetimi"
+        ],
+        "summary": "Fatura Linki Silme - deleteInvoiceLink",
+        "description": "Daha önce hatalı beslenen faturalar bu servis üzerinden silinip, fatura linki gönderme servisi ile tekrar beslenebilmektedir.\n\n### Kullanım\n- serviceSourceId: shipmentPackageId değerini gösterir\n- channelId: Her zaman 1 olarak gönderilmelidir\n- customerId: Sipariş paketleri çekme servisinden kontrol edilmelidir\n",
+        "operationId": "deleteInvoiceLink",
+        "parameters": [
+          {
+            "name": "sellerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "Satıcı ID"
+          },
+          {
+            "$ref": "#/components/parameters/UserAgent"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvoiceLinkDeleteRequest"
+              },
+              "example": {
+                "serviceSourceId": 88787,
+                "channelId": 1,
+                "customerId": 888888888
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Accepted - Fatura linki silme isteği kabul edildi"
+          },
+          "400": {
+            "description": "Bad Request - Geçersiz istek parametreleri",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Kimlik doğrulama hatası",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Belirtilen fatura linki bulunamadı",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-lonca-doc-url": "https://developers.trendyol.com/reference/deleteinvoicelink",
+        "x-lonca-portal-updated-at": "2026-02-03T10:29:04.000Z"
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "UserAgent": {
+        "name": "User-Agent",
+        "in": "header",
+        "required": true,
+        "description": "Trendyol Partner API isteklerinde zorunludur; User-Agent bilgisi olmayan istekler 403 ile engellenir. Aracı (entegratör) firma ile çalışılıyorsa \"{sellerId} - {Entegratör Firma İsmi}\", entegrasyon yazılımı firmaya aitse \"{sellerId} - SelfIntegration\" gönderilmelidir. Entegratör firma ismi alfanumerik, en fazla 30 karakter olmalıdır.",
+        "schema": {
+          "type": "string"
+        },
+        "example": "1234 - SelfIntegration",
+        "x-lonca-doc-url": "https://developers.trendyol.com/docs/2-authorization"
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Hata kodu veya tipi",
+            "example": "CONFLICT"
+          },
+          "message": {
+            "type": "string",
+            "description": "Hata mesajı detayı",
+            "example": "Gönderilen ShipmentPackageId'ye ait bir fatura zaten beslenmiş"
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Hata zamanı (Unix timestamp)"
+          },
+          "path": {
+            "type": "string",
+            "description": "Hatanın oluştuğu endpoint"
+          },
+          "status": {
+            "type": "integer",
+            "description": "HTTP status kodu"
+          }
+        }
+      },
+      "InvoiceLinkDeleteRequest": {
+        "type": "object",
+        "required": [
+          "serviceSourceId",
+          "channelId",
+          "customerId"
+        ],
+        "properties": {
+          "serviceSourceId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Sipariş paket ID (shipmentPackageId)",
+            "example": 88787
+          },
+          "channelId": {
+            "type": "integer",
+            "description": "Kanal ID - Her zaman 1 olarak gönderilmelidir",
+            "enum": [
+              1
+            ],
+            "default": 1,
+            "example": 1
+          },
+          "customerId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Müşteri ID - Sipariş paketleri çekme servisinden alınmalıdır",
+            "example": 167878
+          }
+        }
+      },
+      "InvoiceLinkRequest": {
+        "type": "object",
+        "required": [
+          "invoiceLink",
+          "shipmentPackageId"
+        ],
+        "properties": {
+          "invoiceLink": {
+            "type": "string",
+            "format": "uri",
+            "description": "E-Fatura veya E-Arşiv fatura linki. Bu link 10 yıl boyunca erişilebilir olmalıdır (yasal zorunluluk).\n",
+            "example": "https://developers.trendyolefaturam.com/invoice-example.pdf"
+          },
+          "shipmentPackageId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Trendyol sipariş paket ID",
+            "example": 435346
+          },
+          "invoiceDateTime": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Fatura tarihi - Unix timestamp formatında (saniye veya milisaniye).\n0'dan büyük, 10 haneli (saniye) veya 13 haneli (milisaniye) olmalıdır.\nMikro ihracat paketleri için zorunlu, diğer paket türleri için opsiyonel.\n",
+            "example": 1678788898
+          },
+          "invoiceNumber": {
+            "type": "string",
+            "description": "Fatura numarası. Mikro ihracat paketleri için zorunlu, diğer paket türleri için opsiyonel.\n\nFormat Kuralları:\n- İlk 3 hane: alfanumerik (harf veya rakam)\n- 4-7. haneler: yıl bilgisi (2020-2099 arası)\n- Son 9 hane: numerik\n\nToplam 16 karakter: [3 alfanumerik][4 digit yıl][9 digit numara]\n\nAzerbaycan ve GULF ülkeleri için: Fatura üzerindeki numara ile gönderilen numara aynı olmalıdır.\n",
+            "pattern": "^[A-Za-z0-9]{3}(20[2-9][0-9])\\d{9}$",
+            "minLength": 16,
+            "maxLength": 16,
+            "example": "TY42024567890123"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "apiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Authorization",
+        "description": "Bearer token kimlik doğrulama"
+      },
+      "basicAuth": {
+        "type": "http",
+        "scheme": "basic",
+        "description": "Basic Auth ile Satıcı API Key ve API Secret"
+      }
+    }
+  },
+  "security": [
+    {
+      "basicAuth": []
+    },
+    {
+      "apiKeyAuth": []
+    }
+  ]
+}
