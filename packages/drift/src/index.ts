@@ -1,7 +1,9 @@
 export {
+  carryEmptyArrayItems,
   DEFAULT_SUMMARIZE_OPTIONS,
   describe,
   diffShapes,
+  isInformationalDiff,
   mergeShapes,
   summarize,
   type JsonType,
@@ -33,6 +35,7 @@ export {
   type WireOperation,
 } from './operations.js';
 export {
+  carryWireItems,
   collapseExchanges,
   createWireRecorder,
   diffWire,
@@ -63,4 +66,14 @@ export {
   type OperationReport,
   type ProbeSnapshot,
 } from './report.js';
+export {
+  ACCEPTABLE_KINDS,
+  applyKnownDiscrepancies,
+  KNOWN_DISCREPANCIES_FILE,
+  KnownDiscrepanciesError,
+  loadKnownDiscrepancies,
+  parseKnownDiscrepancies,
+  type KnownDiscrepancy,
+  type KnownSummary,
+} from './known.js';
 export { runCli } from './cli.js';

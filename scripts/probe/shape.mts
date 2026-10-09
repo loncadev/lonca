@@ -4,9 +4,11 @@
  * Re-exported here to keep the probe's local imports stable.
  */
 export {
+  carryEmptyArrayItems,
   DEFAULT_SUMMARIZE_OPTIONS,
   describe,
   diffShapes,
+  isInformationalDiff,
   mergeShapes,
   summarize,
   type JsonType,

@@ -24,6 +24,12 @@
  * specs/, status, content type, shape of the raw JSON body). `--check` diffs
  * both and reports wire drift separately; `pnpm drift` compares `wire` with
  * the specs.
+ *
+ * Shapes are sample-dependent. When the update path rewrites a snapshot, an
+ * array that was empty in this run keeps the element shape the committed
+ * snapshot knew at the same position (`itemsFromBaseline: true`), for both
+ * `shape` and every `wire[].shape`; `--check` reports such a position as
+ * informational (`uncomparable`), not as drift.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -31,6 +37,7 @@ import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import {
   buildOperationIndex,
+  carryWireItems,
   createWireRecorder,
   diffWire,
   isUnmatched,
@@ -50,9 +57,11 @@ import {
   type ProbeSet,
 } from './registry.mts';
 import {
+  carryEmptyArrayItems,
   DEFAULT_SUMMARIZE_OPTIONS,
   describe,
   diffShapes,
+  isInformationalDiff,
   type Shape,
   type ShapeDiff,
 } from './shape.mts';
@@ -137,6 +146,26 @@ function toSnapshot(set: ProbeSet<unknown>, results: ProbeResult[]): Snapshot {
   };
 }
 
+/**
+ * Keep element shapes the committed snapshot knew where this run only saw
+ * empty arrays (same probe; wire exchanges matched by operation key + status).
+ * Only `items` are carried — keys and types come from the fresh run, so
+ * removals stay detectable — and only within the same environment (a stage
+ * run never inherits prod element shapes).
+ */
+function carryFromBaseline(fresh: Snapshot, before: Snapshot | undefined): Snapshot {
+  if (!before || before.env !== fresh.env) return fresh;
+  const probes: Record<string, SnapshotProbe> = {};
+  for (const [name, entry] of Object.entries(fresh.probes)) {
+    const prev = before.probes[name];
+    const next: SnapshotProbe = { ...entry };
+    if (entry.shape && prev?.shape) next.shape = carryEmptyArrayItems(entry.shape, prev.shape);
+    if (entry.wire && prev?.wire) next.wire = carryWireItems(entry.wire, prev.wire);
+    probes[name] = next;
+  }
+  return { ...fresh, probes };
+}
+
 function readSnapshot(marketplace: Marketplace): Snapshot | undefined {
   const file = join(SNAPSHOT_DIR, `${marketplace}.json`);
   if (!existsSync(file)) return undefined;
@@ -194,13 +223,13 @@ function hasWireDiff(w: WireDiff): boolean {
 }
 
 function isSdkBlocking(d: ProbeDrift): boolean {
-  return d.statusChanges.length > 0 || d.shapeDiffs.some((x) => x.kind !== 'nullability');
+  return d.statusChanges.length > 0 || d.shapeDiffs.some((x) => !isInformationalDiff(x));
 }
 
 function isWireBlocking(w: WireDiff): boolean {
   return (
     w.baseline === 'present' &&
-    (w.changes.length > 0 || w.shapeDiffs.some((x) => x.kind !== 'nullability'))
+    (w.changes.length > 0 || w.shapeDiffs.some((x) => !isInformationalDiff(x)))
   );
 }
 
@@ -352,7 +381,11 @@ for (const set of selected) {
   );
 
   if (MODE === 'update') {
-    writeJson(join(SNAPSHOT_DIR, `${set.marketplace}.json`), fresh);
+    // An empty sample must not erase an element shape the committed baseline knows.
+    writeJson(
+      join(SNAPSHOT_DIR, `${set.marketplace}.json`),
+      carryFromBaseline(fresh, readSnapshot(set.marketplace)),
+    );
     console.log(`  → wrote probe-snapshots/${set.marketplace}.json`);
     continue;
   }
@@ -392,7 +425,7 @@ for (const set of selected) {
   } else {
     console.log(
       drift.length
-        ? `  ✓ no drift (${drift.length} informational nullability note(s))`
+        ? `  ✓ no drift (${drift.length} probe(s) with informational notes: nullability / empty samples)`
         : '  ✓ no drift',
     );
   }

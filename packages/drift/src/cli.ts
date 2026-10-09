@@ -12,6 +12,9 @@
  *   --out-dir <dir>                         where report.md / report.json go (default: drift-output/)
  *   --snapshots-dir <dir>                   probe snapshots to read (default: probe-snapshots/)
  *   --specs-dir <dir>                       OpenAPI collection to read (default: specs/)
+ *   --known <file>                          known-discrepancy overlay (default:
+ *                                           <snapshots-dir>/known-discrepancies.json, optional)
+ *   --no-known                              ignore the overlay
  *
  * Exit codes: 0 no finding at or above --fail-on (or no wire baseline yet),
  * 1 findings at or above --fail-on, 2 usage / input error.
@@ -21,6 +24,12 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
+import {
+  applyKnownDiscrepancies,
+  KNOWN_DISCREPANCIES_FILE,
+  loadKnownDiscrepancies,
+  type KnownDiscrepancy,
+} from './known.js';
 import { loadSpecs } from './openapi.js';
 import {
   buildDriftReport,
@@ -40,10 +49,12 @@ export interface CliIo {
 const FAIL_ON: readonly FailOn[] = ['breaking', 'additive', 'never'];
 
 export const HELP = `Usage: pnpm drift [--only <marketplace>] [--fail-on breaking|additive|never] [--out-dir <dir>]
-                  [--snapshots-dir <dir>] [--specs-dir <dir>]
+                  [--snapshots-dir <dir>] [--specs-dir <dir>] [--known <file> | --no-known]
 
 Compare the wire shapes recorded in probe-snapshots/*.json with the response schemas in specs/
-and write <out-dir>/report.md and <out-dir>/report.json. Reads committed files only.`;
+and write <out-dir>/report.md and <out-dir>/report.json. Findings listed in the known-discrepancy
+overlay (default: <snapshots-dir>/${KNOWN_DISCREPANCIES_FILE}) are reported as "accepted".
+Reads committed files only.`;
 
 export function runCli(argv: readonly string[], io: CliIo): number {
   let flags;
@@ -56,6 +67,8 @@ export function runCli(argv: readonly string[], io: CliIo): number {
         'out-dir': { type: 'string', default: 'drift-output' },
         'snapshots-dir': { type: 'string', default: 'probe-snapshots' },
         'specs-dir': { type: 'string', default: 'specs' },
+        known: { type: 'string' },
+        'no-known': { type: 'boolean', default: false },
         help: { type: 'boolean', short: 'h', default: false },
       },
       strict: true,
@@ -75,6 +88,11 @@ export function runCli(argv: readonly string[], io: CliIo): number {
     return 2;
   }
 
+  if (flags.known !== undefined && flags['no-known']) {
+    io.error('✖ --known and --no-known are mutually exclusive');
+    return 2;
+  }
+
   const snapshotsDir = resolve(io.cwd, flags['snapshots-dir']);
   const specsDir = resolve(io.cwd, flags['specs-dir']);
   const outDir = resolve(io.cwd, flags['out-dir']);
@@ -83,10 +101,26 @@ export function runCli(argv: readonly string[], io: CliIo): number {
     return 2;
   }
 
+  // The default overlay lives next to the snapshots and may be absent; an explicit one must exist.
+  const knownPath =
+    flags.known !== undefined
+      ? resolve(io.cwd, flags.known)
+      : join(snapshotsDir, KNOWN_DISCREPANCIES_FILE);
+  let overlay: KnownDiscrepancy[] | undefined;
+  if (!flags['no-known']) {
+    try {
+      overlay = loadKnownDiscrepancies(knownPath, { optional: flags.known === undefined });
+    } catch (err) {
+      io.error(`✖ ${(err as Error).message}`);
+      return 2;
+    }
+  }
+
   let snapshots: ProbeSnapshot[];
   try {
     snapshots = readdirSync(snapshotsDir)
-      .filter((f) => f.endsWith('.json'))
+      .filter((f) => f.endsWith('.json') && f !== KNOWN_DISCREPANCIES_FILE)
+      .filter((f) => resolve(snapshotsDir, f) !== knownPath)
       .sort()
       .map((f) => JSON.parse(readFileSync(join(snapshotsDir, f), 'utf8')) as ProbeSnapshot);
   } catch (err) {
@@ -106,7 +140,11 @@ export function runCli(argv: readonly string[], io: CliIo): number {
     specsDir,
     snapshots.map((s) => s.marketplace),
   );
-  const report = buildDriftReport(snapshots, specs);
+  let report = buildDriftReport(snapshots, specs);
+  if (overlay) {
+    const source = flags.known ?? join(flags['snapshots-dir'], KNOWN_DISCREPANCIES_FILE);
+    report = applyKnownDiscrepancies(report, overlay, source.replace(/\\/g, '/'));
+  }
 
   mkdirSync(outDir, { recursive: true });
   writeFileSync(join(outDir, 'report.json'), `${JSON.stringify(report, null, 2)}\n`, 'utf8');

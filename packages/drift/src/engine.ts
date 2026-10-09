@@ -14,6 +14,9 @@
  *   requires it.
  * - `nullable: true` and `type: [..., "null"]` both allow `null`; `integer`
  *   is the JSON type `number`. A node without `type` accepts any type.
+ * - When the only disallowed observed type is `null`, the finding is
+ *   `undocumented-null` (warning: the spec most likely omits `nullable`);
+ *   any other disallowed type keeps it a breaking `type-mismatch`.
  * - `additionalProperties: true` or a schema allows keys not listed in
  *   `properties` (a schema is compared against the extra keys); `false` or
  *   absent means `properties` is the documented key set.
@@ -29,7 +32,9 @@ export type FindingKind =
   | 'undocumented-field'
   | 'missing-required'
   | 'type-mismatch'
+  | 'undocumented-null'
   | 'known'
+  | 'accepted'
   | 'not-observed'
   | 'unmatched-operation'
   | 'uncomparable';
@@ -43,8 +48,10 @@ export const DEFAULT_SEVERITY: Record<FindingKind, Severity> = {
   'missing-required': 'breaking',
   'type-mismatch': 'breaking',
   'undocumented-field': 'additive',
+  'undocumented-null': 'warning',
   'unmatched-operation': 'warning',
   known: 'info',
+  accepted: 'info',
   'not-observed': 'info',
   uncomparable: 'info',
 };
@@ -61,6 +68,12 @@ export interface Finding {
   documented?: JsonType[];
   /** `not-observed`: the documented optional property names that were never seen under `path`. */
   fields?: string[];
+  /** `accepted`: the original finding kind a known-discrepancy overlay entry accepted. */
+  accepts?: FindingKind;
+  /** `accepted`: why the discrepancy is accepted (the overlay entry's `reason`). */
+  reason?: string;
+  /** `accepted`: when the overlay entry was added (`YYYY-MM-DD`). */
+  since?: string;
 }
 
 /** Display form of a finding path: `(root)` for the body itself. */
@@ -72,7 +85,7 @@ export function finding(
   kind: FindingKind,
   path: string,
   message: string,
-  extra: Partial<Pick<Finding, 'observed' | 'documented' | 'fields'>> = {},
+  extra: Partial<Omit<Finding, 'kind' | 'severity' | 'path' | 'message'>> = {},
 ): Finding {
   return { kind, severity: DEFAULT_SEVERITY[kind], path, message, ...extra };
 }
@@ -269,11 +282,15 @@ function compare(norm: Norm, shape: Shape, path: string, ctx: Ctx): void {
       );
     }
     if (unexplained.length) {
+      // `null` alone where a non-nullable type is documented almost always means the upstream
+      // spec forgot `nullable` — a warning, not a contract break. Any other disallowed type
+      // (alone or next to `null`) still contradicts the definition.
+      const onlyNull = unexplained.every((t) => t === 'null');
       ctx.out.push(
         finding(
-          'type-mismatch',
+          onlyNull ? 'undocumented-null' : 'type-mismatch',
           path,
-          `observed ${unexplained.join('|')} where ${documented.join('|') || 'nothing'} is documented`,
+          `observed ${unexplained.join('|')} where ${documented.join('|') || 'nothing'} is documented${onlyNull ? ' (not nullable)' : ''}`,
           { observed: unexplained, documented },
         ),
       );

@@ -2,7 +2,7 @@
  * End-to-end: the CLI against a fixture snapshot and the REAL `specs/trendyol/*.json`.
  * No network, no credentials.
  */
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -140,6 +140,86 @@ describe('pnpm drift — fixture snapshot vs real specs/trendyol', () => {
     expect(cli('--snapshots-dir', join(FIXTURES, 'snapshots'), '--only', 'trendyol')).toBe(1);
     expect(cli('--snapshots-dir', join(FIXTURES, 'snapshots'), '--only', 'n11')).toBe(2);
     expect(errors.join('\n')).toContain('Known marketplaces: trendyol');
+  });
+});
+
+describe('pnpm drift — known-discrepancy overlay', () => {
+  const ORDERS = 'GET /integration/order/sellers/{sellerId}/orders';
+  const accepting = {
+    marketplace: 'trendyol',
+    operation: ORDERS,
+    path: 'content[].customerId',
+    kind: 'type-mismatch',
+    reason: 'fixture: prod sends a string id',
+    since: '2026-10-09',
+  };
+  const stale = { ...accepting, path: 'content[].gone', reason: 'fixture: no longer seen' };
+  const overlay = (entries: unknown[], name = 'overlay.json'): string => {
+    const file = join(outDir, name);
+    writeFileSync(file, JSON.stringify({ $comment: 'test', entries }));
+    return file;
+  };
+  const snapshots = join(FIXTURES, 'snapshots');
+
+  it('accepts a listed finding (exit 0) and reports stale entries', () => {
+    expect(cli('--snapshots-dir', snapshots, '--known', overlay([accepting, stale]))).toBe(0);
+    const { json, md } = readReport();
+    const orders = json.marketplaces[0]!.operations.find((op) => op.key === ORDERS)!;
+    expect(orders.findings.filter((f) => f.kind === 'accepted')).toEqual([
+      expect.objectContaining({
+        severity: 'info',
+        path: 'content[].customerId',
+        accepts: 'type-mismatch',
+        reason: 'fixture: prod sends a string id',
+      }),
+    ]);
+    expect(json.counts.breaking).toBe(0);
+    expect(json.known).toMatchObject({ entries: 2, accepted: 1, stale: [stale] });
+    expect(md).toContain('Known-discrepancy overlay');
+    expect(md).toContain('2 entries, 1 finding(s) accepted, 1 stale.');
+    expect(md).toContain('### Stale overlay entries');
+    expect(md).toContain(
+      `- trendyol \`${ORDERS}\` \`content[].gone\` \`type-mismatch\` (since 2026-10-09): fixture: no longer seen`,
+    );
+    expect(md).toContain(
+      '- `accepted` `content[].customerId` (was `type-mismatch`): observed string where number is documented — fixture: prod sends a string id',
+    );
+    expect(logs.join('\n')).toContain('(1 accepted)');
+    expect(logs.join('\n')).toContain(
+      '1 finding(s) accepted by 2 entries, 1 stale entry (see report.md)',
+    );
+  });
+
+  it('reads <snapshots-dir>/known-discrepancies.json by default and never parses it as a snapshot', () => {
+    const dir = join(outDir, 'snaps');
+    mkdirSync(dir);
+    copyFileSync(join(snapshots, 'trendyol.json'), join(dir, 'trendyol.json'));
+    writeFileSync(join(dir, 'known-discrepancies.json'), JSON.stringify({ entries: [accepting] }));
+    expect(cli('--snapshots-dir', dir)).toBe(0);
+    const { json } = readReport();
+    expect(json.marketplaces.map((m) => m.marketplace)).toEqual(['trendyol']);
+    expect(json.known).toMatchObject({ entries: 1, accepted: 1, stale: [] });
+    expect(logs.join('\n')).toContain('1 finding(s) accepted by 1 entry');
+
+    // --no-known ignores it
+    expect(cli('--snapshots-dir', dir, '--no-known')).toBe(1);
+    expect(readReport().json.known).toBeUndefined();
+  });
+
+  it('runs without an overlay when the default file is absent', () => {
+    expect(cli('--snapshots-dir', snapshots)).toBe(1);
+    expect(readReport().json.known).toBeUndefined();
+  });
+
+  it('exits 2 on a missing, invalid or conflicting overlay', () => {
+    expect(cli('--snapshots-dir', snapshots, '--known', join(outDir, 'none.json'))).toBe(2);
+    expect(errors.join('\n')).toContain('none.json: file not found');
+    expect(
+      cli('--snapshots-dir', snapshots, '--known', overlay([{ ...accepting, kind: 'known' }])),
+    ).toBe(2);
+    expect(errors.join('\n')).toContain('entries[0].kind: "known" is not one of');
+    expect(cli('--snapshots-dir', snapshots, '--known', 'x.json', '--no-known')).toBe(2);
+    expect(errors.join('\n')).toContain('--known and --no-known are mutually exclusive');
   });
 });
 

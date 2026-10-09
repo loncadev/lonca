@@ -3,7 +3,9 @@ import { createTrendyolClient } from '@lonca/trendyol';
 import { describe, expect, it, vi } from 'vitest';
 import { loadSpecs, type SpecFile } from './openapi.js';
 import { buildOperationIndex } from './operations.js';
+import type { Shape } from './shape.js';
 import {
+  carryWireItems,
   collapseExchanges,
   createWireRecorder,
   diffWire,
@@ -378,5 +380,53 @@ describe('diffWire', () => {
       changes: ['GET /x: body json, json → json, empty'],
       shapeDiffs: [{ path: 'GET /x $.b', kind: 'removed' }],
     });
+  });
+});
+
+describe('carryWireItems', () => {
+  const op = (key: string) => ({
+    key,
+    spec: 's.json',
+    method: 'GET',
+    path: key.slice(4),
+    specPath: key.slice(4),
+    server: 'https://h',
+  });
+  const list = (items?: WireExchange['shape']): WireExchange['shape'] => ({
+    types: ['object'],
+    keys: { content: items ? { types: ['array'], items } : { types: ['array'] } },
+  });
+  const row: Shape = { types: ['object'], keys: { id: { types: ['number'] } } };
+  const ex = (key: string, shape: WireExchange['shape'], status = 200): WireExchange => ({
+    operation: op(key),
+    status,
+    body: shape ? 'json' : 'empty',
+    ...(shape ? { shape } : {}),
+  });
+
+  it('keeps the committed element shape for the same operation and status', () => {
+    const [carried] = carryWireItems([ex('GET /x', list())], [ex('GET /x', list(row))]);
+    expect(carried!.shape).toEqual({
+      types: ['object'],
+      keys: { content: { types: ['array'], items: row, itemsFromBaseline: true } },
+    });
+  });
+
+  it('returns exchanges unchanged without a matching baseline shape', () => {
+    const fresh = [
+      ex('GET /x', list()),
+      ex('GET /y', list()),
+      ex('GET /z', undefined, 204),
+      ex('GET /w', list(row)),
+    ];
+    const baseline = [
+      ex('GET /x', list(row), 201), // other status
+      ex('GET /y', undefined, 200), // no shape
+      ex('GET /z', list(row), 204),
+      ex('GET /w', list(row)),
+    ];
+    const out = carryWireItems(fresh, baseline);
+    out.forEach((x, i) => expect(x).toBe(fresh[i]));
+    expect(carryWireItems(fresh, undefined)).toEqual(fresh);
   });
 });

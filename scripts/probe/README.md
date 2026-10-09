@@ -104,7 +104,10 @@ name is the snapshot key, so keep it stable.
 - `types` is the sorted union of JSON types (`string | number | boolean | null | array | object`)
   observed at that position.
 - Arrays are summarised by the union of their element shapes (`items`); element counts are not
-  recorded. An empty array has no `items`.
+  recorded. An empty array has no `items` — except when the snapshot is rewritten (see
+  [Empty samples](#empty-samples-itemsfrombaseline)).
+- `itemsFromBaseline: true` marks an array position whose `items` were **not** observed in the
+  run that wrote the file (every array there was empty) but kept from the previous snapshot.
 - Depth is capped at 6 (`depthCapped: true` marks the cut) and keys at 80 per level
   (`droppedKeys: n`).
 - Errors are recorded as `{ httpStatus, errorName, errorCode }` from `LoncaError` only — never
@@ -166,6 +169,25 @@ caused, recorded by a `fetch` wrapper (`createWireRecorder` in
   the global `fetch` (`withGlobalFetch`). No SDK code changes; a unit test in
   `packages/drift/src/wire.test.ts` pins that behaviour for `@lonca/trendyol`.
 
+### Empty samples (`itemsFromBaseline`)
+
+Shapes are sample-dependent: with a 10-row page, a list that happens to be empty (no webhooks,
+no open questions) has no element shape. So that such a run does not erase a known shape, the
+**update** path (`pnpm probe` / `pnpm probe:prod`, writing `probe-snapshots/`) compares each
+fresh shape — the SDK-output `shape` and every `wire[].shape` (matched by operation key +
+status) — with the committed snapshot of the same probe:
+
+- wherever the fresh shape has an array **without** `items` (an empty sample, not a depth cap)
+  and the committed shape has `items` at the same position, the committed `items` are kept and
+  the array is marked `"itemsFromBaseline": true`;
+- nothing else is carried over — keys, types and caps come from the fresh run alone, so a
+  removed key is still a removal; a list that is non-empty again replaces the carried shape
+  (and the marker disappears);
+- only within the same environment: a `stage` run never inherits `prod` element shapes.
+
+`pnpm drift` treats carried `items` like observed ones. `probe-output/<marketplace>.json` (the
+raw fresh run) is written without carry-over.
+
 ## Drift detection
 
 `--check` compares the fresh shape of each probe with the committed one and reports:
@@ -177,13 +199,14 @@ caused, recorded by a `fetch` wrapper (`createWireRecorder` in
 
 Those block (exit 1). `nullability` (only the presence of `null` differs) is printed for
 information but does not block — with a 10-row sample a nullable field is often `null` in one
-run and populated in the next. Array element shapes are compared only when both sides saw at
-least one element; an empty page is data churn, not drift.
+run and populated in the next. Array element shapes are compared only when both sides have
+them; an empty fresh page against a known element shape is reported as `uncomparable`
+(informational, "no elements in this sample") — data churn, not drift.
 
 The `wire` lists are compared the same way and reported in their own **Wire (raw
 responses)** section of `report.md`: an operation that appeared or disappeared, a changed
 status / content type / body kind, and `added` / `removed` / `type-changed` keys (paths are
-prefixed with the operation key) block; `nullability` is informational. A committed snapshot
+prefixed with the operation key) block; `nullability` and `uncomparable` are informational. A committed snapshot
 taken before wire capture has no `wire` field: `--check` prints "no wire baseline yet" and does
 **not** treat it as drift. Running `pnpm probe` once writes the baseline.
 

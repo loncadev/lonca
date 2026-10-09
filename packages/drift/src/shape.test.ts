@@ -1,5 +1,13 @@
 import { describe as suite, expect, it } from 'vitest';
-import { describe, diffShapes, mergeShapes, summarize } from './shape.js';
+import {
+  carryEmptyArrayItems,
+  describe,
+  diffShapes,
+  isInformationalDiff,
+  mergeShapes,
+  summarize,
+  type Shape,
+} from './shape.js';
 
 suite('summarize', () => {
   it('reduces values to key sets and JSON types', () => {
@@ -76,6 +84,102 @@ suite('mergeShapes', () => {
       items: { types: ['string'] },
     });
   });
+
+  it('keeps itemsFromBaseline only while no side observed elements', () => {
+    const carried: Shape = {
+      types: ['array'],
+      items: { types: ['string'] },
+      itemsFromBaseline: true,
+    };
+    const observed: Shape = { types: ['array'], items: { types: ['number'] } };
+    expect(mergeShapes(carried, { types: ['array'] })).toEqual(carried);
+    expect(mergeShapes({ types: ['array'] }, carried)).toEqual(carried);
+    expect(mergeShapes(carried, carried)).toEqual(carried);
+    expect(mergeShapes(carried, observed)).toEqual({
+      types: ['array'],
+      items: { types: ['number', 'string'] },
+    });
+  });
+});
+
+suite('carryEmptyArrayItems', () => {
+  const baseline = summarize({
+    list: [{ id: 1, name: 'x' }],
+    nested: { rows: [{ a: true }] },
+    pages: [[{ p: 1 }]],
+    gone: [{ z: 1 }],
+  });
+
+  it('keeps baseline items where the fresh sample only had empty arrays, and marks them', () => {
+    const fresh = summarize({ list: [], nested: { rows: [] }, pages: [[]] });
+    expect(carryEmptyArrayItems(fresh, baseline)).toEqual({
+      types: ['object'],
+      keys: {
+        list: {
+          types: ['array'],
+          items: baseline.keys!.list!.items,
+          itemsFromBaseline: true,
+        },
+        nested: {
+          types: ['object'],
+          keys: {
+            rows: {
+              types: ['array'],
+              items: baseline.keys!.nested!.keys!.rows!.items,
+              itemsFromBaseline: true,
+            },
+          },
+        },
+        pages: {
+          types: ['array'],
+          items: {
+            types: ['array'],
+            items: { types: ['object'], keys: { p: { types: ['number'] } } },
+            itemsFromBaseline: true,
+          },
+        },
+      },
+    });
+    // `gone` is not resurrected: only items at positions the fresh shape has are carried.
+    expect(carryEmptyArrayItems(fresh, baseline).keys).not.toHaveProperty('gone');
+  });
+
+  it('prefers observed items and never merges keys from the baseline', () => {
+    const fresh = summarize({ list: [{ id: 2 }] });
+    const out = carryEmptyArrayItems(fresh, baseline);
+    expect(out).toEqual(fresh);
+    expect(out).toBe(fresh); // unchanged → same object
+    expect(out.keys!.list!.items!.keys).not.toHaveProperty('name');
+  });
+
+  it('carries a previously carried shape forward while the list stays empty', () => {
+    const once = carryEmptyArrayItems(summarize({ list: [] }), baseline);
+    const twice = carryEmptyArrayItems(summarize({ list: [] }), once);
+    expect(twice.keys!.list).toEqual({
+      types: ['array'],
+      items: baseline.keys!.list!.items,
+      itemsFromBaseline: true,
+    });
+  });
+
+  it('leaves depth-capped arrays, missing baselines and non-array baselines alone', () => {
+    const capped: Shape = { types: ['array'], depthCapped: true };
+    expect(carryEmptyArrayItems(capped, { types: ['array'], items: { types: ['string'] } })).toBe(
+      capped,
+    );
+    const empty = summarize([]);
+    expect(carryEmptyArrayItems(empty, undefined)).toBe(empty);
+    expect(carryEmptyArrayItems(empty, { types: ['null'] })).toBe(empty);
+    const obj = summarize({ a: [] });
+    expect(carryEmptyArrayItems(obj, { types: ['string'] })).toBe(obj);
+  });
+
+  it('does not modify its inputs', () => {
+    const fresh = summarize({ list: [] });
+    const copy = structuredClone(fresh);
+    carryEmptyArrayItems(fresh, baseline);
+    expect(fresh).toEqual(copy);
+  });
 });
 
 suite('diffShapes', () => {
@@ -97,6 +201,34 @@ suite('diffShapes', () => {
     expect(diffShapes(summarize([{ a: 1 }]), summarize([{ a: '1' }]))).toEqual([
       { path: '$[].a', kind: 'type-changed', from: 'number', to: 'string' },
     ]);
+  });
+
+  it('reports an empty fresh sample against known items as uncomparable (informational)', () => {
+    const diffs = diffShapes(summarize({ l: [{ a: 1 }] }), summarize({ l: [] }));
+    expect(diffs).toEqual([
+      { path: '$.l[]', kind: 'uncomparable', from: 'object{1}', to: 'no elements in this sample' },
+    ]);
+    expect(diffs.every(isInformationalDiff)).toBe(true);
+    // a depth cap is not an empty sample, and items appearing are not reported
+    expect(diffShapes(summarize([1]), { types: ['array'], depthCapped: true })).toEqual([]);
+    expect(diffShapes(summarize([]), summarize([1]))).toEqual([]);
+  });
+
+  it('compares carried items like observed ones', () => {
+    const carried: Shape = {
+      types: ['array'],
+      items: { types: ['object'], keys: { a: { types: ['number'] } } },
+      itemsFromBaseline: true,
+    };
+    expect(diffShapes(carried, summarize([{ a: 'x' }]))).toEqual([
+      { path: '$[].a', kind: 'type-changed', from: 'number', to: 'string' },
+    ]);
+  });
+
+  it('classifies informational kinds', () => {
+    expect(isInformationalDiff({ path: '$', kind: 'nullability' })).toBe(true);
+    expect(isInformationalDiff({ path: '$', kind: 'uncomparable' })).toBe(true);
+    expect(isInformationalDiff({ path: '$', kind: 'removed' })).toBe(false);
   });
 });
 
