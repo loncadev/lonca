@@ -53,3 +53,14 @@ export {
   type FindingKind,
   type Severity,
 } from './engine.js';
+export {
+  buildDriftReport,
+  renderMarkdown,
+  shouldFail,
+  type DriftReport,
+  type FailOn,
+  type MarketplaceReport,
+  type OperationReport,
+  type ProbeSnapshot,
+} from './report.js';
+export { runCli } from './cli.js';

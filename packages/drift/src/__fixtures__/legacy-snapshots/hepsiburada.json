@@ -1,0 +1,12 @@
+{
+  "$comment": "TEST FIXTURE for packages/drift (cli.test.ts): a snapshot in the pre-wire format (no `wire` field on any probe).",
+  "marketplace": "hepsiburada",
+  "env": "prod",
+  "shapeOptions": { "maxDepth": 6, "maxKeys": 80 },
+  "probes": {
+    "orders.list": {
+      "status": "ok",
+      "shape": { "types": ["object"], "keys": { "items": { "types": ["array"] } } }
+    }
+  }
+}
