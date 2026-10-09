@@ -38,7 +38,7 @@ See [Stability & versioning](https://loncadev.github.io/lonca/stability/) for th
 Three-stage roadmap:
 
 1. **SDK + OpenAPI Spec Collection** — Type-safe TypeScript SDKs and curated OpenAPI specs for Turkish marketplaces (current stage)
-2. **API Drift Detection** — A monitoring layer that proactively detects breaking changes in marketplace APIs
+2. **API Drift Detection** — A monitoring layer that proactively detects breaking changes in marketplace APIs. v1 runs locally: the contract probes record the raw wire shapes of live read calls and [`pnpm drift`](packages/drift/) compares them with the documented schemas in [`specs/`](specs/)
 3. **Unified Marketplace API Gateway** — A Plaid-style abstraction that puts every marketplace behind a single API
 
 ## Why?
@@ -148,11 +148,13 @@ Live contract probes (read-only, credentials from `.env` — see [`.env.example`
 ```bash
 pnpm probe          # call the main read endpoints, write key-set/type snapshots to probe-snapshots/
 pnpm probe:check    # compare a fresh run with the committed snapshots; exit 1 on drift
+pnpm drift          # compare the committed wire shapes with specs/ (offline); exit 1 on breaking drift
 ```
 
-The same check runs nightly via [`contract-probe.yml`](./.github/workflows/contract-probe.yml) and
-opens a `drift` issue when a marketplace response changes shape. Details in
-[`scripts/probe/README.md`](./scripts/probe/README.md).
+These run locally (before releases: `pnpm probe && pnpm drift`). Marketplace credentials are not
+stored as GitHub secrets, so [`contract-probe.yml`](./.github/workflows/contract-probe.yml) is
+manual-only and skips without them. Details in [`scripts/probe/README.md`](./scripts/probe/README.md)
+and [`packages/drift/README.md`](./packages/drift/README.md).
 
 ## Contributing
 
