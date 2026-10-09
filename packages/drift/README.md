@@ -36,6 +36,7 @@ pnpm drift --only trendyol                # one marketplace (repeatable)
 pnpm drift --fail-on additive             # also fail on undocumented fields
 pnpm drift --fail-on never                # report only
 pnpm drift --out-dir /tmp/drift           # default: drift-output/ (gitignored)
+pnpm drift --no-known                     # ignore the known-discrepancy overlay
 ```
 
 | Flag                             | Default                      | Effect                                                   |
@@ -44,17 +45,20 @@ pnpm drift --out-dir /tmp/drift           # default: drift-output/ (gitignored)
 | `--fail-on <level>`              | `breaking`                   | `breaking`, `additive` (breaking + additive) or `never`. |
 | `--out-dir <dir>`                | `drift-output/`              | Where `report.md` and `report.json` are written.         |
 | `--snapshots-dir`, `--specs-dir` | `probe-snapshots/`, `specs/` | Alternative inputs (used by the tests).                  |
+| `--known <file>`                 | see below                    | Known-discrepancy overlay; the file must exist.          |
+| `--no-known`                     | off                          | Ignore the overlay (every finding at its own severity).  |
 
 Exit codes: `0` nothing at or above `--fail-on` (also when there is **no wire baseline yet** —
 the CLI then prints "run `pnpm probe` to capture"), `1` findings at or above `--fail-on`, `2`
-usage or input error. Warnings and info never fail the run.
+usage or input error (including an unreadable or invalid overlay). Warnings and info never fail
+the run.
 
 Outputs:
 
 - `report.json` — every finding, per marketplace and operation (including the field names
   behind each collapsed `not-observed` entry).
-- `report.md` — a counts table, then per marketplace → per operation the findings grouped by
-  severity, then a "How to act" footer. It is capped at 60 KB so it can be pasted as an issue
+- `report.md` — a counts table, the overlay summary (with any stale entries), then per
+  marketplace → per operation the findings grouped by severity, then a "How to act" footer. It is capped at 60 KB so it can be pasted as an issue
   body; past the cap, whole sections are dropped with a note pointing at `report.json`.
 
 ## Findings
@@ -67,6 +71,7 @@ Outputs:
 | `undocumented-null`   | warning  | `null` was observed on a property that is not nullable, and no other disallowed type was — the upstream spec usually omits `nullable`. |
 | `unmatched-operation` | warning  | A wire call no spec operation describes (or whose operation has since left the spec).                                                  |
 | `known`               | info     | Explained by Lonca's own annotations: the property is `x-lonca-observed`, or the observed type is listed in `x-lonca-observed-types`.  |
+| `accepted`            | info     | A finding the [known-discrepancy overlay](#known-discrepancy-overlay) accepts; carries the original kind (`accepts`) and the `reason`. |
 | `not-observed`        | info     | Optional documented properties never seen in the sample — one collapsed entry per object, with a count.                                |
 | `uncomparable`        | info     | Nothing to compare: depth / key cap hit, empty arrays only, non-JSON or error body, no documented JSON schema, unresolvable `$ref`.    |
 
@@ -95,17 +100,58 @@ the wire and the definition really disagree:
 - Responses: the exact status code, then the `2XX` range; `default` is not used (it documents
   errors in these specs). Media type: `application/json`, then any `*json*` type, then `*/*`.
 
+### Known-discrepancy overlay
+
+[`probe-snapshots/known-discrepancies.json`](../../probe-snapshots/known-discrepancies.json) is a
+hand-maintained list of findings that are understood and accepted — the marketplace's docs are
+wrong and the SDK copes, or an upstream spec omits `nullable`. It lives next to the snapshots,
+not in `specs/`: the Hepsiburada specs are redistributed unchanged and `specs/trendyol` is
+generated (and `--check`ed), so neither can carry Lonca's notes.
+
+```jsonc
+{
+  "$comment": "…",
+  "entries": [
+    {
+      "marketplace": "trendyol",
+      "operation": "GET /integration/product/product-categories", // as in the report heading
+      "path": "(root)", // as printed in the report; "*" = any path in the operation
+      "kind": "type-mismatch", // the finding kind it accepts
+      "reason": "Docs say array; prod returns { categories: [...] }. SDK reads data.categories.",
+      "since": "2026-10-09", // YYYY-MM-DD
+    },
+  ],
+}
+```
+
+- A finding that matches an entry (marketplace + operation + path or `*` + kind) is reported as
+  `accepted` (info) with the entry's `reason`; the original kind is kept in `accepts`.
+- `kind` must be one that needs attention: `type-mismatch`, `missing-required`,
+  `undocumented-field`, `undocumented-null` or `unmatched-operation`. The file is validated on
+  load (unknown keys, missing fields, bad dates, duplicates); any problem is exit code `2` with
+  one line per problem.
+- Entries that matched nothing in the run (for the marketplaces in the report) are listed under
+  **Stale overlay entries** in `report.md` and in `report.json` (`known.stale`) — info, never a
+  failure. Remove them, or fix the operation / path spelling.
+- By default the CLI reads `<snapshots-dir>/known-discrepancies.json` and silently runs without
+  an overlay when that file does not exist; `--known <file>` points elsewhere (and requires the
+  file), `--no-known` ignores it. The overlay is never read as a snapshot.
+
+Accept only what the SDK already handles. Undocumented fields (`undocumented-field`) and
+undocumented endpoints (`unmatched-operation`) are usually better left visible as signals.
+
 ### How to act
 
 - **breaking** — check the SDK's types and normalisers for that field and fix the SDK if it
-  relies on the documented shape. If the marketplace is wrong about its own API, record the
-  observed type on the property with `x-lonca-observed-types`; it is then reported as `known`.
+  relies on the documented shape. If the marketplace is wrong about its own API and the SDK
+  copes, add an overlay entry with the reason (reported as `accepted`), or — in a spec Lonca
+  generates — record the observed type with `x-lonca-observed-types` (reported as `known`).
 - **additive** — the field is real but undocumented. Expose it in the SDK if useful, and mark
   the spec property `x-lonca-observed: true` (Trendyol: the observation pass of
   `pnpm specs:trendyol:build`, see [`specs/trendyol/README.md`](../../specs/trendyol/README.md)).
 - **warning** — `undocumented-null`: make sure the SDK type allows `null` (or normalises it
-  away); the spec most likely just lacks `nullable`. `unmatched-operation`: add the missing
-  definition to `specs/`, or fix the SDK path.
+  away); the spec most likely just lacks `nullable`, so accept it in the overlay.
+  `unmatched-operation`: add the missing definition to `specs/`, or fix the SDK path.
 
 ## Library
 
@@ -120,6 +166,7 @@ The package also provides what the probe runner uses for wire capture:
   value-like segment).
 - `withGlobalFetch(fetch, build)` — builds an SDK client while `fetch` is installed globally
   (the SDK factories expose no `fetch` option, but the transports bind it at construction).
+- `loadKnownDiscrepancies` / `applyKnownDiscrepancies` — the overlay, as the CLI uses it.
 - `summarize` / `diffShapes` / `diffWire` — the snapshot shape format (moved here from
   `scripts/probe/shape.mts`) and the comparisons `pnpm probe:check` uses.
 

@@ -1,0 +1,93 @@
+{
+  "$comment": "Hand-maintained known-discrepancy overlay for `pnpm drift` (packages/drift/README.md#known-discrepancy-overlay). Each entry accepts one finding `kind` at one `path` of one `operation` (both exactly as printed in drift-output/report.md; path \"*\" = any path in the operation) for a `marketplace`; matching findings are reported as `accepted` (info) with the `reason`. Entries that match nothing are listed as stale — remove them. It lives here, not in specs/, because the Hepsiburada specs are redistributed unchanged and specs/trendyol is generated. Keep entries sorted by marketplace, operation, path.",
+  "entries": [
+    {
+      "marketplace": "hepsiburada",
+      "operation": "GET /orders/merchantid/{merchantId}",
+      "path": "items[].cargoCompanyModel.trackingUrl",
+      "kind": "undocumented-null",
+      "reason": "upstream spec omits nullable; prod returns null",
+      "since": "2026-10-09"
+    },
+    {
+      "marketplace": "hepsiburada",
+      "operation": "GET /orders/merchantid/{merchantId}",
+      "path": "items[].creditCardHolderName",
+      "kind": "undocumented-null",
+      "reason": "upstream spec omits nullable; prod returns null",
+      "since": "2026-10-09"
+    },
+    {
+      "marketplace": "hepsiburada",
+      "operation": "GET /orders/merchantid/{merchantId}",
+      "path": "items[].invoice.taxOffice",
+      "kind": "undocumented-null",
+      "reason": "upstream spec omits nullable; prod returns null",
+      "since": "2026-10-09"
+    },
+    {
+      "marketplace": "hepsiburada",
+      "operation": "GET /orders/merchantid/{merchantId}",
+      "path": "items[].pickUpTime",
+      "kind": "undocumented-null",
+      "reason": "upstream spec omits nullable; prod returns null",
+      "since": "2026-10-09"
+    },
+    {
+      "marketplace": "hepsiburada",
+      "operation": "GET /orders/merchantid/{merchantId}",
+      "path": "items[].slot",
+      "kind": "undocumented-null",
+      "reason": "upstream spec omits nullable; prod returns null",
+      "since": "2026-10-09"
+    },
+    {
+      "marketplace": "hepsiburada",
+      "operation": "GET /product/api/categories/{categoryId}/attributes",
+      "path": "message",
+      "kind": "undocumented-null",
+      "reason": "upstream spec omits nullable; prod returns null",
+      "since": "2026-10-09"
+    },
+    {
+      "marketplace": "hepsiburada",
+      "operation": "GET /product/api/categories/get-all-categories",
+      "path": "message",
+      "kind": "undocumented-null",
+      "reason": "upstream spec omits nullable; prod returns null",
+      "since": "2026-10-09"
+    },
+    {
+      "marketplace": "hepsiburada",
+      "operation": "GET /product/api/products/all-products-of-merchant/{merchantId}",
+      "path": "message",
+      "kind": "undocumented-null",
+      "reason": "upstream spec omits nullable; prod returns null",
+      "since": "2026-10-09"
+    },
+    {
+      "marketplace": "hepsiburada",
+      "operation": "GET /product/api/products/products-by-merchant-and-status",
+      "path": "message",
+      "kind": "undocumented-null",
+      "reason": "upstream spec omits nullable; prod returns null",
+      "since": "2026-10-09"
+    },
+    {
+      "marketplace": "trendyol",
+      "operation": "GET /integration/order/sellers/{sellerId}/orders",
+      "path": "content[].lines[].fastDeliveryOptions[]",
+      "kind": "type-mismatch",
+      "reason": "Docs say string items; prod returns objects. The SDK types the field as unknown[] (sdks/trendyol/src/types/order.ts) and passes it through unchanged.",
+      "since": "2026-10-09"
+    },
+    {
+      "marketplace": "trendyol",
+      "operation": "GET /integration/product/product-categories",
+      "path": "(root)",
+      "kind": "type-mismatch",
+      "reason": "Docs say array; prod returns { categories: [...] }. SDK reads data.categories.",
+      "since": "2026-10-09"
+    }
+  ]
+}

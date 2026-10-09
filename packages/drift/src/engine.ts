@@ -34,6 +34,7 @@ export type FindingKind =
   | 'type-mismatch'
   | 'undocumented-null'
   | 'known'
+  | 'accepted'
   | 'not-observed'
   | 'unmatched-operation'
   | 'uncomparable';
@@ -50,6 +51,7 @@ export const DEFAULT_SEVERITY: Record<FindingKind, Severity> = {
   'undocumented-null': 'warning',
   'unmatched-operation': 'warning',
   known: 'info',
+  accepted: 'info',
   'not-observed': 'info',
   uncomparable: 'info',
 };
@@ -66,6 +68,12 @@ export interface Finding {
   documented?: JsonType[];
   /** `not-observed`: the documented optional property names that were never seen under `path`. */
   fields?: string[];
+  /** `accepted`: the original finding kind a known-discrepancy overlay entry accepted. */
+  accepts?: FindingKind;
+  /** `accepted`: why the discrepancy is accepted (the overlay entry's `reason`). */
+  reason?: string;
+  /** `accepted`: when the overlay entry was added (`YYYY-MM-DD`). */
+  since?: string;
 }
 
 /** Display form of a finding path: `(root)` for the body itself. */
@@ -77,7 +85,7 @@ export function finding(
   kind: FindingKind,
   path: string,
   message: string,
-  extra: Partial<Pick<Finding, 'observed' | 'documented' | 'fields'>> = {},
+  extra: Partial<Omit<Finding, 'kind' | 'severity' | 'path' | 'message'>> = {},
 ): Finding {
   return { kind, severity: DEFAULT_SEVERITY[kind], path, message, ...extra };
 }

@@ -11,6 +11,7 @@ import {
   type Finding,
   type Severity,
 } from './engine.js';
+import type { KnownSummary } from './known.js';
 import { getOperation, responseSchemaFor, type SpecFile } from './openapi.js';
 import { isUnmatched } from './operations.js';
 import { mergeShapes, type Shape } from './shape.js';
@@ -55,6 +56,8 @@ export interface DriftReport {
   counts: Record<Severity, number>;
   /** `true` when at least one selected marketplace has wire data to compare. */
   wireBaseline: boolean;
+  /** Set when a known-discrepancy overlay was applied (see `applyKnownDiscrepancies`). */
+  known?: KnownSummary;
 }
 
 export type FailOn = 'breaking' | 'additive' | 'never';
@@ -63,13 +66,13 @@ export function emptyCounts(): Record<Severity, number> {
   return { breaking: 0, additive: 0, warning: 0, info: 0 };
 }
 
-function countFindings(findings: readonly Finding[]): Record<Severity, number> {
+export function countFindings(findings: readonly Finding[]): Record<Severity, number> {
   const counts = emptyCounts();
   for (const f of findings) counts[f.severity] += 1;
   return counts;
 }
 
-function addCounts(into: Record<Severity, number>, more: Record<Severity, number>): void {
+export function addCounts(into: Record<Severity, number>, more: Record<Severity, number>): void {
   for (const s of SEVERITIES) into[s] += more[s];
 }
 
@@ -231,11 +234,11 @@ const SEVERITY_TITLE: Record<Severity, string> = {
 const HOW_TO_ACT = [
   '## How to act',
   '',
-  '- **breaking** (`type-mismatch`, `missing-required`): the wire contradicts the definition. Check the SDK types and normalisers for that field and fix the SDK if it relies on the documented shape; if the marketplace is simply wrong about its own API, record the observed type on the property with `x-lonca-observed-types` so it shows up as `known` next time.',
+  '- **breaking** (`type-mismatch`, `missing-required`): the wire contradicts the definition. Check the SDK types and normalisers for that field and fix the SDK if it relies on the documented shape. If the marketplace is simply wrong about its own API and the SDK copes, accept it in `probe-snapshots/known-discrepancies.json` with a reason (it shows up as `accepted`), or — for specs Lonca generates — record the observed type with `x-lonca-observed-types` (it shows up as `known`).',
   '- **additive** (`undocumented-field`): the field is real but undocumented. Expose it in the SDK if it is useful, and mark the spec property with `x-lonca-observed: true` so it shows up as `known` next time (for Trendyol the observation pass of `pnpm specs:trendyol:build` writes these annotations; see `specs/trendyol/README.md`).',
-  '- **warning** (`undocumented-null`): the property was `null` on the wire but the schema is not nullable — usually the upstream spec just omits `nullable`. Make sure the SDK type allows `null` (or normalises it away), then record it with `x-lonca-observed-types: ["null"]` (it shows up as `known`).',
+  '- **warning** (`undocumented-null`): the property was `null` on the wire but the schema is not nullable — usually the upstream spec just omits `nullable`. Make sure the SDK type allows `null` (or normalises it away), then accept it in `probe-snapshots/known-discrepancies.json` (or record `x-lonca-observed-types: ["null"]` in a spec Lonca generates).',
   '- **warning** (`unmatched-operation`): the SDK calls an endpoint `specs/` does not document. Add the definition, or fix the SDK path.',
-  '- **info** (`known`, `not-observed`, `uncomparable`): no action needed; `not-observed` only means this sample did not contain the optional field.',
+  '- **info** (`known`, `accepted`, `not-observed`, `uncomparable`): no action needed; `not-observed` only means this sample did not contain the optional field. A stale overlay entry matched nothing in this run: the discrepancy is gone (remove the entry) or the operation / path is misspelled.',
   '',
   'Regenerate the inputs with `pnpm probe` (read-only, against prod) and re-run `pnpm drift`.',
 ];
@@ -245,7 +248,31 @@ function code(s: string): string {
 }
 
 function findingLine(f: Finding): string {
+  if (f.kind === 'accepted') {
+    return `- ${code('accepted')} ${code(displayPath(f.path))} (was ${code(f.accepts ?? '?')}): ${f.message} — ${f.reason ?? ''}`;
+  }
   return `- ${code(f.kind)} ${code(displayPath(f.path))}: ${f.message}`;
+}
+
+function knownBlock(known: KnownSummary): string[] {
+  const lines = [
+    `Known-discrepancy overlay ${code(known.source)}: ${known.entries} entr${known.entries === 1 ? 'y' : 'ies'}, ${known.accepted} finding(s) accepted, ${known.stale.length} stale.`,
+    '',
+  ];
+  if (known.stale.length) {
+    lines.push(
+      '### Stale overlay entries',
+      '',
+      'These entries matched no finding in this run — remove them, or fix the operation / path spelling (info, never fails the run):',
+      '',
+      ...known.stale.map(
+        (e) =>
+          `- ${e.marketplace} ${code(e.operation)} ${code(e.path)} ${code(e.kind)} (since ${e.since}): ${e.reason}`,
+      ),
+      '',
+    );
+  }
+  return lines;
 }
 
 function operationBlock(op: OperationReport): string {
@@ -304,6 +331,7 @@ export function renderMarkdown(report: DriftReport, maxBytes = MAX_MARKDOWN_BYTE
     );
   }
   head.push('');
+  if (report.known) head.push(...knownBlock(report.known));
 
   const footer = HOW_TO_ACT.join('\n');
   const truncationReserve = 400;
@@ -349,12 +377,23 @@ export function renderMarkdown(report: DriftReport, maxBytes = MAX_MARKDOWN_BYTE
   return `${body}\n${footer}\n`;
 }
 
-/** One-line-per-marketplace console summary. */
+/** One-line-per-marketplace console summary (plus one line for the overlay, when applied). */
 export function summaryLines(report: DriftReport): string[] {
-  return report.marketplaces.map((m) => {
+  const lines = report.marketplaces.map((m) => {
     if (!m.wireBaseline)
       return `${m.marketplace}: no wire baseline — run \`pnpm probe\` to capture`;
     const c = m.counts;
-    return `${m.marketplace} (${m.env ?? '-'}): ${m.operations.length} operation(s) — ${c.breaking} breaking / ${c.additive} additive / ${c.warning} warning / ${c.info} info`;
+    const accepted = m.operations.reduce(
+      (n, op) => n + op.findings.filter((f) => f.kind === 'accepted').length,
+      0,
+    );
+    return `${m.marketplace} (${m.env ?? '-'}): ${m.operations.length} operation(s) — ${c.breaking} breaking / ${c.additive} additive / ${c.warning} warning / ${c.info} info${accepted ? ` (${accepted} accepted)` : ''}`;
   });
+  if (report.known) {
+    const k = report.known;
+    lines.push(
+      `known discrepancies (${k.source}): ${k.accepted} finding(s) accepted by ${k.entries} entr${k.entries === 1 ? 'y' : 'ies'}${k.stale.length ? `, ${k.stale.length} stale entr${k.stale.length === 1 ? 'y' : 'ies'} (see report.md)` : ''}`,
+    );
+  }
+  return lines;
 }

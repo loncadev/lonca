@@ -13,6 +13,15 @@ sets and JSON types — and never a value. Format and drift rules are documented
 Both baselines are taken against **production** (every probe is a read-only GET). The earlier
 SIT (Hepsiburada) and stage-placeholder (Trendyol) captures are only in git history.
 
+`known-discrepancies.json` is not a snapshot: it is the hand-maintained
+[known-discrepancy overlay](../packages/drift/README.md#known-discrepancy-overlay) for
+`pnpm drift` — findings against the committed baseline that are understood and accepted, each
+with a reason. Seeded 2026-10-09 with the 11 then-breaking findings of the first prod baseline
+(2 Trendyol docs-vs-prod contradictions the SDK already handles, 9 Hepsiburada `null`s on
+properties the upstream spec does not mark `nullable`). With it, `pnpm drift` on this baseline
+reports 0 breaking findings; the only warnings left are the 4 Hepsiburada endpoints `specs/`
+does not document.
+
 ## Regenerating
 
 Keep `.env` on stage / SIT and put production credentials in a separate, gitignored
@@ -24,6 +33,9 @@ pnpm build
 pnpm probe:prod    # = tsx --env-file=.env.prod scripts/probe/run.mts — rewrites both files
 pnpm drift         # compare the wire shapes with specs/, review drift-output/report.md
 ```
+
+After regenerating, check the report's **Stale overlay entries** section and drop entries that
+no longer match anything.
 
 Before committing, check that both files say `"env": "prod"` and every probe is `ok` — a plain
 `pnpm probe` reads `.env` and would replace the prod baseline with stage / SIT shapes. Review the

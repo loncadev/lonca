@@ -561,6 +561,7 @@ describe('severity table', () => {
       'undocumented-null': 'warning',
       'unmatched-operation': 'warning',
       known: 'info',
+      accepted: 'info',
       'not-observed': 'info',
       uncomparable: 'info',
     });

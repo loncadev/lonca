@@ -63,4 +63,14 @@ export {
   type OperationReport,
   type ProbeSnapshot,
 } from './report.js';
+export {
+  ACCEPTABLE_KINDS,
+  applyKnownDiscrepancies,
+  KNOWN_DISCREPANCIES_FILE,
+  KnownDiscrepanciesError,
+  loadKnownDiscrepancies,
+  parseKnownDiscrepancies,
+  type KnownDiscrepancy,
+  type KnownSummary,
+} from './known.js';
 export { runCli } from './cli.js';
