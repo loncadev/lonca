@@ -213,13 +213,13 @@ spec path prefixed with its server base path. Private path and request helpers i
 ### SDK ↔ documentation discrepancies found while compiling
 
 Coverage only matches method + path. Comparing request and response shapes is out of scope
-for the script, but compiling `video.json` surfaced two SDK issues worth a follow-up:
+for the script, but compiling `video.json` surfaced two SDK issues, both fixed since:
 
 - **`videos.list()`**: the guide documents the response as `{ meta, data: [...] }`. The SDK
-  reads rows from a bare array, `content` or `items`, so on the documented shape it returns
-  `[]`.
-- **`SellerIntegrationStatus`**: the SDK type lists `WAITING | IN_PROGRESS | COMPLETED |
-FAILED`. The guide documents `IN_PROGRESS | SUCCESS | FAILED`.
+  read rows only from a bare array, `content` or `items`, so on the documented shape it
+  returned `[]`. It now reads `data` first.
+- **`SellerIntegrationStatus`**: the SDK type listed `WAITING | IN_PROGRESS | COMPLETED |
+FAILED`; it now matches the guide's `IN_PROGRESS | SUCCESS | FAILED` (still an open union).
 
 ## Known gaps
 
