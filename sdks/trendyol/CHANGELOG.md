@@ -1,5 +1,11 @@
 # @lonca/trendyol
 
+## 1.0.1
+
+### Patch Changes
+
+- [#158](https://github.com/loncadev/lonca/pull/158) [`875a4aa`](https://github.com/loncadev/lonca/commit/875a4aacdee80ed6a420a35da0241728a1cfe9f2) Thanks [@keparlak](https://github.com/keparlak)! - `videos.list()` now reads rows from the documented `{ meta, data: [...] }` response envelope; previously it returned `[]` for that shape. `SellerIntegrationStatus` now lists the documented values `IN_PROGRESS | SUCCESS | FAILED` (it remains an open union, so other strings still type-check).
+
 ## 1.0.0
 
 ### Major Changes
