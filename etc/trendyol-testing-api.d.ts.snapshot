@@ -1,4 +1,4 @@
-import { g as BatchRequestStatus, ba as TrendyolClient } from './client-CnDyop_o.js';
+import { g as BatchRequestStatus, ba as TrendyolClient } from './client-DfwymJ7P.js';
 import '@lonca/core';
 
 /** A request the fake client received, normalized for matching in a `handler`. */

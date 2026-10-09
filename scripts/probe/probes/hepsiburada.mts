@@ -31,13 +31,14 @@ export const hepsiburadaProbes: ProbeSet<HepsiburadaClient> = {
   marketplace: 'hepsiburada',
   requiredEnv: ['HB_MERCHANT_ID', 'HB_API_USER', 'HB_API_PASS'],
   envLabel: env,
-  createClient: () =>
+  createClient: (fetch) =>
     createHepsiburadaClient({
       merchantId: process.env.HB_MERCHANT_ID!,
       username: process.env.HB_API_USER!,
       password: process.env.HB_API_PASS!,
       env: env(),
       integratorName: process.env.HB_INTEGRATOR_NAME ?? 'LoncaProbe',
+      fetch,
     }),
   probes: [
     { name: 'listings.list', call: (c) => c.listings.list(PAGE) },

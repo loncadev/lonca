@@ -20,13 +20,14 @@ export const trendyolProbes: ProbeSet<TrendyolClient> = {
   marketplace: 'trendyol',
   requiredEnv: ['TY_SELLER_ID', 'TY_API_KEY', 'TY_API_SECRET'],
   envLabel: env,
-  createClient: () =>
+  createClient: (fetch) =>
     createTrendyolClient({
       sellerId: Number(process.env.TY_SELLER_ID),
       apiKey: process.env.TY_API_KEY!,
       apiSecret: process.env.TY_API_SECRET!,
       env: env(),
       integratorName: process.env.TY_INTEGRATOR_NAME ?? 'LoncaProbe',
+      fetch,
     }),
   probes: [
     { name: 'products.list', call: (c) => c.products.list(PAGE) },

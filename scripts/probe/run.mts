@@ -42,7 +42,6 @@ import {
   diffWire,
   isUnmatched,
   loadSpecs,
-  withGlobalFetch,
   type WireDiff,
   type WireExchange,
 } from '@lonca/drift';
@@ -354,15 +353,14 @@ for (const set of selected) {
     continue;
   }
 
-  // The SDK factories take no `fetch` option, but both transports bind
-  // `fetch` when they are constructed — so build the client while the
-  // recorder is the global fetch (restored right after). SDK code and
-  // behaviour are unchanged; the recorder reads bodies from a clone.
+  // The client's traffic goes through the recorder via the SDKs' `fetch`
+  // option; the recorder reads bodies from a clone, so SDK behaviour is
+  // unchanged.
   const recorder = createWireRecorder({
     index: SPEC_INDEX,
     summarizeOptions: DEFAULT_SUMMARIZE_OPTIONS,
   });
-  const client = withGlobalFetch(recorder.fetch, () => set.createClient());
+  const client = set.createClient(recorder.fetch);
   for (const probe of set.probes) {
     results.push(await runProbe(set, probe, client, DEFAULT_SUMMARIZE_OPTIONS, recorder));
   }
