@@ -41,6 +41,11 @@ Three-stage roadmap:
 2. **API Drift Detection** — A monitoring layer that proactively detects breaking changes in marketplace APIs. v1 runs locally: the contract probes record the raw wire shapes of live read calls and [`pnpm drift`](packages/drift/) compares them with the documented schemas in [`specs/`](specs/); [`pnpm drift:types`](packages/drift/README.md#sdk-types-vs-specs) checks the SDKs' own TypeScript response types against the same schemas on every CI run (warn-only)
 3. **Unified Marketplace API Gateway** — A Plaid-style abstraction that puts every marketplace behind a single API
 
+Next marketplaces:
+
+- **n11** — _in research._ The API survey and an unpublished, unverified skeleton live in [`sdks/n11/`](sdks/n11/RESEARCH.md). Nothing is released and n11 is not supported yet.
+- **Amazon TR, Pazarama, Çiçeksepeti** — planned.
+
 ## Why?
 
 Turkish e-commerce marketplace APIs are fragmented, under-documented, and constantly shifting. Every e-commerce developer ends up rewriting the same integration code from scratch. Existing solutions are either closed-source vendor-locked (IdeaSoft, T-Soft) or simply don't support Turkish marketplaces (Zapier, Make, n8n).

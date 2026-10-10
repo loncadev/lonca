@@ -7,7 +7,7 @@ import { isLoncaError } from '@lonca/core';
 import type { WireExchange, WireRecorder } from '@lonca/drift';
 import { summarize, type Shape, type SummarizeOptions } from './shape.mts';
 
-export type Marketplace = 'hepsiburada' | 'trendyol';
+export type Marketplace = 'hepsiburada' | 'n11' | 'trendyol';
 
 export interface Probe<TClient> {
   /** Stable identifier, e.g. `orders.list`. Doubles as the snapshot key. */

@@ -27,15 +27,15 @@ with `pnpm probe:prod`, which loads a separate gitignored `.env.prod` (see
 Credentials are read from the environment; the root scripts load `.env` when it exists
 (`tsx --env-file-if-exists=.env`). The variable names are the ones in
 [`.env.example`](../../.env.example): `HB_MERCHANT_ID`, `HB_API_USER`, `HB_API_PASS`, `HB_ENV`,
-`HB_INTEGRATOR_NAME` and `TY_SELLER_ID`, `TY_API_KEY`, `TY_API_SECRET`, `TY_ENV`,
-`TY_INTEGRATOR_NAME`. A marketplace whose required variables are absent is **skipped**, not
+`HB_INTEGRATOR_NAME`, `TY_SELLER_ID`, `TY_API_KEY`, `TY_API_SECRET`, `TY_ENV`,
+`TY_INTEGRATOR_NAME`, and `N11_APP_KEY`, `N11_APP_SECRET`, `N11_ENV`, `N11_INTEGRATOR_NAME`. A marketplace whose required variables are absent is **skipped**, not
 failed (`--require-credentials` turns that into exit code 2 for CI).
 
 | Flag                    | Effect                                                                      |
 | ----------------------- | --------------------------------------------------------------------------- |
 | `--check`               | Compare fresh shapes with `probe-snapshots/` instead of writing them.       |
 | `--update`              | Write `probe-snapshots/` (the default when `--check` is absent).            |
-| `--only <marketplace>`  | Restrict to `hepsiburada` or `trendyol`. Repeatable.                        |
+| `--only <marketplace>`  | Restrict to `hepsiburada`, `n11` or `trendyol`. Repeatable.                 |
 | `--out-dir <dir>`       | Where fresh snapshots, timings and `report.md` go. Default `probe-output/`. |
 | `--require-credentials` | Exit 2 when a selected marketplace has no credentials.                      |
 
@@ -73,6 +73,12 @@ list of barcodes to look up (max 10).
 
 The probes below the original twelve / nine were added to verify SDK fields that the
 SDK-types-vs-spec check (`pnpm drift:types`) could not confirm from the earlier sample.
+
+n11 (`@lonca/n11`, the private research SDK) has four probes, all `GET`: `categories.list`,
+`categories.getAttributes` (→ the category of the first listed product), `products.list` and
+`orders.list`. n11 documents no sandbox, so its credentials are prod ones and only belong in
+`.env.prod`. With no `specs/n11/` yet, `pnpm drift` reports its four operations as
+"no spec match" warnings.
 
 Add a probe by appending `{ name, call }` to the registry in `probes/<marketplace>.mts`; the
 name is the snapshot key, so keep it stable.
