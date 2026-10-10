@@ -173,6 +173,9 @@ importers:
       '@lonca/hepsiburada':
         specifier: workspace:*
         version: link:../../sdks/hepsiburada
+      '@lonca/n11':
+        specifier: workspace:*
+        version: link:../../sdks/n11
       '@lonca/trendyol':
         specifier: workspace:*
         version: link:../../sdks/trendyol

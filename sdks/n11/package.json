@@ -2,7 +2,7 @@
   "name": "@lonca/n11",
   "version": "0.0.0",
   "private": true,
-  "description": "Research skeleton of a TypeScript SDK for the n11 marketplace API (private, unpublished, unverified)",
+  "description": "Research skeleton of a TypeScript SDK for the n11 marketplace API (private, unpublished; reads verified on prod)",
   "license": "MIT",
   "repository": {
     "type": "git",

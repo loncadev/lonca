@@ -55,4 +55,84 @@ describe('mapHttpError', () => {
     expect(mapHttpError(400, { other: true }).issues).toEqual([]);
     expect(mapHttpError(400, 'plain text').issues).toEqual([]);
   });
+
+  // Envelopes below mirror what prod answered on 2026-10-10 (values invented).
+  describe('observed n11 envelopes', () => {
+    const springError = (message: string, reason: string) => ({
+      '@type': 'InternalServerException',
+      name: 'InternalServerException',
+      message,
+      description: message,
+      urlStack: ['/ms/product-query'],
+      errors: [{ reason }],
+    });
+
+    it('treats a /ms 500 MissingRequestHeaderException as a non-retryable AuthError', () => {
+      const error = mapHttpError(
+        500,
+        springError('MissingRequestHeaderException', "Required request header 'appsecret'"),
+      );
+      expect(error).toBeInstanceOf(AuthError);
+      expect(error.retryable).toBe(false);
+      expect(error.status).toBe(500);
+      expect(error.issues).toEqual([{ message: "Required request header 'appsecret'" }]);
+    });
+
+    it.each(['ConstraintViolationException', 'IllegalArgumentException'])(
+      'treats a /ms 500 %s as a ValidationError',
+      (exception) => {
+        const error = mapHttpError(500, springError(exception, 'size: must be <= 250'));
+        expect(error).toBeInstanceOf(ValidationError);
+        expect(error.retryable).toBe(false);
+      },
+    );
+
+    it('keeps an unrecognised /ms 500 a retryable ServerError', () => {
+      const error = mapHttpError(500, springError('NullPointerException', 'boom'));
+      expect(error).toBeInstanceOf(ServerError);
+      expect(error.retryable).toBe(true);
+    });
+
+    it('maps the /ms 401 envelope with an empty errors[] to its message', () => {
+      const error = mapHttpError(401, {
+        '@type': 'SellerApiUserUnauthorizedException',
+        message: 'Apide doğrulama işlemi başarısız oldu.',
+        errors: [],
+      });
+      expect(error).toBeInstanceOf(AuthError);
+      expect(error.issues).toEqual([{ message: 'Apide doğrulama işlemi başarısız oldu.' }]);
+    });
+
+    it('treats the /rest 400 authenticationFailed body as an AuthError', () => {
+      const error = mapHttpError(400, {
+        code: 400,
+        status: 'failure',
+        errorCode: 'SELLER_API.authenticationFailed',
+        errorMessage: 'Apide doğrulama işlemi başarısız oldu.',
+        errorCategory: 'SELLER_API',
+      });
+      expect(error).toBeInstanceOf(AuthError);
+      expect(error.issues).toEqual([
+        {
+          code: 'SELLER_API.authenticationFailed',
+          message: 'Apide doğrulama işlemi başarısız oldu.',
+        },
+      ]);
+    });
+
+    it('maps the /cdn 400 invalidInput body to a ValidationError with its code', () => {
+      const error = mapHttpError(400, {
+        errorCode: 'invalidInput',
+        errorMessage: 'category not found',
+      });
+      expect(error).toBeInstanceOf(ValidationError);
+      expect(error.issues).toEqual([{ code: 'invalidInput', message: 'category not found' }]);
+    });
+
+    it('ignores errors[] entries without text', () => {
+      expect(mapHttpError(400, { errors: [{ other: 1 }, 'plain'] }).issues).toEqual([
+        { message: 'plain' },
+      ]);
+    });
+  });
 });

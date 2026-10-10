@@ -14,8 +14,10 @@ const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 250;
 
 /**
- * One row of `GET /ms/product-query` as the portal documents it. Every field is
- * optional: nothing here has been observed on the live wire yet.
+ * One row of `GET /ms/product-query`. Field names and types match prod
+ * (2026-10-10): ids and amounts are JSON numbers, `barcode` and
+ * `maxPurchaseQuantity` can be `null`, and `rejectInfo` is absent on active
+ * products. Every field stays optional.
  */
 interface N11ProductWire {
   n11ProductId?: number | string;
@@ -122,8 +124,10 @@ function normalizeProduct(row: N11ProductWire): N11Product {
  *
  * Source: https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/satici-urun-sorgulama/
  * — the request filters, the 0-based `page` / `size` (default 20, max 250)
- * pagination and the response fields below all come from that page. Nothing
- * has been verified against the live API yet.
+ * pagination and the response fields below all come from that page, and were
+ * checked against prod on 2026-10-10: `size` over 250 is rejected (`500
+ * ConstraintViolationException`, mapped to `ValidationError`), a page past the
+ * end answers an empty `content`, and a single `categoryIds` value filters.
  *
  * Rate limit: none documented for this endpoint, so no limiter is applied by
  * default; inject one through the constructor if needed.

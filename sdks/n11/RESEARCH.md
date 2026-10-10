@@ -255,32 +255,80 @@ must not retry faults that are not transient.
   joins array query values with commas.
 - **`mapHttpError`.** Maps 401/403 to `AuthError`, 400/422 to `ValidationError`, 404 to
   `NotFoundError`, 429 to `RateLimitError`, 5xx to `ServerError`, and anything else to
-  `UNKNOWN`. Messages are fixed and redacted. Issues are read best-effort from `errors[]`,
-  `reasons[]` or `message`.
+  `UNKNOWN`. On top of that it reads the observed envelopes (question 2 below): a `/ms` `500
+InternalServerException` naming `MissingRequestHeaderException` is an `AuthError`, one naming
+  `ConstraintViolationException` / `IllegalArgumentException` is a `ValidationError`, and a body
+  with `errorCode` ending in `authenticationFailed` is an `AuthError` whatever the status.
+  Messages are fixed and redacted. Issues come from `errors[].reason`, `reasons[]`,
+  `errorCode`/`errorMessage` or `message`.
 - **`products.list(params)`.** `GET /ms/product-query` with every documented filter, `size` clamped
   to 250, and the page index used as the `CursorPage` cursor. It stops on an empty page,
   `last: true` or `totalPages`. Rows are normalised to `N11Product`: string ids, `Money` prices, and
   `raw` kept.
+- **`categories.list()` / `categories.getAttributes(id)`.** `GET /cdn/categories` (the whole
+  tree, `leaf` derived from `subCategories: null`) and `GET /cdn/category/{id}/attribute`
+  (attributes with their values, string ids).
+- **`orders.list(params)`.** `GET /rest/delivery/v1/shipmentPackages` with `status`,
+  `startDate`/`endDate` (a `Date` or epoch ms), `orderNumber` and ordering; `size` clamped to 100,
+  page index as cursor, the documented 1000 requests/minute as the default limiter. Packages are
+  normalised to `N11ShipmentPackage`: string ids, `Money` in TRY, ISO timestamps, nulls dropped,
+  `raw` kept.
 - **`n11Capabilities`.** `scheduledPricing: false`, `stockOnlyBatch: true`,
   `listingUpdatedAt: false`, all from the docs.
-- **Tests.** Fixture-based with a mocked transport or `fetch` and invented values. Coverage is 100%.
+- **Tests.** Fixture-based with a mocked transport or `fetch` and invented values (shapes follow
+  prod). Line coverage is 100%.
+- **Contract probes.** `scripts/probe/probes/n11.mts` runs the four reads above against prod
+  (`pnpm probe:prod -- --only n11`); the shape baseline is `probe-snapshots/n11.json`.
 
 ## 11. Open questions that need an n11 account
 
+Checked on prod on 2026-10-10 with a seller's own keys, **read-only GETs only** (no write, no
+SOAP call: SOAP requests are `POST`s and were not sent). Answers are marked **Answered**,
+**Mostly answered** or **Partly answered**; the rest stay open.
+
 1. **Sandbox.** Is there a test environment or test seller? If not, can n11 create test orders for
-   an integrator account? Without one, every write is a production write.
+   an integrator account? Without one, every write is a production write. _(Still open: only n11
+   can answer, via `sellerintegration@n11.com`.)_
 2. **Error envelope.** What status codes and JSON bodies do REST failures use (bad key, missing
    secret, validation)? Is 401 used, or 403, or 200 with an error body?
+   **Answered:** it differs per path family.
+   - `/ms`: Spring envelope `{ "@type", name, message, description, urlStack, errors: [{ reason }] }`.
+     Wrong secret: `401 SellerApiUserUnauthorizedException`. Missing `appsecret` header:
+     `500 InternalServerException` / `MissingRequestHeaderException`. `size` over 250, an unknown
+     `saleStatus` and a negative `page`: `500` with `ConstraintViolationException` /
+     `IllegalArgumentException`.
+   - `/rest`: wrong secret is `400 { code: 400, status: "failure", errorCode:
+"SELLER_API.authenticationFailed", errorMessage, errorCategory: "SELLER_API" }`; a missing
+     header is `400` HTML.
+   - `/cdn`: wrong key is `403 text/plain` "Authentication failed"; an unknown or non-leaf
+     category is `400 { errorCode: "invalidInput", errorMessage }`.
+   - An unknown path is `503` HTML. No 200-with-error body was seen on these reads.
 3. **Rate limits.** What are the limits outside `shipmentPackages` and the question list? Is a 429
    returned, with `Retry-After`? Are the limits per key or per IP?
+   **Partly answered:** no response carries a rate-limit or `Retry-After` header; no 429 was seen
+   (limits were not pushed on purpose).
 4. **Header names.** Do the `cdn` category endpoints really reject requests without `appSecret` now?
    Does any endpoint care about header-name case?
+   **Answered:** `/cdn/categories` still answers 200 with `appkey` alone (403 with no headers);
+   `/ms` and `/rest` require both. Lower-case `appkey` / `appsecret` work everywhere.
 5. **`product-query` wire.** How is `categoryIds` encoded (comma-separated or a repeated
    parameter)? Is the response `status` vocabulary the same as the `productStatus` filter? What
    shape is `rejectInfo`? Are numeric fields really numbers? What happens when `page` is past
    `totalPages`?
+   **Mostly answered:** ids, prices, `quantity`, `vatRate` and `commissionRate` are JSON numbers;
+   `barcode` and `maxPurchaseQuantity` can be `null`; `rejectInfo` is absent on active products
+   (its shape is still unknown); a page past the end is `200` with an empty `content`. A single
+   `categoryIds` value filters (multi-value encoding untested: the sample had one category).
+   The 250-row sample had only `status: Active`, `saleStatus: On_Sale`, `sender: SELLER` and
+   `currencyType: TL`.
 6. **Orders.** Confirm the meaning of "GMT+3 epoch ms" for `startDate`/`endDate`, the 15-day
    clamping, and the `orderByField` behaviour. Are `Cancelled` and `Unpacked` really filterable?
+   **Mostly answered:** all seven statuses are accepted by the filter (an unknown value is `200`
+   with an empty page, not an error). With no dates the last ~15 days come back; with only
+   `startDate`, 15 days from it; a 40-day range answered like the last 15 days, so the window is
+   clamped silently. `size` over 100 is silently clamped to 100. The envelope is `{ pageCount,
+totalPages, page, size, content }`, where `pageCount` equals the number of rows in the page.
+   Timestamps are epoch ms. `orderByField` and the GMT+3 meaning are still unchecked.
 7. **SOAP lifetime.** Are SOAP `OrderList`/`DetailedOrderList` and `CategoryService` still up, and
    is there a sunset date? Are questions and returns moving to REST?
 8. **Finance.** Is the legacy `SettlementService` still live, or is there a REST replacement for
@@ -297,9 +345,9 @@ must not retry faults that are not transient.
 
 ## 12. Next steps (proposed)
 
-1. Get an n11 seller or integrator account. Add `N11_APP_KEY` / `N11_APP_SECRET` to `.env` and
-   contract probes for `categories`, `product-query` and `shipmentPackages` (read-only), following
-   `scripts/probe/`.
+1. ~~Get an n11 seller or integrator account. Add `N11_APP_KEY` / `N11_APP_SECRET` and contract
+   probes for `categories`, `product-query` and `shipmentPackages` (read-only).~~ Done on
+   2026-10-10 (keys in `.env.prod`, since n11 has no sandbox).
 2. Decide the `specs/n11/` source (WSDL capture, a hand-compiled OpenAPI, or both). Write
    `scripts/specs/{fetch,build}-n11.mjs` the same way as Trendyol's, so the scripts read only the
    docs portal.

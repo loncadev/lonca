@@ -8,9 +8,11 @@ sets and JSON types — and never a value. Format and drift rules are documented
 | File               | Environment | Captured   | Result          | Wire baseline (`wire`)                                   |
 | ------------------ | ----------- | ---------- | --------------- | -------------------------------------------------------- |
 | `hepsiburada.json` | prod        | 2026-10-10 | 15 ok / 0 error | 15 operations, 4 with no spec match                      |
+| `n11.json`         | prod        | 2026-10-10 | 4 ok / 0 error  | 4 operations, none in `specs/` yet (no n11 spec)         |
 | `trendyol.json`    | prod        | 2026-10-10 | 18 ok / 0 error | 17 operations (one `POST` read), all matched to `specs/` |
 
-Both baselines are taken against **production** (every probe is a read-only GET). The earlier
+All baselines are taken against **production** (every probe is a read-only GET, except the
+one Trendyol buybox `POST` read). n11 has no sandbox at all. The earlier
 SIT (Hepsiburada) and stage-placeholder (Trendyol) captures are only in git history.
 
 `known-discrepancies.json` is not a snapshot: it is the hand-maintained
@@ -25,19 +27,19 @@ does not document.
 ## Regenerating
 
 Keep `.env` on stage / SIT and put production credentials in a separate, gitignored
-`.env.prod` (same variable names as [`.env.example`](../.env.example), with `TY_ENV=prod` and
-`HB_ENV=prod`). Production is then only reached when that file is passed explicitly:
+`.env.prod` (same variable names as [`.env.example`](../.env.example), with `TY_ENV=prod`,
+`HB_ENV=prod` and the `N11_*` keys). Production is then only reached when that file is passed explicitly:
 
 ```bash
 pnpm build
-pnpm probe:prod    # = tsx --env-file=.env.prod scripts/probe/run.mts — rewrites both files
+pnpm probe:prod    # = tsx --env-file=.env.prod scripts/probe/run.mts — rewrites every file
 pnpm drift         # compare the wire shapes with specs/, review drift-output/report.md
 ```
 
 After regenerating, check the report's **Stale overlay entries** section and drop entries that
 no longer match anything.
 
-Before committing, check that both files say `"env": "prod"` and every probe is `ok` — a plain
+Before committing, check that every file says `"env": "prod"` and every probe is `ok` — a plain
 `pnpm probe` reads `.env` and would replace the prod baseline with stage / SIT shapes. Review the
 diff: `wire` must contain only spec path templates or `{}`-redacted paths, key names and JSON
 types. Shapes are sample-dependent: a list that happens to be empty (e.g. no webhooks, no open

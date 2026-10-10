@@ -46,6 +46,7 @@ import {
   type WireExchange,
 } from '@lonca/drift';
 import { hepsiburadaProbes } from './probes/hepsiburada.mts';
+import { n11Probes } from './probes/n11.mts';
 import { trendyolProbes } from './probes/trendyol.mts';
 import {
   hasCredentials,
@@ -93,7 +94,7 @@ const OUT_DIR = resolve(process.cwd(), flags['out-dir']);
 const MODE: 'check' | 'update' = flags.check ? 'check' : 'update';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- heterogeneous client types are erased at the registry boundary
-const ALL_SETS: ProbeSet<any>[] = [hepsiburadaProbes, trendyolProbes];
+const ALL_SETS: ProbeSet<any>[] = [hepsiburadaProbes, n11Probes, trendyolProbes];
 const selected = flags.only?.length
   ? ALL_SETS.filter((s) => flags.only!.includes(s.marketplace))
   : ALL_SETS;

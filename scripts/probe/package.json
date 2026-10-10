@@ -11,6 +11,7 @@
     "@lonca/core": "workspace:*",
     "@lonca/drift": "workspace:*",
     "@lonca/hepsiburada": "workspace:*",
+    "@lonca/n11": "workspace:*",
     "@lonca/trendyol": "workspace:*"
   },
   "devDependencies": {

@@ -2,16 +2,18 @@
 
 > [!WARNING]
 > **Not a supported SDK.** This package is `private`, at version `0.0.0`, and is never published to
-> npm. It has not been tested against the live n11 API. It exists so the n11 integration can be
-> designed and reviewed before an n11 account is available.
+> npm. Only its read calls have been checked against the live n11 API (prod, 2026-10-10, GET only);
+> nothing that writes has been run. It exists so the n11 integration can be designed and reviewed.
 
 > [!IMPORTANT]
 > **Unofficial.** Lonca is not affiliated with, endorsed by, or supported by n11. "n11" and related
 > names are trademarks of their respective owners.
 
 - Research notes, sources and open questions: [`RESEARCH.md`](RESEARCH.md)
-- Covered so far: `createN11Client` and `products.list()` (`GET /ms/product-query`), on a
-  `@lonca/core` transport that sends n11's `appkey` / `appsecret` headers.
+- Covered so far: `createN11Client`, `products.list()` (`GET /ms/product-query`),
+  `categories.list()` / `categories.getAttributes()` (`/cdn/...`) and `orders.list()`
+  (`GET /rest/delivery/v1/shipmentPackages`), on a `@lonca/core` transport that sends n11's
+  `appkey` / `appsecret` headers. Read-only contract probes: `pnpm probe:prod -- --only n11`.
 
 ```ts
 import { paginate } from '@lonca/core';
