@@ -87,6 +87,7 @@ export type {
   ListOrdersParams,
   ListPackagesParams,
   Order,
+  OrderPrice,
   OrdersPage,
   PackageLabel,
   PackageReceipt,
@@ -106,12 +107,17 @@ export type {
   ListCategoriesParams,
 } from './types/category.js';
 export type {
+  CatalogAttributePair,
   CatalogField,
+  CatalogMatchedHbProduct,
   CatalogPagingParams,
   CatalogProduct,
+  CatalogProductAttribute,
   CatalogProductLifecycleStatus,
   CatalogProductStatus,
+  CatalogTaskDetail,
   CatalogTrackingReceipt,
+  CatalogValidationResult,
   CheckProductStatusInput,
   DeleteBySkuInput,
   FastListingInput,
@@ -149,7 +155,11 @@ export type {
   SupplierListingType,
   SupplierSearchResult,
 } from './types/supplier.js';
-export type { AccountingTransaction, ListTransactionsParams } from './types/accounting.js';
+export type {
+  AccountingAmount,
+  AccountingTransaction,
+  ListTransactionsParams,
+} from './types/accounting.js';
 export type {
   AnswerQuestionInput,
   CreateQuestionInput,

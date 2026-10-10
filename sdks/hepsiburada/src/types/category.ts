@@ -93,12 +93,32 @@ export interface GetAttributesParams {
   modifiedAtSince?: string;
 }
 
-/** One attribute definition for a leaf category. */
+/**
+ * One attribute definition for a leaf category (an element of
+ * `data.baseAttributes[]` / `data.attributes[]` / `data.variantAttributes[]`
+ * of `GET /product/api/categories/{categoryId}/attributes` — spec
+ * `mpop-catalog.json`, confirmed on the prod wire 2026-10).
+ */
 export interface CategoryAttribute {
+  /** Attribute id — a string on the wire; kept wide for back-compat. */
   id?: number | string;
   name?: string;
-  externalName?: string;
+  /** Whether a product in this category must set the attribute. */
   mandatory?: boolean;
+  /** Attribute value type, passed through as Hepsiburada spells it. */
+  type?: string;
+  /** Whether the attribute accepts more than one value. */
+  multiValue?: boolean;
+  /**
+   * @deprecated Neither documented nor sent by Hepsiburada — never populated.
+   *   Use {@link name}. Will be removed in the next major.
+   */
+  externalName?: string;
+  /**
+   * @deprecated The attributes endpoint does not inline allowed values — never
+   *   populated. Fetch them with `categories.getAttributeValues(categoryId, id)`.
+   *   Will be removed in the next major.
+   */
   values?: unknown[];
   /**
    * Which bucket this attribute came from. Hepsiburada returns a leaf

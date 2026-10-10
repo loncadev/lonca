@@ -280,8 +280,16 @@
       "spec": "hepsiburada/mpfinance-external.json",
       "operation": "GET /transactions/merchantid/{merchantId}",
       "pointer": "items[]",
-      "ignore": ["raw"],
-      "note": "Public type; the normaliser copies same-named fields with typeof guards."
+      "ignore": [
+        "raw",
+        "transactionAmount",
+        "transactionId",
+        "transactionDate",
+        "type",
+        "currency"
+      ],
+      "coerced": ["amount"],
+      "note": "Public type; the normaliser copies same-named fields with typeof guards. `transactionAmount` is the wire `amount` object (renamed — the legacy numeric `amount`, back-filled from `amount.value`, keeps the name); transactionId / type / currency are deprecated aliases back-filled from id / transactionType / amount.currencyCode; transactionDate is deprecated (never sent)."
     },
     {
       "marketplace": "hepsiburada",
@@ -290,8 +298,8 @@
       "spec": "hepsiburada/mpop-catalog.json",
       "operation": "GET /product/api/categories/{categoryId}/attributes",
       "pointer": "data.attributes[]",
-      "ignore": ["raw", "group"],
-      "note": "Same schema under data.baseAttributes[] and data.variantAttributes[]; `group` is set by the SDK."
+      "ignore": ["raw", "group", "externalName", "values"],
+      "note": "Same schema under data.baseAttributes[] and data.variantAttributes[]; `group` is set by the SDK; externalName / values are deprecated (never sent — values come from getAttributeValues)."
     },
     {
       "marketplace": "hepsiburada",
@@ -309,9 +317,32 @@
       "spec": "hepsiburada/mpop-catalog.json",
       "operation": "GET /product/api/products/all-products-of-merchant/{merchantId}",
       "pointer": "data[]",
-      "ignore": ["raw", "title"],
-      "coerced": ["id", "categoryId"],
-      "note": "`title` is derived (productName / name / title); id and categoryId are stringified."
+      "ignore": [
+        "raw",
+        "title",
+        "productStatus",
+        "taskDetails",
+        "matchedHbProductInfo",
+        "rejectReasonsMessages",
+        "videoStatus",
+        "id",
+        "createdAt",
+        "createdBy",
+        "modifiedAt",
+        "modifiedBy",
+        "preMatchedSku",
+        "siblingSku",
+        "listingStatus",
+        "listingFailureReason",
+        "validationStatus",
+        "productType",
+        "uploadDate",
+        "productQuality",
+        "categoryScore",
+        "fields"
+      ],
+      "coerced": ["categoryId"],
+      "note": "`title` is derived (productName / name / title); categoryId is stringified. Ignored: the fields only products-by-merchant-and-status rows carry, and the deprecated fields neither endpoint sends."
     },
     {
       "marketplace": "hepsiburada",
@@ -320,8 +351,38 @@
       "spec": "hepsiburada/mpop-catalog.json",
       "operation": "GET /product/api/products/products-by-merchant-and-status",
       "pointer": "data[]",
-      "ignore": ["raw", "title"],
-      "coerced": ["id", "categoryId"]
+      "ignore": [
+        "raw",
+        "title",
+        "status",
+        "categoryId",
+        "categoryName",
+        "brand",
+        "description",
+        "images",
+        "price",
+        "tax",
+        "baseAttributes",
+        "productAttributes",
+        "variantTypeAttributes",
+        "rejectReasons",
+        "id",
+        "createdAt",
+        "createdBy",
+        "modifiedAt",
+        "modifiedBy",
+        "preMatchedSku",
+        "siblingSku",
+        "listingStatus",
+        "listingFailureReason",
+        "validationStatus",
+        "productType",
+        "uploadDate",
+        "productQuality",
+        "categoryScore",
+        "fields"
+      ],
+      "note": "Same type as all-products-of-merchant; `status` is copied from productStatus here. Ignored: the fields only all-products-of-merchant rows carry, and the deprecated fields neither endpoint sends."
     },
     {
       "marketplace": "hepsiburada",
@@ -340,8 +401,15 @@
       "spec": "hepsiburada/oms-external.json",
       "operation": "GET /orders/merchantid/{merchantId}",
       "pointer": "items[]",
-      "ignore": ["raw"],
-      "note": "Public type; the normaliser copies same-named fields with typeof guards (customerName falls back to customer / recipientName)."
+      "ignore": [
+        "raw",
+        "merchantSku",
+        "createdDate",
+        "externalOrderNumber",
+        "modifiedDate",
+        "total"
+      ],
+      "note": "Public type; the normaliser copies same-named fields with typeof guards (customerName falls back to customer / recipientName; merchantSku is read from merchantSKU). createdDate is documented on the getByOrderNumber detail root only; externalOrderNumber / modifiedDate / total are deprecated (never sent)."
     },
     {
       "marketplace": "hepsiburada",

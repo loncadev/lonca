@@ -7,9 +7,13 @@ import {
 import { resolveCatalogPaging, type ResolvedCatalogPaging } from '../catalog-paging.js';
 import type { HepsiburadaTransport } from '../transport.js';
 import type {
+  CatalogMatchedHbProduct,
   CatalogProduct,
+  CatalogProductAttribute,
   CatalogProductStatus,
+  CatalogTaskDetail,
   CatalogTrackingReceipt,
+  CatalogValidationResult,
   CheckProductStatusInput,
   DeleteBySkuInput,
   FastListingInput,
@@ -348,34 +352,98 @@ function toCatalogPage(data: unknown, paging: ResolvedCatalogPaging): OffsetPage
   };
 }
 
+/** String fields copied as-is (both list endpoints, plus the deprecated legacy names). */
+const PRODUCT_STRING_FIELDS = [
+  'merchantSku',
+  'barcode',
+  'hbSku',
+  'variantGroupId',
+  'status',
+  'productStatus',
+  'price',
+  'tax',
+  'videoStatus',
+  // Deprecated: documented by neither endpoint, absent on the prod wire.
+  'createdAt',
+  'createdBy',
+  'modifiedAt',
+  'modifiedBy',
+  'preMatchedSku',
+  'siblingSku',
+  'listingStatus',
+  'listingFailureReason',
+  'validationStatus',
+  'productType',
+  'uploadDate',
+] as const satisfies ReadonlyArray<keyof CatalogProduct>;
+
+/**
+ * Map one row of either catalog list endpoint onto {@link CatalogProduct}
+ * (`all-products-of-merchant` and `products-by-merchant-and-status` return
+ * different row shapes — spec `mpop-catalog.json`, prod wire 2026-10). Fields
+ * are copied when they carry the documented JSON type; nothing is guessed.
+ */
 function normalizeCatalogProduct(row: unknown): CatalogProduct {
   const r = (row && typeof row === 'object' ? row : {}) as Record<string, unknown>;
   const out: CatalogProduct = { raw: r };
+  for (const key of PRODUCT_STRING_FIELDS) {
+    const value = r[key];
+    if (typeof value === 'string') out[key] = value;
+  }
+  // `products-by-merchant-and-status` names the lifecycle status `productStatus`.
+  if (out.status === undefined && out.productStatus !== undefined) out.status = out.productStatus;
   if (typeof r.id === 'string') out.id = r.id;
   else if (typeof r.id === 'number') out.id = String(r.id);
-  if (typeof r.createdAt === 'string') out.createdAt = r.createdAt;
-  if (typeof r.createdBy === 'string') out.createdBy = r.createdBy;
-  if (typeof r.modifiedAt === 'string') out.modifiedAt = r.modifiedAt;
-  if (typeof r.modifiedBy === 'string') out.modifiedBy = r.modifiedBy;
-  if (typeof r.merchantSku === 'string') out.merchantSku = r.merchantSku;
-  if (typeof r.preMatchedSku === 'string') out.preMatchedSku = r.preMatchedSku;
-  if (typeof r.siblingSku === 'string') out.siblingSku = r.siblingSku;
-  if (typeof r.status === 'string') out.status = r.status;
-  if (typeof r.listingStatus === 'string') out.listingStatus = r.listingStatus;
-  if (typeof r.listingFailureReason === 'string') out.listingFailureReason = r.listingFailureReason;
-  if (typeof r.validationStatus === 'string') out.validationStatus = r.validationStatus;
-  if (typeof r.productType === 'string') out.productType = r.productType;
-  if (typeof r.uploadDate === 'string') out.uploadDate = r.uploadDate;
   if (typeof r.productQuality === 'number') out.productQuality = r.productQuality;
   if (typeof r.categoryScore === 'number') out.categoryScore = r.categoryScore;
   if (r.fields && typeof r.fields === 'object') {
     out.fields = r.fields as Record<string, never>;
   }
-  // Best-effort typed content. Hepsiburada keeps title/category/brand/images in
-  // the per-SKU `fields` map (keys verified against the catalog OpenAPI:
-  // `productName`/`name`, `categoryId`, `categoryName`, `brand`, `images`,
-  // `description`) — occasionally at the raw top level. Try known key variants;
-  // leave `undefined` when none match (never guess a value).
+  const baseAttributes = toAttributes(r.baseAttributes);
+  if (baseAttributes) out.baseAttributes = baseAttributes;
+  const productAttributes = toAttributes(r.productAttributes);
+  if (productAttributes) out.productAttributes = productAttributes;
+  const variantTypeAttributes = toAttributes(r.variantTypeAttributes);
+  if (variantTypeAttributes) out.variantTypeAttributes = variantTypeAttributes;
+  if (Array.isArray(r.validationResults)) {
+    out.validationResults = objectRows(r.validationResults).map((v) => {
+      const result: CatalogValidationResult = {};
+      if (typeof v.attributeName === 'string') result.attributeName = v.attributeName;
+      if (typeof v.message === 'string') result.message = v.message;
+      return result;
+    });
+  }
+  const rejectReasons = toStrings(r.rejectReasons);
+  if (rejectReasons) out.rejectReasons = rejectReasons;
+  const rejectReasonsMessages = toStrings(r.rejectReasonsMessages);
+  if (rejectReasonsMessages) out.rejectReasonsMessages = rejectReasonsMessages;
+  if (Array.isArray(r.taskDetails)) {
+    out.taskDetails = objectRows(r.taskDetails).map((t) => {
+      const task: CatalogTaskDetail = {};
+      if (typeof t.reason === 'string') task.reason = t.reason;
+      if (typeof t.url === 'string') task.url = t.url;
+      if (Array.isArray(t.commentList)) task.commentList = t.commentList;
+      return task;
+    });
+  }
+  if (Array.isArray(r.matchedHbProductInfo)) {
+    out.matchedHbProductInfo = objectRows(r.matchedHbProductInfo).map((m) => {
+      const matched: CatalogMatchedHbProduct = {};
+      if (typeof m.hbSku === 'string') matched.hbSku = m.hbSku;
+      if (typeof m.productName === 'string') matched.productName = m.productName;
+      if (typeof m.brand === 'string') matched.brand = m.brand;
+      const images = toStrings(m.images);
+      if (images) matched.images = images;
+      const variants = toAttributes(m.variantTypeAttributes, false);
+      if (variants) matched.variantTypeAttributes = variants;
+      return matched;
+    });
+  }
+  // Content fields. Both list endpoints send them at the top level
+  // (`productName`, and on `all-products-of-merchant` also `categoryId`,
+  // `categoryName`, `brand`, `description`, `images`). The legacy per-SKU
+  // `fields` map and the alternative key spellings are still tried first /
+  // as fallbacks for back-compat; `undefined` when none match (never guessed).
   const fields = r.fields as Record<string, { value?: unknown }> | undefined;
   const title = pickContentString(fields, r, 'productName', 'name', 'title');
   if (title !== undefined) out.title = title;
@@ -390,6 +458,36 @@ function normalizeCatalogProduct(row: unknown): CatalogProduct {
   const images = pickContentImages(fields, r, 'images', 'image', 'imageUrls');
   if (images !== undefined) out.images = images;
   return out;
+}
+
+/** The object elements of an array (non-objects dropped). */
+function objectRows(value: unknown[]): Array<Record<string, unknown>> {
+  return value.filter(
+    (item): item is Record<string, unknown> =>
+      !!item && typeof item === 'object' && !Array.isArray(item),
+  );
+}
+
+/**
+ * A `{ name, value, mandatory }[]` attribute list (`withMandatory: false` for
+ * the `{ name, value }[]` pairs of `matchedHbProductInfo[]`); `undefined` when
+ * not an array.
+ */
+function toAttributes(value: unknown, withMandatory = true): CatalogProductAttribute[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  return objectRows(value).map((a) => {
+    const attribute: CatalogProductAttribute = {};
+    if (typeof a.name === 'string') attribute.name = a.name;
+    if (typeof a.value === 'string') attribute.value = a.value;
+    if (withMandatory && typeof a.mandatory === 'boolean') attribute.mandatory = a.mandatory;
+    return attribute;
+  });
+}
+
+/** The string elements of an array; `undefined` when not an array. */
+function toStrings(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  return value.filter((item): item is string => typeof item === 'string');
 }
 
 /**

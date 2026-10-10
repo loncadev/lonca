@@ -48,10 +48,39 @@ export interface ListOrdersParams {
 /** Query parameters for `orders.listPackages()` and the status-specific helpers. */
 export type ListPackagesParams = ListOrdersParams;
 
-/** One order row. */
+/**
+ * A price on an order line, exactly as `oms-external` sends it: a major-unit
+ * decimal (`amount`, e.g. `149.9` lira) plus an ISO 4217 code (`currency`).
+ * Not converted to `@lonca/core` `Money` (integer minor units) — use
+ * `moneyFromMajor(amount, currency)` for that.
+ */
+export interface OrderPrice {
+  /** Major-unit decimal amount. */
+  amount?: number;
+  /** ISO 4217 currency code (e.g. `'TRY'`). */
+  currency?: string;
+}
+
+/**
+ * One order row.
+ *
+ * `orders.list()` rows are **order lines** (`items[]` of
+ * `GET /orders/merchantid/{merchantId}`: one row per line item, so an order
+ * with two lines appears twice with the same `orderNumber`). The line fields
+ * below mirror that object (spec `oms-external.json`, confirmed on the prod
+ * wire 2026-10). `orders.getByOrderNumber()` maps the order-detail root onto
+ * the same type; it carries `orderNumber`, `orderId`, `orderDate`,
+ * `createdDate` and a nested `customer`, the line fields stay on `raw.items`.
+ * Every field is optional and only set when the wire value has the documented
+ * JSON type.
+ */
 export interface Order {
   orderNumber?: string;
-  externalOrderNumber?: string;
+  /** Hepsiburada order id (wire `orderId`). */
+  orderId?: string;
+  /** Order line (line item) id — the id the line-item actions take (wire `id`). */
+  id?: string;
+  /** Line status (`Open`, `Unpacked`, …). */
   status?: string;
   /**
    * Customer display name, surfaced from the raw row's candidate fields
@@ -60,8 +89,59 @@ export interface Order {
    * stop guessing from `raw`.
    */
   customerName?: string | null;
+  /** Hepsiburada customer id. */
+  customerId?: string;
+  /** ISO 8601 order date-time (wire `orderDate`). */
+  orderDate?: string;
+  /** ISO 8601 date-time of the line's last status change (wire `lastStatusUpdateDate`). */
+  lastStatusUpdateDate?: string;
+  /** ISO 8601 date-time by which the line must ship (wire `dueDate`). */
+  dueDate?: string;
+  /** Package number once the line is packed. */
+  packageNumber?: string;
+  /** Hepsiburada SKU. */
+  sku?: string;
+  /** Merchant SKU (wire `merchantSKU`, upper-case `SKU`). */
+  merchantSku?: string;
+  /** Product barcode. */
+  barcode?: string;
+  /** Product name of the line. */
+  name?: string;
+  /** Quantity on the line. */
+  quantity?: number;
+  /** Cargo company name. */
+  cargoCompany?: string;
+  /** Unit price. */
+  unitPrice?: OrderPrice;
+  /** Line total (`unitPrice × quantity` after discounts) — not the order total. */
+  totalPrice?: OrderPrice;
+  /** VAT amount. */
+  vat?: number;
+  /** VAT rate (percent). */
+  vatRate?: number;
+  /**
+   * ISO 8601 creation date-time. Documented only on the order-detail root
+   * (`orders.getByOrderNumber()`); `orders.list()` rows carry
+   * {@link orderDate} instead and leave this unset.
+   */
   createdDate?: string;
+  /**
+   * @deprecated Neither documented nor sent by Hepsiburada — never populated.
+   *   Use {@link orderNumber}. Will be removed in the next major.
+   */
+  externalOrderNumber?: string;
+  /**
+   * @deprecated Neither documented nor sent by Hepsiburada — never populated.
+   *   The nearest real field is {@link lastStatusUpdateDate} (the last status
+   *   change, not any modification). Will be removed in the next major.
+   */
   modifiedDate?: string;
+  /**
+   * @deprecated Neither documented nor sent by Hepsiburada — never populated.
+   *   List rows are order lines: use {@link totalPrice} for the line total and
+   *   sum the lines of one `orderNumber` for an order total. Will be removed
+   *   in the next major.
+   */
   total?: number | string;
   /** Untouched raw row. */
   raw: Record<string, unknown>;
