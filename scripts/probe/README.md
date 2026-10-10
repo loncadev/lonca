@@ -66,6 +66,8 @@ check).
 | `promotions.listDiscounts`                         | `products.listUnapproved`                                   |
 | `orders.listPackages`                              | `orders.list(Delivered)`                                    |
 | `orders.getByOrderNumber` (→ first order)          | `suppliers.getAddresses` (Trendyol allows 1 request / hour) |
+|                                                    | `categories.getAttributeValues` (→ first leaf, attribute)   |
+|                                                    | `orders.listStream(last 7d)`                                |
 
 The probes below the original twelve / nine were added to verify SDK fields that the
 SDK-types-vs-spec check (`pnpm drift:types`) could not confirm from the earlier sample.

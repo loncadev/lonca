@@ -168,6 +168,22 @@
       "kind": "sdk-unknown-field",
       "reason": "Not in the docs or the prod wire (2026-10-10); kept on purpose so an inline value list from an older response format still reaches the deprecated CategoryAttribute.values instead of being dropped.",
       "since": "2026-10-10"
+    },
+    {
+      "marketplace": "trendyol",
+      "operation": "GET /integration/order/sellers/{sellerId}/orders/stream",
+      "path": "content[].lines[].fastDeliveryOptions[]",
+      "kind": "type-mismatch",
+      "reason": "Same as the orders list: docs say string items, prod returns objects. The SDK types the field as unknown[] and passes it through unchanged.",
+      "since": "2026-10-10"
+    },
+    {
+      "marketplace": "trendyol",
+      "operation": "GET /integration/order/sellers/{sellerId}/orders/stream",
+      "path": "content[].invoiceLink",
+      "kind": "sdk-unknown-field",
+      "reason": "Same package node as the orders list, where prod packages carried invoiceLink (string) in the 2026-10-10 05:39 sample; present only on some packages, so a sample can lack it. The SDK copies it to ShipmentPackage.invoiceLink.",
+      "since": "2026-10-10"
     }
   ]
 }
