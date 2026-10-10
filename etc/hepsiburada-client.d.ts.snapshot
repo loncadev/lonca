@@ -1,0 +1,2324 @@
+import { BaseRequestOptions, Logger, MutationResult, OffsetPage, TokenBucketRateLimiter } from '@lonca/core';
+
+/**
+ * Hepsiburada exposes its marketplace API across several `*-external` hostnames,
+ * each scoped to one product surface. Resources pick which service they need.
+ *
+ * The base URLs match the values published in Hepsiburada's developer portal
+ * (developers.hepsiburada.com) per OpenAPI document.
+ */
+declare const BASE_URLS: {
+    readonly prod: {
+        readonly listing: "https://listing-external.hepsiburada.com";
+        readonly oms: "https://oms-external.hepsiburada.com";
+        readonly shipping: "https://shipping-external.hepsiburada.com";
+        readonly 'claim-stub': "https://claim-stub-external.hepsiburada.com";
+        readonly 'oms-stub': "https://oms-stub-external.hepsiburada.com";
+        readonly mpop: "https://mpop.hepsiburada.com";
+        readonly mpfinance: "https://mpfinance-external.hepsiburada.com";
+        readonly 'supplier-api': "https://supplier-api-external.hepsiburada.com";
+        readonly asktoseller: "https://api-asktoseller-merchant.hepsiburada.com";
+        readonly diskonto: "https://diskonto-external.hepsiburada.com";
+    };
+    readonly sit: {
+        readonly listing: "https://listing-external-sit.hepsiburada.com";
+        readonly oms: "https://oms-external-sit.hepsiburada.com";
+        readonly shipping: "https://shipping-external-sit.hepsiburada.com";
+        readonly 'claim-stub': "https://claim-stub-external-sit.hepsiburada.com";
+        readonly 'oms-stub': "https://oms-stub-external-sit.hepsiburada.com";
+        readonly mpop: "https://mpop-sit.hepsiburada.com";
+        readonly mpfinance: "https://mpfinance-external-sit.hepsiburada.com";
+        readonly 'supplier-api': "https://supplier-api-external-sit.hepsiburada.com";
+        readonly asktoseller: "https://api-asktoseller-merchant-sit.hepsiburada.com";
+        readonly diskonto: "https://diskonto-external-sit.hepsiburada.com";
+    };
+};
+type HepsiburadaEnvironment = keyof typeof BASE_URLS;
+type HepsiburadaService = keyof (typeof BASE_URLS)[HepsiburadaEnvironment];
+interface TransportConfig {
+    /** Hepsiburada merchant ID (UUID-shaped). Required on most paths. */
+    merchantId: string;
+    /** API username — from Hepsiburada Merchant Portal → Settings → Integrations. */
+    username: string;
+    /** API password (treat as a secret; rotatable from the portal). */
+    password: string;
+    /** Which Hepsiburada environment to target. */
+    env: HepsiburadaEnvironment;
+    /**
+     * Integrator name sent in `User-Agent`. Required: Hepsiburada rejects
+     * requests without a meaningful User-Agent.
+     */
+    integratorName: string;
+    /** Optional structured logger (`@lonca/core` `Logger`). Defaults to no-op. */
+    logger?: Logger;
+    /** Request timeout in ms. Default: 30_000. */
+    timeoutMs?: number;
+    /** Override the underlying `fetch` (tests inject a mock). */
+    fetch?: typeof fetch;
+}
+interface RequestOptions extends BaseRequestOptions {
+    method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+    /** Which Hepsiburada service to call; selects the base URL. */
+    service: HepsiburadaService;
+    /** Path beginning with `/` (e.g. `/listings/merchantid/<id>`). */
+    path: string;
+    query?: Record<string, string | number | boolean | undefined>;
+}
+declare class HepsiburadaTransport {
+    private readonly config;
+    private readonly env;
+    private readonly authHeader;
+    private readonly requester;
+    constructor(config: TransportConfig);
+    get merchantId(): string;
+    request<T>(opts: RequestOptions): Promise<T>;
+    private buildUrl;
+    private buildHeaders;
+}
+
+/**
+ * Hepsiburada Accounting types (`muhasebe-entegrasyonu`).
+ *
+ * Source: developers.hepsiburada.com `muhasebe-entegrasyonu` v1.0.
+ *
+ * Two endpoints — order performance feed (alias of the orders list,
+ * delivered under a different docs tag) and the per-record accounting
+ * transaction feed. Only the transactions feed is unique; the orders
+ * performance feed is the same `/orders/merchantid/{id}` endpoint already
+ * exposed under `orders.list()`.
+ */
+/**
+ * Query parameters for `accounting.listTransactions()`.
+ *
+ * `mpfinance-external` validates the combination server-side (verified on SIT
+ * 2026-08-30): when none of `orderNumber` / `packageNumber` /
+ * `referenceDocument` / `sku` is given, a date-range pair is **required**
+ * (`recordDateStart`+`recordDateEnd`, `dueDateStart`+`dueDateEnd`,
+ * `orderDateStart`+`orderDateEnd` or `paymentDateStart`+`paymentDateEnd`),
+ * and a range may span at most 1 month.
+ */
+interface ListTransactionsParams {
+    /**
+     * ISO date `yyyy-MM-dd`.
+     *
+     * @deprecated Alias of {@link orderDateStart} (sent as `OrderDateStart`).
+     */
+    beginDate?: string;
+    /**
+     * ISO date `yyyy-MM-dd`.
+     *
+     * @deprecated Alias of {@link orderDateEnd} (sent as `OrderDateEnd`).
+     */
+    endDate?: string;
+    /** Row offset. Required by the API — the SDK defaults it to `0`. */
+    offset?: number;
+    /** Page size. Required by the API — the SDK defaults it to `100`. */
+    limit?: number;
+    /** Filter by order number. */
+    orderNumber?: string;
+    /** Filter by package number. */
+    packageNumber?: string;
+    /** Filter by reference document. */
+    referenceDocument?: string;
+    /** Comma-separated transaction types. */
+    transactionTypes?: string;
+    /** Transaction status filter. */
+    status?: string;
+    /** Filter by SKU. */
+    sku?: string;
+    /** ISO date `yyyy-MM-dd`; pair with `orderDateEnd`, max 1-month range. */
+    orderDateStart?: string;
+    orderDateEnd?: string;
+    /** ISO date `yyyy-MM-dd`; pair with `dueDateEnd`, max 1-month range. */
+    dueDateStart?: string;
+    dueDateEnd?: string;
+    /** ISO date `yyyy-MM-dd`; pair with `recordDateEnd`, max 1-month range. */
+    recordDateStart?: string;
+    recordDateEnd?: string;
+    /** ISO date `yyyy-MM-dd`; pair with `paymentDateEnd`, max 1-month range. */
+    paymentDateStart?: string;
+    paymentDateEnd?: string;
+}
+/** One accounting transaction row. */
+interface AccountingTransaction {
+    transactionId?: string;
+    transactionDate?: string;
+    paymentDate?: string;
+    type?: string;
+    amount?: number;
+    currency?: string;
+    orderNumber?: string;
+    /** Untouched raw row. */
+    raw: Record<string, unknown>;
+}
+
+/**
+ * Hepsiburada Accounting (`muhasebe-entegrasyonu`).
+ *
+ * **Service base URL**: `mpfinance-external[-sit].hepsiburada.com` (per the
+ * portal spec — routing through `oms-external` returns 404 because the route
+ * doesn't exist there; verified on SIT 2026-08-30, where the rerouted call
+ * answers 200).
+ *
+ * One unique endpoint here — the per-record transactions feed. The
+ * "Performans Servisi" endpoint Hepsiburada documents under this product
+ * is the same `/orders/merchantid/{id}` already covered by `orders.list()`.
+ */
+declare class AccountingResource {
+    private readonly transport;
+    private readonly limiter;
+    constructor(transport: HepsiburadaTransport, limiter?: TokenBucketRateLimiter);
+    /**
+     * List accounting transactions (record-level).
+     *
+     * Hepsiburada's portal documents this under "Kayıt Bazlı Muhasebe Servisi".
+     * The API validates the filter combination — pass an identifier
+     * (`orderNumber` / `packageNumber` / `referenceDocument` / `sku`) or a
+     * date-range pair spanning at most 1 month, otherwise it answers 400.
+     * Query parameter names are PascalCase on the wire (`Offset`, `Limit`, …)
+     * per `specs/hepsiburada/mpfinance-external.json`.
+     */
+    listTransactions(params?: ListTransactionsParams): Promise<AccountingTransaction[]>;
+}
+
+/**
+ * Hepsiburada Catalog Product (merchant SKU rows) types.
+ *
+ * Source: `katalog-urun-entegrasyonu` v1.0 (developers.hepsiburada.com) +
+ * discovery-first against `mpop[-sit].hepsiburada.com/product/api/products/*`.
+ *
+ * The catalog tracks per-field revision history, validation state,
+ * matching state, and product-quality scoring per merchant SKU.
+ */
+/**
+ * Paging for the catalog list endpoints. Hepsiburada pages the catalog by
+ * **page number** (`page` / `size`, zero-based). `offset` / `limit` are
+ * accepted as an alias so the methods plug straight into `paginateOffset`
+ * from `@lonca/core` — `offset` must then be a whole multiple of `limit`,
+ * because the API cannot address an arbitrary row offset. Use one style per
+ * call, not both.
+ *
+ * @example
+ * for await (const p of paginateOffset((q) => client.catalog.listProducts(q), { limit: 100 })) {
+ *   console.log(p.merchantSku);
+ * }
+ */
+interface CatalogPagingParams {
+    /** Zero-based page index. Omitted ⇒ Hepsiburada's default (`0`). */
+    page?: number;
+    /** Rows per page. Omitted ⇒ Hepsiburada applies its own default page size. */
+    size?: number;
+    /** Row offset (`paginateOffset` style). Must be a multiple of `limit`. */
+    offset?: number;
+    /** Rows per page (`paginateOffset` style alias of `size`). */
+    limit?: number;
+}
+/** Query parameters for `catalog.listProducts()`. */
+interface ListCatalogProductsParams extends CatalogPagingParams {
+    /** Narrow to one barcode (documented filter; verified live). */
+    barcode?: string;
+    /** Narrow to one merchant SKU (documented filter; verified live). */
+    merchantSku?: string;
+    /** Narrow to one Hepsiburada SKU (documented filter; verified live). */
+    hbSku?: string;
+}
+/**
+ * Catalog lifecycle status exactly as Hepsiburada's product API spells it —
+ * the closed enum documented for the `productStatus` query parameter of
+ * `products-by-merchant-and-status` (and the `status` field on
+ * `all-products-of-merchant` rows). Values are UPPER_SNAKE; the API answers
+ * HTTP 500 to anything else, including differently-cased spellings
+ * (verified live 2026-08).
+ */
+type CatalogProductLifecycleStatus = 'WAITING' | 'IN_EXTERNAL_PROGRESS' | 'PRE_MATCHED' | 'MATCHED' | 'REJECTED' | 'MATCHED_WITH_STAGED' | 'MISSING_INFO' | 'CREATED' | 'BLOCKED';
+/** Query parameters for `catalog.listProductsByStatus()`. */
+interface ListProductsByStatusParams extends CatalogPagingParams {
+    /**
+     * Lifecycle status to filter by — **required** by Hepsiburada (sent as the
+     * `productStatus` query parameter). Use the API's UPPER_SNAKE vocabulary
+     * (`'MATCHED'`, `'WAITING'`, …): the server returns HTTP 500 for unknown or
+     * differently-cased values. Strings outside the documented union are passed
+     * through unchanged so a newly added status works before this type catches up.
+     */
+    status: CatalogProductLifecycleStatus | (string & {});
+    /**
+     * Documented optional boolean filter, sent as `taskStatus`. Passed through
+     * as-is — Hepsiburada does not document what it selects.
+     */
+    taskStatus?: boolean;
+    /** Documented `version` query parameter (Hepsiburada's default is `1`). Passed through as-is. */
+    version?: number;
+    /**
+     * @deprecated Not a documented parameter — Hepsiburada ignores it (verified
+     *   live). It is no longer sent and will be removed in a future minor.
+     */
+    modifiedAtSince?: string;
+}
+/** One field on a catalog product (value + revision history). */
+interface CatalogField<V = string> {
+    value: V;
+    mandatory?: boolean;
+    detail?: {
+        revisedBy?: string;
+        revisionDate?: string;
+    };
+    history?: Array<{
+        revisedBy?: string;
+        revisionDate?: string;
+        value?: V;
+    }>;
+}
+/** One row in the merchant's catalog. */
+interface CatalogProduct {
+    /**
+     * Catalog row id. Absent when the wire row has none — `listProductsByStatus`
+     * rows carry no `id` (verified live 2026-08). Never the `''` placeholder
+     * earlier versions emitted.
+     */
+    id?: string;
+    createdAt?: string;
+    createdBy?: string;
+    modifiedAt?: string;
+    modifiedBy?: string;
+    merchantSku?: string;
+    preMatchedSku?: string;
+    siblingSku?: string;
+    status?: string;
+    listingStatus?: string;
+    listingFailureReason?: string;
+    validationStatus?: string;
+    productType?: string;
+    uploadDate?: string;
+    productQuality?: number;
+    categoryScore?: number;
+    /**
+     * Product title, resolved best-effort from the per-SKU `fields` map (or the
+     * raw row). Hepsiburada's catalog keys this as `productName`/`name`, **not**
+     * `title`. `undefined` when the catalog doesn't surface it — never guessed.
+     */
+    title?: string;
+    /** Hepsiburada category id, resolved best-effort from `fields` / raw. */
+    categoryId?: string;
+    /** Human-readable category name, resolved best-effort from `fields` / raw. */
+    categoryName?: string;
+    /** Brand name, resolved best-effort from `fields` / raw. */
+    brand?: string;
+    /** Product description, resolved best-effort from `fields` / raw. */
+    description?: string;
+    /** Image URLs in display order, resolved best-effort from `fields` / raw. */
+    images?: string[];
+    /**
+     * Raw per-field map (value + revision history) as returned by Hepsiburada.
+     * The typed `title`/`categoryId`/… above are resolved from this; keep reading
+     * `fields` directly for anything not promoted to a typed field.
+     */
+    fields?: Record<string, CatalogField<unknown>>;
+    /** Untouched raw row. */
+    raw: Record<string, unknown>;
+}
+/**
+ * Receipt returned by upload endpoints — Hepsiburada synchronously returns
+ * an opaque `trackingId` you can poll via `catalog.getProductStatus()`.
+ */
+interface CatalogTrackingReceipt {
+    trackingId: string;
+    /** Untouched raw response. */
+    raw: Record<string, unknown>;
+}
+/** Status check result for a tracking-id. */
+interface CatalogProductStatus {
+    trackingId?: string;
+    status?: string;
+    message?: string;
+    /** Per-row results when the upload contained multiple products. */
+    rows?: Array<Record<string, unknown>>;
+    /** Untouched raw response. */
+    raw: Record<string, unknown>;
+}
+/** One tracking-id history entry. */
+interface TrackingIdHistoryEntry {
+    trackingId?: string;
+    createdAt?: string;
+    status?: string;
+    /** Untouched raw row. */
+    raw: Record<string, unknown>;
+}
+/**
+ * Body for `catalog.uploadProductViaFile()` — an array of product objects
+ * (one per SKU). Hepsiburada's portal documents the per-field rules
+ * under "Ürün Bilgisi Gönderme".
+ */
+type UploadProductsInput = unknown[];
+/** Body for `catalog.uploadFastListing()`. */
+type FastListingInput = unknown[] | Record<string, unknown>;
+/**
+ * One `{ merchant, merchantSkuList }` group — the spec's
+ * `MerchantAndMerchantSkuListDTO` (`mpop-catalog.json`). Both fields are
+ * required per spec; the hints stay optional in TS and extra fields pass
+ * through.
+ */
+type MerchantSkuGroup = {
+    /** Merchant id (GUID). Required per spec. */
+    merchant?: string;
+    /** Merchant SKUs to act on. Required per spec. */
+    merchantSkuList?: string[];
+} & Record<string, unknown>;
+/**
+ * Body for `catalog.approvePreMatch()` / `catalog.rejectPreMatch()` — the
+ * spec (`integratorApprovePreMatch` / `integratorRejectPreMatch`) takes an
+ * **array** of {@link MerchantSkuGroup}; a plain object also passes through
+ * unchanged for backwards compatibility.
+ */
+type PreMatchActionInput = MerchantSkuGroup[] | MerchantSkuGroup;
+/** Body for `catalog.deleteByMerchantSkuList()` — Hepsiburada wants an SKU list. */
+type DeleteBySkuInput = {
+    merchantSkuList?: string[];
+    [key: string]: unknown;
+};
+/**
+ * Body for `catalog.checkProductStatus()` — the spec (`checkProductStatus`)
+ * takes an **array** of {@link MerchantSkuGroup}; a plain object also passes
+ * through unchanged for backwards compatibility.
+ */
+type CheckProductStatusInput = MerchantSkuGroup[] | MerchantSkuGroup;
+
+/**
+ * Hepsiburada Catalog Products (`katalog-urun-entegrasyonu` —
+ * product surface).
+ *
+ * **Service base URL**: `mpop[-sit].hepsiburada.com`, `/product/api/products/*`.
+ *
+ * Covers the full 11-endpoint product CRUD surface — read (list / by-status /
+ * history), upload (file / fast-listing), pre-match approve/reject, delete
+ * (async with tracking-id polling), and status checks.
+ */
+declare class CatalogResource {
+    private readonly transport;
+    private readonly limiter;
+    constructor(transport: HepsiburadaTransport, limiter?: TokenBucketRateLimiter);
+    /**
+     * List the merchant's catalog rows, one page at a time, optionally narrowed
+     * to a single `barcode` / `merchantSku` / `hbSku`.
+     *
+     * Returns an `OffsetPage` mapped from Hepsiburada's Spring-style envelope
+     * (`totalElements` → `totalCount`, `totalPages` → `pageCount`, `data` →
+     * `items`). Page by `page` / `size`, or by `offset` / `limit` to drive it
+     * with `paginateOffset` (pass `limit` — the API pages by number, so
+     * `offset` must be a multiple of it). A filter that matches nothing comes
+     * back as HTTP 200 `success: false, code: 4014` with an empty `data` array;
+     * that is surfaced as an empty page, not an error.
+     *
+     * @throws {ValidationError} when `offset` / `limit` cannot be expressed as a page.
+     */
+    listProducts(params?: ListCatalogProductsParams): Promise<OffsetPage<CatalogProduct>>;
+    /**
+     * List catalog rows filtered by lifecycle status (`'MATCHED'`, `'WAITING'`,
+     * `'MISSING_INFO'`, … — see `CatalogProductLifecycleStatus`).
+     *
+     * Hepsiburada requires the status (query parameter `productStatus`) and
+     * answers HTTP 500 — not 400 — when it is missing or not one of its
+     * UPPER_SNAKE values, so the SDK validates presence up front. A status
+     * bucket with no rows comes back as HTTP 200 `success: false, code: 4008`
+     * with an empty `data` array; that is surfaced as an empty page, not an error.
+     *
+     * Returns an `OffsetPage` (see `listProducts` for the envelope mapping and
+     * the `offset` / `limit` alias that makes it work with `paginateOffset`).
+     *
+     * @throws {ValidationError} when `status` is missing or empty, or when
+     *   `offset` / `limit` cannot be expressed as a page.
+     */
+    listProductsByStatus(params: ListProductsByStatusParams): Promise<OffsetPage<CatalogProduct>>;
+    /** Look up status for a single tracking-id (returned by an earlier upload). */
+    getProductStatus(trackingId: string): Promise<CatalogProductStatus>;
+    /** Get the upload-history feed for the merchant's tracking ids. */
+    getTrackingIdHistory(): Promise<TrackingIdHistoryEntry[]>;
+    /**
+     * Upload one or more products as JSON. Returns a `trackingId` you can
+     * poll via `getProductStatus(trackingId)`.
+     *
+     * @throws {ValidationError} when `products` is empty.
+     */
+    uploadProductViaFile(products: UploadProductsInput): Promise<CatalogTrackingReceipt>;
+    /** Upload a fast-listing payload (Hepsiburada's "Hızlı Ürün Yükleme" flow). */
+    uploadFastListing(input: FastListingInput): Promise<CatalogTrackingReceipt>;
+    /** Approve a product Hepsiburada has pre-matched to an existing catalog entry. */
+    approvePreMatch(input: PreMatchActionInput): Promise<MutationResult>;
+    /** Reject a pre-match Hepsiburada has proposed. */
+    rejectPreMatch(input: PreMatchActionInput): Promise<MutationResult>;
+    /** Check upload status for one or more tracking ids in a single request. */
+    checkProductStatus(input: CheckProductStatusInput): Promise<MutationResult>;
+    /**
+     * Delete one or more products by merchant SKU. Returns a `trackingId` you
+     * can poll via `getDeleteProcess(trackingId)`.
+     */
+    deleteByMerchantSkuList(input: DeleteBySkuInput): Promise<CatalogTrackingReceipt>;
+    /** Look up the status of an in-flight delete request by tracking-id. */
+    getDeleteProcess(trackingId: string): Promise<CatalogProductStatus>;
+}
+
+/**
+ * Hepsiburada Catalog/Category types.
+ *
+ * Source: `katalog-urun-entegrasyonu` v1.0 (developers.hepsiburada.com) +
+ * discovery-first against `mpop[-sit].hepsiburada.com/product/api/*`.
+ *
+ * The catalog API uses a **Spring-style** wrapped pagination envelope
+ * (`{ success, code, version, message, totalElements, totalPages, number,
+ * numberOfElements, first, last, data: T[] }`) distinct from the OMS shape.
+ * `categories.list` maps it onto the shared `OffsetPage<T>` (see
+ * {@link CatalogPage}).
+ */
+
+/**
+ * Page returned by `categories.list()` — the shared `OffsetPage<T>` shape from
+ * `@lonca/core` (`items`, `totalCount`, `limit`, `offset`, `pageCount`, so it
+ * plugs straight into `paginateOffset`) mapped from Hepsiburada's Spring
+ * envelope: `totalElements` → `totalCount`, `totalPages` → `pageCount`,
+ * `data` → `items`, `number × limit` → `offset`.
+ *
+ * The Spring fields the SDK exposed before are still present but
+ * **deprecated** — they will be dropped in a later minor, at which point this
+ * becomes a plain alias of `OffsetPage<T>`. Migrate `.data` → `.items`,
+ * `.totalElements` → `.totalCount`, `.totalPages` → `.pageCount`.
+ */
+interface CatalogPage<T> extends OffsetPage<T> {
+    /** @deprecated Use `offset / limit` — the zero-based page index. */
+    number: number;
+    /** @deprecated Use `pageCount`. */
+    totalPages: number;
+    /** @deprecated Use `totalCount`. */
+    totalElements: number;
+    /** @deprecated Use `items.length`. */
+    numberOfElements: number;
+    /** @deprecated Derive from `offset === 0`. */
+    first: boolean;
+    /** @deprecated Derive from `offset + limit >= totalCount`. */
+    last: boolean;
+    /** @deprecated An empty result is surfaced as an empty page; `success` carries no extra signal. */
+    success: boolean;
+    /** @deprecated Hepsiburada's own status code (`0` on success; `4008` / `4014` for an empty result). */
+    code: number;
+    /** @deprecated Hepsiburada's own status message. */
+    message: string | null;
+    /** @deprecated Use `items`. */
+    data: T[];
+}
+/** Wrapper for non-paged responses (e.g. category attributes). */
+interface CatalogResult<T> {
+    success: boolean;
+    code: number;
+    message: string | null;
+    data: T;
+}
+/**
+ * Query parameters for `categories.list()`. Paging is either Hepsiburada's
+ * `page` / `size` or the `paginateOffset`-style `offset` / `limit` alias —
+ * see {@link CatalogPagingParams}.
+ */
+interface ListCategoriesParams extends CatalogPagingParams {
+    /** Restrict to leaf (listable) categories. */
+    leaf?: boolean;
+    /** Filter by status string (`ACTIVE`, `INACTIVE`, …). */
+    status?: string;
+    /** Restrict to currently-available categories. */
+    available?: boolean;
+}
+/** One row in the category tree. */
+interface Category {
+    categoryId: number;
+    name: string;
+    displayName: string;
+    parentCategoryId: number;
+    paths: string[];
+    leaf: boolean;
+    status: string;
+    type: string;
+    sortId?: string;
+    available: boolean;
+    productTypes: unknown[];
+    merge: boolean;
+}
+/** Query parameters for `categories.getAttributes()`. */
+interface GetAttributesParams {
+    /** ISO timestamp — only return attributes modified at-or-after this. */
+    modifiedAtSince?: string;
+}
+/** One attribute definition for a leaf category. */
+interface CategoryAttribute {
+    id?: number | string;
+    name?: string;
+    externalName?: string;
+    mandatory?: boolean;
+    values?: unknown[];
+    /**
+     * Which bucket this attribute came from. Hepsiburada returns a leaf
+     * category's attributes in three groups — `base` (common), `category`
+     * (category-specific), and `variant` (variant-defining) — flattened into one
+     * list here, with this tag so callers can tell them apart.
+     */
+    group?: 'base' | 'category' | 'variant';
+    /** Untouched raw attribute object. */
+    raw: Record<string, unknown>;
+}
+/** One attribute-value option (for enum-style attributes). */
+interface CategoryAttributeValue {
+    id?: number | string;
+    name?: string;
+    externalName?: string;
+    /** Untouched raw row. */
+    raw: Record<string, unknown>;
+}
+
+/**
+ * Hepsiburada Categories (`katalog-urun-entegrasyonu` — category surface).
+ *
+ * **Service base URL**: `mpop[-sit].hepsiburada.com` with `/product/api/`
+ * prefix routed to the catalog category microservice.
+ *
+ * Three operations: list categories, list attributes (leaf-only), list
+ * attribute values (for enum-style attributes).
+ */
+declare class CategoriesResource {
+    private readonly transport;
+    private readonly limiter;
+    constructor(transport: HepsiburadaTransport, limiter?: TokenBucketRateLimiter);
+    /**
+     * List the category tree. ~27,000 categories total — use `leaf: true` to
+     * filter to listable ones.
+     *
+     * Returns a {@link CatalogPage} — the shared `OffsetPage` shape (`items`,
+     * `totalCount`, `pageCount`, …) mapped from Hepsiburada's Spring envelope,
+     * so it plugs into `paginateOffset` (pass `limit`; `offset` must be a
+     * multiple of it because the API pages by number). The legacy Spring fields
+     * (`data`, `totalElements`, …) are still present but deprecated.
+     *
+     * @throws {ValidationError} when both `page`/`size` and `offset`/`limit` are
+     *   given, or `offset` is not a multiple of `limit`.
+     */
+    list(params?: ListCategoriesParams): Promise<CatalogPage<Category>>;
+    /**
+     * Get attribute definitions for a leaf category.
+     *
+     * @throws {ValidationError} when `categoryId` is missing, or when
+     *   Hepsiburada returns `success: false` (e.g. non-leaf category, code 1003).
+     */
+    getAttributes(categoryId: number | string, params?: GetAttributesParams): Promise<CategoryAttribute[]>;
+    /**
+     * Get the allowed values for an enum-style attribute on a leaf category.
+     *
+     * @throws {ValidationError} when either id is missing or when Hepsiburada
+     *   rejects (success: false).
+     */
+    getAttributeValues(categoryId: number | string, attributeId: number | string): Promise<CategoryAttributeValue[]>;
+}
+
+/**
+ * Hepsiburada Claims (Talep) types.
+ *
+ * Two backend services back this surface:
+ *   - `talep-listeleme` (oms-external)        — list + accept / reject / preApproval
+ *   - `talep-olusturma` (claim-stub-external) — create
+ *
+ * Like Shipping, the portal's OpenAPI for both is path-only; body shapes
+ * are documented in the rendered doc pages. The SDK accepts loose
+ * `Record<string, unknown>` bodies and surfaces responses with a typed
+ * envelope + a `raw` escape hatch.
+ */
+/**
+ * Allowed values for `claims.listByStatus(status)`. The published OpenAPI
+ * spec types this as a string enum:
+ * `NewRequest | Accepted | AwaitingAction | InDispute | Rejected |
+ * Refunded | Cancelled | AwaitingPreApproval`. Trendyol's `Open` / `Closed`
+ * naming does **not** apply — Hepsiburada returns
+ * `400 "Wrong Claim Status"` for any other value.
+ *
+ * Open-ended to allow forward-compatibility if Hepsiburada adds a new
+ * status without an SDK release; explicit literals are intellisense-friendly.
+ */
+type ClaimStatus = 'NewRequest' | 'Accepted' | 'AwaitingAction' | 'InDispute' | 'Rejected' | 'Refunded' | 'Cancelled' | 'AwaitingPreApproval' | (string & {});
+/** A single claim row surfaced by `claims.list*()`. */
+interface Claim {
+    claimNumber?: string;
+    status?: ClaimStatus;
+    /** ISO 8601-ish; Hepsiburada returns a server-local string. */
+    createdAt?: string;
+    /** Untouched raw row — pull full claim fields from here. */
+    raw: Record<string, unknown>;
+}
+/** Filter / pagination params for `claims.list()`. */
+interface ListClaimsParams {
+    /** Format: `yyyy-MM-dd HH:mm` (Hepsiburada's documented spelling). */
+    beginDate?: string;
+    /** Format: `yyyy-MM-dd HH:mm`. */
+    endDate?: string;
+    offset?: number;
+    limit?: number;
+}
+/** Filter / pagination params for `claims.listByStatus()`. */
+interface ListClaimsByStatusParams extends ListClaimsParams {
+    /** Filter on the claim's status-change date. */
+    statusBeginDate?: string;
+    /** Filter on the claim's status-change date. */
+    statusEndDate?: string;
+}
+/**
+ * Payload for `claims.create()`. Common fields are typed as hints; the
+ * `& Record<string, unknown>` keeps Hepsiburada's full `createClaimRequest` body
+ * open so undocumented/extra fields still pass through verbatim.
+ */
+type CreateClaimInput = {
+    orderNumber?: string;
+    /** Line items being claimed (shape per Hepsiburada's portal docs). */
+    lines?: unknown[];
+} & Record<string, unknown>;
+/**
+ * Payload for `claims.accept()` / `claims.reject()` / `claims.preApprovalConfirm()`.
+ * Common fields typed as hints; open for the rest.
+ */
+type ClaimActionInput = {
+    /** Reason code for accept/reject. */
+    reasonCode?: string;
+    /** Pre-approval confirmation flag (`preApprovalConfirm`). */
+    confirmed?: boolean;
+} & Record<string, unknown>;
+
+/**
+ * Hepsiburada Claims (Talep) — list, status-based filtering, and
+ * accept/reject/preApproval actions plus claim creation.
+ *
+ * **Two backend services** back this surface (the SDK routes
+ * automatically; callers don't pick):
+ *
+ *   - List + actions: `oms-external[-sit].hepsiburada.com` (`talep-listeleme`)
+ *   - Create: `claim-stub-external[-sit].hepsiburada.com` (`talep-olusturma`)
+ *
+ * Body shapes for `accept`, `reject`, `preApprovalConfirm`, and `create`
+ * are documented on the developer portal — the SDK passes them through
+ * as `Record<string, unknown>` so future field additions don't break callers.
+ */
+declare class ClaimsResource {
+    private readonly transport;
+    private readonly limiter;
+    constructor(transport: HepsiburadaTransport, limiter?: TokenBucketRateLimiter);
+    /**
+     * List all claims. Date-range filters are optional; `offset`/`limit` default
+     * to `0`/`100` because Hepsiburada rejects a missing `limit` (`400
+     * "LimitCannotBeEmpty"`). Pass your own to paginate.
+     */
+    list(params?: ListClaimsParams): Promise<Claim[]>;
+    /**
+     * List claims filtered to a specific status.
+     *
+     * Allowed values (per the published OpenAPI spec, verified live):
+     * `NewRequest | Accepted | AwaitingAction | InDispute | Rejected |
+     * Refunded | Cancelled | AwaitingPreApproval`. Any other value returns
+     * `400 "Wrong Claim Status"` from Hepsiburada.
+     *
+     * @throws {ValidationError} when `status` is empty.
+     */
+    listByStatus(status: ClaimStatus, params?: ListClaimsByStatusParams): Promise<Claim[]>;
+    /**
+     * Accept (approve) a customer claim. Hepsiburada expects a body —
+     * pass the documented `c` payload via `input`.
+     */
+    accept(claimNumber: string, input?: ClaimActionInput): Promise<MutationResult>;
+    /** Reject a customer claim. */
+    reject(claimNumber: string, input?: ClaimActionInput): Promise<MutationResult>;
+    /**
+     * Confirm a "pre-approval" — a Hepsiburada-specific second-step
+     * approval flow for certain claim categories.
+     */
+    preApprovalConfirm(claimNumber: string, input?: ClaimActionInput): Promise<MutationResult>;
+    /**
+     * Create a new claim against an order. Routes to the `claim-stub`
+     * backend service.
+     */
+    create(input: CreateClaimInput): Promise<MutationResult>;
+}
+
+/**
+ * Hepsiburada Listings (Listeleme) types.
+ *
+ * Shape source: official OpenAPI document at
+ * developers.hepsiburada.com/api/v1/public/docs/hepsiburada/listeleme/v1/openapi
+ * (HEPSIBURADA - LISTELEME ENTEGRASYONU v1, 17 operations / 25 schemas).
+ */
+
+/** Pricing window for a listing (date-bounded promo, contract pricing, etc.). */
+interface ListingPricing {
+    finalPrice: number;
+    /** ISO 8601 UTC. */
+    startDate?: string;
+    /** ISO 8601 UTC. */
+    endDate?: string;
+    debtors?: string[];
+}
+/** Free-form customizable property metadata returned by Hepsiburada. */
+interface CustomizableProperty {
+    displayName?: string;
+    displayLength: number;
+    displayDescription?: string;
+}
+/** A single listing row from `listings.list()`. */
+interface Listing {
+    listingId: string;
+    uniqueIdentifier?: string;
+    hepsiburadaSku?: string;
+    merchantSku?: string;
+    price: number;
+    availableStock: number;
+    dispatchTime: number;
+    cargoCompany1?: string;
+    cargoCompany2?: string;
+    cargoCompany3?: string;
+    shippingAddressLabel?: string;
+    shippingProfileName?: string;
+    claimAddressLabel?: string;
+    maximumPurchasableQuantity: number;
+    minimumPurchasableQuantity: number;
+    pricings?: ListingPricing[];
+    isSalable: boolean;
+    customizableProperties?: CustomizableProperty[];
+    /** Reasons Hepsiburada surfaces when a listing is `!isSalable`. */
+    deactivationReasons?: string[];
+    isSuspended: boolean;
+    isLocked: boolean;
+    lockReasons?: string[];
+    isFrozen: boolean;
+    freezeReasons?: string[];
+    availableWarehouses?: string[];
+    /**
+     * `true` when this listing is fulfilled by Hepsiburada (FBH / "HepsiLojistik").
+     *
+     * ⚠️ For FBH listings, stock is managed by Hepsiburada's warehouse. Pushing
+     * your own stock via `uploadStock` / `uploadInventory` can **overwrite**
+     * Hepsiburada's stock figure and oversell or zero out the listing. Skip
+     * `isFulfilledByHB` listings in your stock-sync unless you intend to override.
+     */
+    isFulfilledByHB: boolean;
+    priceIncreaseDisabled: boolean;
+    priceDecreaseDisabled: boolean;
+    stockDecreaseDisabled: boolean;
+    skuAfterSuspension?: string;
+    productId?: string;
+    hasVariant: boolean;
+    /**
+     * Last-update timestamp surfaced from the raw row (ISO 8601), or `null` when
+     * Hepsiburada's listing row doesn't carry one — so last-write-wins guards can
+     * check for `null` instead of silently no-op'ing. (Hepsiburada exposes update
+     * *filters* but doesn't reliably return the timestamp on each row.)
+     */
+    updatedAt?: string | null;
+}
+/**
+ * Paged response wrapping `Listing[]` — the shared `OffsetPage<T>` shape from
+ * `@lonca/core`, so `paginateOffset((p) => client.listings.list(p))` works and
+ * the page shape matches every other list endpoint (`.items`, `.pageCount`).
+ *
+ * @deprecated Prefer importing `OffsetPage` from `@lonca/core` directly. This
+ *   alias stays exported for the lifetime of the `0.x` line. Note: the shape
+ *   changed in 0.9.0 — `.listings` is now `.items`, and `.pageCount` was added.
+ */
+type ListingsPage = OffsetPage<Listing>;
+/** Filter / pagination params for `listings.list()`. */
+interface ListListingsParams {
+    /** Pagination — required by Hepsiburada. */
+    offset: number;
+    /** Pagination — required by Hepsiburada. */
+    limit: number;
+    /** CSV of Hepsiburada SKUs to filter to. */
+    hbSkuList?: string;
+    /** CSV of merchant SKUs to filter to. */
+    merchantSkuList?: string;
+    /** Filter to listings that are salable. */
+    salableListings?: boolean;
+    /** Filter to listings that are NOT salable. */
+    notsalableListings?: boolean;
+    /** ISO 8601 UTC; filter to listings updated since this date. */
+    updateStartDate?: string;
+    /** ISO 8601 UTC; filter to listings updated before this date. */
+    updateEndDate?: string;
+    /** Filter to a single Hepsiburada product ID. */
+    productId?: string;
+}
+/** One item in a `listings.uploadInventory()` batch. */
+interface InventoryUploadItem {
+    hepsiburadaSku?: string;
+    merchantSku?: string;
+    price?: number;
+    fixedShippingPrice?: string;
+    availableStock?: number;
+    cargoCompany1?: string;
+    cargoCompany2?: string;
+    cargoCompany3?: string;
+    shippingAddressLabel?: string;
+    claimAddressLabel?: string;
+    maximumPurchasableQuantity?: number;
+    customizationTextType?: string;
+    customizationTextLength?: number;
+    btCargoCompany?: string;
+    ytCargoCompany?: string;
+    /** CSV of warehouse codes. */
+    availableWarehouses?: string;
+    shippingProfileName?: string;
+    hasInstallation?: boolean;
+}
+/** One item in a `listings.uploadStock()` batch. */
+interface StockUploadItem {
+    hepsiburadaSku?: string;
+    merchantSku?: string;
+    availableStock?: number;
+    maximumPurchasableQuantity?: number;
+}
+/** One item in a `listings.uploadPrice()` batch. */
+interface PriceUploadItem {
+    hepsiburadaSku?: string;
+    merchantSku?: string;
+    price?: number;
+}
+/** One item in a `listings.uploadShippingInfo()` batch. */
+interface ShippingInfoUploadItem {
+    hepsiburadaSku?: string;
+    merchantSku?: string;
+    dispatchTime?: number;
+    fixedShippingPrice?: number;
+    claimAddressLabel?: string;
+    shippingAddressLabel?: string;
+    cargoCompany1?: string;
+    cargoCompany2?: string;
+    cargoCompany3?: string;
+    btCargoCompany?: string;
+    ytCargoCompany?: string;
+    /** CSV of warehouse codes. */
+    availableWarehouses?: string;
+    shippingProfileName?: string;
+}
+/** One item in a `listings.uploadAdditionalInfo()` batch. */
+interface AdditionalInfoUploadItem {
+    hepsiburadaSku?: string;
+    merchantSku?: string;
+    customizationTextType?: string;
+    customizationTextLength: number;
+    hasInstallation?: boolean;
+}
+/**
+ * Response from every upload endpoint — Hepsiburada accepts the batch and
+ * returns an opaque `id` you poll separately (`listings.getStockUpload(id)`,
+ * etc.). The `id` lives 24+ hours on Hepsiburada's side.
+ */
+interface UploadReceipt {
+    id: string;
+}
+/** Lifecycle status of an upload. */
+type UploadStatus = 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'COMPLETED_WITH_ERRORS' | (string & {});
+/** Per-row failure surfaced by an upload result. */
+interface UploadError {
+    /** Index of the failing item in the original request batch. */
+    elementNo?: number;
+    hepsiburadaSku?: string;
+    merchantSku?: string;
+    /** Underlying error messages from Hepsiburada validation. */
+    errors?: string[];
+    /** Untouched raw error row. */
+    raw: Record<string, unknown>;
+}
+/**
+ * Common result envelope shared by stock / shipping / additional-info uploads
+ * (price uploads add `priceValidations` — see `PriceUploadResult` below).
+ */
+interface UploadResult {
+    id: string;
+    status?: UploadStatus;
+    /** ISO 8601 UTC. */
+    createdAt?: string;
+    total: number;
+    errors: UploadError[];
+}
+/** Hepsiburada price-validation hint surfaced on `PriceUploadResult.priceValidations`. */
+interface PriceValidation {
+    elementNo: number;
+    hepsiburadaSku?: string;
+    merchantSku?: string;
+    /** Validation type (e.g. `MinPrice`, `MaxPrice`, `RegulativePrice`). */
+    type?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    regulativePriceDetail?: {
+        minAmount?: number;
+        maxAmount?: number;
+        categoryName?: string;
+    };
+    description?: string;
+}
+interface PriceUploadResult extends UploadResult {
+    priceValidations?: PriceValidation[];
+}
+/** Body for `listings.updateSingleSku()`. */
+interface UpdateListingInput {
+    newAvailableStock?: number;
+    newPrice?: {
+        /** ISO 4217 currency code (e.g. `'TRY'`). */
+        currency?: string;
+        amount: number;
+    };
+    newDispatchTime?: number;
+}
+/** Body for `listings.bulkUnlock()`. */
+interface BulkUnlockInput {
+    hbSkuList: string[];
+}
+/** Row from `listings.getBuyboxOrder()`. Hepsiburada keeps the response shape sparse — pull from `raw` for fields the SDK doesn't model. */
+interface BuyboxOrderRow {
+    hepsiburadaSku?: string;
+    merchantSku?: string;
+    buyboxOrder?: number;
+    buyboxPrice?: number;
+    raw: Record<string, unknown>;
+}
+/** Row from `listings.getCommissions()`. Conservative typing — `raw` carries the full response. */
+interface CommissionRow {
+    hepsiburadaSku?: string;
+    merchantSku?: string;
+    commissionRate?: number;
+    raw: Record<string, unknown>;
+}
+
+/**
+ * Hepsiburada listings / stock / price / shipping / additional-info endpoints.
+ *
+ * **Service base URL**: `listing-external[-sit].hepsiburada.com`.
+ *
+ * Async upload pattern (mirrors Trendyol's batch model): every POST upload
+ * endpoint returns `{ id }` — poll the matching `get*Upload(id)` to read the
+ * outcome (status + per-item errors). Hepsiburada retains upload results for
+ * **24+ hours**.
+ *
+ * Rate limit: Hepsiburada doesn't publish a per-endpoint limit on this surface;
+ * the SDK provisions a generous 600 req/min token bucket that you can override.
+ */
+declare class ListingsResource {
+    private readonly transport;
+    private readonly limiter;
+    constructor(transport: HepsiburadaTransport, limiter?: TokenBucketRateLimiter);
+    /**
+     * List the merchant's listings. Pagination is mandatory — pass `offset`
+     * and `limit`.
+     *
+     * @throws {ValidationError} when `limit < 1` or `offset < 0`.
+     */
+    list(params: ListListingsParams): Promise<OffsetPage<Listing>>;
+    /**
+     * Buybox-rank info for one or more SKUs. Pass a comma-separated string
+     * via `skuList` — Hepsiburada accepts both Hepsiburada SKUs and merchant
+     * SKUs. **Required** despite what the published OpenAPI spec suggests:
+     * the live API rejects empty/missing `skuList` with `400 "skuList cannot
+     * be empty"`. The SDK validates client-side so the bad request never
+     * leaves the process.
+     *
+     * @throws {ValidationError} when `skuList` is empty / not a string.
+     */
+    getBuyboxOrder(skuList: string): Promise<BuyboxOrderRow[]>;
+    /**
+     * Commission rates for one or more SKUs (`skuList` as CSV).
+     *
+     * **Required** despite what the published OpenAPI spec suggests: the live
+     * API rejects empty/missing `skuList` with `400 "skuList cannot be empty"`.
+     *
+     * @throws {ValidationError} when `skuList` is empty / not a string.
+     */
+    getCommissions(skuList: string): Promise<CommissionRow[]>;
+    /**
+     * "Inventory upload" — Hepsiburada's combined stock/price/shipping/etc.
+     * bulk endpoint. Use this when you want to push everything at once;
+     * `uploadStock`, `uploadPrice`, `uploadShippingInfo` are narrower
+     * surfaces that update one dimension at a time.
+     *
+     * @throws {ValidationError} when `items` is empty or longer than 1000.
+     */
+    uploadInventory(items: InventoryUploadItem[]): Promise<UploadReceipt>;
+    /** Poll the result of a prior `uploadInventory`. */
+    getInventoryUpload(uploadId: string): Promise<UploadResult>;
+    /**
+     * Bulk-update stock quantities.
+     *
+     * ⚠️ This overwrites the stock Hepsiburada holds for each SKU. For listings
+     * fulfilled by Hepsiburada (`Listing.isFulfilledByHB === true`), that figure
+     * is managed by HB's warehouse — pushing your own can oversell or zero them
+     * out. Filter those SKUs out of your stock sync unless you mean to override.
+     *
+     * @throws {ValidationError} when `items` is empty or longer than 1000.
+     */
+    uploadStock(items: StockUploadItem[]): Promise<UploadReceipt>;
+    getStockUpload(uploadId: string): Promise<UploadResult>;
+    /**
+     * Bulk-update prices.
+     *
+     * Hepsiburada validates against floor/ceiling rules; if rejected, the
+     * result populates `priceValidations[]` on `getPriceUpload`.
+     *
+     * @throws {ValidationError} when `items` is empty or longer than 1000.
+     */
+    uploadPrice(items: PriceUploadItem[]): Promise<UploadReceipt>;
+    /** Poll a price upload — surfaces `priceValidations[]` for floor/ceiling rejections. */
+    getPriceUpload(uploadId: string): Promise<PriceUploadResult>;
+    /** Bulk-update shipping config (dispatch time, cargo company, warehouses). */
+    uploadShippingInfo(items: ShippingInfoUploadItem[]): Promise<UploadReceipt>;
+    getShippingInfoUpload(uploadId: string): Promise<UploadResult>;
+    /** Bulk-update product extras (customization text, installation flag). */
+    uploadAdditionalInfo(items: AdditionalInfoUploadItem[]): Promise<UploadReceipt>;
+    getAdditionalInfoUpload(uploadId: string): Promise<UploadResult>;
+    /**
+     * Activate one listing by `hepsiburadaSku`. Reverses a prior
+     * deactivate / "is not salable" state when the underlying issue
+     * (low stock, suspended, etc.) is resolved.
+     */
+    activate(hepsiburadaSku: string): Promise<void>;
+    /** Deactivate one listing by `hepsiburadaSku`. */
+    deactivate(hepsiburadaSku: string): Promise<void>;
+    /** Update one listing's stock / price / dispatch-time in a single call. */
+    updateSingle(hepsiburadaSku: string, merchantSku: string, input: UpdateListingInput): Promise<void>;
+    /** Permanently delete one listing. */
+    deleteSingle(hepsiburadaSku: string, merchantSku: string): Promise<void>;
+    /**
+     * Bulk-unlock Hepsiburada SKUs that Hepsiburada has locked (typically
+     * due to pricing or supply issues — same family as Trendyol's `unlock`).
+     *
+     * @throws {ValidationError} when `hbSkuList` is empty.
+     */
+    bulkUnlock(input: BulkUnlockInput): Promise<void>;
+    private submitUpload;
+    private pollUpload;
+}
+
+/**
+ * Hepsiburada OMS (Order Management) types.
+ *
+ * Source: `siparis-olusturma-entegrasyonu` v1.0 (developers.hepsiburada.com)
+ * + discovery-first against `oms-external-sit.hepsiburada.com` (2026-05).
+ *
+ * - Most list endpoints return `{ totalCount, limit, offset, pageCount, items }` —
+ *   the shared `OffsetPage<T>` shape from `@lonca/core`.
+ * - The unfiltered `/packages` list returns a **raw array** (no envelope).
+ * - Action endpoints (deliver, intransit, undeliver, cancel, etc.) accept
+ *   loose `Record<string, unknown>` bodies — Hepsiburada's portal docs the
+ *   exact field set per endpoint; the SDK passes payloads through unchanged.
+ *   They answer with a bare string (`200`) or no body (`204`), so they resolve
+ *   to `MutationResult` (`{ raw }`) — except `createPackages`, whose
+ *   documented `201` body is surfaced as `PackageReceipt`.
+ */
+
+/**
+ * Wrapper for the orders / packages list endpoints. Equivalent to
+ * `OffsetPage<T>` from `@lonca/core` — kept as a named export for
+ * back-compat and discoverability.
+ *
+ * @deprecated Prefer importing `OffsetPage` from `@lonca/core` directly.
+ *   This alias will stay exported for the lifetime of the `0.x` line.
+ */
+type OrdersPage<T = Order> = OffsetPage<T>;
+/** Query parameters shared across all list endpoints. */
+interface ListOrdersParams {
+    /** Zero-based offset. Default: 0. */
+    offset?: number;
+    /** Page size. Default: 100 in SDK, up to 1000 server-side. */
+    limit?: number;
+    /**
+     * Filter by status (open enum: `Open`, `Shipped`, `Delivered`, `Cancelled`, …).
+     * Used only by `list()`; status-specific helpers (e.g. `listCancelled`) bake the
+     * status into the path instead.
+     */
+    status?: string;
+    /** ISO `yyyy-MM-dd` (or ISO 8601 timestamp). */
+    beginDate?: string;
+    /** ISO `yyyy-MM-dd` (or ISO 8601 timestamp). */
+    endDate?: string;
+}
+/** Query parameters for `orders.listPackages()` and the status-specific helpers. */
+type ListPackagesParams = ListOrdersParams;
+/** One order row. */
+interface Order {
+    orderNumber?: string;
+    externalOrderNumber?: string;
+    status?: string;
+    /**
+     * Customer display name, surfaced from the raw row's candidate fields
+     * (`customerName`, `customer.name`, `customer.firstName/lastName`,
+     * `recipientName`). `null` when Hepsiburada omits all of them — so callers
+     * stop guessing from `raw`.
+     */
+    customerName?: string | null;
+    createdDate?: string;
+    modifiedDate?: string;
+    total?: number | string;
+    /** Untouched raw row. */
+    raw: Record<string, unknown>;
+}
+/** One shipping-package row. */
+interface ShippingPackage {
+    packageNumber?: string;
+    orderNumber?: string;
+    status?: string;
+    cargoCompany?: string;
+    trackingNumber?: string;
+    createdDate?: string;
+    /** Untouched raw row. */
+    raw: Record<string, unknown>;
+}
+/** One available cargo company option returned by the changeable-cargo endpoints. */
+interface CargoCompanyOption {
+    code?: string;
+    name?: string;
+    /** Untouched raw row. */
+    raw: Record<string, unknown>;
+}
+/** Package label (PDF / image URL or base64 payload). */
+interface PackageLabel {
+    /** When Hepsiburada returns a downloadable URL. */
+    url?: string;
+    /** When Hepsiburada returns a base64-encoded inline payload. */
+    base64?: string;
+    /** Label format (PDF / ZPL / etc.) if surfaced. */
+    format?: string;
+    /** Untouched raw response. */
+    raw: Record<string, unknown>;
+}
+/**
+ * Receipt returned by `orders.createPackages()` — the spec's
+ * `CreateDeliveryResponse` (`201`): the number of the package that was just
+ * created and its cargo barcode. Both are optional on the wire; the untouched
+ * body is on `raw`.
+ */
+interface PackageReceipt {
+    /** Number of the newly created package (`packageNumber`). */
+    packageNumber?: string;
+    /** Cargo barcode / delivery code of the new package. */
+    barcode?: string;
+    /** Untouched parsed response body. */
+    raw: unknown;
+}
+/**
+ * Body for `orders.createPackages()` — one or more line-item groups to pack.
+ * Hepsiburada's portal docs the field set; the SDK accepts any object.
+ */
+type CreatePackagesInput = {
+    /** Line-item ids to pack together. */
+    lineItems?: string[];
+    /** Cargo company code (e.g. `'ARAS'`). */
+    cargoCompany?: string;
+} & Record<string, unknown>;
+/** Body for `orders.splitPackage()`. */
+type SplitPackageInput = {
+    /** Line-item ids to split into a new package. */
+    lineItems?: string[];
+} & Record<string, unknown>;
+/** Body for `orders.cancelLineItem()`. Hepsiburada expects a `reason` field. */
+type CancelLineItemInput = {
+    reason?: string;
+} & Record<string, unknown>;
+/** Body for the deliver / intransit / undeliver status transitions. */
+type PackageStatusInput = {
+    /** Cargo tracking number (e.g. for the in-transit transition). */
+    trackingNumber?: string;
+    /** Reason (e.g. for a failed/undelivered transition). */
+    reason?: string;
+} & Record<string, unknown>;
+/** Body for cargo-company-change updates (line item or package level). */
+type ChangeCargoCompanyInput = {
+    /** Target cargo company code (e.g. `'MNG'`). */
+    cargoCompany?: string;
+} & Record<string, unknown>;
+/**
+ * Body for `orders.updateLineItemLaborCost()` — the spec's
+ * `UpdateLaborCostRequest` (`oms-external.json`).
+ */
+type LaborCostInput = {
+    /** Labor cost per unit. */
+    unitLaborCost?: number;
+} & Record<string, unknown>;
+/** One invoice entry in {@link InvoiceLinkInput}'s `invoices` list. */
+type InvoiceLinkItem = {
+    /** Invoice issue date. */
+    arrangementDate?: string;
+    /** Invoice content type (`pdf` / `html`); when set the link is not re-queried. */
+    contentType?: string;
+    /** Invoice URL. */
+    invoiceLink?: string;
+    /** Order number the invoice belongs to. */
+    orderNumber?: string;
+    /** Invoice row number. */
+    rowNumber?: string;
+    /** Invoice serial number. */
+    serialNumber?: string;
+} & Record<string, unknown>;
+/**
+ * Body for `orders.sendInvoiceLink()` — the spec's `AddInvoiceOfPackageRequest`:
+ * either a single link (`invoiceLink` + `serialNumber` / `rowNumber`) or a
+ * multi-invoice `invoices` list.
+ */
+type InvoiceLinkInput = {
+    /** Invoice issue date. */
+    arrangementDate?: string;
+    /** Invoice URL. */
+    invoiceLink?: string;
+    /** Multiple invoices for the package. */
+    invoices?: InvoiceLinkItem[];
+    /** Invoice row number. */
+    rowNumber?: string;
+    /** Invoice serial number. */
+    serialNumber?: string;
+} & Record<string, unknown>;
+/**
+ * Body for `orders.updateParcelInfo()` — the spec's
+ * `UpdateDeliveryParcelInfoRequest`.
+ */
+type ParcelInfoInput = {
+    /** Total volumetric weight (desi) of the package. */
+    totalDesi?: number;
+    /** Total number of parcels. */
+    totalParcel?: number;
+} & Record<string, unknown>;
+/**
+ * Body for `orders.updatePackageWarehouse()` — the spec's
+ * `UpdateDeliveryWarehouseRequest`.
+ */
+type WarehouseInput = {
+    /** Short label identifying the warehouse shipping address. */
+    shippingAddressLabel?: string;
+} & Record<string, unknown>;
+
+/**
+ * Hepsiburada Order Management (`siparis-olusturma-entegrasyonu` +
+ * `oms-fulfilment-entegrasyonu` + `muhasebe-entegrasyonu` performance feed).
+ *
+ * **Service base URL**: `oms-external[-sit].hepsiburada.com`.
+ *
+ * Covers the full 28-endpoint OMS surface — status-bucketed list queries,
+ * single-order / single-package detail, package status transitions
+ * (deliver / intransit / undeliver), line-item actions (cancel / cargo /
+ * labor cost), and packaging mutations (create / split / unpack).
+ *
+ * Most list endpoints return `{ totalCount, items[] }`; the unfiltered
+ * `/packages` list returns a raw array (no envelope) — both are normalized.
+ */
+declare class OrdersResource {
+    private readonly transport;
+    private readonly limiter;
+    constructor(transport: HepsiburadaTransport, limiter?: TokenBucketRateLimiter);
+    /** List orders whose payment is complete (status: order received). */
+    list(params?: ListOrdersParams): Promise<OrdersPage>;
+    /** List cancelled orders. */
+    listCancelled(params?: ListOrdersParams): Promise<OrdersPage>;
+    /** List orders awaiting payment. */
+    listPaymentAwaiting(params?: ListOrdersParams): Promise<OrdersPage>;
+    /**
+     * Get full detail for a single order by order number.
+     *
+     * @throws {ValidationError} when `orderNumber` is missing.
+     */
+    getByOrderNumber(orderNumber: string): Promise<Order>;
+    /**
+     * List shipping packages for the merchant. Returns a **raw array** (no
+     * `totalCount` envelope on this specific endpoint).
+     */
+    listPackages(params?: ListPackagesParams): Promise<ShippingPackage[]>;
+    /** List packages already shipped (cargo handover complete). */
+    listShippedPackages(params?: ListPackagesParams): Promise<OrdersPage<ShippingPackage>>;
+    /** List packages already delivered to the buyer. */
+    listDeliveredPackages(params?: ListPackagesParams): Promise<OrdersPage<ShippingPackage>>;
+    /** List packages that failed delivery. */
+    listUndeliveredPackages(params?: ListPackagesParams): Promise<OrdersPage<ShippingPackage>>;
+    /** List packages that were unpacked after being created. */
+    listUnpackedPackages(params?: ListPackagesParams): Promise<OrdersPage<ShippingPackage>>;
+    /** List shipped packages still missing an uploaded invoice. */
+    listMissingInvoicePackages(params?: ListPackagesParams): Promise<OrdersPage<ShippingPackage>>;
+    /**
+     * Get cargo detail for a single package by package number.
+     *
+     * @throws {ValidationError} when `packageNumber` is missing.
+     */
+    getPackage(packageNumber: string): Promise<ShippingPackage>;
+    /**
+     * Get the shared label (barcode / PDF) for a package.
+     *
+     * @throws {ValidationError} when `packageNumber` is missing.
+     */
+    getPackageLabel(packageNumber: string): Promise<PackageLabel>;
+    /**
+     * List cargo firms a line item (still un-packaged) can be moved to.
+     *
+     * @throws {ValidationError} when `orderLineId` is missing.
+     */
+    getChangeableCargoCompaniesForLineItem(orderLineId: string): Promise<CargoCompanyOption[]>;
+    /**
+     * List cargo firms a packaged shipment can be moved to.
+     *
+     * @throws {ValidationError} when `packageNumber` is missing.
+     */
+    getChangeableCargoCompaniesForPackage(packageNumber: string): Promise<CargoCompanyOption[]>;
+    /**
+     * List line items that can be packaged together with the given line item.
+     *
+     * @throws {ValidationError} when `lineItemId` is missing.
+     */
+    getPackageableLineItems(lineItemId: string): Promise<unknown[]>;
+    /**
+     * Package one or more line items into a new shipping package. Hepsiburada's
+     * portal documents the exact body shape under `Kalem veya Kalemleri
+     * Paketleme`.
+     *
+     * Resolves to a {@link PackageReceipt} — the new `packageNumber` and its
+     * cargo `barcode` (the spec's `CreateDeliveryResponse`); the untouched
+     * body stays on `raw`.
+     */
+    createPackages(input: CreatePackagesInput): Promise<PackageReceipt>;
+    /**
+     * Split an existing package into two. Resolves to a `MutationResult` — the
+     * API acknowledges with a bare string, available on `raw`.
+     */
+    splitPackage(packageNumber: string, input: SplitPackageInput): Promise<MutationResult>;
+    /** Unpack an existing package (returns its line items to the un-packaged pool). */
+    unpackPackage(packageNumber: string, input?: Record<string, unknown>): Promise<MutationResult>;
+    /** Mark a package as in transit (handed to the cargo firm). */
+    markPackageInTransit(packageNumber: string, input?: PackageStatusInput): Promise<MutationResult>;
+    /** Mark a package as delivered. */
+    markPackageDelivered(packageNumber: string, input?: PackageStatusInput): Promise<MutationResult>;
+    /** Mark a package as undelivered (failed delivery). */
+    markPackageUndelivered(packageNumber: string, input?: PackageStatusInput): Promise<MutationResult>;
+    /** Cancel a single line item before it has been packaged. */
+    cancelLineItem(lineId: string, input: CancelLineItemInput): Promise<MutationResult>;
+    /** Change the cargo company on a line item before it has been packaged. */
+    updateLineItemCargoCompany(orderLineId: string, input: ChangeCargoCompanyInput): Promise<MutationResult>;
+    /** Update the labor-cost field on a line item. */
+    updateLineItemLaborCost(orderLineId: string, input: LaborCostInput): Promise<MutationResult>;
+    /** Change the cargo company on a packaged shipment. */
+    updatePackageCargoCompany(packageNumber: string, input: ChangeCargoCompanyInput): Promise<MutationResult>;
+    /** Attach an invoice URL / number to a shipped package. */
+    sendInvoiceLink(packageNumber: string, input: InvoiceLinkInput): Promise<MutationResult>;
+    /** Update parcel dimensions / `desi` info on a package. */
+    updateParcelInfo(packageNumber: string, input: ParcelInfoInput): Promise<MutationResult>;
+    /** Update the source warehouse for a package. */
+    updatePackageWarehouse(packageNumber: string, input: WarehouseInput): Promise<MutationResult>;
+    private merchantSegment;
+    private getOrdersPage;
+    private getPackagesPage;
+    private getPackagesArray;
+    private listQuery;
+    private packageStatusAction;
+    private assertInput;
+}
+
+/**
+ * Hepsiburada Product Update types (`urun-guncelleme-entegrasyonu`).
+ *
+ * Source: developers.hepsiburada.com `urun-guncelleme-entegrasyonu` v1.0.
+ * Async upload flow — POST returns a `trackingId` you poll via
+ * `getUpdateStatus(trackingId)`.
+ */
+/** Single update-history row for a specific (merchantId, hbSku) pair. */
+interface ProductUpdateHistoryEntry {
+    trackingId?: string;
+    status?: string;
+    modifiedAt?: string;
+    /** Untouched raw row. */
+    raw: Record<string, unknown>;
+}
+/** Response from `productUpdates.importUpdates()`. */
+interface ProductUpdateReceipt {
+    trackingId: string;
+    /** Untouched raw response. */
+    raw: Record<string, unknown>;
+}
+/** Status lookup for a single tracking-id. */
+interface ProductUpdateStatus {
+    trackingId?: string;
+    status?: string;
+    message?: string;
+    rows?: Array<Record<string, unknown>>;
+    /** Untouched raw response. */
+    raw: Record<string, unknown>;
+}
+/**
+ * Body for `productUpdates.importUpdates()` — an array of update rows
+ * `{ hbSku, fields: { ... } }`. Hepsiburada's portal documents the exact
+ * field set under "Ürün Güncelleme Servisi".
+ */
+type ProductUpdateInput = unknown[];
+
+/**
+ * Hepsiburada Product Updates (`urun-guncelleme-entegrasyonu`).
+ *
+ * **Service base URL**: `mpop[-sit].hepsiburada.com` with the `/ticket-api`
+ * base path (per the portal spec — routing through `oms-external` returns 401
+ * because the routes don't exist there; verified on SIT 2026-08-30, where
+ * `/ticket-api/api/integrator/status/{id}` answers 200). 3-endpoint surface —
+ * submit updates, poll status, query update history per (merchantId, hbSku)
+ * pair.
+ */
+declare class ProductUpdatesResource {
+    private readonly transport;
+    private readonly limiter;
+    constructor(transport: HepsiburadaTransport, limiter?: TokenBucketRateLimiter);
+    /**
+     * Submit a batch of product updates. Returns a `trackingId` you can poll
+     * via `getUpdateStatus(trackingId)`.
+     */
+    importUpdates(updates: ProductUpdateInput): Promise<ProductUpdateReceipt>;
+    /** Get the status of a previously-submitted update batch. */
+    getUpdateStatus(trackingId: string): Promise<ProductUpdateStatus>;
+    /** Get the full update history for one (merchantId, hbSku) pair. */
+    getUpdateHistory(hbSku: string): Promise<ProductUpdateHistoryEntry[]>;
+}
+
+/**
+ * Hepsiburada Seller Promotions types (`satici-promosyonu-entegrasyonu`).
+ *
+ * Source: developers.hepsiburada.com `satici-promosyonu-entegrasyonu` v1.0.
+ *
+ * 9 endpoints — "self-campaign" (basket-discount) lifecycle: list seller's
+ * eligible categories, query budgets/limits, list discounts, get single
+ * discount, create three discount types (TL / Yüzde / X Al Y Öde), cancel.
+ */
+/**
+ * Body for `promotions.createTlDiscount()` — the diskonto spec's "Sepette TL
+ * İndirimi Oluşturma" request. Undocumented fields pass through.
+ */
+type CreateTlDiscountInput = {
+    /** Campaign name shown to the seller. */
+    name?: string;
+    /** Campaign start date-time (ISO 8601). */
+    startDate?: string;
+    /** Campaign end date-time (ISO 8601). */
+    endDate?: string;
+    /** Category ids the campaign applies to. */
+    conditionCategories?: string[];
+    /** SKUs the campaign applies to. */
+    conditionSkus?: string[];
+    /** Campaign budget (TL). */
+    budget?: number;
+    /** Discount amount (TL). */
+    discountAmount?: number;
+    /** Minimum cart amount for the discount to apply. */
+    conditionAmount?: number;
+    /** Whether the campaign is one-time-use per customer. */
+    oneTimeUsage?: boolean;
+} & Record<string, unknown>;
+/**
+ * Body for `promotions.createPercentDiscount()` — the diskonto spec's
+ * "Sepete % İndirimi Oluşturma" request. Undocumented fields pass through.
+ */
+type CreatePercentDiscountInput = {
+    /** Campaign name shown to the seller. */
+    name?: string;
+    /** Campaign start date-time (ISO 8601). */
+    startDate?: string;
+    /** Campaign end date-time (ISO 8601). */
+    endDate?: string;
+    /** Category ids the campaign applies to. */
+    conditionCategories?: string[];
+    /** SKUs the campaign applies to. */
+    conditionSkus?: string[];
+    /** Percentage discount to apply. */
+    discountPercentage?: number;
+    /** Minimum cart amount for the discount to apply. */
+    conditionAmount?: number;
+    /** Maximum discount amount that can be applied. */
+    maxDiscountAmount?: number;
+    /** Maximum number of carts the campaign applies to. */
+    maxCartCount?: number;
+    /** Whether the campaign is one-time-use per customer. */
+    oneTimeUsage?: boolean;
+} & Record<string, unknown>;
+/**
+ * Body for `promotions.createXyDiscount()` — the diskonto spec's "Sepete X Al
+ * Y Öde İndirimi Oluşturma" request. Undocumented fields pass through.
+ */
+type CreateXyDiscountInput = {
+    /** Campaign name shown to the seller. */
+    name?: string;
+    /** Campaign start date-time (ISO 8601). */
+    startDate?: string;
+    /** Campaign end date-time (ISO 8601). */
+    endDate?: string;
+    /** Category ids the campaign applies to. */
+    conditionCategories?: string[];
+    /** SKUs the campaign applies to. */
+    conditionSkus?: string[];
+    /** Products required in the cart for the campaign to apply (the X in "buy X pay Y"). */
+    conditionProductCount?: number;
+    /** Products the customer pays for (the Y in "buy X pay Y"). */
+    mustPayProductCount?: number;
+    /** How many times the campaign can repeat within one cart. */
+    iterationCount?: number;
+    /** Maximum number of carts the campaign applies to. */
+    maxCartCount?: number;
+    /** Whether the campaign is one-time-use per customer. */
+    oneTimeUsage?: boolean;
+} & Record<string, unknown>;
+/**
+ * Body for `promotions.cancelDiscount()` — the diskonto spec's "Sepet
+ * İndirimi İptali" request.
+ */
+type CancelDiscountInput = {
+    /** Unique id of the campaign to cancel. */
+    campaignId?: number;
+} & Record<string, unknown>;
+/**
+ * Query parameters for `promotions.listDiscounts()`. Both are required by
+ * the API (`page` / `pagesize` on the wire); the SDK defaults them to
+ * `page=1`, `pagesize=100`.
+ */
+interface ListDiscountsParams {
+    /** Page number (defaults to `1`). */
+    page?: number;
+    /** Page size (sent as `pagesize`; defaults to `100`). */
+    pageSize?: number;
+}
+/**
+ * Receipt returned by `promotions.createTlDiscount()` /
+ * `createPercentDiscount()` / `createXyDiscount()` — the spec's
+ * `CreateSelfCampaignResponse`: `{ success, data: { campaignId } }`.
+ * `cancelDiscount()` only gets `{ success }` back and therefore resolves to a
+ * plain `MutationResult`.
+ */
+interface DiscountReceipt {
+    /** Whether Hepsiburada accepted the campaign. */
+    success?: boolean;
+    /** Id of the campaign that was created (`data.campaignId` on the wire). */
+    campaignId?: number;
+    /** Untouched parsed response body (envelope included). */
+    raw: unknown;
+}
+/** One seller-product-category row. */
+interface PromotionCategory {
+    categoryId?: number | string;
+    name?: string;
+    /** Untouched raw row. */
+    raw: Record<string, unknown>;
+}
+/** Discount budgets summary (TL / Yüzde / XY per campaign type). */
+interface DiscountBudgets {
+    /** Untouched raw response — Hepsiburada returns a per-type breakdown. */
+    raw: Record<string, unknown>;
+}
+/** Discount limits summary. */
+interface DiscountLimits {
+    raw: Record<string, unknown>;
+}
+/** One discount row. */
+interface Discount {
+    campaignId?: string;
+    type?: string;
+    status?: string;
+    startDate?: string;
+    endDate?: string;
+    /** Untouched raw row. */
+    raw: Record<string, unknown>;
+}
+
+/**
+ * Hepsiburada Seller Promotions (`satici-promosyonu-entegrasyonu`).
+ *
+ * **Service base URL**: `diskonto-external[-sit].hepsiburada.com` (per the
+ * portal spec — routing through `oms-external` returns 401 because the routes
+ * don't exist there; verified on SIT 2026-08-30, where `listCategories`
+ * answers 200). 9-endpoint self-service basket-discount lifecycle:
+ * - list seller's eligible product categories
+ * - query budgets / limits
+ * - list discounts / get single discount
+ * - create three discount types (TL, %, X-buy-Y-pay)
+ * - cancel a discount
+ *
+ * NOTE: On SIT the `/self-campaign/*` read endpoints answer a server-side
+ * `500` (`"Beklenmedik bir hata oluştu."`) for the sandbox merchant
+ * regardless of parameters (verified 2026-08-30) — likely no self-campaign
+ * enrollment. `listCategories` works (200).
+ */
+declare class PromotionsResource {
+    private readonly transport;
+    private readonly limiter;
+    constructor(transport: HepsiburadaTransport, limiter?: TokenBucketRateLimiter);
+    /** List the seller's product categories eligible for self-campaigns. */
+    listCategories(): Promise<PromotionCategory[]>;
+    /** Get the seller's current discount budgets. */
+    getBudgets(): Promise<DiscountBudgets>;
+    /** Get the seller's discount limits. */
+    getLimits(): Promise<DiscountLimits>;
+    /**
+     * List the seller's existing discounts.
+     *
+     * The API requires `page`/`pagesize` (both mandatory per
+     * `specs/hepsiburada/diskonto-external.json`); the SDK defaults them to
+     * `page=1`, `pagesize=100`.
+     */
+    listDiscounts(params?: ListDiscountsParams): Promise<Discount[]>;
+    /** Get a single discount by campaign id. */
+    getDiscount(campaignId: string): Promise<Discount>;
+    /** Create a fixed-TL basket discount. Resolves to a {@link DiscountReceipt} (`campaignId` of the new campaign). */
+    createTlDiscount(input: CreateTlDiscountInput): Promise<DiscountReceipt>;
+    /** Create a percentage basket discount. Resolves to a {@link DiscountReceipt} (`campaignId` of the new campaign). */
+    createPercentDiscount(input: CreatePercentDiscountInput): Promise<DiscountReceipt>;
+    /** Create an X-buy-Y-pay basket discount. Resolves to a {@link DiscountReceipt} (`campaignId` of the new campaign). */
+    createXyDiscount(input: CreateXyDiscountInput): Promise<DiscountReceipt>;
+    /**
+     * Cancel an existing discount. The API only answers `{ success }`, so this
+     * resolves to a `MutationResult` — the body is on `raw`.
+     */
+    cancelDiscount(input: CancelDiscountInput): Promise<MutationResult>;
+    private merchantSegment;
+    private assertInput;
+}
+
+/**
+ * Hepsiburada "Ask the Seller" types (`saticiya-sor-entegrasyonu`).
+ *
+ * Source: developers.hepsiburada.com `saticiya-sor-entegrasyonu` v1.0.
+ *
+ * Six endpoints — list / get / create / answer / reject / count-by-status
+ * for buyer questions posted on product pages.
+ */
+/**
+ * Query parameters for `questions.list()`.
+ *
+ * The Ask-the-Seller API pages with `page`/`size` and filters creation dates
+ * with `minCreatedAt`/`maxCreatedAt` (verified on SIT 2026-08-30).
+ */
+interface ListQuestionsParams {
+    /** Filter by status (`WaitingForAnswer`, `Answered`, `Reported`, …). */
+    status?: string;
+    /** @deprecated Alias of {@link minCreatedAt}. */
+    beginDate?: string;
+    /** @deprecated Alias of {@link maxCreatedAt}. */
+    endDate?: string;
+    /** @deprecated Alias of {@link page}. */
+    offset?: number;
+    /** @deprecated Alias of {@link size}. */
+    limit?: number;
+    /** Zero-based page number. */
+    page?: number;
+    /** Page size. */
+    size?: number;
+    /** ISO date-time — questions created at/after this instant. */
+    minCreatedAt?: string;
+    /** ISO date-time — questions created at/before this instant. */
+    maxCreatedAt?: string;
+}
+/**
+ * Body for `questions.create()` — the spec's `CreateIssueViewModel` ("Soru
+ * Oluşturma", a SIT test-question generator).
+ */
+type CreateQuestionInput = {
+    /** How many test questions to create. */
+    issueCount?: number;
+} & Record<string, unknown>;
+/**
+ * Body for `questions.answer()`. The spec defines this endpoint as
+ * `multipart/form-data` with PascalCase part names.
+ */
+type AnswerQuestionInput = {
+    /** Answer text — at most 2000 characters per spec. */
+    Answer?: string;
+    /** Files to send along with the answer. */
+    Files?: unknown[];
+} & Record<string, unknown>;
+/** Body for `questions.reject()` — the spec's `RejectIssueViewModel`. */
+type RejectQuestionInput = {
+    /** Why the question is being rejected — at most 2000 characters per spec. */
+    rejectReason?: string;
+    /** Id of the conversation the rejection relates to, if any. */
+    rejectConversationId?: string;
+} & Record<string, unknown>;
+/** One question row. */
+interface Question {
+    number?: string;
+    status?: string;
+    text?: string;
+    answer?: string;
+    productSku?: string;
+    createdDate?: string;
+    /** Untouched raw row. */
+    raw: Record<string, unknown>;
+}
+/** Per-status count summary returned by `questions.getCountByStatus()`. */
+interface QuestionCountSummary {
+    totalCount?: number;
+    byStatus?: Record<string, number>;
+    /** Untouched raw response. */
+    raw: Record<string, unknown>;
+}
+
+/**
+ * Hepsiburada "Ask the Seller" (`saticiya-sor-entegrasyonu`).
+ *
+ * **Service base URL**: `api-asktoseller-merchant[-sit].hepsiburada.com`
+ * (per the portal spec — routing through `oms-external` returns 401 because
+ * the routes don't exist there; verified on SIT 2026-08-30, where the
+ * rerouted calls answer 200). 6-endpoint surface — list / get / create /
+ * answer / reject / count.
+ *
+ * Every endpoint requires the merchant id in a `merchantId` **header**
+ * (missing it yields 401); the SDK sends it automatically.
+ */
+declare class QuestionsResource {
+    private readonly transport;
+    private readonly limiter;
+    constructor(transport: HepsiburadaTransport, limiter?: TokenBucketRateLimiter);
+    /**
+     * List questions with optional status / date filtering. Pages with the
+     * API's `page`/`size` parameters (the legacy `offset`/`limit` params are
+     * kept as aliases).
+     */
+    list(params?: ListQuestionsParams): Promise<Question[]>;
+    /** Get a single question by its issue number. */
+    get(number: string): Promise<Question>;
+    /** Per-status question counts. */
+    getCountByStatus(): Promise<QuestionCountSummary>;
+    /**
+     * Create a new buyer question. SIT-only: Hepsiburada exposes it so
+     * integrators can seed test data (the buyer normally creates questions).
+     *
+     * Resolves to a `MutationResult`. The spec documents the `201` body as a
+     * bare `number[]` without naming the elements, so it is left on `raw`
+     * rather than modelled as a field.
+     */
+    create(input: CreateQuestionInput): Promise<MutationResult>;
+    /** Answer a question. Resolves to a `MutationResult` (`201`, bare string on `raw`). */
+    answer(number: string, input: AnswerQuestionInput): Promise<MutationResult>;
+    /** Reject a question (mark as inappropriate / spam). Resolves to a `MutationResult` (`201`, bare string on `raw`). */
+    reject(number: string, input: RejectQuestionInput): Promise<MutationResult>;
+    private assertInput;
+    /**
+     * The Ask-the-Seller API authenticates the merchant with a required
+     * `merchantId` header on every endpoint (401 without it).
+     */
+    private merchantHeader;
+}
+
+/**
+ * Hepsiburada Shipping types.
+ *
+ * Source: developers.hepsiburada.com/api/v1/public/docs/hepsiburada/shipping-entegrasyonu/v1.0/openapi
+ *
+ * Hepsiburada's published OpenAPI for this surface only lists paths and
+ * the names of body schemas (`ShippingProfileExternalRequest`,
+ * `ShippingProfileExternalResponse`) — the schemas themselves aren't in
+ * the components block. The SDK keeps the typed surface conservative
+ * (input/output declared as `Record<string, unknown>`) and points at the
+ * portal doc for full field rules.
+ */
+/** One cargo firm row returned by `shipping.getCargoFirms()`. */
+interface CargoFirm {
+    id?: string | number;
+    name?: string;
+    code?: string;
+    /** Untouched raw row — pull undocumented fields from here. */
+    raw: Record<string, unknown>;
+}
+/**
+ * Shipping profile shape — used by both `shipping.createProfile()` and
+ * `shipping.updateProfile()`. Hepsiburada's portal documents the field
+ * set under "Profil Oluşturma" / "Profil Güncelleme"; the SDK accepts
+ * any object so future field additions don't require a release bump.
+ */
+interface ShippingProfileInput {
+    /** Merchant-side profile name (caller-defined). */
+    profileName?: string;
+    /** CSV / array of cargo firm codes the profile supports. */
+    cargoFirms?: string[] | string;
+    /** Free-form extra fields Hepsiburada accepts. */
+    [key: string]: unknown;
+}
+/** One shipping profile row returned by `shipping.listProfiles()`. */
+interface ShippingProfile {
+    profileName?: string;
+    /** Untouched raw row — see the portal docs for the documented field set. */
+    raw: Record<string, unknown>;
+}
+
+/**
+ * Hepsiburada Shipping (`shipping-entegrasyonu`) — cargo firm catalog +
+ * merchant shipping profile management.
+ *
+ * **Service base URL**: `shipping-external[-sit].hepsiburada.com`.
+ *
+ * Hepsiburada's published OpenAPI for this surface lists 4 paths but
+ * leaves body schemas / response schemas empty. The SDK exposes the
+ * documented paths typed and accepts loose `Record<string, unknown>`
+ * payloads — see the developer-portal doc page for field rules.
+ */
+declare class ShippingResource {
+    private readonly transport;
+    private readonly limiter;
+    constructor(transport: HepsiburadaTransport, limiter?: TokenBucketRateLimiter);
+    /** List the cargo firms Hepsiburada supports for the merchant. */
+    getCargoFirms(): Promise<CargoFirm[]>;
+    /** List the merchant's configured shipping profiles. */
+    listProfiles(): Promise<ShippingProfile[]>;
+    /**
+     * Create a new shipping profile. Resolves to a `MutationResult` — the
+     * portal publishes no response schema for this surface, so the body is
+     * left untouched on `raw`.
+     *
+     * @throws {ValidationError} when `input` is empty / missing fields HB requires.
+     */
+    createProfile(input: ShippingProfileInput): Promise<MutationResult>;
+    /** Update an existing shipping profile. Same body shape (and `MutationResult`) as `createProfile`. */
+    updateProfile(input: ShippingProfileInput): Promise<MutationResult>;
+}
+
+/**
+ * Hepsiburada Supplier integration types (`tedarikci-entegrasyonu`).
+ *
+ * Source: developers.hepsiburada.com `tedarikci-entegrasyonu` v1.0
+ * (`specs/hepsiburada/supplier-api-external.json`).
+ *
+ * Five endpoints — open purchase orders search, supplier listings search,
+ * listing-update-requests CRUD (search list / get / create).
+ *
+ * All search endpoints are POST with `{ limit, offset, … }` style bodies;
+ * the inputs carry typed hints for the spec-documented fields and any extra
+ * fields still pass through untouched.
+ *
+ * Every response is wrapped in the supplier API's own envelope
+ * `{ data, message, errorCode }`. The SDK unwraps `data` into the typed
+ * result and keeps `message` / `errorCode` next to it; the untouched body
+ * (envelope included) is always on `raw`.
+ */
+/** Purchase-order (SAS) type — values documented on `purchaseOrderTypes` in the spec. */
+type PurchaseOrderType = 'ConsignmentPurchaseOrder' | 'StandardPurchaseOrder';
+/** One `{ purchaseOrderNumber, lineNumber }` pair in {@link OpenPurchaseOrderSearchInput}. */
+type PurchaseOrderLineRef = {
+    /** Purchase order (SAS) number. */
+    purchaseOrderNumber?: string;
+    /** Line number within the purchase order. */
+    lineNumber?: number;
+} & Record<string, unknown>;
+/**
+ * Body for `suppliers.searchOpenPurchaseOrders()` — the spec's "Açık
+ * Siparişleri Listeleme" request. All fields optional per spec.
+ */
+type OpenPurchaseOrderSearchInput = {
+    /** Due-date range start (`yyyy-MM-dd`). */
+    dueDateStart?: string;
+    /** Due-date range end (`yyyy-MM-dd`). */
+    dueDateEnd?: string;
+    /** Purchase-order creation-date range start (`yyyy-MM-dd`). */
+    createdDateStart?: string;
+    /** Purchase-order creation-date range end (`yyyy-MM-dd`). */
+    createdDateEnd?: string;
+    /** SKU filter. */
+    skus?: string[];
+    /** Brand filter. */
+    brands?: string[];
+    /** Buying-category filter. */
+    buyingCategories?: string[];
+    /** Product-type filter. */
+    definitionNames?: string[];
+    /** Purchase-order type filter; strings outside the documented union pass through. */
+    purchaseOrderTypes?: Array<PurchaseOrderType | (string & {})>;
+    /** Warehouse gate-id filter. */
+    warehouseGateIds?: string[];
+    /** Specific purchase-order lines to match. */
+    purchaseOrderLines?: PurchaseOrderLineRef[];
+    /** Whether a purchase-order operation is still in progress. */
+    inProgressPurchaseOrdersOperation?: boolean;
+    /** Whether the line was marked as sent. */
+    isSent?: boolean;
+    /** Free-text search. */
+    searchText?: string;
+    /** Field to sort by. */
+    sortField?: string;
+    /** Sort direction. */
+    sortDirection?: string;
+    /** Max rows to return (0–1000). */
+    limit?: number;
+    /** Start index of the rows to return (defaults to `0`). */
+    offset?: number;
+} & Record<string, unknown>;
+/**
+ * Body for `suppliers.searchSupplierListings()` — the spec's "Envanter
+ * Bilgilerini Listeleme" request. All fields optional per spec.
+ */
+type SupplierListingSearchInput = {
+    /** Listing-type filter; strings outside the documented union pass through. */
+    listingType?: SupplierListingType | (string & {});
+    /** Listing-status filter; strings outside the documented union pass through. */
+    status?: SupplierListingStatus | (string & {});
+    /** Purchase-price change-date range start (`yyyy-MM-dd`). */
+    lastPurchasePriceUpdateStartDate?: string;
+    /** Purchase-price change-date range end (`yyyy-MM-dd`). */
+    lastPurchasePriceUpdateEndDate?: string;
+    /** Free-text search over SKU / supplier stock code. */
+    searchText?: string;
+    /** Max rows to return (0–1000). */
+    limit?: number;
+    /** Start index of the rows to return (defaults to `0`). */
+    offset?: number;
+} & Record<string, unknown>;
+/**
+ * Body for `suppliers.searchListingUpdateRequests()` — the spec's "Teklifleri
+ * Listeleme" request. All fields optional per spec.
+ */
+type ListingUpdateRequestSearchInput = {
+    /** Offer-date range start (`yyyy-MM-dd`). */
+    startDate?: string;
+    /** Offer-date range end (`yyyy-MM-dd`). */
+    endDate?: string;
+    /** Max rows to return (0–1000). */
+    limit?: number;
+    /** Start index of the rows to return (defaults to `0`). */
+    offset?: number;
+} & Record<string, unknown>;
+/**
+ * One offered product line in {@link CreateListingUpdateRequestInput} — the
+ * spec's `AddListingUpdateRequestItem`.
+ */
+type CreateListingUpdateRequestItem = {
+    /** Trace id (UUID). */
+    traceId?: string;
+    /** Offered supplier stock code. */
+    merchantSku?: string;
+    /** SKU the offer is for. */
+    sku?: string;
+    /** Offered price. */
+    price?: number;
+    /** Date the offered price takes effect (ISO 8601). */
+    priceEffectiveDate?: string;
+    /** Offered stock. */
+    stock?: number;
+    /** Currency of the offered price — required by the API when `price` is set; strings outside the documented union pass through. */
+    currencyCode?: 'TRY' | 'USD' | 'EUR' | (string & {});
+    /** Offered salable flag. */
+    salable?: boolean;
+    /** Offered units per package (case size). */
+    unitPerPackage?: number;
+} & Record<string, unknown>;
+/**
+ * Body for `suppliers.createListingUpdateRequest()` — the spec's
+ * `AddListingUpdateRequestCommand`.
+ */
+type CreateListingUpdateRequestInput = {
+    /** Product lines of the offer. */
+    requestItems?: CreateListingUpdateRequestItem[];
+} & Record<string, unknown>;
+/** `operationStatus` of an open purchase-order line (spec enum `OpenPurchaseOrderResponseStatus`). */
+type OpenPurchaseOrderStatus = 'Actionable' | 'Pending' | 'DraftShipment';
+/** Supplier listing status (spec enum `ListingStatus`). */
+type SupplierListingStatus = 'Suspended' | 'Active' | 'Inactive';
+/** Supplier listing type (spec enum `ListingType`). */
+type SupplierListingType = 'Normal' | 'DropShipping' | 'Consignee';
+/** Per-field approval status on an offer item (spec enum `ApprovalStatus`). */
+type SupplierApprovalStatus = 'Processing' | 'Approved' | 'Rejected' | 'Accepted';
+/**
+ * Fields shared by every supplier-API result: the `{ data, message, errorCode }`
+ * envelope minus `data` (which is unwrapped into the typed result), plus the
+ * untouched body.
+ */
+interface SupplierEnvelope {
+    /** Server message — `null` on the wire for a successful call, so usually absent. */
+    message?: string;
+    /** Server error code — `null` on the wire for a successful call, so usually absent. */
+    errorCode?: string;
+    /** Untouched parsed response body (envelope included). */
+    raw: unknown;
+}
+/**
+ * One page of a supplier search — `data: { totalCount, rows }` on the wire.
+ * Not an `OffsetPage`: the API pages by `pageNumber` / `pageSize` in the
+ * request body and echoes neither back, so `limit` / `offset` are unknowable
+ * from the response.
+ */
+interface SupplierSearchResult<T> extends SupplierEnvelope {
+    /** Total matching rows across all pages. */
+    totalCount?: number;
+    /** Rows on this page (`data.rows`; empty when the API sends `null`). */
+    items: T[];
+}
+/** One open purchase-order line — `OpenPurchaseOrderResponseItem` in the spec. */
+interface OpenPurchaseOrder {
+    /** Purchase order (SAS) number. */
+    purchaseOrderNumber?: string;
+    /** Line number within the purchase order. */
+    lineNumber?: number;
+    sku?: string;
+    warehouseCode?: string;
+    warehouseName?: string;
+    /** Purchase-order creation date (`yyyy-MM-dd`). */
+    createdDate?: string;
+    /** Latest date the goods are expected at the warehouse. */
+    dueDate?: string;
+    /** Maximum quantity still to be shipped. */
+    remainingQuantity?: number;
+    /** Quantity received at the warehouse. */
+    receivedQuantity?: number;
+    /** Quantity issued from the warehouse. */
+    issuedQuantity?: number;
+    /** Product description. */
+    description?: string;
+    /** Currency of the unit / total price (`TRY`, `USD`, `EUR`). */
+    currencyCode?: string;
+    purchaseOrderUnitPrice?: number;
+    purchaseOrderTotalPrice?: number;
+    /** Product type name. */
+    definitionName?: string;
+    brand?: string;
+    vatRate?: number;
+    /** Product barcodes. */
+    barcode?: string[];
+    /** Quantity the purchase order was opened with. */
+    originalLineQuantity?: number;
+    /** Quantity already placed on a shipment list. */
+    shipmentListCreatedQuantity?: number;
+    buyingCategoryId?: string;
+    buyingCategoryName?: string;
+    /** Whether a purchase-order operation is still in progress. */
+    inProgressPurchaseOrdersOperation?: boolean;
+    /** Line status; strings outside the documented union pass through. */
+    operationStatus?: OpenPurchaseOrderStatus | (string & {});
+    /** `ConsignmentPurchaseOrder`, `StandardPurchaseOrder`, … */
+    purchaseOrderType?: string;
+    /** Supplier's own stock code. */
+    merchantSku?: string;
+    /** Warehouse gate id (UUID). */
+    warehouseGateId?: string;
+    /** Whether the due date was postponed before. */
+    isPostdated?: boolean;
+    /** Whether the line was marked as sent. */
+    isSent?: boolean;
+    /** Untouched raw row. */
+    raw: Record<string, unknown>;
+}
+/** One supplier inventory row — `SupplierListingItem` in the spec. */
+interface SupplierListing {
+    sku?: string;
+    /** Supplier's own stock code. */
+    merchantSku?: string;
+    price?: number;
+    /** `TRY`, `USD`, `EUR`. */
+    currencyCode?: string;
+    /** Last purchase-price change (`yyyy-MM-dd`). */
+    lastPurchasePriceUpdateDate?: string;
+    stock?: number;
+    /** Units per package (case size). */
+    unitPerPackage?: number;
+    /** Listing status; strings outside the documented union pass through. */
+    status?: SupplierListingStatus | (string & {});
+    /** Listing type; strings outside the documented union pass through. */
+    listingType?: SupplierListingType | (string & {});
+    /** Untouched raw row. */
+    raw: Record<string, unknown>;
+}
+/** One offer in a `searchListingUpdateRequests` page — `ListingUpdateRequestSummaryResponse` in the spec. */
+interface ListingUpdateRequestSummary {
+    /** Offer id (UUID). */
+    requestId?: string;
+    /** Offer date (`yyyy-MM-dd`). */
+    createdDateTime?: string;
+    /** Where the offer was made: `Api` or `Portal`. */
+    operationSource?: string;
+    /** Number of products in the offer. */
+    rowCount?: number;
+    /** Untouched raw row. */
+    raw: Record<string, unknown>;
+}
+/** One product line of an offer — `ListingUpdateRequestItemResponse` in the spec. */
+interface ListingUpdateRequestItem {
+    sku?: string;
+    /** Offered price. */
+    price?: number;
+    /** Date the offered price takes effect. */
+    priceEffectiveDate?: string;
+    /** `TRY`, `USD`, `EUR`, … (spec enum `CurrencyCode`). */
+    currencyCode?: string;
+    /** Offered stock. */
+    stock?: number;
+    /** Offered units per package. */
+    unitPerPackage?: number;
+    priceApprovalStatus?: SupplierApprovalStatus | (string & {});
+    priceRejectionReason?: string;
+    priceEffectiveDateApprovalStatus?: SupplierApprovalStatus | (string & {});
+    priceEffectiveDateRejectionReason?: string;
+    stockApprovalStatus?: SupplierApprovalStatus | (string & {});
+    stockRejectionReason?: string;
+    unitPerPackageApprovalStatus?: SupplierApprovalStatus | (string & {});
+    /** Offered supplier stock code. */
+    merchantSku?: string;
+    merchantSkuApprovalStatus?: SupplierApprovalStatus | (string & {});
+    /** Offered salable flag. */
+    salable?: boolean;
+    salableApprovalStatus?: SupplierApprovalStatus | (string & {});
+    salableRejectionReason?: string;
+    /** Untouched raw row. */
+    raw: Record<string, unknown>;
+}
+/** Result of `suppliers.getListingUpdateRequest()` — `ListingUpdateRequestDetailResponse` in the spec. */
+interface ListingUpdateRequestDetail extends SupplierEnvelope {
+    /** Offer id (UUID). */
+    requestId?: string;
+    /** Offer date (`yyyy-MM-dd`). */
+    createdDateTime?: string;
+    /** Product lines of the offer (`data.requestItems`; empty when the API sends `null`). */
+    requestItems: ListingUpdateRequestItem[];
+}
+/** Receipt returned by `suppliers.createListingUpdateRequest()` — `GuidIdResult` in the spec. */
+interface ListingUpdateRequestReceipt extends SupplierEnvelope {
+    /** Id of the offer that was created (UUID). */
+    id?: string;
+}
+
+/**
+ * Hepsiburada Supplier integration (`tedarikci-entegrasyonu`).
+ *
+ * **Service base URL**: `supplier-api-external[-sit].hepsiburada.com` (per the
+ * portal spec — routing through `oms-external` returns 401 because the routes
+ * don't exist there; verified on SIT 2026-08-30).
+ *
+ * Covers purchase-order discovery, inventory search, and the offer
+ * (`listingUpdateRequest`) lifecycle for suppliers. Every response arrives in
+ * the supplier API's `{ data, message, errorCode }` envelope; the SDK unwraps
+ * `data` into the typed result and keeps the untouched body on `raw`.
+ *
+ * NOTE: A merchant that is not enrolled as a supplier gets a route-level
+ * `404` with `errorCode: "E4201"` ("Tedarikçi bulunamadı") — the SIT sandbox
+ * merchant behaves this way, and so does a non-enrolled production merchant
+ * (verified on prod 2026-08-30). Endpoints typed from the developer-portal spec
+ * (`specs/hepsiburada/supplier-api-external.json`).
+ */
+declare class SuppliersResource {
+    private readonly transport;
+    private readonly limiter;
+    constructor(transport: HepsiburadaTransport, limiter?: TokenBucketRateLimiter);
+    /** Search open purchase orders. Resolves to one page of {@link OpenPurchaseOrder} rows. */
+    searchOpenPurchaseOrders(input: OpenPurchaseOrderSearchInput): Promise<SupplierSearchResult<OpenPurchaseOrder>>;
+    /** Search the supplier's inventory listings. Resolves to one page of {@link SupplierListing} rows. */
+    searchSupplierListings(input: SupplierListingSearchInput): Promise<SupplierSearchResult<SupplierListing>>;
+    /**
+     * Search the supplier's offers (`listingUpdateRequests`). Resolves to one
+     * page of {@link ListingUpdateRequestSummary} rows; fetch a single offer's
+     * product lines with `getListingUpdateRequest`.
+     */
+    searchListingUpdateRequests(input: ListingUpdateRequestSearchInput): Promise<SupplierSearchResult<ListingUpdateRequestSummary>>;
+    /** Get a single offer by request id, with its per-product approval statuses. */
+    getListingUpdateRequest(requestId: string): Promise<ListingUpdateRequestDetail>;
+    /** Create a new offer (`listingUpdateRequest`). Resolves to the new offer's `id`. */
+    createListingUpdateRequest(input: CreateListingUpdateRequestInput): Promise<ListingUpdateRequestReceipt>;
+    private merchantSegment;
+    private assertInput;
+}
+
+/**
+ * Payload for `testOrders.create()`. Hepsiburada's portal documents the
+ * inner structure under "Test Siparişi Oluşturma"; the SDK accepts any
+ * object so the deeply-nested customer/seller/lines structure can grow
+ * without releases.
+ */
+type CreateTestOrderInput = Record<string, unknown>;
+/**
+ * Hepsiburada test-order utility (`test-siparisi-olusturma`). **Sandbox
+ * only** — Trendyol has the same `testOrders.create` shape.
+ *
+ * **Service base URL**: `oms-stub-external[-sit].hepsiburada.com`.
+ */
+declare class TestOrdersResource {
+    private readonly transport;
+    private readonly limiter;
+    constructor(transport: HepsiburadaTransport, limiter?: TokenBucketRateLimiter);
+    /**
+     * Create a test order on Hepsiburada's stub OMS. Use only against the
+     * SIT environment. Resolves to a `MutationResult` — the stub has no
+     * published response schema, so the body is left untouched on `raw`.
+     *
+     * @throws {ValidationError} when `input` is empty / not an object.
+     */
+    create(input: CreateTestOrderInput): Promise<MutationResult>;
+}
+
+/**
+ * Static feature-capability flags for the Hepsiburada marketplace, so consumers
+ * can feature-detect instead of hard-coding marketplace quirks. Read them off
+ * a client as `client.capabilities`.
+ *
+ * The flag *values* are marketplace-specific, but the const `satisfies` the
+ * shared {@link MarketplaceCapabilities} contract so the key set can't drift
+ * from the Trendyol SDK without a compile error. Kept `as const` so the literal
+ * `true`/`false` values stay narrowed.
+ */
+declare const hepsiburadaCapabilities: {
+    /** Listings support time-bounded pricing windows (`ListingPricing.startDate/endDate`). */
+    readonly scheduledPricing: true;
+    /** `listings.uploadStock` accepts stock-only batches (no price). */
+    readonly stockOnlyBatch: true;
+    /**
+     * Listing rows don't reliably carry a last-update timestamp (`Listing.updatedAt`
+     * is surfaced best-effort and is often `null`), so last-write-wins guards can't
+     * depend on it.
+     */
+    readonly listingUpdatedAt: false;
+};
+/** Shape of {@link hepsiburadaCapabilities}. */
+type HepsiburadaCapabilities = typeof hepsiburadaCapabilities;
+
+interface CreateClientOptions {
+    /** Hepsiburada merchant ID (UUID-shaped). Visible in the Merchant Portal. */
+    merchantId: string;
+    /** Hepsiburada API username (from Merchant Portal → Settings → Integrations). */
+    username: string;
+    /** Hepsiburada API password / secret. */
+    password: string;
+    /**
+     * Which Hepsiburada environment to target — `'prod'` (production) or
+     * `'sit'` (sandbox). No default — explicit is safer than implicit.
+     */
+    env: HepsiburadaEnvironment;
+    /**
+     * Integrator company name sent in `User-Agent`. Hepsiburada rejects requests
+     * without a meaningful User-Agent. Use the bare integrator name configured
+     * server-side in the Merchant Portal (e.g. `beekod_dev`).
+     */
+    integratorName: string;
+    /** Optional structured logger (`@lonca/core` `Logger`). Defaults to no-op. */
+    logger?: Logger;
+    /** Request timeout in ms. Default: 30_000. */
+    timeoutMs?: number;
+    /**
+     * Custom `fetch` implementation (e.g. to add a proxy agent, record or mock
+     * traffic). Defaults to the global `fetch`.
+     */
+    fetch?: typeof fetch;
+}
+interface HepsiburadaClient {
+    listings: ListingsResource;
+    shipping: ShippingResource;
+    claims: ClaimsResource;
+    testOrders: TestOrdersResource;
+    orders: OrdersResource;
+    categories: CategoriesResource;
+    catalog: CatalogResource;
+    productUpdates: ProductUpdatesResource;
+    suppliers: SuppliersResource;
+    accounting: AccountingResource;
+    questions: QuestionsResource;
+    promotions: PromotionsResource;
+    /** Static feature-capability flags for feature detection. */
+    capabilities: HepsiburadaCapabilities;
+}
+/**
+ * Create a Hepsiburada Marketplace SDK client.
+ *
+ * @example
+ * ```ts
+ * import { createHepsiburadaClient } from '@lonca/hepsiburada';
+ *
+ * const client = createHepsiburadaClient({
+ *   merchantId: '00000000-0000-0000-0000-000000000000',
+ *   username: process.env.HB_API_USER!,
+ *   password: process.env.HB_API_PASS!,
+ *   env: 'sit',
+ *   integratorName: 'MyCompany',
+ * });
+ *
+ * const page = await client.listings.list({ offset: 0, limit: 100 });
+ * ```
+ */
+declare function createHepsiburadaClient(opts: CreateClientOptions): HepsiburadaClient;
+
+export { AccountingResource, type AccountingTransaction, type AdditionalInfoUploadItem, type AnswerQuestionInput, type BulkUnlockInput, type BuyboxOrderRow, type CancelDiscountInput, type CancelLineItemInput, type CargoCompanyOption, type CargoFirm, type CatalogField, type CatalogPage, type CatalogPagingParams, type CatalogProduct, type CatalogProductLifecycleStatus, type CatalogProductStatus, CatalogResource, type CatalogResult, type CatalogTrackingReceipt, CategoriesResource, type Category, type CategoryAttribute, type CategoryAttributeValue, type ChangeCargoCompanyInput, type CheckProductStatusInput, type Claim, type ClaimActionInput, ClaimsResource, type ClaimStatus, type CommissionRow, type CreateClaimInput, type CreateClientOptions, createHepsiburadaClient, type CreateListingUpdateRequestInput, type CreateListingUpdateRequestItem, type CreatePackagesInput, type CreatePercentDiscountInput, type CreateQuestionInput, type CreateTestOrderInput, type CreateTlDiscountInput, type CreateXyDiscountInput, type CustomizableProperty, type DeleteBySkuInput, type Discount, type DiscountBudgets, type DiscountLimits, type DiscountReceipt, type FastListingInput, type GetAttributesParams, hepsiburadaCapabilities, type HepsiburadaCapabilities, type HepsiburadaClient, type HepsiburadaEnvironment, type InventoryUploadItem, type InvoiceLinkInput, type InvoiceLinkItem, type LaborCostInput, type ListCatalogProductsParams, type ListCategoriesParams, type ListClaimsByStatusParams, type ListClaimsParams, type ListDiscountsParams, type Listing, type ListingPricing, type ListingsPage, ListingsResource, type ListingUpdateRequestDetail, type ListingUpdateRequestItem, type ListingUpdateRequestReceipt, type ListingUpdateRequestSearchInput, type ListingUpdateRequestSummary, type ListListingsParams, type ListOrdersParams, type ListPackagesParams, type ListProductsByStatusParams, type ListQuestionsParams, type ListTransactionsParams, type MerchantSkuGroup, type OpenPurchaseOrder, type OpenPurchaseOrderSearchInput, type OpenPurchaseOrderStatus, type Order, type OrdersPage, OrdersResource, type PackageLabel, type PackageReceipt, type PackageStatusInput, type ParcelInfoInput, type PreMatchActionInput, type PriceUploadItem, type PriceUploadResult, type PriceValidation, type ProductUpdateHistoryEntry, type ProductUpdateInput, type ProductUpdateReceipt, ProductUpdatesResource, type ProductUpdateStatus, type PromotionCategory, PromotionsResource, type PurchaseOrderLineRef, type PurchaseOrderType, type Question, type QuestionCountSummary, QuestionsResource, type RejectQuestionInput, type ShippingInfoUploadItem, type ShippingPackage, type ShippingProfile, type ShippingProfileInput, ShippingResource, type SplitPackageInput, type StockUploadItem, type SupplierApprovalStatus, type SupplierEnvelope, type SupplierListing, type SupplierListingSearchInput, type SupplierListingStatus, type SupplierListingType, type SupplierSearchResult, SuppliersResource, TestOrdersResource, type TrackingIdHistoryEntry, type UpdateListingInput, type UploadError, type UploadProductsInput, type UploadReceipt, type UploadResult, type UploadStatus, type WarehouseInput };

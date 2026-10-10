@@ -1,0 +1,2797 @@
+import { BaseRequestOptions, CursorPage, CursorPaginationParams, Logger, MutationResult, OffsetPaginationParams, TokenBucketRateLimiter } from '@lonca/core';
+
+declare const BASE_URLS: {
+    readonly prod: "https://apigw.trendyol.com";
+    readonly stage: "https://stageapigw.trendyol.com";
+};
+type TrendyolEnvironment = keyof typeof BASE_URLS;
+interface TransportConfig {
+    sellerId: number;
+    apiKey: string;
+    apiSecret: string;
+    env: TrendyolEnvironment;
+    integratorName: string;
+    clientIp?: string;
+    logger?: Logger;
+    /** Request timeout in ms. Default: 30_000. */
+    timeoutMs?: number;
+    /** Override the underlying `fetch` (tests inject a mock). */
+    fetch?: typeof fetch;
+}
+interface RequestOptions extends BaseRequestOptions {
+    method: 'GET' | 'POST' | 'PUT' | 'DELETE';
+    /** Path beginning with `/` (e.g., `/sapigw/brands`). */
+    path: string;
+    query?: Record<string, string | number | boolean | undefined>;
+}
+declare class TrendyolTransport {
+    private readonly config;
+    private readonly baseUrl;
+    private readonly requester;
+    constructor(config: TransportConfig);
+    /** Seller ID this transport is configured with. Resources read it for path-building. */
+    get sellerId(): number;
+    request<T>(opts: RequestOptions): Promise<T>;
+    private buildUrl;
+    private buildHeaders;
+}
+
+/**
+ * A Trendyol marketplace brand.
+ *
+ * Trendyol returns numeric IDs; we normalize to `string` to match the
+ * `@lonca/core` convention (string IDs across all Lonca SDKs).
+ */
+interface Brand {
+    id: string;
+    name: string;
+}
+
+/**
+ * Trendyol brand-list endpoint group.
+ *
+ * Rate limit: 50 req/min (per Trendyol service limits).
+ *
+ * Trendyol uses page-based pagination internally; we expose the cursor-based
+ * `CursorPage` shape from `@lonca/core` so callers can drive everything with
+ * `paginate()` and stay consistent across Lonca SDKs.
+ */
+declare class BrandsResource {
+    private readonly transport;
+    private readonly limiter;
+    constructor(transport: TrendyolTransport, limiter?: TokenBucketRateLimiter);
+    /**
+     * List Trendyol brands, one page at a time.
+     *
+     * @example
+     * ```ts
+     * import { paginate } from '@lonca/core';
+     * for await (const brand of paginate((p) => client.brands.list(p))) {
+     *   console.log(brand.id, brand.name);
+     * }
+     * ```
+     */
+    list(params?: CursorPaginationParams): Promise<CursorPage<Brand>>;
+    /**
+     * Search brands by name. Useful when you need a brand's numeric ID for
+     * `createProducts` and don't want to page through the full `list()`
+     * (1000 brands per page).
+     *
+     * **Wire fact (verified STAGE 2026-05-25):** Trendyol's
+     * doc claims this is a case-sensitive *exact* match, but live behaviour
+     * is **substring + case-insensitive** — `search('Trendyol')` returns
+     * 17 hits including `TRENDYOLMILLA`, `trendyol vavist`, `Trendyol Üyelik`.
+     * Plan for ranking your results client-side if you need an exact match.
+     * The endpoint returns an empty array when nothing matches (no 404).
+     *
+     * @param name The brand name to search for.
+     */
+    search(name: string): Promise<Brand[]>;
+}
+
+/**
+ * A node in the Trendyol category tree.
+ *
+ * Trendyol exposes categories as a deeply nested structure where each node
+ * can have child categories under `subCategories`. We normalize numeric IDs
+ * to strings to match the `@lonca/core` convention.
+ */
+interface Category {
+    id: string;
+    name: string;
+    /** `null` when this is a root category. */
+    parentId: string | null;
+    subCategories: Category[];
+}
+/** A single allowed value for a category attribute. */
+interface CategoryAttributeValue {
+    id: string;
+    name: string;
+}
+/**
+ * Result of `categories.getByBarcodes` — a barcode → category mapping
+ * sourced from Trendyol's Export Center (AutoFT) lookup endpoint.
+ */
+interface BarcodeCategoryLookup {
+    /** Successful matches. */
+    matches: Array<{
+        barcode: string;
+        category: {
+            id: string;
+            name: string;
+        };
+    }>;
+    /** Barcodes Trendyol could not resolve to a category. */
+    notFound: string[];
+}
+/**
+ * A required or optional attribute for products in a given category.
+ * Use these when constructing a `createProduct V2` payload — the API rejects
+ * products that omit `required` attributes.
+ */
+interface CategoryAttribute {
+    id: string;
+    name: string;
+    /** The category this attribute belongs to (echoed back by Trendyol). */
+    categoryId?: string;
+    required: boolean;
+    /** Whether the attribute accepts custom text values in addition to the listed ones. */
+    allowCustom: boolean;
+    /** Whether the attribute participates in product variants (e.g. color, size). */
+    varianter: boolean;
+    /** Whether the attribute is used as a price slicer (e.g. size for shoes). */
+    slicer: boolean;
+    /**
+     * V2-only: whether the attribute accepts multiple values at once.
+     * Present on responses from the V2 `getCategoryAttributes` endpoint; absent on V1.
+     */
+    allowMultipleAttributeValues?: boolean;
+    /**
+     * Allowed values for this attribute.
+     *
+     * NOTE: Trendyol's live API often omits this field on the `getCategoryAttributes`
+     * response — the endpoint returns attribute metadata + flags, not the full value
+     * catalog. In that case `values` is an empty array. If `allowCustom` is `true`,
+     * any custom text is accepted; otherwise use `client.categories.getAttributeValues(categoryId, attributeId)`
+     * to fetch the catalog from the dedicated V2 endpoint.
+     */
+    values: CategoryAttributeValue[];
+}
+
+type ListCategoryAttributeValuesParams = CursorPaginationParams;
+/**
+ * Trendyol category-tree and category-attribute endpoints.
+ *
+ * Rate limits (per Trendyol service limits):
+ * - Category list: 50 req/min
+ * - Category attributes: 50 req/min
+ * - Category attribute values: 50 req/min (same service tier)
+ *
+ * All three counters live on the same Trendyol service, so we share one
+ * limiter across the endpoints.
+ */
+declare class CategoriesResource {
+    private readonly transport;
+    private readonly limiter;
+    constructor(transport: TrendyolTransport, limiter?: TokenBucketRateLimiter);
+    /**
+     * Fetch the full Trendyol category tree.
+     *
+     * Trendyol returns the entire tree in one response — there is no pagination.
+     * Cache the result aggressively in your application; the tree changes rarely.
+     */
+    list(): Promise<Category[]>;
+    /**
+     * Fetch the attributes (required and optional) for a single category.
+     *
+     * Call this before `createProduct V2` so you know which attributes are
+     * mandatory — the API rejects products that omit any `required` attribute.
+     *
+     * @param categoryId Trendyol numeric category ID; accepts `string` or `number`.
+     */
+    getAttributes(categoryId: string | number): Promise<CategoryAttribute[]>;
+    /**
+     * Fetch the allowed values for a single category attribute (paginated).
+     *
+     * `getCategoryAttributes` returns attribute metadata + flags but typically
+     * omits the value catalog. Use this method to fetch the catalog for an
+     * attribute when `allowCustom` is `false` and you need to map your data
+     * onto Trendyol's accepted values.
+     *
+     * @param categoryId  Trendyol numeric category ID; accepts `string` or `number`.
+     * @param attributeId Attribute ID returned by `getAttributes`.
+     * @param params      Cursor pagination (max page size 1000; default 100).
+     *
+     * @example
+     * ```ts
+     * import { paginate } from '@lonca/core';
+     * for await (const value of paginate((p) =>
+     *   client.categories.getAttributeValues(catId, attrId, p),
+     * )) {
+     *   console.log(value.id, value.name);
+     * }
+     * ```
+     */
+    getAttributeValues(categoryId: string | number, attributeId: string | number, params?: ListCategoryAttributeValuesParams): Promise<CursorPage<CategoryAttributeValue>>;
+    /**
+     * Look up category info for a list of barcodes (Trendyol Export Center
+     * / AutoFT endpoint).
+     *
+     * **Requires Export Center enrollment.** Sellers who have not joined
+     * Trendyol's "İhracat Merkezi" program will get an auth error on this
+     * endpoint even though their regular Marketplace credentials are valid.
+     *
+     * @param barcodes 1–N barcodes to look up.
+     * @throws {ValidationError} when `barcodes` is empty.
+     */
+    getByBarcodes(barcodes: string[]): Promise<BarcodeCategoryLookup>;
+}
+
+/**
+ * Trendyol claim ("iade" / return-claim) types.
+ *
+ * A claim is a customer-initiated return on a delivered order. The
+ * seller can also open a `createClaimIssue` (a rejection) against a
+ * customer-filed claim, and either party can have line items approved
+ * via `approveClaimLineItems`.
+ */
+
+/** One item inside `claims.create()`. */
+interface CreateClaimItemInput {
+    /** Barcode of the ordered SKU. */
+    barcode: string;
+    /** Number of units being returned. */
+    quantity: number;
+    /**
+     * Numeric reason code customers select on trendyol.com.
+     * Trendyol's docs note `401` ("Vazgectim" — changed my mind) as a
+     * safe default when you don't have a more specific code.
+     */
+    reasonId: number;
+    /** Free-text note from the customer. */
+    customerNote?: string;
+}
+/** Payload for `claims.create()`. */
+interface CreateClaimInput {
+    /** The order to file the claim against. */
+    orderNumber: string;
+    claimItems: CreateClaimItemInput[];
+    /** Trendyol customer ID (the one who placed the order). */
+    customerId?: number;
+    /** Suppress this claim from listing pages. */
+    excludeListing?: boolean;
+    /** Force a new shipment package to be created for the return. */
+    forcePackageCreation?: boolean;
+}
+/**
+ * Payload for `claims.createIssue()` — file a seller-side rejection
+ * ("ret talebi") against a customer claim. Wire format is
+ * `multipart/form-data` because optional `files` are PDF / JPEG
+ * supporting documents.
+ */
+interface CreateClaimIssueInput {
+    /** Numeric reason ID from `claims.getIssueReasons()`. */
+    claimIssueReasonId: number;
+    /** Per-line claim item IDs being rejected. SDK joins with commas. */
+    claimItemIdList: string[];
+    /** Free-text explanation (≤500 chars). */
+    description: string;
+    /** Optional supporting documents (Blob / File). */
+    files?: Blob[];
+}
+/** Payload for `claims.approveLineItems()`. */
+interface ApproveClaimLineItemsInput {
+    /** Claim line-item IDs to approve. */
+    claimLineItemIdList: string[];
+    /** Optional extra params Trendyol forwards verbatim. */
+    params?: Record<string, string>;
+}
+/**
+ * Claim item lifecycle state. Open enum — Trendyol can add new states
+ * without breaking callers.
+ */
+type ClaimItemStatus = 'Created' | 'WaitingInAction' | 'WaitingFraudCheck' | 'Accepted' | 'Unresolved' | 'Rejected' | (string & {});
+/** Filter / pagination for `claims.list()`. */
+interface ListClaimsParams extends CursorPaginationParams {
+    startDate?: Date;
+    endDate?: Date;
+    /** Filter claims by item-level status. */
+    claimItemStatus?: ClaimItemStatus;
+}
+/**
+ * A return claim. Trendyol returns ~20 fields; the SDK surfaces the
+ * stable subset and keeps everything else on `raw`.
+ */
+interface Claim {
+    /** Claim ID (Trendyol returns it under both `id` and `claimId` — same value). */
+    id: string;
+    orderNumber: string;
+    /** ISO 8601 UTC (from ms-epoch `orderDate`). */
+    orderDate?: string;
+    /** ISO 8601 UTC (from ms-epoch `claimDate`). */
+    claimDate?: string;
+    customerFirstName?: string;
+    customerLastName?: string;
+    /** Untouched raw claim — pull undocumented fields from here. */
+    raw: Record<string, unknown>;
+}
+/** Rejection-reason catalog row from `claims.getIssueReasons()`. */
+interface ClaimIssueReason {
+    id: number;
+    name: string;
+}
+/**
+ * Audit entry for a single claim item, returned by `claims.getItemAudits()`.
+ * Trendyol's response shape varies; only `raw` is guaranteed.
+ */
+interface ClaimItemAudit {
+    /** Untouched raw audit row. */
+    raw: Record<string, unknown>;
+}
+
+/**
+ * Trendyol claims (return / iade) endpoints.
+ *
+ * Rate limit (per Trendyol service limits): shares the order service bucket;
+ * the SDK provisions its own 1000 req/min limiter that the caller can override.
+ */
+declare class ClaimsResource {
+    private readonly transport;
+    private readonly limiter;
+    constructor(transport: TrendyolTransport, limiter?: TokenBucketRateLimiter);
+    /**
+     * Create a return claim against an order. Use this to file a return on
+     * behalf of a customer (e.g. when they called your CS line). For
+     * customer-initiated returns coming from trendyol.com, you receive them
+     * via `claims.list()` — no need to call `create`.
+     *
+     * Returns whatever Trendyol returns (typically the new claim's identifier).
+     *
+     * @throws {ValidationError} when `claimItems` is empty.
+     */
+    create(input: CreateClaimInput): Promise<MutationResult>;
+    /**
+     * File a seller-side rejection ("ret talebi") against a customer claim.
+     *
+     * **Wire format: `multipart/form-data`** — the SDK builds the FormData
+     * internally from the typed input. `claimItemIdList` is joined with
+     * commas (Trendyol expects a single comma-separated string field).
+     * Attach supporting docs (PDF / JPEG) via `files: [Blob, ...]`.
+     */
+    createIssue(claimId: string, input: CreateClaimIssueInput): Promise<MutationResult>;
+    /**
+     * Approve specific claim line items. After approval, Trendyol moves
+     * those line items into the post-approval refund / return-shipping flow.
+     *
+     * @throws {ValidationError} when `claimLineItemIdList` is empty.
+     */
+    approveLineItems(claimId: string, input: ApproveClaimLineItemsInput): Promise<MutationResult>;
+    /**
+     * List claims (page-based; SDK exposes opaque cursor convention).
+     *
+     * @example
+     * ```ts
+     * import { paginate } from '@lonca/core';
+     * for await (const c of paginate((p) =>
+     *   client.claims.list({ ...p, claimItemStatus: 'WaitingInAction' }),
+     * )) {
+     *   console.log(c.id, c.orderNumber, c.claimDate);
+     * }
+     * ```
+     */
+    list(params?: ListClaimsParams): Promise<CursorPage<Claim>>;
+    /**
+     * Fetch the catalog of rejection-reason IDs the seller can use on
+     * `claims.createIssue()`. Cache the result — it changes rarely.
+     *
+     * Note: this endpoint is **not seller-scoped** (no `sellerId` in path).
+     */
+    getIssueReasons(): Promise<ClaimIssueReason[]>;
+    /**
+     * Fetch the audit log for a single claim item (state transitions,
+     * actor, timestamp). Trendyol's response shape varies — the SDK
+     * surfaces each row as `{ raw }` and leaves field extraction to the
+     * caller until we observe a stable shape on the wire.
+     */
+    getItemAudits(claimItemId: string): Promise<ClaimItemAudit[]>;
+}
+
+/**
+ * Trendyol Export Center (İhracat Merkezi / AutoFT) types.
+ *
+ * Source: developers.trendyol.com — `autoft-*` documentation pages.
+ *
+ * The Export Center is Trendyol's program for sellers exporting from
+ * Türkiye to Trendyol's international platforms. It shares the same API
+ * gateway (`apigw.trendyol.com`) and HMAC auth as the main marketplace
+ * surface — the distinguishing factor is the path prefix:
+ * `/integration/ecgw/v{N}/{sellerId}/…`
+ *
+ * Per-endpoint shapes are loosely typed (`Record<string, unknown>`)
+ * because Trendyol's docs document fields in HTML tables; the SDK keeps
+ * payloads loose and surfaces the raw response. Operations that need
+ * stronger typing in practice should consult the portal pages.
+ */
+
+/** Query parameters for `exportCenter.listProducts()`. */
+interface ListExportProductsParams {
+    /** Optional list of barcodes to filter to. */
+    barcodes?: string[];
+    /**
+     * Page cursor — empty for the first request, then use the `x-paging-key`
+     * value from the previous response's headers for subsequent pages.
+     */
+    pageKey?: string;
+    /** Page size. Default: 20, max: 100. */
+    size?: number;
+}
+/** One product row returned by `listProducts()`. Loose; consult portal for the documented field set. */
+interface ExportProduct {
+    /** Untouched raw row. */
+    raw: Record<string, unknown>;
+}
+/**
+ * Payload for `exportCenter.createProducts()` — see "Ürün Oluşturma V2"
+ * on the developer portal for the documented field set per product.
+ * Max 5000 items per call.
+ */
+type ExportProductInput = Record<string, unknown>;
+/** Payload for `exportCenter.updatePrices()` — `{ barcode, salePrice, listPrice, ... }` per docs. */
+type ExportPriceUpdateInput = Record<string, unknown>;
+/** Payload for `exportCenter.updateStocks()` — `{ barcode, quantity, ... }` per docs. */
+type ExportStockUpdateInput = Record<string, unknown>;
+/** Returned by every async batch endpoint — poll status via `getBatchStatus(batchId)`. */
+interface ExportBatchAcceptedResponse {
+    /** UUID returned by Trendyol. Surfaces in the response body or `Location` header. */
+    batchId: string;
+    /** Untouched raw response. */
+    raw: Record<string, unknown>;
+}
+/** Status of a previously-submitted batch. */
+interface ExportBatchStatus {
+    batchId?: string;
+    status?: string;
+    itemCount?: number;
+    failedItemCount?: number;
+    items?: Array<Record<string, unknown>>;
+    /** Untouched raw row. */
+    raw: Record<string, unknown>;
+}
+/** Status enum for Export Center packages — `new | pending | completed | cancelled`. */
+type ExportPackageStatus = 'new' | 'pending' | 'completed' | 'cancelled';
+/** Query parameters for `exportCenter.listPackagesV2()`. */
+interface ListExportPackagesV2Params {
+    /** Cargo tracking number filter. */
+    trackingNumber?: string;
+    /** Status filter. */
+    status?: ExportPackageStatus;
+    /** UTC milliseconds. */
+    creationStartDate?: number;
+    /** UTC milliseconds. */
+    creationEndDate?: number;
+    /** Page size; max 100. */
+    size?: number;
+    /** Boutique-specific filter (when used by partner businesses). */
+    boutiqueId?: number;
+}
+/** Query parameters for `exportCenter.listPackagesV3()`. Uses page-based pagination. */
+interface ListExportPackagesV3Params extends OffsetPaginationParams {
+    status?: ExportPackageStatus;
+    creationStartDate?: number;
+    creationEndDate?: number;
+}
+/** Query parameters for `exportCenter.getPackageItems()`. */
+interface GetExportPackageItemsParams extends OffsetPaginationParams {
+    /** Required. */
+    packageId: string;
+    status?: ExportPackageStatus;
+}
+/** One package row returned by the list endpoints. */
+interface ExportPackage {
+    packageNumber?: string;
+    status?: ExportPackageStatus;
+    /** Untouched raw row. */
+    raw: Record<string, unknown>;
+}
+/** One package-item row returned by `getPackageItems()`. */
+interface ExportPackageItem {
+    /** Untouched raw row. */
+    raw: Record<string, unknown>;
+}
+/** Attribute definition for a leaf Export Center category. */
+interface ExportCategoryAttribute {
+    attributeId?: number | string;
+    attributeName?: string;
+    required?: boolean;
+    /** Allowed values (for enum-style attributes). */
+    values?: unknown[];
+    /** Untouched raw row. */
+    raw: Record<string, unknown>;
+}
+/** One care-instruction lookup row. */
+interface CareInstruction {
+    id?: number | string;
+    name?: string;
+    /** Untouched raw row. */
+    raw: Record<string, unknown>;
+}
+/** One material-composition lookup row. */
+interface ProductComposition {
+    id?: number | string;
+    name?: string;
+    /** Untouched raw row. */
+    raw: Record<string, unknown>;
+}
+/** One country-of-origin lookup row. */
+interface ProductOrigin {
+    id?: number | string;
+    name?: string;
+    countryCode?: string;
+    /** Untouched raw row. */
+    raw: Record<string, unknown>;
+}
+
+/**
+ * Trendyol Export Center (İhracat Merkezi / AutoFT) — Türkiye-based
+ * sellers exporting to Trendyol's international platforms.
+ *
+ * **Service base URL**: same `apigw.trendyol.com` as the main marketplace,
+ * with a distinct path prefix `/integration/ecgw/v{N}/{sellerId}/…`.
+ *
+ * The Export Center requires sellers to first complete Trendyol's "İhracat
+ * Merkezi" application; the same `apiKey`/`apiSecret` then authorize
+ * these paths. Calls from non-enrolled sellers return `401`.
+ *
+ * 12 endpoints across four surfaces — products (list/create/price/stock),
+ * batch status, packages (V2/V3 list + item detail), and lookup
+ * (categories, care instructions, compositions, origins).
+ *
+ * NOTE: per-endpoint body / response shapes are documented in HTML tables
+ * on developers.trendyol.com — the SDK accepts `Record<string, unknown>`
+ * bodies and surfaces row-level `raw` accessors so undocumented fields
+ * stay reachable.
+ */
+declare class ExportCenterResource {
+    private readonly transport;
+    private readonly limiter;
+    constructor(transport: TrendyolTransport, limiter?: TokenBucketRateLimiter);
+    /**
+     * List Export Center-approved products. Uses Trendyol's `pageKey`
+     * pagination — the first call leaves `pageKey` empty; subsequent
+     * calls pass the `x-paging-key` value from the previous response.
+     */
+    listProducts(params?: ListExportProductsParams): Promise<ExportProduct[]>;
+    /**
+     * Create Export Center products. Maximum 5000 per call. Returns a
+     * `batchId` you can poll via `getBatchStatus(batchId)`.
+     *
+     * @throws {ValidationError} when `products` is empty / oversized.
+     */
+    createProducts(products: ExportProductInput[]): Promise<ExportBatchAcceptedResponse>;
+    /**
+     * Update Export Center prices. **Trendyol allows one price update per
+     * barcode per day.** Returns a `batchId`.
+     *
+     * @throws {ValidationError} when `priceInfos` is empty / oversized.
+     */
+    updatePrices(priceInfos: ExportPriceUpdateInput[]): Promise<ExportBatchAcceptedResponse>;
+    /**
+     * Update Export Center stocks. Returns a `batchId`. Sellers using
+     * Trendyol's shared inventory cannot use this endpoint (per portal docs).
+     *
+     * @throws {ValidationError} when `items` is empty / oversized.
+     */
+    updateStocks(items: ExportStockUpdateInput[]): Promise<ExportBatchAcceptedResponse>;
+    /**
+     * Look up the status of a previously-submitted batch. Trendyol retains
+     * batch records for **24 hours** only — older `batchId`s return `404`.
+     */
+    getBatchStatus(batchId: string): Promise<ExportBatchStatus>;
+    /** List daily Export Center packages (V2 — query-based filters). */
+    listPackagesV2(params?: ListExportPackagesV2Params): Promise<ExportPackage[]>;
+    /** List Export Center packages (V3 — consolidated, page-based). */
+    listPackagesV3(params?: ListExportPackagesV3Params): Promise<ExportPackage[]>;
+    /** Get the line items inside an Export Center package. */
+    getPackageItems(params: GetExportPackageItemsParams): Promise<ExportPackageItem[]>;
+    /** Get the required attributes for an Export Center category. */
+    getCategoryAttributes(categoryId: number | string): Promise<ExportCategoryAttribute[]>;
+    /** Get the care-instruction lookup values used by `createProducts`. */
+    getCareInstructions(): Promise<CareInstruction[]>;
+    /** Get the material-composition lookup values used by `createProducts`. */
+    getCompositions(): Promise<ProductComposition[]>;
+    /** Get the country-of-origin lookup values used by `createProducts`. */
+    getOrigins(): Promise<ProductOrigin[]>;
+    private assertBatch;
+}
+
+/**
+ * Misc types for Trendyol's smaller surfaces — invoices, finance,
+ * common labels, test orders, and location lookups. Most shapes are
+ * loosely typed (`Record<string, unknown>`) because the Trendyol response
+ * shapes here are wide and seldom-evolved; callers drill into `raw` for
+ * fields beyond the stable surface.
+ */
+
+interface UploadInvoiceFileInput {
+    /** Trendyol shipment package ID (required). */
+    shipmentPackageId: number;
+    /** Invoice file (PDF / JPEG / PNG, max 10 MB). */
+    file: Blob;
+    /** ms-epoch — mandatory for micro-export orders, optional otherwise. */
+    invoiceDateTime?: number;
+    /**
+     * Invoice number — mandatory for micro-export orders. Format:
+     * `[A-Za-z0-9]{3}(20[2-9][0-9])\d{9}`.
+     */
+    invoiceNumber?: string;
+}
+interface SendInvoiceLinkInput {
+    invoiceLink: string;
+    shipmentPackageId: number;
+    invoiceDateTime?: number;
+    invoiceNumber?: string;
+}
+interface DeleteInvoiceLinkInput {
+    serviceSourceId?: number;
+    channelId?: number;
+    customerId?: number;
+    /** Forward-compatible: pass any extra fields Trendyol may add. */
+    [key: string]: unknown;
+}
+/**
+ * One row from Trendyol's current-account statement — returned by both
+ * `finance.getSettlements()` and `finance.getOtherFinancials()` (both
+ * endpoints share the `FinancialTransaction` wire schema).
+ *
+ * Field set verified against the spec on 2026-05-25. The SDK exposes the
+ * stable subset; anything Trendyol adds later remains accessible via `raw`.
+ */
+interface FinancialTransaction {
+    /** Transaction ID (string per Trendyol). */
+    id: string;
+    /** ISO 8601 UTC (from ms-epoch `transactionDate`). */
+    transactionDate?: string;
+    /** Product barcode when the transaction is tied to a SKU. */
+    barcode?: string | null;
+    /** Transaction category (e.g. `'Satış'`, `'Ödeme'`). */
+    transactionType?: string;
+    /** Receipt ID ("dekont no") when applicable. */
+    receiptId?: number | null;
+    description?: string | null;
+    /** Debit amount on the seller's account. */
+    debt?: number;
+    /** Credit amount on the seller's account. */
+    credit?: number;
+    paymentPeriod?: number | null;
+    commissionRate?: number | null;
+    commissionAmount?: number | null;
+    commissionInvoiceSerialNumber?: string | null;
+    /** Net seller revenue after Trendyol's cut. */
+    sellerRevenue?: number | null;
+    orderNumber?: string | null;
+    paymentOrderId?: number | null;
+    /** ISO 8601 UTC (from ms-epoch `paymentDate`). */
+    paymentDate?: string;
+    sellerId?: number;
+    storeId?: number | null;
+    storeName?: string | null;
+    storeAddress?: string | null;
+    country?: string | null;
+    /** Untouched raw row — pull any undocumented fields from here. */
+    raw: Record<string, unknown>;
+}
+/**
+ * Aliases preserved for source-compatibility with `0.5.0`. Both legacy
+ * names now resolve to the unified `FinancialTransaction`.
+ *
+ * @deprecated since `0.5.1` — use `FinancialTransaction`.
+ */
+type SettlementRow = FinancialTransaction;
+/** @deprecated since `0.5.1` — use `FinancialTransaction`. */
+type OtherFinancialRow = FinancialTransaction;
+/**
+ * Shared filter shape for both finance endpoints.
+ * `transactionType` lets you scope to one settlement category.
+ */
+interface ListFinanceParams extends CursorPaginationParams {
+    startDate?: Date;
+    endDate?: Date;
+    /**
+     * **Required** by Trendyol's CHE finance API (it returns 500 without one),
+     * e.g. `'Sale'`, `'Return'`, `'Discount'`, `'DeductionInvoices'`. The SDK
+     * throws a `ValidationError` if omitted.
+     */
+    transactionType?: string;
+    /**
+     * Page size. Trendyol's finance API only accepts **500 or 1000** — the SDK
+     * clamps any value to the nearest of those (default 500).
+     */
+    limit?: number;
+}
+interface CreateCommonLabelInput {
+    /** Currently the only documented format Trendyol accepts. */
+    format: 'ZPL' | (string & {});
+    boxQuantity?: number;
+    /** Volumetric height (height × width × depth / 3000 → desi). */
+    volumetricHeight?: number;
+}
+/** One label entry inside a `CommonLabel` response. */
+interface CommonLabelEntry {
+    /** Encoded label payload (e.g. ZPL string `^XA...^XZ`). */
+    label: string;
+    format: 'ZPL' | (string & {});
+}
+/**
+ * Response from `labels.getCommon()` — Trendyol's wire shape is
+ * `{ data: [{ label, format }] }`. SDK surfaces the array directly via
+ * `labels` for ergonomic access; `raw` is the untouched response.
+ */
+interface CommonLabel {
+    labels: CommonLabelEntry[];
+    raw: Record<string, unknown>;
+}
+/**
+ * Payload for `testOrders.create()`. Top-level requireds are
+ * `customer`, `invoiceAddress`, `lines`, `seller`, `shippingAddress`;
+ * each sub-object has its own field rules (see Trendyol's
+ * `createTestOrder` reference). Kept loose because the inner schema is
+ * deep and used only in STAGE.
+ */
+interface CreateTestOrderInput {
+    customer: Record<string, unknown>;
+    invoiceAddress: Record<string, unknown>;
+    shippingAddress: Record<string, unknown>;
+    seller: Record<string, unknown>;
+    lines: Array<Record<string, unknown>>;
+    [key: string]: unknown;
+}
+/**
+ * Result of `testOrders.create()`. Trendyol's `createTestOrder` reference
+ * documents the response as `{ orderNumber: string }`; `raw` keeps the
+ * untouched body.
+ */
+interface CreateTestOrderResult extends MutationResult {
+    /** Order number of the created test order (absent when the body had none). */
+    orderNumber?: string;
+}
+/**
+ * Optional body for `testOrders.setClaimsWaitingInAction()`. Trendyol's
+ * `updateTestOrderStatus` doc shows `{ shipmentPackageId }` — the
+ * `orderShipmentPackageId` returned by `claims.list`.
+ */
+interface SetClaimsWaitingInActionInput {
+    shipmentPackageId: string | number;
+}
+/** One order line targeted by `testOrders.updateStatus()`. */
+interface TestOrderStatusLine {
+    /** Line id from the test order (doc example: `4944785`). */
+    lineId: string | number;
+    /** Quantity of the line to move. */
+    quantity: number;
+    [key: string]: unknown;
+}
+/**
+ * Optional extras for `testOrders.updateStatus()`. Trendyol's
+ * `status-updates-on-test-orders` doc shows a `{ lines, params, status }`
+ * body; omitted, the SDK keeps sending `{ status }` alone as before.
+ */
+interface UpdateTestOrderStatusOptions {
+    /** Order lines to move to the target status. */
+    lines?: TestOrderStatusLine[];
+    /** Doc-level `params` object (the doc's example sends `{}`). */
+    params?: Record<string, unknown>;
+}
+type TestOrderStatus = 'Created' | 'Picking' | 'Invoiced' | 'Shipped' | 'AtCollectionPoint' | 'Delivered' | 'Cancelled' | 'Returned' | 'UnDelivered' | (string & {});
+interface Country {
+    /** ISO country code (e.g. `'TR'`, `'AZ'`). */
+    code: string;
+    name?: string;
+    raw: Record<string, unknown>;
+}
+interface City {
+    /**
+     * Trendyol's internal city id — the value the **nested** endpoints expect
+     * (`getTurkeyDistricts(city.id)`). Distinct from `code` (the plate-style
+     * display code, e.g. `"1"` for Adana); passing `code` there returns 500.
+     */
+    id?: string;
+    code: string;
+    name?: string;
+    countryCode?: string;
+    raw: Record<string, unknown>;
+}
+interface District {
+    /** Trendyol's internal district id — pass to `getTurkeyNeighborhoods(cityId, district.id)`. */
+    id?: string;
+    code: string;
+    name?: string;
+    cityCode?: string;
+    raw: Record<string, unknown>;
+}
+interface Neighborhood {
+    /** Trendyol's internal neighborhood id. */
+    id?: string;
+    code: string;
+    name?: string;
+    districtCode?: string;
+    raw: Record<string, unknown>;
+}
+
+/**
+ * Trendyol finance endpoints — current-account-statement settlements and
+ * "other financials" (cargo invoices, labor cost adjustments, etc.).
+ *
+ * Both endpoints return the same `FinancialTransaction` shape on the wire,
+ * so the SDK exposes one typed surface for them.
+ */
+declare class FinanceResource {
+    private readonly transport;
+    private readonly limiter;
+    constructor(transport: TrendyolTransport, limiter?: TokenBucketRateLimiter);
+    getSettlements(params?: ListFinanceParams): Promise<CursorPage<FinancialTransaction>>;
+    getOtherFinancials(params?: ListFinanceParams): Promise<CursorPage<FinancialTransaction>>;
+    private queryPage;
+}
+
+/**
+ * A single price / stock update entry.
+ *
+ * `barcode` is the only required field. Include any combination of:
+ * - `quantity` to update stock (max 20 000 per product)
+ * - `salePrice` to update the sale price
+ * - `listPrice` to update the list (strikethrough) price
+ *
+ * `listPrice` must be greater than or equal to `salePrice`.
+ */
+interface PriceInventoryUpdate {
+    barcode: string;
+    quantity?: number;
+    salePrice?: number;
+    listPrice?: number;
+}
+/** Response from `updatePriceAndInventory` — poll with `products.getBatchStatus`. */
+interface UpdatePriceInventoryResponse {
+    batchRequestId: string;
+}
+
+/** A `{ id, name }` reference object used in product/category/brand wire types. */
+interface NamedRef {
+    id: string;
+    name: string;
+}
+/**
+ * A single attribute on a Trendyol product or variant.
+ *
+ * `attributeValueId` and `attributeValue` are mutually exclusive in createProduct
+ * payloads but can both be present in filter responses.
+ */
+interface ProductAttribute {
+    attributeId: string;
+    attributeName?: string;
+    attributeValueId?: string;
+    attributeValue?: string;
+}
+/**
+ * A variant of a Trendyol product — the actual purchasable SKU.
+ *
+ * Trendyol scopes barcode + stock + commission to the variant level even for
+ * products that only have a single variant. To read a product's barcode use
+ * `product.variants[0].barcode`.
+ */
+interface ProductVariant {
+    variantId: string;
+    barcode: string;
+    commission?: number;
+    attributes: ProductAttribute[];
+    productUrl?: string;
+    onSale?: boolean;
+    /** Stock quantity (when the response includes stock data). */
+    stock?: number;
+    /** Untouched raw response for fields not modeled yet. */
+    raw: Record<string, unknown>;
+}
+/**
+ * The content fields shared by an approved {@link Product} and an unapproved
+ * (draft) {@link UnapprovedProduct} — so callers can read title / brand /
+ * category / images from either shape without branching.
+ *
+ * Intentionally just the common surface: the two diverge structurally beyond
+ * this (`Product` carries `variants[]`; `UnapprovedProduct` is flat with a root
+ * `barcode`), and their timestamp fields differ in optionality, so those stay on
+ * the concrete types.
+ */
+interface ProductContentBase {
+    productMainId: string;
+    title: string;
+    description?: string;
+    brand: NamedRef;
+    category: NamedRef;
+    /** Image URLs in display order. */
+    images: string[];
+    attributes: ProductAttribute[];
+}
+/**
+ * A Trendyol marketplace product (approved variant).
+ *
+ * Lonca surfaces the stable fields we have verified against live Trendyol
+ * responses. Everything else stays accessible via `raw`.
+ */
+interface Product extends ProductContentBase {
+    contentId: string;
+    variants: ProductVariant[];
+    /** ISO 8601 UTC string (converted from Trendyol's ms-epoch). */
+    createdAt: string;
+    /** ISO 8601 UTC string. */
+    updatedAt: string;
+    lastModifiedBy?: string;
+    /** Untouched raw response — read fields we have not modeled yet. */
+    raw: Record<string, unknown>;
+}
+/**
+ * Lifecycle status of an unapproved (draft) product on Trendyol.
+ *
+ * Verified values seen on STAGE/PROD as of 2026-05-25:
+ * - `pendingApproval` — submitted; Trendyol content review in progress.
+ * - `rejected` — review failed; `rejectReasonDetails` is populated.
+ *
+ * Older docs also mention `waiting`. Treat as open-enum (`(string & {})`)
+ * since Trendyol can add new statuses without notice.
+ */
+type UnapprovedProductStatus = 'pendingApproval' | 'waiting' | 'rejected' | (string & {});
+interface UnapprovedProductRejectReason {
+    /** Short title (e.g. "Kategori Bilgisi Eksik veya Yanlış"). */
+    rejectReason?: string;
+    /** Full explanation of the rejection. */
+    rejectReasonDetail?: string;
+}
+/**
+ * An unapproved (draft) product as returned by `filterUnapprovedProducts`.
+ *
+ * Important: the wire shape is **flatter** than the approved-product shape
+ * exposed by `Product` — `barcode`, `quantity`, `salePrice`, etc. live at the
+ * root (no `variants[]` array). Each draft is one barcode/SKU.
+ *
+ * Verified against Trendyol STAGE on 2026-05-25. The official OpenAPI spec
+ * calls the image-list field `media`, but the live API returns it as
+ * `images`. SDK normalizes to `images`.
+ */
+interface UnapprovedProduct extends ProductContentBase {
+    /** Seller (supplier) ID echoed back by Trendyol. */
+    supplierId?: string;
+    /** Lifecycle status — see `UnapprovedProductStatus`. */
+    status?: UnapprovedProductStatus;
+    barcode: string;
+    /** Stock quantity at the moment of the query. */
+    quantity?: number;
+    listPrice?: number;
+    salePrice?: number;
+    /** VAT rate as a percentage (e.g. `20` for 20%). */
+    vatRate?: number;
+    dimensionalWeight?: number;
+    stockCode?: string;
+    /** Populated when `status === 'rejected'`. */
+    rejectReasonDetails: UnapprovedProductRejectReason[];
+    /** Returned by Trendyol; null when the seller has not configured this. */
+    origin?: string | null;
+    locationBasedDelivery?: 'ENABLED' | 'DISABLED' | null;
+    lotNumber?: string | null;
+    /** Special consumption tax (ÖTV) where applicable. */
+    specialConsumptionTax?: number | null;
+    /** Suggested governance retail price (Suggested Government Retail price). */
+    sgrPrice?: number | null;
+    /** ISO 8601 UTC string (from `createDateTime` ms-epoch). */
+    createdAt?: string;
+    /** ISO 8601 UTC string (from `lastUpdateDate`). */
+    updatedAt?: string;
+    /** ISO 8601 UTC string (from `lastPriceChangeDate`). */
+    lastPriceChangedAt?: string;
+    /** ISO 8601 UTC string (from `lastStockChangeDate`). */
+    lastStockChangedAt?: string;
+    /** Untouched raw response. */
+    raw: Record<string, unknown>;
+}
+/**
+ * Listing-status filter accepted by `filterProducts` inventory-and-price.
+ *
+ * Trendyol documents `archived`, `blacklisted`, `locked`, `onSale`, and
+ * `notOnSale`. Open (`string & {}`) so a value Trendyol adds later still
+ * type-checks.
+ */
+type ApprovedProductStatus = 'archived' | 'blacklisted' | 'locked' | 'onSale' | 'notOnSale' | (string & {});
+/**
+ * A single variant's stock + price, returned by
+ * `products.listInventoryAndPrice` (Trendyol's lightweight
+ * `inventory-and-price` filter). Intentionally narrow: this endpoint returns
+ * only pricing + stock, not the full product/variant shape exposed by
+ * {@link ProductVariant}.
+ */
+interface ProductStockPriceVariant {
+    variantId: string;
+    barcode: string;
+    /** Sale price (price the customer pays). */
+    salePrice?: number;
+    /** List price (pre-discount reference price). */
+    listPrice?: number;
+    /** Stock quantity. */
+    quantity?: number;
+    stockCode?: string;
+    /**
+     * ISO 8601 UTC string (from `stockLastModifiedDate` ms-epoch). Absent when
+     * the variant's stock has never been updated (Trendyol returns `null`).
+     */
+    stockLastModifiedAt?: string;
+    /** Untouched raw response. */
+    raw: Record<string, unknown>;
+}
+/**
+ * An approved product's stock + price, returned by
+ * `products.listInventoryAndPrice`. Slimmer than {@link Product} — it carries
+ * only the identifiers and the per-variant stock/price.
+ */
+interface ProductStockPrice {
+    contentId: string;
+    productMainId: string;
+    variants: ProductStockPriceVariant[];
+    /** Untouched raw response. */
+    raw: Record<string, unknown>;
+}
+/**
+ * Basic lifecycle info for a single product, returned by `getProductBase`.
+ *
+ * Cheap to call (no body — just barcode in path) and useful as a polling
+ * primitive after `createProducts` to detect `approved: true`.
+ */
+interface ProductBase {
+    barcode: string;
+    approved: boolean;
+    archived: boolean;
+    /** ISO 8601 UTC string (from `approvedDate` ms-epoch); `undefined` until approved. */
+    approvedAt?: string;
+    /** Stable listing ID assigned after approval. */
+    listingId?: string;
+    /** Trendyol's content ID — the same field on `Product.contentId`. */
+    contentId?: string;
+    /** Untouched raw response. */
+    raw: Record<string, unknown>;
+}
+/**
+ * Buybox status for a single barcode, returned by `getBuyboxInformation`.
+ *
+ * `buyboxOrder === 1` means you currently hold the buybox.
+ * `secondBuyboxPrice` / `thirdBuyboxPrice` are surfaced from live wire (not
+ * in the spec) so you can see what other sellers are charging.
+ */
+interface BuyboxInfo {
+    barcode: string;
+    /** Position in the buybox ranking (1 = you hold it). */
+    buyboxOrder?: number;
+    /** Current buybox-winning price. */
+    buyboxPrice?: number;
+    hasMultipleSeller?: boolean;
+    /** Second-best price (when multiple sellers compete). */
+    secondBuyboxPrice?: number | null;
+    /** Third-best price. */
+    thirdBuyboxPrice?: number | null;
+    /** Untouched raw response. */
+    raw: Record<string, unknown>;
+}
+/**
+ * Status of an async batch request returned by `createProducts`,
+ * `updatePriceAndInventory`, and other Trendyol bulk endpoints.
+ */
+type BatchRequestStatus = 'PROCESSING' | 'COMPLETED' | 'FAILED' | (string & {});
+interface BatchRequestItemResult {
+    requestItem?: unknown;
+    status?: string;
+    failureReasons?: string[];
+}
+/**
+ * Result of polling `getBatchRequestResult` for a previously-submitted batch.
+ *
+ * Trendyol retains batch results for **4 hours** after the originating request.
+ */
+interface BatchRequestResult {
+    batchRequestId: string;
+    status: BatchRequestStatus;
+    itemCount?: number;
+    failedItemCount?: number;
+    items: BatchRequestItemResult[];
+    /** ISO 8601 UTC string (converted from Trendyol's ms-epoch). */
+    createdAt?: string;
+    /** ISO 8601 UTC string. */
+    lastModifiedAt?: string;
+    /** Trendyol category of submission (e.g. `MarketPlace`). */
+    sourceType?: string;
+    /** Operation type (e.g. `CreateProducts`, `PriceUpdate`). */
+    batchRequestType?: string;
+    notes?: string;
+    /** Storage object key Trendyol uses internally for the batch payload. */
+    objectKey?: string;
+    storeFrontCode?: string;
+    /** Untouched raw response. */
+    raw: Record<string, unknown>;
+}
+
+/** Function that resolves a batch request's current status (i.e. `products.getBatchStatus`). */
+type BatchStatusPoller = (batchRequestId: string) => Promise<BatchRequestResult>;
+/** Options controlling how {@link InventoryResource.updateAndWait} / {@link pollBatchStatus} poll. */
+interface BatchPollOptions {
+    /** Delay between status polls, in ms. Default: `2000`. */
+    pollIntervalMs?: number;
+    /** Total time to wait for a batch to settle before throwing `TimeoutError`, in ms. Default: `120000`. */
+    timeoutMs?: number;
+    /** Abort the wait early. The rejection carries the signal's reason. */
+    signal?: AbortSignal;
+}
+/**
+ * Poll a Trendyol batch request until it reaches a terminal state
+ * (`COMPLETED` / `FAILED`) or the timeout elapses.
+ *
+ * Standalone so callers can poll an id obtained elsewhere (e.g. a persisted
+ * `batchRequestId` from a previous process) without going through
+ * {@link InventoryResource.updateAndWait}.
+ *
+ * @throws {TimeoutError} when the batch does not settle within `timeoutMs`;
+ *   `error.data` carries `{ batchRequestId, lastStatus, lastResult }`.
+ */
+declare function pollBatchStatus(getStatus: BatchStatusPoller, batchRequestId: string, opts?: BatchPollOptions): Promise<BatchRequestResult>;
+/**
+ * Trendyol stock & price update endpoint (a.k.a. `updatePriceAndInventory`).
+ *
+ * Rate limit: **none** — Trendyol explicitly lists this endpoint as
+ * `NO LIMIT` in its service limits table. The `15-minute duplicate
+ * suppression` rule still applies on Trendyol's side, but that's a
+ * server-side concern.
+ *
+ * The endpoint is asynchronous. {@link InventoryResource.update} returns the
+ * `batchRequestId`; poll it yourself with `products.getBatchStatus`, or let
+ * {@link InventoryResource.updateAndWait} chunk, submit, and poll for you.
+ */
+declare class InventoryResource {
+    private readonly transport;
+    private readonly getBatchStatus?;
+    /**
+     * @param transport Trendyol transport.
+     * @param getBatchStatus Batch-status poller (wired by `createTrendyolClient`
+     *   to `products.getBatchStatus`). Required only for `updateAndWait`.
+     */
+    constructor(transport: TrendyolTransport, getBatchStatus?: BatchStatusPoller | undefined);
+    /**
+     * Update price and/or stock for one or more SKUs (by barcode).
+     *
+     * @example
+     * ```ts
+     * const { batchRequestId } = await client.inventory.update([
+     *   { barcode: 'ABC123', quantity: 42, salePrice: 199.9, listPrice: 249.9 },
+     *   { barcode: 'XYZ789', quantity: 0 },
+     * ]);
+     * const status = await client.products.getBatchStatus(batchRequestId);
+     * ```
+     *
+     * @throws {ValidationError} when `items` is empty or longer than 1000.
+     * @throws {ServerError} when Trendyol accepts the request but returns no
+     *   `batchRequestId` (an unpollable response — surfaced loudly instead of
+     *   handing back an empty id).
+     */
+    update(items: PriceInventoryUpdate[]): Promise<UpdatePriceInventoryResponse>;
+    /**
+     * Submit price/stock updates and wait for them to settle.
+     *
+     * Splits `items` into chunks of ≤1000, submits each via {@link update}, and
+     * polls each `batchRequestId` to a terminal state. Returns one
+     * `BatchRequestResult` per chunk (read `failedItemCount` / `items[]` for
+     * per-barcode outcomes). Compose `@lonca/core`'s `retry` around this for
+     * transient-error resilience.
+     *
+     * @throws {ValidationError} when `items` is empty.
+     * @throws {TimeoutError} when any chunk does not settle within `timeoutMs`;
+     *   `error.data.batchRequestId` identifies the stuck chunk.
+     */
+    updateAndWait(items: PriceInventoryUpdate[], opts?: BatchPollOptions): Promise<BatchRequestResult[]>;
+}
+
+/**
+ * Trendyol invoice endpoints — upload PDF/JPEG/PNG invoice files or
+ * register/delete invoice links. Pair these with `orders.updatePackageStatus(_, { status: 'Invoiced' })`
+ * after invoice issuance.
+ */
+declare class InvoicesResource {
+    private readonly transport;
+    private readonly limiter;
+    constructor(transport: TrendyolTransport, limiter?: TokenBucketRateLimiter);
+    /**
+     * Upload an invoice file for a shipment package. **Multipart**: the
+     * SDK builds the FormData internally from the typed input.
+     *
+     * Max 10 MB. Accepted formats: PDF, JPEG, PNG.
+     */
+    uploadFile(input: UploadInvoiceFileInput): Promise<MutationResult>;
+    /** Register an invoice URL with Trendyol (alternative to uploading the file). */
+    sendLink(input: SendInvoiceLinkInput): Promise<MutationResult>;
+    /** Remove a previously-registered invoice link. */
+    deleteLink(input: DeleteInvoiceLinkInput): Promise<MutationResult>;
+}
+
+/**
+ * Common-label (ortak etiket) endpoints — request and retrieve a
+ * combined ZPL shipping label for a cargo tracking number.
+ */
+declare class LabelsResource {
+    private readonly transport;
+    private readonly limiter;
+    constructor(transport: TrendyolTransport, limiter?: TokenBucketRateLimiter);
+    /**
+     * Request a common ZPL label for a cargo tracking number. After this
+     * returns, call `getCommon()` with the same `cargoTrackingNumber` to
+     * retrieve the generated label.
+     *
+     * Trendyol documents this endpoint (`createCommonLabel`) as a bare
+     * `200 OK` with no response body, so the SDK returns a `MutationResult`
+     * whose `raw` is whatever the gateway sent (normally `undefined`).
+     *
+     * @throws {ValidationError} when `format` is missing.
+     */
+    createCommon(cargoTrackingNumber: string | number, input: CreateCommonLabelInput): Promise<MutationResult>;
+    /**
+     * Retrieve the previously-created common label. Trendyol returns
+     * `{ data: [{ label, format }] }`; the SDK surfaces the array as
+     * `labels[]` for ergonomic access.
+     *
+     * Typically `labels.length === 1` per tracking number, but kept as an
+     * array to match the wire shape.
+     */
+    getCommon(cargoTrackingNumber: string | number): Promise<CommonLabel>;
+}
+
+/**
+ * Trendyol location lookups for building shipment / invoice addresses
+ * with the correct city / district / neighborhood codes.
+ *
+ * Trendyol exposes these under a different prefix (`/integration/member/`)
+ * — not under `/integration/order/` or `/integration/product/`.
+ */
+declare class LocationsResource {
+    private readonly transport;
+    private readonly limiter;
+    constructor(transport: TrendyolTransport, limiter?: TokenBucketRateLimiter);
+    /** List all supported countries (Türkiye + AZ + GULF + CEE). */
+    getCountries(): Promise<Country[]>;
+    getTurkeyCities(): Promise<City[]>;
+    /**
+     * List districts for a Turkish city. **Pass the city `id`** (`City.id`) — the
+     * nested endpoint keys off Trendyol's internal id, not the display `code`, and
+     * returns 500 for the code. Verified live.
+     */
+    getTurkeyDistricts(cityId: string | number): Promise<District[]>;
+    /**
+     * List neighborhoods for a Turkish district. **Pass the ids** (`City.id`,
+     * `District.id`) — not the display codes (those 500).
+     */
+    getTurkeyNeighborhoods(cityId: string | number, districtId: string | number): Promise<Neighborhood[]>;
+    getAzerbaijanCities(): Promise<City[]>;
+    /** List districts for an Azerbaijani city. **Pass the city `id`** (`City.id`), not `code`. */
+    getAzerbaijanDistricts(cityId: string | number): Promise<District[]>;
+    getCitiesByCountry(countryCode: string): Promise<City[]>;
+    getDistrictsByCity(countryCode: string, cityId: string | number): Promise<District[]>;
+    private cities;
+    private districts;
+    private neighborhoods;
+}
+
+/**
+ * The closed set of Trendyol shipment-package statuses the SDK maps
+ * exhaustively (see `statusMap` / `normalizeStatus`). Kept separate from the
+ * open wire type {@link ShipmentPackageStatus} so the status map stays
+ * exhaustive at compile time while unknown wire values stay representable.
+ */
+type KnownShipmentPackageStatus = 'Created' | 'Picking' | 'Invoiced' | 'Shipped' | 'Cancelled' | 'Delivered' | 'UnDelivered' | 'Returned' | 'UnSupplied' | 'Awaiting' | 'UnPacked' | 'AtCollectionPoint' | 'Verified';
+/**
+ * Trendyol shipment-package status as it appears on the wire.
+ *
+ * Trendyol uses ~13 distinct values (see {@link KnownShipmentPackageStatus}).
+ * Open (`string & {}`) so a status Trendyol adds later still type-checks; fold
+ * it into the closed `NormalizedOrderStatus` vocab with `normalizeStatus`.
+ */
+type ShipmentPackageStatus = KnownShipmentPackageStatus | (string & {});
+interface OrderAddressLines {
+    addressLine1?: string;
+    addressLine2?: string;
+}
+/**
+ * A customer or invoice/shipment address returned alongside a shipment package.
+ * Field set is conservative — Trendyol returns many optional locality fields
+ * and we surface them as-is.
+ */
+interface OrderAddress {
+    id?: string;
+    firstName?: string;
+    lastName?: string;
+    fullName?: string;
+    company?: string;
+    address1?: string;
+    address2?: string;
+    fullAddress?: string;
+    shortAddress?: string;
+    city?: string;
+    cityCode?: number;
+    district?: string;
+    districtId?: number;
+    neighborhoodId?: number;
+    countyId?: number;
+    countyName?: string;
+    stateName?: string;
+    postalCode?: string;
+    countryCode?: string;
+    phone?: string;
+    addressLines?: OrderAddressLines;
+}
+/** Customer details on a shipment package (a subset of what Trendyol exposes). */
+interface OrderCustomer {
+    id?: string;
+    firstName: string;
+    lastName: string;
+    email?: string;
+    taxNumber?: string;
+    identityNumber?: string;
+}
+interface OrderLineDiscountDetail {
+    lineItemPrice?: number;
+    lineItemSellerDiscount?: number;
+    lineItemTyDiscount?: number;
+}
+/** A single item line inside a shipment package. */
+interface OrderLine {
+    /** Trendyol's `lineId`. */
+    id: string;
+    quantity: number;
+    productName: string;
+    barcode: string;
+    productSize?: string;
+    productColor?: string;
+    stockCode?: string;
+    contentId?: string;
+    sellerId?: string;
+    productCategoryId?: string;
+    salesCampaignId?: string;
+    currencyCode?: string;
+    lineUnitPrice: number;
+    lineGrossAmount: number;
+    lineSellerDiscount?: number;
+    lineTyDiscount?: number;
+    lineTotalDiscount?: number;
+    vatRate?: number;
+    commission?: number;
+    orderLineItemStatusName?: string;
+    businessUnit?: string;
+    fastDeliveryOptions?: unknown[];
+    discountDetails?: OrderLineDiscountDetail[];
+    /** Untouched raw line response. */
+    raw: Record<string, unknown>;
+}
+/** A status transition entry in `packageHistories`. */
+interface PackageHistoryEntry {
+    status?: ShipmentPackageStatus;
+    /** ISO 8601 UTC string (converted from Trendyol's ms-epoch). */
+    createdAt?: string;
+    raw: Record<string, unknown>;
+}
+/**
+ * A package line update tuple used by `updatePackageStatus` and
+ * `cancelPackageItem`. `lineId` is the per-line ID from `ShipmentPackage.lines[].lineId`.
+ */
+interface PackageLineUpdate {
+    lineId: number;
+    quantity: number;
+}
+/**
+ * Input for `orders.updatePackageStatus`. Trendyol restricts the seller-side
+ * status push to `Picking` (mark as being prepared) and `Invoiced`
+ * (invoice issued); other transitions are driven by Trendyol / the cargo
+ * provider. `lines` is optional and only used when transitioning subset of
+ * line items.
+ */
+interface UpdatePackageStatusInput {
+    status: 'Picking' | 'Invoiced';
+    lines?: PackageLineUpdate[];
+}
+/**
+ * Input for `orders.cancelPackageItem` — Trendyol's "supply failure" notification.
+ * Marks specific line items as un-suppliable. `reasonId` is a numeric code
+ * Trendyol publishes separately (e.g. `577` = "tedarik edemiyorum"); consult
+ * Trendyol's seller panel or the "Tedarik Edememe" docs for current values.
+ */
+interface CancelPackageItemInput {
+    lines: PackageLineUpdate[];
+    reasonId: number;
+}
+/**
+ * One row from `orders.getCargoInvoiceItems` — a cargo invoice line item
+ * that ties a parcel ID to its cargo fee. Useful for reconciling Trendyol's
+ * cargo deductions against your shipped packages.
+ */
+interface CargoInvoiceItem {
+    /** e.g. "Gönderi Kargo Bedeli" (outbound) or "İade Kargo Bedeli" (return). */
+    shipmentPackageType?: string;
+    /** Cargo parcel unique ID. */
+    parcelUniqueId?: number | string;
+    orderNumber?: string;
+    /** Fee charged in this row. */
+    amount?: number;
+    /** Desi value used to compute the fee. */
+    desi?: number;
+    /** Untouched raw row. */
+    raw: Record<string, unknown>;
+}
+/**
+ * Filter params for `orders.listStream` — the streaming alternative to
+ * `orders.list`. Uses Trendyol's opaque `nextCursor` (forwarded as the
+ * `@lonca/core` `CursorPaginationParams.cursor`) instead of page-index
+ * pagination.
+ */
+interface ListOrdersStreamParams {
+    cursor?: string;
+    limit?: number;
+    /**
+     * CSV of package-item statuses to filter by (e.g.
+     * `'Created,Picking,Invoiced'`). Trendyol accepts the same status
+     * vocabulary as `ShipmentPackageStatus`.
+     */
+    packageItemStatuses?: string;
+    /** Lower bound for `lastModified` (Trendyol expects ms-epoch). */
+    lastModifiedStartDate?: Date;
+    /** Upper bound for `lastModified`. */
+    lastModifiedEndDate?: Date;
+}
+/**
+ * Box / packaging metadata for `orders.updateBoxInfo`. Both fields are
+ * optional but at least one should be set for the call to be meaningful.
+ */
+interface UpdateBoxInfoInput {
+    /** Desi value (volumetric weight used by Trendyol for shipping cost). */
+    deci?: number;
+    /** Number of physical boxes in the shipment. */
+    boxQuantity?: number;
+}
+/**
+ * Per-line labor cost for `orders.updateLaborCosts`. The Trendyol API
+ * accepts a raw array of these (no envelope) — the SDK forwards as-is.
+ */
+interface LaborCostInput {
+    orderLineId: number;
+    /** Labor cost charged per single unit of this line. */
+    laborCostPerItem: number;
+}
+/**
+ * Trendyol cargo provider codes accepted by `orders.changeCargoProvider`.
+ * Use the string union for autocomplete; `(string & {})` keeps unknown
+ * codes type-compatible so Trendyol can add providers without breaking
+ * callers.
+ */
+type TrendyolCargoProvider = 'YKMP' | 'ARASMP' | 'SURATMP' | 'HOROZMP' | 'DHLECOMMP' | 'PTTMP' | 'CEVAMP' | 'TEXMP' | 'KOLAYGELSINMP' | 'CEVATEDARIK' | (string & {});
+/**
+ * Per-line quantity split for `orders.splitPackageByQuantity`. Each item
+ * in `quantities` becomes its own new package containing that many units
+ * of `orderLineId`.
+ *
+ * @example
+ * // splits 5 units of line 100 into 3 packages: 2 + 2 + 1
+ * { orderLineId: 100, quantities: [2, 2, 1] }
+ */
+interface QuantitySplit {
+    orderLineId: number;
+    quantities: number[];
+}
+/**
+ * A group of line IDs that should become a new package together,
+ * for `orders.multiSplitPackage`.
+ */
+interface SplitGroup {
+    orderLineIds: number[];
+}
+/**
+ * One package's contents for `orders.splitMultiPackagesByQuantity`. Each
+ * element of the outer array becomes a new package; each `packageDetails`
+ * entry carries an `orderLineId` and the **single** quantity assigned to
+ * that package (note: singular `quantities`, despite the field name).
+ */
+interface PackageDetail {
+    orderLineId: number;
+    /** Quantity of this line to include in this package (singular integer). */
+    quantities: number;
+}
+interface SplitPackagePlan {
+    packageDetails: PackageDetail[];
+}
+/**
+ * Input for `orders.processAlternativeDelivery`. Used when the seller is
+ * shipping via a non-Trendyol cargo provider — provide either a phone number
+ * (which Trendyol SMSes the tracking link to) or a direct tracking URL.
+ */
+interface ProcessAlternativeDeliveryInput {
+    /** When true, `trackingInfo` is a phone number; when false, a tracking URL. */
+    isPhoneNumber: boolean;
+    trackingInfo: string;
+    /** Provider-specific extra parameters (Trendyol forwards verbatim). */
+    params: Record<string, string>;
+}
+/**
+ * A Trendyol order — Trendyol models orders as "shipment packages". A single
+ * customer order may produce multiple shipment packages (one per warehouse,
+ * one per cancellation, etc.).
+ *
+ * `id` is the `shipmentPackageId` (the operational unit); `orderNumber`
+ * groups packages that came from the same customer order.
+ */
+interface ShipmentPackage {
+    /** `shipmentPackageId` — the operational identifier for this package. */
+    id: string;
+    orderNumber: string;
+    shipmentNumber?: string;
+    originPackageIds?: string[] | null;
+    warehouseId?: string;
+    supplierId?: string;
+    status: ShipmentPackageStatus;
+    /** Usually identical to `status`; surfaced for completeness. */
+    shipmentPackageStatus?: ShipmentPackageStatus;
+    customer: OrderCustomer;
+    orderDate: string;
+    lastModifiedDate: string;
+    agreedDeliveryDate?: string;
+    estimatedDeliveryStartDate?: string;
+    estimatedDeliveryEndDate?: string;
+    originShipmentDate?: string;
+    currencyCode: string;
+    packageTotalPrice: number;
+    packageGrossAmount: number;
+    packageSellerDiscount: number;
+    packageTyDiscount: number;
+    packageTotalDiscount: number;
+    invoiceAddress?: OrderAddress;
+    shipmentAddress?: OrderAddress;
+    deliveryAddressType?: string;
+    cargoTrackingNumber?: string;
+    cargoProviderName?: string;
+    cargoProviderId?: string;
+    cargoSenderNumber?: string;
+    deliveryType?: string;
+    whoPays?: number;
+    timeSlotId?: number;
+    fastDelivery?: boolean;
+    fastDeliveryType?: string;
+    deliveredByService?: boolean;
+    commercial?: boolean;
+    micro?: boolean;
+    giftBoxRequested?: boolean;
+    /** Renamed from Trendyol's wire field `3pByTrendyol` (identifier cannot start with a digit). */
+    threePByTrendyol?: boolean;
+    containsDangerousProduct?: boolean;
+    isCod?: boolean;
+    is4P?: boolean;
+    invoiceLink?: string;
+    createdBy?: string;
+    lines: OrderLine[];
+    packageHistories: PackageHistoryEntry[];
+    /** Untouched raw response for fields not modeled yet. */
+    raw: Record<string, unknown>;
+}
+
+/**
+ * Returns + compensation types for Trendyol orders.
+ *
+ * Trendyol distinguishes two separate concepts:
+ * - **Manual return** — seller-side notification that a package was
+ *   received back (no body, just a state flip on the package).
+ * - **Compensation ticket** — Trendyol Express-specific dispute filed
+ *   when a shipment is lost or damaged. Multi-state lifecycle with up to
+ *   ~18 documented states.
+ */
+
+/**
+ * Lifecycle state of a Trendyol Express compensation ticket. Trendyol
+ * documents 18 distinct states (`Empty`, `MarkInCompensation`,
+ * `CompensationApproved`, etc.) — kept as an open enum so unknown future
+ * values still type-check.
+ *
+ * Verified against the official spec on 2026-05-25.
+ */
+type CompensationTicketState = 'Empty' | 'MarkInCompensation' | 'OpenedForRefund' | 'StartCompensationFinanceProgress' | 'StartCompensationInApprovalProgress' | 'CompensationApproved' | 'CompensationRejected' | 'FoundAfterCompensationComplete' | 'NotCompensationCase' | 'FoundInCompensation' | 'FoundInvestigationProgress' | 'MarkCompensationCancel' | 'CreateCompensationTicket' | 'FinalizeCompensation' | 'CloseCompensationTicket' | 'FoundInvestigationProgressDeliveredToCustomer' | 'FoundInCompensationDeliveredToCustomer' | 'FoundAfterCompensationCompleteDeliveredToCustomer' | (string & {});
+/** One line item under a compensation ticket. */
+interface CompensationItemDetail {
+    /** Amount (e.g. unit price). */
+    itemAmount?: number;
+    itemCode?: string;
+    /** Item count (number of units claimed). */
+    itemCount?: number;
+    itemName?: string;
+}
+/**
+ * A Trendyol Express compensation ticket — filed when a shipment is lost
+ * or damaged in transit. Returned by `orders.getCompensationTickets()`.
+ */
+interface CompensationTicket {
+    cargoProvider?: string;
+    compensateReason?: string;
+    /** ISO 8601 UTC string (converted from `createDate` ms-epoch). */
+    createdAt?: string;
+    currentState?: CompensationTicketState;
+    deliveryNumber?: string;
+    itemDetails: CompensationItemDetail[];
+    orderNumber?: string;
+    requestedBy?: string;
+    stateMessage?: string;
+    /** Total amount across items — Trendyol returns this as a string. */
+    totalItemsAmount?: string;
+    /** Untouched raw ticket response. */
+    raw: Record<string, unknown>;
+}
+/** Filter / pagination params for `orders.getCompensationTickets()`. */
+interface ListCompensationTicketsParams extends CursorPaginationParams {
+    /** Lower bound on `createDate` (Trendyol expects ms-epoch). */
+    startDate?: Date;
+    /** Upper bound on `createDate`. */
+    endDate?: Date;
+}
+
+interface ListOrdersParams extends CursorPaginationParams {
+    status?: ShipmentPackageStatus;
+    orderNumber?: string;
+    /** Filter packages updated on or after this date (Trendyol expects ms-epoch). */
+    startDate?: Date;
+    /** Filter packages updated on or before this date. */
+    endDate?: Date;
+}
+/**
+ * Normalize one raw Trendyol shipment-package node into the public
+ * `ShipmentPackage` shape. Exported so consumers handling Trendyol
+ * webhooks can reuse the SDK's normalization logic on the event body
+ * (Trendyol POSTs the same shape it returns from `getShipmentPackages`).
+ *
+ * For full-webhook parsing use `parseWebhookEvent(rawBody)` from the
+ * top-level package, which calls this internally per item.
+ */
+declare function normalizeShipmentPackage(rawNode: unknown): ShipmentPackage;
+/**
+ * Trendyol order (shipment-package) endpoints.
+ *
+ * Rate limit (per Trendyol service limits): tunable via the constructor with a
+ * generous default.
+ *
+ * Pagination: `getShipmentPackages` (`list`) uses page-based pagination (not
+ * nextPageToken). The SDK exposes `CursorPage<ShipmentPackage>` so the caller
+ * can iterate with `paginate()` from `@lonca/core`; the opaque cursor encodes
+ * the page index.
+ *
+ * **2026-06-08 limit:** `getShipmentPackages` reaches at most 10,000 records —
+ * requests past that offset return HTTP 429. For full scans, periodic syncs, or
+ * exports use {@link OrdersResource.listStream} (`getShipmentPackagesStream`),
+ * which paginates with an opaque cursor and is not subject to the cap. Note the
+ * stream endpoint exposes only the last 3 months of orders.
+ */
+declare class OrdersResource {
+    private readonly transport;
+    private readonly limiter;
+    constructor(transport: TrendyolTransport, limiter?: TokenBucketRateLimiter);
+    /**
+     * List shipment packages for the seller.
+     *
+     * @example
+     * ```ts
+     * import { paginate } from '@lonca/core';
+     * for await (const pkg of paginate((p) => client.orders.list({ ...p, status: 'Created' }))) {
+     *   console.log(pkg.id, pkg.status, pkg.customer.firstName);
+     * }
+     * ```
+     */
+    list(params?: ListOrdersParams): Promise<CursorPage<ShipmentPackage>>;
+    /**
+     * Push a shipment-package status update.
+     *
+     * Trendyol restricts the seller-side push to two transitions:
+     * - `Picking`  — order picked up from the shelf / being prepared
+     * - `Invoiced` — invoice issued, ready for cargo handoff
+     *
+     * Other transitions (`Shipped`, `Delivered`, etc.) are driven by Trendyol
+     * or the cargo provider — call `processAlternativeDelivery` or
+     * `manualDeliverByPackageId` if you ship outside Trendyol's cargo
+     * network.
+     *
+     * Returns void; Trendyol responds with 200 + empty body on success.
+     */
+    updatePackageStatus(packageId: string | number, input: UpdatePackageStatusInput): Promise<void>;
+    /**
+     * Notify Trendyol that one or more line items cannot be supplied
+     * ("Tedarik Edememe Bildirimi"). Marks the listed line IDs as
+     * `UnSupplied`. Trendyol cancels those quantities and notifies the
+     * customer.
+     *
+     * `reasonId` is a numeric code Trendyol publishes separately — consult
+     * the seller panel or the "Tedarik Edememe" docs for current values.
+     *
+     * Returns void; Trendyol responds with 200 + empty body on success.
+     */
+    cancelPackageItem(packageId: string | number, input: CancelPackageItemInput): Promise<void>;
+    /**
+     * Extend the agreed delivery date for a shipment package by 1, 2, or 3 days.
+     * Trendyol enforces the [1, 3] range server-side; the SDK validates client-side
+     * to fail fast.
+     *
+     * Returns void; Trendyol responds with 200 + empty body on success.
+     */
+    extendDeliveryDate(packageId: string | number, extendedDayCount: 1 | 2 | 3): Promise<void>;
+    /**
+     * Notify Trendyol of an alternative delivery channel — used when the
+     * seller is shipping via a non-Trendyol cargo provider. Trendyol then
+     * either SMSes the customer the tracking link (when `isPhoneNumber` is
+     * `true`) or stores the tracking URL on the package directly.
+     *
+     * Returns void; Trendyol responds with 200 + empty body on success.
+     */
+    processAlternativeDelivery(packageId: string | number, input: ProcessAlternativeDeliveryInput): Promise<void>;
+    /**
+     * Split a shipment package by moving a set of line IDs into a new
+     * package. The original package keeps the remaining lines.
+     *
+     * @param packageId    The package to split.
+     * @param orderLineIds Line IDs to move into the new package (1+).
+     * @throws {ValidationError} when `orderLineIds` is empty.
+     */
+    splitPackage(packageId: string | number, orderLineIds: number[]): Promise<void>;
+    /**
+     * Split a shipment package by quantity. Each `QuantitySplit` entry
+     * carves a single line into multiple packages — e.g. `{ orderLineId: 100,
+     * quantities: [2, 2, 1] }` splits 5 units of line 100 into three packages
+     * of 2 + 2 + 1.
+     *
+     * @throws {ValidationError} when `quantitySplit` is empty.
+     */
+    splitPackageByQuantity(packageId: string | number, quantitySplit: QuantitySplit[]): Promise<void>;
+    /**
+     * Split a shipment package into multiple new packages by grouping line
+     * IDs. Each `SplitGroup` becomes one new package containing the listed
+     * line IDs.
+     *
+     * @throws {ValidationError} when `splitGroups` is empty.
+     */
+    multiSplitPackage(packageId: string | number, splitGroups: SplitGroup[]): Promise<void>;
+    /**
+     * Split a shipment package into multiple new packages, each containing a
+     * mix of line items at specific quantities. This is the most expressive
+     * split — use it when you need fine-grained control over which line IDs
+     * and how many of each end up in each new package.
+     *
+     * @throws {ValidationError} when `splitPackages` is empty.
+     */
+    splitMultiPackagesByQuantity(packageId: string | number, splitPackages: SplitPackagePlan[]): Promise<void>;
+    /**
+     * Change the cargo provider on an existing shipment package. Use one of
+     * Trendyol's documented marketplace cargo codes (`'YKMP'`, `'ARASMP'`,
+     * `'SURATMP'`, etc.) — see `TrendyolCargoProvider` for the full list.
+     */
+    changeCargoProvider(packageId: string | number, cargoProvider: TrendyolCargoProvider): Promise<void>;
+    /**
+     * Mark a shipment package as manually delivered via its package ID.
+     * Used when the seller delivered the order outside Trendyol's cargo
+     * network and needs to flip the package to `Delivered` after handover.
+     *
+     * No request body; Trendyol responds with 200 + empty body on success.
+     */
+    manualDeliverByPackageId(packageId: string | number): Promise<void>;
+    /**
+     * Manual-deliver variant that takes the cargo tracking number instead
+     * of the package ID. Useful when you only have the tracking number on
+     * hand (e.g., from a cargo provider webhook).
+     *
+     * Note the path structure: tracking number sits at a sibling location,
+     * not under `/shipment-packages/{id}/...`.
+     */
+    manualDeliverByTrackingNumber(cargoTrackingNumber: string | number): Promise<void>;
+    /**
+     * Mark a package as delivered through an authorized service ("yetkili
+     * servis"). For appliance / installation-required products that are
+     * delivered + installed by a third-party service partner.
+     */
+    markDeliveredByService(packageId: string | number): Promise<void>;
+    /**
+     * Update box / packaging metadata on a shipment package (desi value
+     * and/or number of boxes). Either field can be sent alone.
+     */
+    updateBoxInfo(packageId: string | number, input: UpdateBoxInfoInput): Promise<void>;
+    /**
+     * Update labor costs for one or more order lines.
+     *
+     * **Wire note:** Trendyol's request body is a raw array (no envelope),
+     * not `{ items: [...] }`. The SDK forwards `items` verbatim.
+     *
+     * @throws {ValidationError} when `items` is empty.
+     */
+    updateLaborCosts(packageId: string | number, items: LaborCostInput[]): Promise<void>;
+    /**
+     * Reassign a shipment package to a different warehouse. `warehouseId`
+     * comes from `client.suppliers.getAddresses()` (filter by `isShipmentAddress`).
+     */
+    updateWarehouse(packageId: string | number, warehouseId: number): Promise<void>;
+    /**
+     * Stream variant of `list()`. Trendyol's `getShipmentPackagesStream`
+     * returns the same `ShipmentPackage` shape but paginates with an opaque
+     * cursor — useful when the dataset is large and page-based pagination
+     * would hit the 10 000-record cap.
+     *
+     * @example
+     * ```ts
+     * import { paginate } from '@lonca/core';
+     * for await (const pkg of paginate((p) =>
+     *   client.orders.listStream({ ...p, packageItemStatuses: 'Created,Picking' }),
+     * )) {
+     *   console.log(pkg.id, pkg.status);
+     * }
+     * ```
+     */
+    listStream(params?: ListOrdersStreamParams): Promise<CursorPage<ShipmentPackage>>;
+    /**
+     * Fetch the per-parcel cargo-fee breakdown for a single cargo invoice
+     * (Trendyol's `getCargoInvoiceItems`). Useful for reconciling Trendyol's
+     * cargo deductions against your shipped packages.
+     *
+     * `invoiceSerialNumber` is sourced from the Current Account Statement
+     * ("Cari Hesap Ekstresi") with `transactionType=DeductionInvoices`.
+     *
+     * Page-based pagination internally (cursor encodes the page index).
+     */
+    getCargoInvoiceItems(invoiceSerialNumber: string, params?: CursorPaginationParams): Promise<CursorPage<CargoInvoiceItem>>;
+    /**
+     * Notify Trendyol that a shipped package was returned to you (manual
+     * return flow, e.g. customer dropped it at your address or you got the
+     * package back without going through Trendyol's return cargo).
+     *
+     * No body; Trendyol responds with 200 + empty body on success.
+     */
+    manualReturnByPackageId(packageId: string | number): Promise<void>;
+    /**
+     * Manual-return variant that takes the cargo tracking number instead of
+     * the package ID. Useful when the cargo provider's webhook only carries
+     * the tracking number.
+     *
+     * Sibling path (not under `/{packageId}/...`).
+     */
+    manualReturnByTrackingNumber(cargoTrackingNumber: string | number): Promise<void>;
+    /**
+     * Fetch Trendyol Express compensation tickets (claims filed when a
+     * shipment is lost or damaged in transit). Page-based pagination
+     * internally; the SDK exposes the cursor convention.
+     *
+     * Note the different base path — `/integration/tex/compensation/...`,
+     * not the regular `/integration/order/...`.
+     *
+     * @example
+     * ```ts
+     * import { paginate } from '@lonca/core';
+     * const tickets = await client.orders.getCompensationTickets({
+     *   startDate: new Date('2026-01-01'),
+     *   endDate: new Date('2026-02-01'),
+     * });
+     * for (const t of tickets.items) {
+     *   console.log(t.orderNumber, t.currentState, t.stateMessage);
+     * }
+     * ```
+     */
+    getCompensationTickets(params?: ListCompensationTicketsParams): Promise<CursorPage<CompensationTicket>>;
+    private packagePath;
+}
+
+/**
+ * Input types for Trendyol product write endpoints (V2).
+ *
+ * All five write endpoints (`createProducts`, `updateContentBulk`,
+ * `updateVariantBulk`, `updateUnapproved`, `updateDeliveryInfoBulk`) are
+ * async batch operations: SDK accepts the typed payload, Trendyol returns
+ * `{ batchRequestId }`, and the caller polls via `products.getBatchStatus`.
+ */
+/** Response shape for every async write endpoint in the product API. */
+interface BatchAcceptedResponse {
+    /** Opaque ID — pass to `products.getBatchStatus(...)` to track. */
+    batchRequestId: string;
+}
+/** A V2 product attribute payload. Mutually-exclusive value selectors. */
+interface ProductAttributeV2Input {
+    attributeId: number;
+    /**
+     * One or more attribute value IDs (V2 supports multi-value when the
+     * attribute's `allowMultipleAttributeValues` flag is true).
+     */
+    attributeValueIds?: number[];
+    /** Free-text value (only when the attribute's `allowCustom` flag is true). */
+    attributeValue?: string;
+}
+/** Image entry: just a URL (Trendyol fetches the image asynchronously). */
+interface ProductImageInput {
+    /** https URL; Trendyol recommends 1200×1800, 96 DPI. */
+    url: string;
+}
+/** Per-variant delivery option (used by `create` + `updateUnapproved`). */
+interface DeliveryOptionInput {
+    deliveryDuration?: number;
+    fastDeliveryType?: 'SAME_DAY_SHIPPING' | 'FAST_DELIVERY';
+}
+/**
+ * Payload for one item in `createProducts` (V2).
+ *
+ * Trendyol requires all 14 fields listed in the spec — the type makes them
+ * non-optional so missing required fields fail at compile time, not at
+ * runtime after a failed batch.
+ */
+interface CreateProductV2Input {
+    /** Barcode (≤40 chars, allows `.`, `-`, `_`). */
+    barcode: string;
+    /** Title (≤100 chars). */
+    title: string;
+    /** Parent product ID for variant grouping (≤40 chars). */
+    productMainId: string;
+    /** Trendyol numeric brand ID (from `brands.list`). */
+    brandId: number;
+    /** Trendyol numeric category ID (from `categories.list`). */
+    categoryId: number;
+    /** Initial stock quantity. */
+    quantity: number;
+    /** Seller-side stock code (≤100 chars). */
+    stockCode: string;
+    /** Desi value used for shipping cost calculation. */
+    dimensionalWeight: number;
+    /** HTML-friendly product description (≤30 000 chars). */
+    description: string;
+    /** List price (PSF). Must be ≥ `salePrice`. */
+    listPrice: number;
+    /** Sale price (TSF). */
+    salePrice: number;
+    /** 1–8 image URLs. */
+    images: ProductImageInput[];
+    /** VAT rate as integer percent (0, 1, 10, 20). */
+    vatRate: number;
+    /** Required attributes for the category — fetch via `categories.getAttributes`. */
+    attributes: ProductAttributeV2Input[];
+    /** Delivery duration / fast-delivery type. */
+    deliveryOption?: DeliveryOptionInput;
+    /** Lot/SKT info (≤100 chars). */
+    lotNumber?: string | null;
+    /** Shipment warehouse ID (from `suppliers.getAddresses`). */
+    shipmentAddressId?: number;
+    /** Returning warehouse ID. */
+    returningAddressId?: number;
+}
+/** Payload for one item in `updateContentBulk` (only `contentId` is required). */
+interface UpdateContentInput {
+    /** From `Product.contentId` on `products.list` results. */
+    contentId: number;
+    title?: string;
+    description?: string;
+    images?: ProductImageInput[];
+    /**
+     * If you update ANY attribute, you must send ALL attributes — partial
+     * attribute updates are not supported by Trendyol on this endpoint.
+     */
+    attributes?: ProductAttributeV2Input[];
+}
+/**
+ * Payload for one item in `updateVariantBulk`. `barcode` is the identifier;
+ * Trendyol does not allow updating the barcode itself via this endpoint.
+ */
+interface UpdateVariantInput {
+    barcode: string;
+    stockCode?: string;
+    vatRate?: number;
+    shipmentAddressId?: number;
+    returningAddressId?: number;
+    dimensionalWeight?: number;
+    lotNumber?: string | null;
+    locationBasedDelivery?: 'ENABLED' | 'DISABLED' | null;
+}
+/** Payload for one item in `updateUnapprovedProducts` — all optional except `barcode`. */
+interface UpdateUnapprovedInput {
+    barcode: string;
+    title?: string;
+    description?: string;
+    productMainId?: string;
+    brandId?: number;
+    categoryId?: number;
+    stockCode?: string;
+    dimensionalWeight?: number;
+    vatRate?: number;
+    deliveryOption?: DeliveryOptionInput;
+    locationBasedDelivery?: 'ENABLED' | 'DISABLED' | null;
+    lotNumber?: string | null;
+    shipmentAddressId?: number;
+    returningAddressId?: number;
+    images?: ProductImageInput[];
+    attributes?: ProductAttributeV2Input[];
+}
+/** Payload for one item in `updateDeliveryInfoBulk`. */
+interface UpdateDeliveryInfoInput {
+    barcode: string;
+    deliveryOptions?: {
+        deliveryDuration?: number;
+        fastDeliveryType?: 'SAME_DAY_SHIPPING' | 'FAST_DELIVERY';
+    };
+}
+
+interface ListProductsParams extends CursorPaginationParams {
+    /** Filter by a single barcode. */
+    barcode?: string;
+    /** Filter products updated on or after this date (Trendyol expects ms-epoch). */
+    startDate?: Date;
+    /** Filter products updated on or before this date. */
+    endDate?: Date;
+}
+/**
+ * Filters for `products.listInventoryAndPrice` (Trendyol's lightweight
+ * `inventory-and-price` approved-product filter). All filters are optional;
+ * pass none to page through every approved product's stock + price.
+ */
+interface ListInventoryAndPriceParams extends CursorPaginationParams {
+    /** Filter by a single barcode. */
+    barcode?: string;
+    /** Filter by a single contentId. */
+    contentId?: string;
+    /** Filter by the seller's stock code. */
+    stockCode?: string;
+    /** Filter by the seller's productMainId. */
+    productMainId?: string;
+    /** Filter by listing status (archived / blacklisted / locked / onSale / notOnSale). */
+    status?: ApprovedProductStatus;
+    /**
+     * Sort by `SellerCreatedDate`. `ASC` = oldest→newest, `DESC` = newest→oldest.
+     */
+    orderByDirection?: 'ASC' | 'DESC';
+    /**
+     * Storefront code sent as the `storeFrontCode` header. Required on the
+     * International marketplace; optional on the Türkiye marketplace.
+     */
+    storeFrontCode?: string;
+}
+/** Date field to filter against on `listUnapproved` (default: server choice). */
+type UnapprovedDateQueryType = 'CREATED_DATE' | 'LAST_MODIFIED_DATE';
+interface ListUnapprovedProductsParams extends CursorPaginationParams {
+    barcode?: string;
+    startDate?: Date;
+    endDate?: Date;
+    /** Choose which date `startDate`/`endDate` apply to. */
+    dateQueryType?: UnapprovedDateQueryType;
+    /**
+     * Optional override of the seller-scoped query (rare; defaults to the
+     * client's `sellerId`).
+     */
+    supplierId?: number;
+}
+/**
+ * Trendyol product read + write + lifecycle + batch-result endpoints.
+ *
+ * Rate limits (per Trendyol service limits):
+ * - filterProducts (approved + unapproved + getProductBase): 2000 req/min
+ * - getBatchRequestResult: 1000 req/min
+ * - getBuyboxInformation: 1000 req/min
+ * - create/update/archive/unlock product writes: 1000 req/min (shared bucket)
+ * - delete: 100 req/min (separate bucket)
+ */
+declare class ProductsResource {
+    private readonly transport;
+    private readonly filterLimiter;
+    private readonly batchLimiter;
+    private readonly buyboxLimiter;
+    private readonly writeLimiter;
+    private readonly deleteLimiter;
+    constructor(transport: TrendyolTransport, options?: {
+        filterLimiter?: TokenBucketRateLimiter;
+        batchLimiter?: TokenBucketRateLimiter;
+        buyboxLimiter?: TokenBucketRateLimiter;
+        writeLimiter?: TokenBucketRateLimiter;
+        deleteLimiter?: TokenBucketRateLimiter;
+    });
+    private validateBarcodes;
+    private submitWrite;
+    /**
+     * List approved products. Use `paginate()` from `@lonca/core` to iterate
+     * lazily across pages.
+     *
+     * **Approved only:** this endpoint silently excludes products still in review
+     * or rejected — use {@link listUnapproved} for those. Date fields on the
+     * returned {@link Product} (`createdAt` / `updatedAt`) are ISO 8601 UTC
+     * **strings**, not `Date` objects.
+     *
+     * Trendyol exposes both page-based and `nextPageToken`-based pagination
+     * (the latter required when the dataset exceeds 10,000 items). The SDK
+     * picks the right strategy automatically — pass our opaque `cursor` from
+     * the previous response and we forward it as `nextPageToken`.
+     *
+     * @example
+     * ```ts
+     * import { paginate } from '@lonca/core';
+     * for await (const product of paginate((p) => client.products.list(p))) {
+     *   for (const variant of product.variants) {
+     *     console.log(variant.barcode, product.title);
+     *   }
+     * }
+     * ```
+     */
+    list(params?: ListProductsParams): Promise<CursorPage<Product>>;
+    /**
+     * List **stock and price** for approved products — Trendyol's lightweight
+     * `inventory-and-price` filter. A slim alternative to {@link list} when you
+     * only need pricing + stock: the response carries `contentId`,
+     * `productMainId`, and a `variants[]` array with `barcode`, `salePrice`,
+     * `listPrice`, `quantity`, `stockCode`, and `stockLastModifiedAt` — nothing
+     * else.
+     *
+     * Filter by `barcode`, `contentId`, `stockCode`, `productMainId`, or listing
+     * `status`. Sort with `orderByDirection` (`SellerCreatedDate`). `size` caps
+     * at **100** here (tighter than `list`'s 1000).
+     *
+     * Pagination follows the same convention as {@link list}: pass our opaque
+     * `cursor` from the previous response and we forward it as `nextPageToken`
+     * (required once the dataset exceeds 10,000 items).
+     *
+     * @example
+     * ```ts
+     * import { paginate } from '@lonca/core';
+     * for await (const p of paginate((q) =>
+     *   client.products.listInventoryAndPrice({ ...q, status: 'onSale' }),
+     * )) {
+     *   for (const v of p.variants) {
+     *     console.log(v.barcode, v.quantity, v.salePrice);
+     *   }
+     * }
+     * ```
+     */
+    listInventoryAndPrice(params?: ListInventoryAndPriceParams): Promise<CursorPage<ProductStockPrice>>;
+    /**
+     * Poll a batch request returned by an async write (e.g. `createProducts`,
+     * `updatePriceAndInventory`).
+     *
+     * Trendyol retains batch results for **4 hours** after the originating
+     * request — poll within that window.
+     *
+     * @param batchRequestId The opaque ID returned by the originating call.
+     */
+    getBatchStatus(batchRequestId: string): Promise<BatchRequestResult>;
+    /**
+     * List **unapproved** (draft / rejected / pending-review) products.
+     *
+     * Wire shape is intentionally flatter than the approved-product shape:
+     * each barcode is one top-level item with `barcode`, `quantity`, `salePrice`
+     * etc. at the root. Rejected drafts carry `rejectReasonDetails` so you can
+     * surface why Trendyol's content team turned them down.
+     *
+     * Pagination follows the same convention as `list()`: `cursor` from the
+     * previous response forwards as `nextPageToken`.
+     *
+     * @example
+     * ```ts
+     * const page = await client.products.listUnapproved({ limit: 50 });
+     * for (const draft of page.items) {
+     *   if (draft.status === 'rejected') {
+     *     console.warn(draft.barcode, draft.rejectReasonDetails);
+     *   }
+     * }
+     * ```
+     */
+    listUnapproved(params?: ListUnapprovedProductsParams): Promise<CursorPage<UnapprovedProduct>>;
+    /**
+     * Fetch the basic lifecycle status of a single product by barcode.
+     *
+     * Cheap and useful as a polling primitive after `createProducts`: poll
+     * this endpoint until `approved` flips to `true` (or use
+     * `client.products.getBatchStatus()` to track the originating batch).
+     *
+     * @param barcode The product barcode to look up.
+     */
+    getBase(barcode: string): Promise<ProductBase>;
+    /**
+     * Fetch buybox information for up to 10 barcodes in one call.
+     *
+     * Returns rank (`buyboxOrder === 1` means you hold the buybox), the
+     * current buybox price, and — beyond the spec — the second and third
+     * competing prices when other sellers are present.
+     *
+     * @param barcodes 1–10 product barcodes.
+     * @throws {ValidationError} when `barcodes` is empty or longer than 10.
+     */
+    getBuyboxInfo(barcodes: string[]): Promise<BuyboxInfo[]>;
+    /**
+     * Create products (V2). Async batch — returns a `batchRequestId` you can
+     * poll with `getBatchStatus`. Max 1000 items per call.
+     *
+     * Trendyol requires the full V2 attribute payload — fetch via
+     * `categories.getAttributes` (and `categories.getAttributeValues` for
+     * values when `allowCustom === false`). Shipment / returning warehouse
+     * IDs come from `suppliers.getAddresses`.
+     *
+     * @throws {ValidationError} when `items` is empty or longer than 1000.
+     */
+    create(items: CreateProductV2Input[]): Promise<BatchAcceptedResponse>;
+    /**
+     * Update **content** of approved products (title, description, images,
+     * attributes). Identified by `contentId`. Partial update is supported
+     * except for attributes — if you update ANY attribute, send ALL of them.
+     *
+     * @throws {ValidationError} when `items` is empty or longer than 1000.
+     */
+    updateContent(items: UpdateContentInput[]): Promise<BatchAcceptedResponse>;
+    /**
+     * Update **variant** fields of approved products (stockCode, vatRate,
+     * dimensionalWeight, warehouse IDs, location-based delivery, lot). Identified
+     * by `barcode`. The barcode itself cannot be changed via this endpoint.
+     *
+     * @throws {ValidationError} when `items` is empty or longer than 1000.
+     */
+    updateVariants(items: UpdateVariantInput[]): Promise<BatchAcceptedResponse>;
+    /**
+     * Update **unapproved** (draft) products. Identified by `barcode`. All
+     * other fields are optional partial updates. Use this to fix drafts that
+     * Trendyol rejected — `client.products.listUnapproved` surfaces the
+     * `rejectReasonDetails` you need to act on.
+     *
+     * **Gotcha (verified live STAGE 2026-05-25):** Trendyol's V2 spec claims
+     * only `barcode` is required, but the endpoint returns HTTP 500
+     * (`TrendyolSystemException` / `TypeError`) when too many optional fields
+     * are omitted. In practice, send at least `title`, `description`,
+     * `productMainId`, `brandId`, `categoryId`, `stockCode`,
+     * `dimensionalWeight`, `vatRate`, `images[]`, and `attributes[]` (an
+     * empty array is OK for the latter). The SDK forwards your payload
+     * as-is; trim fields only if you have verified the server accepts it.
+     *
+     * @throws {ValidationError} when `items` is empty or longer than 1000.
+     */
+    updateUnapproved(items: UpdateUnapprovedInput[]): Promise<BatchAcceptedResponse>;
+    /**
+     * Update product **delivery information** (deliveryDuration,
+     * fastDeliveryType). Identified by `barcode`.
+     *
+     * @throws {ValidationError} when `items` is empty or longer than 1000.
+     */
+    updateDeliveryInfo(items: UpdateDeliveryInfoInput[]): Promise<BatchAcceptedResponse>;
+    /**
+     * Delete products by barcode. Trendyol allows deletion of unapproved
+     * products and approved products that have been archived for more than a
+     * day (and have not been sales-stopped by Trendyol).
+     *
+     * Async batch — returns `{ batchRequestId }` to poll via `getBatchStatus`.
+     * Separately rate-limited at **100 req/min** (much tighter than create/update).
+     *
+     * @param barcodes 1–1000 barcodes.
+     * @throws {ValidationError} when `barcodes` is empty or longer than 1000.
+     */
+    delete(barcodes: string[]): Promise<BatchAcceptedResponse>;
+    /**
+     * Archive products by barcode (Trendyol's `archived=true` state).
+     * Archived products are not visible to customers; pair with `delete`
+     * after the 24-hour archive cool-down to remove them entirely.
+     *
+     * Async batch — returns `{ batchRequestId }`.
+     *
+     * @throws {ValidationError} when `barcodes` is empty or longer than 1000.
+     */
+    archive(barcodes: string[]): Promise<BatchAcceptedResponse>;
+    /**
+     * Unarchive products by barcode (Trendyol's `archived=false` state).
+     * Restores visibility for previously-archived products.
+     *
+     * @throws {ValidationError} when `barcodes` is empty or longer than 1000.
+     */
+    unarchive(barcodes: string[]): Promise<BatchAcceptedResponse>;
+    private setArchivedState;
+    /**
+     * Unlock products whose sale was paused by Trendyol due to pricing
+     * issues (under/over-pricing, critical price error, supplier issues).
+     * Restores selling status for the listed barcodes.
+     *
+     * Async batch — returns `{ batchRequestId }`.
+     *
+     * @throws {ValidationError} when `barcodes` is empty or longer than 1000.
+     */
+    unlock(barcodes: string[]): Promise<BatchAcceptedResponse>;
+}
+
+/**
+ * Trendyol customer Q&A types.
+ *
+ * Customers can post product questions on Trendyol; sellers reply via
+ * `questions.answer()`. Status lifecycle:
+ *   `WAITING_FOR_ANSWER` → seller replies → `ANSWERED`
+ *                       → reported by another seller / Trendyol → `REPORTED`
+ *                       → rejected by Trendyol moderation → `REJECTED`
+ */
+
+type QuestionStatus = 'WAITING_FOR_ANSWER' | 'ANSWERED' | 'REJECTED' | 'REPORTED' | (string & {});
+interface QuestionAnswer {
+    text?: string;
+    /** ISO 8601 UTC (converted from `creationDate` ms-epoch). */
+    createdAt?: string;
+    status?: string;
+}
+/**
+ * Result of `questions.answer()`. Trendyol's `answerQuestion` reference
+ * documents the response as `{ answerId: number }`; `raw` keeps the
+ * untouched body in case the gateway returns more (or nothing).
+ */
+interface AnswerQuestionResult extends MutationResult {
+    /** ID of the answer Trendyol created (absent when the body had none). */
+    answerId?: number;
+}
+interface Question {
+    id: string;
+    text?: string;
+    customerId?: string;
+    /** Masked customer display name. */
+    userName?: string;
+    showUserName?: boolean;
+    status?: QuestionStatus;
+    /** Whether the question is visible publicly. */
+    public?: boolean;
+    productMainId?: string;
+    productName?: string;
+    imageUrl?: string;
+    webUrl?: string;
+    /** ISO 8601 UTC (from ms-epoch). */
+    createdAt?: string;
+    /** Trendyol's pre-formatted "answered on ..." message (Turkish). */
+    answeredDateMessage?: string;
+    answer?: QuestionAnswer;
+    rejectedAnswer?: QuestionAnswer;
+    /** ISO 8601 UTC if the question was rejected. */
+    rejectedAt?: string;
+    reason?: string;
+    reportReason?: string;
+    /** ISO 8601 UTC if the question was reported. */
+    reportedAt?: string;
+    /** Untouched raw response. */
+    raw: Record<string, unknown>;
+}
+interface ListQuestionsParams extends CursorPaginationParams {
+    /** Filter to questions about a specific product barcode. */
+    barcode?: string;
+    startDate?: Date;
+    endDate?: Date;
+    /** Filter by current status. */
+    status?: QuestionStatus;
+}
+
+/**
+ * Trendyol customer Q&A management. Customers post product questions on
+ * Trendyol; sellers reply with `questions.answer()`.
+ */
+declare class QuestionsResource {
+    private readonly transport;
+    private readonly limiter;
+    constructor(transport: TrendyolTransport, limiter?: TokenBucketRateLimiter);
+    /** Fetch a single question by its numeric ID. */
+    get(questionId: string | number): Promise<Question>;
+    /**
+     * Filter questions by barcode / date range / status. Page-based
+     * pagination internally; SDK exposes the opaque-cursor convention.
+     */
+    list(params?: ListQuestionsParams): Promise<CursorPage<Question>>;
+    /**
+     * Reply to a question. Trendyol enforces 10–2000 characters on the
+     * answer text; the SDK pre-validates client-side.
+     *
+     * Trendyol documents the response as `{ answerId: number }`; the SDK
+     * surfaces it as `answerId` and keeps the untouched body on `raw`.
+     *
+     * @throws {ValidationError} when `text` is outside the 10–2000 char range.
+     */
+    answer(questionId: string | number, text: string): Promise<AnswerQuestionResult>;
+}
+
+/**
+ * The role an address plays in the seller's logistics flow.
+ *
+ * Trendyol allows a single physical address to play more than one role
+ * (e.g., shipment + invoice), so always check the boolean flags rather than
+ * relying solely on `addressType`.
+ */
+type SupplierAddressType = 'SHIPMENT' | 'RETURNING' | 'INVOICE' | 'WAREHOUSE';
+/**
+ * A supplier address registered in the Trendyol Partner Panel.
+ *
+ * Used by `createProduct V2` for `shipmentAddressId` / `returningAddressId`.
+ *
+ * NOTE: The exact field set is best-effort; some optional fields may differ
+ * once verified against real STAGE responses. Bumped fields land in a follow-up
+ * minor release if needed.
+ */
+interface SupplierAddress {
+    id: string;
+    /** Free-form label set by the seller. */
+    name?: string;
+    /** Primary role declared by Trendyol. */
+    addressType: SupplierAddressType;
+    isShipmentAddress: boolean;
+    isReturningAddress: boolean;
+    isInvoiceAddress: boolean;
+    isDefault: boolean;
+    /** Multi-line address string as registered in the Partner Panel. */
+    address?: string;
+    city?: string;
+    district?: string;
+    postCode?: string;
+    fullName?: string;
+}
+
+interface SuppliersResourceOptions {
+    /** Override the in-memory cache TTL. Defaults to 1 hour. */
+    cacheTtlMs?: number;
+}
+/**
+ * Trendyol supplier address endpoints.
+ *
+ * **Critical:** Trendyol rate-limits `getSuppliersAddresses` to **1 request
+ * per hour per seller**. This resource therefore wraps the endpoint with an
+ * in-memory cache (default TTL: 1 hour) so callers can request addresses
+ * as often as needed without tripping the limit.
+ *
+ * Use `{ forceRefresh: true }` or `invalidateCache()` only when you know the
+ * address list changed in the Partner Panel.
+ */
+declare class SuppliersResource {
+    private readonly transport;
+    private cache;
+    private readonly cacheTtlMs;
+    private readonly limiter;
+    private inflight;
+    constructor(transport: TrendyolTransport, options?: SuppliersResourceOptions);
+    /**
+     * List the seller's registered addresses (shipment, returning, invoice, warehouse).
+     *
+     * Returns the cached value if it is still fresh. Concurrent calls share a
+     * single in-flight request.
+     */
+    getAddresses(options?: {
+        forceRefresh?: boolean;
+    }): Promise<SupplierAddress[]>;
+    /** Drop the cache; the next `getAddresses()` call hits the API. */
+    invalidateCache(): void;
+    private fetchFresh;
+}
+
+/**
+ * STAGE-only helper endpoints for creating + driving test orders /
+ * test claims through their state machine. **Do not use in PROD** —
+ * Trendyol's test endpoints are scoped to the test environment.
+ */
+declare class TestOrdersResource {
+    private readonly transport;
+    private readonly limiter;
+    constructor(transport: TrendyolTransport, limiter?: TokenBucketRateLimiter);
+    /**
+     * Create a test order with the given customer / addresses / lines. The
+     * SDK forwards the typed payload verbatim — drill into Trendyol's
+     * `createTestOrder` doc for inner field rules.
+     *
+     * Trendyol documents the response as `{ orderNumber: string }`; the SDK
+     * surfaces it as `orderNumber` and keeps the untouched body on `raw`.
+     *
+     * @throws {ValidationError} when required top-level fields are missing.
+     */
+    create(input: CreateTestOrderInput): Promise<CreateTestOrderResult>;
+    /**
+     * Push a test shipment package to the given status. Trendyol's
+     * `status-updates-on-test-orders` doc shows a `{ lines, params, status }`
+     * body — pass `options` to send the documented `lines` / `params`;
+     * omitted, the body stays `{ status }` alone as before. Documented
+     * response is a bare `200 OK` (no body), hence `MutationResult`.
+     */
+    updateStatus(packageId: string | number, status: TestOrderStatus, options?: UpdateTestOrderStatusOptions): Promise<MutationResult>;
+    /**
+     * Move test claims to the `WaitingInAction` state. Trendyol's
+     * `updateTestOrderStatus` doc shows a `{ shipmentPackageId }` body (the
+     * `orderShipmentPackageId` from `claims.list`); pass `input` to send it —
+     * omitted, the request goes out body-less as before. Documented response
+     * is a bare `200 OK` (no body), hence `MutationResult`.
+     */
+    setClaimsWaitingInAction(input?: SetClaimsWaitingInActionInput): Promise<MutationResult>;
+}
+
+/**
+ * Trendyol Video API types — product video upload + listing.
+ *
+ * Source: developers.trendyol.com / `seller-integration-video-api`.
+ *
+ * Endpoints under `/integration/video/sellers/{sellerId}/videos`.
+ */
+
+/**
+ * Status of a seller integration video as Trendyol processes it:
+ * `IN_PROGRESS` (downloading / processing), `SUCCESS` (downloaded),
+ * `FAILED` (download failed). Open union — Trendyol may add new statuses
+ * without an SDK release.
+ */
+type SellerIntegrationStatus = 'IN_PROGRESS' | 'SUCCESS' | 'FAILED' | (string & {});
+/**
+ * Documented `videoContentType` values for `videos.create()`. Open union —
+ * Trendyol may add new types without an SDK release. Omitted, Trendyol
+ * defaults to `PRODUCT_PROMOTION`.
+ */
+type VideoContentType = 'PRODUCT_PROMOTION' | 'ASSEMBLY_AND_INSTALLATION' | 'PACKAGING' | 'STORE_PROMOTION' | 'ADVERTISEMENT' | 'PRODUCT_USAGE_AND_EXPERIENCE' | (string & {});
+/**
+ * Body for `videos.create()` — initiates an async download + processing.
+ * The documented fields are typed as optional hints; every extra key passes
+ * through to Trendyol untouched (the SDK never strips unknown fields).
+ */
+type CreateVideoInput = {
+    /** Video title, 3–50 chars — documented as required. */
+    title?: string;
+    /** Video description, ≤500 chars. */
+    description?: string;
+    /** Public http(s) URL Trendyol downloads the video from — documented as required. */
+    videoUrl?: string;
+    /** Product content ids to attach (≤100; the doc's example sends strings). */
+    productContentIds?: Array<string | number>;
+    /** Video content type — defaults to `PRODUCT_PROMOTION` when omitted. */
+    videoContentType?: VideoContentType;
+} & Record<string, unknown>;
+/**
+ * Result of `videos.create()`. Trendyol documents the response as
+ * `{ videoId: string }` (a UUID you can pass to `videos.list({ id })`);
+ * `raw` keeps the untouched body.
+ */
+interface CreateVideoResult extends MutationResult {
+    /** ID of the queued video (absent when the body had none). */
+    videoId?: string;
+}
+/** Query parameters for `videos.list()`. */
+interface ListVideosParams extends OffsetPaginationParams {
+    /** Filter by a single video id. */
+    id?: string;
+    /** Filter by processing status. */
+    sellerIntegrationStatus?: SellerIntegrationStatus;
+}
+/** One video row returned by `videos.list()`. */
+interface SellerVideo {
+    id?: string;
+    status?: SellerIntegrationStatus;
+    /** Untouched raw row. */
+    raw: Record<string, unknown>;
+}
+
+/**
+ * Trendyol Video API (`seller-integration-video-api`) — product video
+ * uploads. Upload happens server-side from a URL the seller provides;
+ * the SDK exposes the create + list endpoints.
+ *
+ * Base path: `/integration/video/sellers/{sellerId}/videos`.
+ * Trendyol publishes per-endpoint rate limits — `create` at 200 req/min,
+ * `list` at 1000 req/min — which the SDK provisions as two separate
+ * token buckets so listing doesn't exhaust the create budget.
+ */
+declare class VideosResource {
+    private readonly transport;
+    private readonly createLimiter;
+    private readonly listLimiter;
+    constructor(transport: TrendyolTransport, options?: {
+        createLimiter?: TokenBucketRateLimiter;
+        listLimiter?: TokenBucketRateLimiter;
+    });
+    /**
+     * Queue a video for upload. Trendyol downloads from the URL in the
+     * body asynchronously; poll `list()` (filtered by id) for status.
+     *
+     * Trendyol documents the response as `{ videoId: string }`; the SDK
+     * surfaces it as `videoId` (pass it to `list({ id })`) and keeps the
+     * untouched body on `raw`.
+     *
+     * @throws {ValidationError} when `input` is empty / not an object.
+     */
+    create(input: CreateVideoInput): Promise<CreateVideoResult>;
+    /** List the seller's integration videos (optionally filtered by id / status). */
+    list(params?: ListVideosParams): Promise<SellerVideo[]>;
+}
+
+/**
+ * Trendyol webhook subscription types.
+ *
+ * Webhooks let Trendyol push shipment-package status events to a URL you
+ * own instead of polling. Max 15 active webhooks per seller. Trendyol
+ * itself authenticates against your endpoint (you don't sign Trendyol's
+ * request) — pick `BASIC_AUTHENTICATION` (username+password) or `API_KEY`
+ * (rotatable; recommended).
+ */
+
+/** Auth method Trendyol uses when calling your webhook URL. */
+type WebhookAuthenticationType = 'BASIC_AUTHENTICATION' | 'API_KEY';
+/**
+ * Payload for `webhooks.create` / `webhooks.update`. Same shape for both.
+ */
+interface WebhookInput {
+    /** Your endpoint URL (must accept POST JSON from Trendyol). */
+    url: string;
+    /** Auth scheme Trendyol will use to call your endpoint. */
+    authenticationType: WebhookAuthenticationType;
+    /** Username (only when `authenticationType === 'BASIC_AUTHENTICATION'`). */
+    username?: string;
+    /** Password (only when `authenticationType === 'BASIC_AUTHENTICATION'`). */
+    password?: string;
+    /** API key (only when `authenticationType === 'API_KEY'`). */
+    apiKey?: string;
+    /**
+     * Order statuses you want events for. Empty/omitted = all statuses.
+     * Trendyol accepts the same vocabulary as `ShipmentPackageStatus`
+     * (the upper-snake-case variants — `'CREATED'`, `'PICKING'`, etc. — see
+     * Trendyol docs for the exact wire spelling, which sometimes differs
+     * from the read-side `'Created'`/`'Picking'`).
+     */
+    subscribedStatuses?: string[];
+}
+/**
+ * Result of `webhooks.create()`. Trendyol's `createWebhook` reference
+ * documents the response as `{ id: string }` — keep it for `update` /
+ * `delete` / `activate` / `deactivate`. `raw` keeps the untouched body.
+ */
+interface CreateWebhookResult extends MutationResult {
+    /** ID of the created subscription (absent when the body had none). */
+    id?: string;
+}
+/** A registered webhook subscription as returned by `webhooks.list`. */
+interface Webhook {
+    id: string;
+    url?: string;
+    authenticationType?: WebhookAuthenticationType;
+    username?: string;
+    apiKey?: string;
+    subscribedStatuses?: string[];
+    /** Active vs deactivated. */
+    active?: boolean;
+    /** Untouched raw webhook entry. */
+    raw: Record<string, unknown>;
+}
+
+/**
+ * Trendyol webhook subscription management.
+ *
+ * Max **15 active webhooks per seller** (Trendyol-enforced). Webhooks
+ * fire on shipment-package status events only — there is no webhook
+ * support for product / stock changes.
+ *
+ * Trendyol's gateway authenticates **against your endpoint** with the
+ * `authenticationType` you configure. Pick `API_KEY` over
+ * `BASIC_AUTHENTICATION` so you can rotate the secret without redeploying.
+ *
+ * No HMAC signature — security relies entirely on the auth method you
+ * pick + the secret you store with Trendyol.
+ */
+declare class WebhooksResource {
+    private readonly transport;
+    private readonly limiter;
+    constructor(transport: TrendyolTransport, limiter?: TokenBucketRateLimiter);
+    /**
+     * Create a new webhook subscription. Trendyol caps subscriptions at 15
+     * per seller — the SDK does NOT pre-check (you'd need to call `list()`
+     * first), but Trendyol returns 400 when the cap is exceeded.
+     *
+     * Trendyol documents the response as `{ id: string }` — the webhook ID
+     * you need for `update` / `delete` / `activate` / `deactivate`. The SDK
+     * surfaces it as `id` and keeps the untouched body on `raw`.
+     *
+     * @throws {ValidationError} when `url` or `authenticationType` is missing.
+     */
+    create(input: WebhookInput): Promise<CreateWebhookResult>;
+    /** List all registered webhook subscriptions. */
+    list(): Promise<Webhook[]>;
+    /**
+     * Update a webhook subscription. Same input shape as `create`; replaces
+     * the whole subscription (Trendyol does NOT partially update).
+     *
+     * Documented response is a bare `200 OK` (no body), hence `MutationResult`.
+     */
+    update(webhookId: string | number, input: WebhookInput): Promise<MutationResult>;
+    /**
+     * Permanently delete a webhook subscription. Documented response is a
+     * bare `200 OK` (no body), hence `MutationResult`.
+     */
+    delete(webhookId: string | number): Promise<MutationResult>;
+    /**
+     * Re-activate a previously-deactivated webhook subscription. Documented
+     * response is a bare `200 OK` (no body), hence `MutationResult`.
+     */
+    activate(webhookId: string | number): Promise<MutationResult>;
+    /**
+     * Deactivate a webhook subscription. Trendyol automatically deactivates
+     * a subscription after persistent delivery failures (and sends 2 emails);
+     * use `activate()` to bring it back online once your endpoint is healthy.
+     *
+     * Documented response is a bare `200 OK` (no body), hence `MutationResult`.
+     */
+    deactivate(webhookId: string | number): Promise<MutationResult>;
+    private validateInput;
+    private webhookPath;
+}
+
+/**
+ * Static feature-capability flags for the Trendyol marketplace, so consumers
+ * can feature-detect instead of hard-coding marketplace quirks. Read them off
+ * a client as `client.capabilities`.
+ *
+ * The flag *values* are marketplace-specific, but the const `satisfies` the
+ * shared {@link MarketplaceCapabilities} contract so the key set can't drift
+ * from the Hepsiburada SDK without a compile error. Kept `as const` so the
+ * literal `true`/`false` values stay narrowed.
+ */
+declare const trendyolCapabilities: {
+    /** Trendyol has no time-bounded / scheduled pricing (`pricings[]`). */
+    readonly scheduledPricing: false;
+    /** `inventory.update` accepts stock-only items (`quantity` with no price). */
+    readonly stockOnlyBatch: true;
+    /** Products expose `updatedAt`, so last-write-wins guards are supported. */
+    readonly listingUpdatedAt: true;
+};
+/** Shape of {@link trendyolCapabilities}. */
+type TrendyolCapabilities = typeof trendyolCapabilities;
+
+interface CreateClientOptions {
+    /** Trendyol seller (supplier) ID — visible in Partner Panel → Account Info. */
+    sellerId: number;
+    /** Trendyol API key. */
+    apiKey: string;
+    /** Trendyol API secret. */
+    apiSecret: string;
+    /** Which Trendyol environment to target. */
+    env: TrendyolEnvironment;
+    /**
+     * Integrator company name to send in `User-Agent` / `x-agentname`. Required —
+     * Trendyol uses this to attribute API traffic. Use `'SelfIntegration'` if
+     * the seller owns the integration code, otherwise your company / product name.
+     * Trendyol caps this at 30 alphanumeric characters.
+     */
+    integratorName: string;
+    /**
+     * IPv4 address to send in `x-clientip`.
+     * Defaults to `'127.0.0.1'` — Trendyol does not validate this against the
+     * request origin, the header just has to be present and IPv4-shaped.
+     */
+    clientIp?: string;
+    /** Optional structured logger (`@lonca/core` `Logger`). Defaults to no-op. */
+    logger?: Logger;
+    /** Request timeout in ms. Default: 30_000. */
+    timeoutMs?: number;
+    /**
+     * Custom `fetch` implementation (e.g. to add a proxy agent, record or mock
+     * traffic). Defaults to the global `fetch`.
+     */
+    fetch?: typeof fetch;
+}
+interface TrendyolClient {
+    brands: BrandsResource;
+    categories: CategoriesResource;
+    suppliers: SuppliersResource;
+    products: ProductsResource;
+    inventory: InventoryResource;
+    orders: OrdersResource;
+    claims: ClaimsResource;
+    webhooks: WebhooksResource;
+    questions: QuestionsResource;
+    invoices: InvoicesResource;
+    finance: FinanceResource;
+    labels: LabelsResource;
+    testOrders: TestOrdersResource;
+    locations: LocationsResource;
+    exportCenter: ExportCenterResource;
+    videos: VideosResource;
+    /** Static feature-capability flags for feature detection. */
+    capabilities: TrendyolCapabilities;
+}
+/**
+ * Create a Trendyol Marketplace SDK client.
+ *
+ * @example
+ * ```ts
+ * import { createTrendyolClient } from '@lonca/trendyol';
+ *
+ * const client = createTrendyolClient({
+ *   sellerId: 12345,
+ *   apiKey: process.env.TRENDYOL_API_KEY!,
+ *   apiSecret: process.env.TRENDYOL_API_SECRET!,
+ *   env: 'stage',
+ * });
+ *
+ * const page = await client.brands.list({ limit: 100 });
+ * ```
+ */
+declare function createTrendyolClient(opts: CreateClientOptions): TrendyolClient;
+
+export { type AnswerQuestionResult, type ApproveClaimLineItemsInput, type ApprovedProductStatus, type BarcodeCategoryLookup, type BatchAcceptedResponse, type BatchPollOptions, type BatchRequestItemResult, type BatchRequestResult, type BatchRequestStatus, type Brand, BrandsResource, type BuyboxInfo, type CancelPackageItemInput, type CareInstruction, type CargoInvoiceItem, CategoriesResource, type Category, type CategoryAttribute, type CategoryAttributeValue, type City, type Claim, type ClaimIssueReason, type ClaimItemAudit, type ClaimItemStatus, ClaimsResource, type CommonLabel, type CommonLabelEntry, type CompensationItemDetail, type CompensationTicket, type CompensationTicketState, type Country, type CreateClaimInput, type CreateClaimIssueInput, type CreateClaimItemInput, type CreateClientOptions, type CreateCommonLabelInput, type CreateProductV2Input, type CreateTestOrderInput, type CreateTestOrderResult, createTrendyolClient, type CreateVideoInput, type CreateVideoResult, type CreateWebhookResult, type DeleteInvoiceLinkInput, type DeliveryOptionInput, type District, type ExportBatchAcceptedResponse, type ExportBatchStatus, type ExportCategoryAttribute, ExportCenterResource, type ExportPackage, type ExportPackageItem, type ExportPackageStatus, type ExportPriceUpdateInput, type ExportProduct, type ExportProductInput, type ExportStockUpdateInput, FinanceResource, type FinancialTransaction, type GetExportPackageItemsParams, InventoryResource, InvoicesResource, type KnownShipmentPackageStatus, LabelsResource, type LaborCostInput, type ListCategoryAttributeValuesParams, type ListClaimsParams, type ListCompensationTicketsParams, type ListExportPackagesV2Params, type ListExportPackagesV3Params, type ListExportProductsParams, type ListFinanceParams, type ListInventoryAndPriceParams, type ListOrdersParams, type ListOrdersStreamParams, type ListProductsParams, type ListQuestionsParams, type ListUnapprovedProductsParams, type ListVideosParams, LocationsResource, type NamedRef, type Neighborhood, normalizeShipmentPackage, type OrderAddress, type OrderAddressLines, type OrderCustomer, type OrderLine, type OrderLineDiscountDetail, OrdersResource, type OtherFinancialRow, type PackageDetail, type PackageHistoryEntry, type PackageLineUpdate, pollBatchStatus, type PriceInventoryUpdate, type ProcessAlternativeDeliveryInput, type Product, type ProductAttribute, type ProductAttributeV2Input, type ProductBase, type ProductComposition, type ProductContentBase, type ProductImageInput, type ProductOrigin, ProductsResource, type ProductStockPrice, type ProductStockPriceVariant, type ProductVariant, type QuantitySplit, type Question, type QuestionAnswer, QuestionsResource, type QuestionStatus, type SellerIntegrationStatus, type SellerVideo, type SendInvoiceLinkInput, type SetClaimsWaitingInActionInput, type SettlementRow, type ShipmentPackage, type ShipmentPackageStatus, type SplitGroup, type SplitPackagePlan, type SupplierAddress, type SupplierAddressType, SuppliersResource, type SuppliersResourceOptions, TestOrdersResource, type TestOrderStatus, type TestOrderStatusLine, trendyolCapabilities, type TrendyolCapabilities, type TrendyolCargoProvider, type TrendyolClient, type TrendyolEnvironment, type UnapprovedDateQueryType, type UnapprovedProduct, type UnapprovedProductRejectReason, type UnapprovedProductStatus, type UpdateBoxInfoInput, type UpdateContentInput, type UpdateDeliveryInfoInput, type UpdatePackageStatusInput, type UpdatePriceInventoryResponse, type UpdateTestOrderStatusOptions, type UpdateUnapprovedInput, type UpdateVariantInput, type UploadInvoiceFileInput, type VideoContentType, VideosResource, type Webhook, type WebhookAuthenticationType, type WebhookInput, WebhooksResource };

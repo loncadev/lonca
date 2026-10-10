@@ -48,12 +48,15 @@ pnpm --filter @lonca/core build
 ### API surface lock
 
 The public `.d.ts` surface of every published package is snapshotted under `etc/` and checked in
-CI (`pnpm api:check`, after `pnpm build`). If the check fails, your change altered the public API
-surface:
+CI (`pnpm api:check`, after `pnpm build`). For the SDKs, which have two entry points, tsup puts the
+shared declarations in a hashed `client-*.d.ts` chunk; that chunk is snapshotted too
+(`etc/<sdk>-client.d.ts.snapshot`), with hashes and minified re-export aliases normalised away, so
+a changed field or signature shows up as a one-line diff. If the check fails, your change altered
+the public API surface:
 
 1. Run `pnpm build && pnpm api:update` to regenerate the snapshots.
-2. Commit the updated `etc/*.api.d.ts.snapshot` files with your change and mention the surface
-   diff in the PR description.
+2. Commit the updated `etc/*.snapshot` files with your change and mention the surface diff in the
+   PR description.
 3. If the change is a removal or an incompatible signature change, it is breaking — pick a major
    bump in your changeset (minor while we are pre-1.0).
 
