@@ -4,22 +4,22 @@ Lonca SDKs connect to marketplace APIs using credentials (API keys, tokens, secr
 
 ## Supported versions
 
-Lonca has not reached `1.0.0` yet (alpha). Security fixes are only published for the **latest released minor version**. This policy will tighten once Lonca reaches a stable release.
+Security fixes are published for the **latest released minor version** of each package (`@lonca/core`, `@lonca/trendyol`, `@lonca/hepsiburada`).
 
-| Version              | Supported |
-| -------------------- | --------- |
-| Latest `0.x` minor   | ✅        |
-| Older `0.x` versions | ❌        |
+| Version                       | Supported |
+| ----------------------------- | --------- |
+| Latest `1.x` minor            | ✅        |
+| Older `1.x` minors, any `0.x` | ❌        |
 
 ## Reporting a vulnerability
 
 **Do not open a public issue for security vulnerabilities.**
 
-Please report vulnerabilities via GitHub's private security advisory mechanism:
+Please report vulnerabilities via GitHub's private vulnerability reporting (only the maintainers can see the report):
 
 👉 [github.com/loncadev/lonca/security/advisories/new](https://github.com/loncadev/lonca/security/advisories/new)
 
-Alternatively, email **security@lonca.dev** (will be active once domain is provisioned).
+This is the only reporting channel. Lonca has no project e-mail address.
 
 Please include:
 
