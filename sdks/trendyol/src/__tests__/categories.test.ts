@@ -96,9 +96,10 @@ describe('CategoriesResource.getAttributes', () => {
     expect(call.path).toBe('/integration/product/categories/weird%20id/attributes');
   });
 
-  it('flattens the attribute shape with string IDs; values stays [] (no inline value list)', async () => {
-    // Neither the docs nor the prod wire (2026-10-10) have `attributeValues` on this endpoint,
-    // so the SDK no longer reads it — the catalog comes from getAttributeValues().
+  it('flattens the attribute shape with string IDs; still maps an inline value list if one arrives', async () => {
+    // Neither the docs nor the prod wire (2026-10-10) have `attributeValues` on this endpoint
+    // (the catalog comes from getAttributeValues()), but older responses inlined it — the
+    // deprecated `values` keeps mapping it rather than dropping data.
     const transport = mockTransport({
       id: 100,
       categoryAttributes: [
@@ -127,7 +128,10 @@ describe('CategoriesResource.getAttributes', () => {
         allowCustom: false,
         varianter: true,
         slicer: false,
-        values: [],
+        values: [
+          { id: '1', name: 'Red' },
+          { id: '2', name: 'Blue' },
+        ],
       },
     ]);
   });

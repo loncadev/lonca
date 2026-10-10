@@ -50,8 +50,7 @@ interface TrendyolAttributeValuesPage {
 
 /**
  * One `categoryAttributes[]` row. Docs and prod wire (2026-10-10) agree: attribute metadata and
- * flags only — no inline value list (`attributeValues`); the catalog comes from the dedicated
- * values endpoint (`getAttributeValues`).
+ * flags only; the value catalog comes from the dedicated values endpoint (`getAttributeValues`).
  */
 interface TrendyolCategoryAttributeNode {
   attribute?: { id: number; name: string };
@@ -62,6 +61,11 @@ interface TrendyolCategoryAttributeNode {
   slicer?: boolean;
   /** V2-only: whether the attribute accepts multiple values at once. */
   allowMultipleAttributeValues?: boolean;
+  /**
+   * Inline value list from older responses — in neither the docs nor the prod wire
+   * (2026-10-10). Still mapped into the deprecated `values` if it arrives.
+   */
+  attributeValues?: Array<{ id: number; name: string }>;
 }
 
 function normalizeCategory(node: TrendyolCategoryNode): Category {
@@ -82,8 +86,8 @@ function normalizeAttribute(node: TrendyolCategoryAttributeNode): CategoryAttrib
     allowCustom: !!node.allowCustom,
     varianter: !!node.varianter,
     slicer: !!node.slicer,
-    // Deprecated field: the attributes endpoint never inlines values (see the node above).
-    values: [],
+    // Deprecated: normally empty — see `attributeValues` on the node above.
+    values: (node.attributeValues ?? []).map((v) => ({ id: String(v.id), name: v.name })),
   };
   if (node.categoryId !== undefined) {
     out.categoryId = String(node.categoryId);
