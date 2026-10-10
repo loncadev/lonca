@@ -165,7 +165,10 @@ export type {
   CreateQuestionInput,
   ListQuestionsParams,
   Question,
+  QuestionConversation,
   QuestionCountSummary,
+  QuestionProduct,
+  QuestionSubject,
   RejectQuestionInput,
 } from './types/question.js';
 export type {

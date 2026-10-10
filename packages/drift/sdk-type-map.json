@@ -237,8 +237,8 @@
       "spec": "hepsiburada/asktoseller-merchant.json",
       "operation": "GET /api/v1.0/issues",
       "pointer": "data[]",
-      "ignore": ["raw"],
-      "note": "Public type; the normaliser copies same-named fields with typeof guards."
+      "ignore": ["raw", "number", "text", "answer", "productSku", "createdDate"],
+      "note": "Public type mirroring IssueViewModel (verified on SIT 2026-10-10); the ignored fields are deprecated pre-1.2 names back-filled from issueNumber / product.sku / createdAt (text, answer: no equivalent)."
     },
     {
       "marketplace": "hepsiburada",
@@ -247,7 +247,8 @@
       "spec": "hepsiburada/asktoseller-merchant.json",
       "operation": "GET /api/v1.0/issues/{number}",
       "pointer": "(root)",
-      "ignore": ["raw"]
+      "ignore": ["raw", "number", "text", "answer", "productSku", "createdDate"],
+      "note": "Public type mirroring IssueViewModel (verified on SIT 2026-10-10); the ignored fields are deprecated pre-1.2 names back-filled from issueNumber / product.sku / createdAt (text, answer: no equivalent)."
     },
     {
       "marketplace": "hepsiburada",
