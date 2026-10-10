@@ -83,6 +83,22 @@
     },
     {
       "marketplace": "trendyol",
+      "operation": "GET /integration/product/brands",
+      "path": "totalElements",
+      "kind": "sdk-unknown-field",
+      "reason": "Neither docs nor prod wire send it; the SDK declares it optional and never relies on it (sdks/trendyol/src/resources/brands.ts).",
+      "since": "2026-10-10"
+    },
+    {
+      "marketplace": "trendyol",
+      "operation": "GET /integration/product/brands",
+      "path": "totalPages",
+      "kind": "sdk-unknown-field",
+      "reason": "Neither docs nor prod wire send it; the SDK declares it optional, honours it only if present and otherwise finds the next page from a full page (sdks/trendyol/src/resources/brands.ts).",
+      "since": "2026-10-10"
+    },
+    {
+      "marketplace": "trendyol",
       "operation": "GET /integration/product/product-categories",
       "path": "(root)",
       "kind": "type-mismatch",

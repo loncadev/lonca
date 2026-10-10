@@ -35,7 +35,7 @@
       "spec": "trendyol/marketplace.json",
       "operation": "GET /integration/member/countries",
       "pointer": "[]",
-      "ignore": ["cityCode", "countryCode", "districtCode"],
+      "ignore": ["cityCode", "districtCode"],
       "note": "One wire-node interface serves every location lookup; the fields only the other lookups read are ignored."
     },
     {
@@ -46,7 +46,7 @@
       "operation": "GET /integration/member/countries/domestic/TR/cities",
       "pointer": "[]",
       "ignore": ["cityCode", "districtCode"],
-      "note": "Shared location wire node; the cities normaliser reads id / code / name / countryCode."
+      "note": "Shared location wire node; the cities normaliser reads id / code / name (City.countryCode comes from the request, not the wire)."
     },
     {
       "marketplace": "trendyol",
@@ -55,7 +55,7 @@
       "spec": "trendyol/marketplace.json",
       "operation": "GET /integration/member/countries/domestic/TR/cities/{CityCode}/districts",
       "pointer": "[]",
-      "ignore": ["countryCode", "districtCode"],
+      "ignore": ["districtCode"],
       "note": "Shared location wire node; the districts normaliser reads id / code / name / cityCode."
     },
     {
@@ -65,7 +65,7 @@
       "spec": "trendyol/marketplace.json",
       "operation": "GET /integration/member/countries/domestic/TR/cities/{CityCode}/districts/{DistrictCode}/neighborhoods",
       "pointer": "[]",
-      "ignore": ["cityCode", "countryCode"],
+      "ignore": ["cityCode"],
       "note": "Shared location wire node; the neighborhoods normaliser reads id / code / name / districtCode."
     },
     {

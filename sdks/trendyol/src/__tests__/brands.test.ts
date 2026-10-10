@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { TokenBucketRateLimiter } from '@lonca/core';
+import { TokenBucketRateLimiter, paginate } from '@lonca/core';
 import { BrandsResource } from '../resources/brands.js';
 import type { TrendyolTransport } from '../transport.js';
 
@@ -88,5 +88,131 @@ describe('BrandsResource.list', () => {
     const page = await resource.list({ cursor: '2' });
 
     expect(page.nextCursor).toBeUndefined();
+  });
+
+  // Prod wire (probe baseline 2026-10-09) is `{ brands: [{ id, luxe, name }] }` — no
+  // totalPages / totalElements. Pagination must still advance.
+  describe('without totalPages (the prod wire shape)', () => {
+    const brandsOf = (count: number, offset = 0) =>
+      Array.from({ length: count }, (_, i) => ({
+        id: offset + i + 1,
+        name: `B${offset + i + 1}`,
+        luxe: false,
+      }));
+
+    it('sets nextCursor after a full page', async () => {
+      const transport = mockTransport({ brands: brandsOf(3) });
+      const resource = new BrandsResource(transport, fastLimiter());
+
+      const page = await resource.list({ cursor: '4', limit: 3 });
+
+      expect(page.items).toHaveLength(3);
+      expect(page.nextCursor).toBe('5');
+    });
+
+    it('treats a page larger than the limit as full (server ignores small sizes)', async () => {
+      const transport = mockTransport({ brands: brandsOf(10) });
+      const resource = new BrandsResource(transport, fastLimiter());
+
+      const page = await resource.list({ limit: 3 });
+
+      expect(page.nextCursor).toBe('1');
+    });
+
+    it('omits nextCursor after a short page', async () => {
+      const transport = mockTransport({ brands: brandsOf(2) });
+      const resource = new BrandsResource(transport, fastLimiter());
+
+      const page = await resource.list({ cursor: '7', limit: 3 });
+
+      expect(page.items).toHaveLength(2);
+      expect(page.nextCursor).toBeUndefined();
+    });
+
+    it('omits nextCursor on an empty page or a missing brands array', async () => {
+      const resource1 = new BrandsResource(mockTransport({ brands: [] }), fastLimiter());
+      const resource2 = new BrandsResource(mockTransport({}), fastLimiter());
+
+      await expect(resource1.list({ limit: 3 })).resolves.toEqual({ items: [] });
+      await expect(resource2.list({ limit: 3 })).resolves.toEqual({ items: [] });
+    });
+
+    it('still honours totalPages when Trendyol sends it, even after a full page', async () => {
+      const transport = mockTransport({ brands: brandsOf(3), totalPages: 1, totalElements: 3 });
+      const resource = new BrandsResource(transport, fastLimiter());
+
+      const page = await resource.list({ limit: 3 });
+
+      expect(page.nextCursor).toBeUndefined();
+    });
+
+    it('exposes the luxe flag and leaves it off when the wire lacks it', async () => {
+      const transport = mockTransport({
+        brands: [
+          { id: 1, name: 'Gucci', luxe: true },
+          { id: 2, name: 'Nike', luxe: false },
+          { id: 3, name: 'Legacy' },
+        ],
+      });
+      const resource = new BrandsResource(transport, fastLimiter());
+
+      const page = await resource.list();
+
+      expect(page.items).toEqual([
+        { id: '1', name: 'Gucci', luxe: true },
+        { id: '2', name: 'Nike', luxe: false },
+        { id: '3', name: 'Legacy' },
+      ]);
+    });
+
+    it('paginate() walks every page and stops after the short one', async () => {
+      const pages = [brandsOf(3, 0), brandsOf(3, 3), brandsOf(1, 6)];
+      const request = vi.fn(async (req: { query: { page: number } }) => ({
+        brands: pages[req.query.page] ?? [],
+      }));
+      const transport = { sellerId: 42, request } as unknown as TrendyolTransport;
+      const resource = new BrandsResource(transport, fastLimiter());
+
+      const ids: string[] = [];
+      for await (const brand of paginate((p) => resource.list(p), { limit: 3 })) {
+        ids.push(brand.id);
+      }
+
+      expect(ids).toEqual(['1', '2', '3', '4', '5', '6', '7']);
+      expect(request).toHaveBeenCalledTimes(3);
+      expect(request.mock.calls.map(([req]) => req.query.page)).toEqual([0, 1, 2]);
+    });
+
+    it('paginate() makes one extra empty request when the total is a multiple of the page size', async () => {
+      const pages = [brandsOf(3, 0), brandsOf(3, 3)];
+      const request = vi.fn(async (req: { query: { page: number } }) => ({
+        brands: pages[req.query.page] ?? [],
+      }));
+      const transport = { sellerId: 42, request } as unknown as TrendyolTransport;
+      const resource = new BrandsResource(transport, fastLimiter());
+
+      const ids: string[] = [];
+      for await (const brand of paginate((p) => resource.list(p), { limit: 3 })) {
+        ids.push(brand.id);
+      }
+
+      expect(ids).toHaveLength(6);
+      expect(request).toHaveBeenCalledTimes(3);
+    });
+  });
+});
+
+describe('BrandsResource.search', () => {
+  it('maps the by-name response, including luxe when present', async () => {
+    const transport = mockTransport([
+      { id: 40, name: 'TRENDYOLMİLLA', luxe: false },
+      { id: 41, name: 'Trendyol' },
+    ]);
+    const resource = new BrandsResource(transport, fastLimiter());
+
+    await expect(resource.search('trendyol')).resolves.toEqual([
+      { id: '40', name: 'TRENDYOLMİLLA', luxe: false },
+      { id: '41', name: 'Trendyol' },
+    ]);
   });
 });
