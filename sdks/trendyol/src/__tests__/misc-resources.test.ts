@@ -381,6 +381,18 @@ describe('LocationsResource', () => {
     expect(city).toMatchObject({ id: '100', code: '1', name: 'Adana' });
   });
 
+  it('fills City.countryCode from the lookup (city rows carry no country field)', async () => {
+    // Docs and the prod wire baseline agree: a city row is { id, code?, name } only.
+    const row = { id: 100, name: 'Adana', code: '1' };
+    const [tr] = await r(mockTransport([row])).getTurkeyCities();
+    const [az] = await r(mockTransport([{ id: 5, name: 'Bakı' }])).getAzerbaijanCities();
+    const [ae] = await r(mockTransport([{ id: 7, name: 'Dubai' }])).getCitiesByCountry('AE');
+    expect(tr!.countryCode).toBe('TR');
+    expect(az!.countryCode).toBe('AZ');
+    expect(ae!.countryCode).toBe('AE');
+    expect(tr!.raw).toEqual(row);
+  });
+
   it('getTurkeyDistricts and getTurkeyNeighborhoods nest correctly', async () => {
     const transport = mockTransport([]);
     await r(transport).getTurkeyDistricts(34);

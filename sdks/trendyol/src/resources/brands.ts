@@ -12,10 +12,31 @@ import type { Brand } from '../types/brand.js';
  */
 const DEFAULT_PAGE_SIZE = 1000;
 
+/** One brand as Trendyol sends it (`GET /product/brands`, `GET /product/brands/by-name`). */
+interface TrendyolBrandNode {
+  id: number;
+  name: string;
+  /** Not in the docs; present on every brand in the prod wire baseline (2026-10-09). */
+  luxe?: boolean;
+}
+
+/**
+ * `GET /product/brands` response.
+ *
+ * Neither the docs nor the prod wire (baseline 2026-10-09: `{ brands: [{ id, luxe, name }] }`)
+ * carry a page count, so `totalPages` / `totalElements` are optional — they are honoured only
+ * if Trendyol ever sends them. See {@link BrandsResource.list} for how the next page is found.
+ */
 interface TrendyolBrandListResponse {
-  brands: Array<{ id: number; name: string }>;
-  totalPages: number;
-  totalElements: number;
+  brands?: TrendyolBrandNode[];
+  totalPages?: number;
+  totalElements?: number;
+}
+
+function toBrand(node: TrendyolBrandNode): Brand {
+  const brand: Brand = { id: String(node.id), name: node.name };
+  if (typeof node.luxe === 'boolean') brand.luxe = node.luxe;
+  return brand;
 }
 
 /**
@@ -40,6 +61,14 @@ export class BrandsResource {
   /**
    * List Trendyol brands, one page at a time.
    *
+   * **Next-page heuristic.** Trendyol's brand list carries no page count (neither the docs
+   * nor the prod wire have `totalPages` / `totalElements` — the response is just
+   * `{ brands: [...] }`). So when `totalPages` is absent, a **full page** (at least `limit`
+   * brands — Trendyol may send ~1000 even for a smaller `limit`) means "there may be more"
+   * and sets `nextCursor`; a short page is the last one. When the
+   * total is an exact multiple of the page size, `paginate()` makes one extra request that
+   * comes back empty and stops there. If Trendyol ever sends `totalPages`, it wins.
+   *
    * @example
    * ```ts
    * import { paginate } from '@lonca/core';
@@ -59,8 +88,13 @@ export class BrandsResource {
       rateLimiter: this.limiter,
     });
 
-    const items: Brand[] = data.brands.map((b) => ({ id: String(b.id), name: b.name }));
-    const nextCursor = page + 1 < data.totalPages ? String(page + 1) : undefined;
+    const brands = data?.brands ?? [];
+    const items: Brand[] = brands.map(toBrand);
+    const hasMore =
+      typeof data?.totalPages === 'number'
+        ? page + 1 < data.totalPages
+        : size > 0 && brands.length >= size;
+    const nextCursor = hasMore ? String(page + 1) : undefined;
 
     return nextCursor !== undefined ? { items, nextCursor } : { items };
   }
@@ -80,12 +114,12 @@ export class BrandsResource {
    * @param name The brand name to search for.
    */
   async search(name: string): Promise<Brand[]> {
-    const data = await this.transport.request<Array<{ id: number; name: string }>>({
+    const data = await this.transport.request<TrendyolBrandNode[]>({
       method: 'GET',
       path: '/integration/product/brands/by-name',
       query: { name },
       rateLimiter: this.limiter,
     });
-    return (data ?? []).map((b) => ({ id: String(b.id), name: b.name }));
+    return (data ?? []).map(toBrand);
   }
 }

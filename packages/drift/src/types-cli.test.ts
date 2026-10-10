@@ -77,10 +77,17 @@ describe('pnpm drift:types (real SDK sources, specs and wire baseline)', () => {
 
     const brands = entryOf(json, 'TrendyolBrandListResponse');
     expect(brands.wireBaseline).toBe(true);
-    // brands.list pages on `totalPages`, which neither the spec nor the prod wire carries
-    expect(at(brands, 'totalPages', 'sdk-unknown-field')).toMatchObject({
-      severity: 'warning',
+    // brands.list keeps an optional `totalPages`, which neither the spec nor the prod wire
+    // carries; the committed overlay accepts it (the SDK falls back to a full-page heuristic).
+    expect(at(brands, 'totalPages', 'accepted')).toMatchObject({
+      severity: 'info',
+      accepts: 'sdk-unknown-field',
       wire: [],
+    });
+    // `luxe` is undocumented but on the prod wire: info, not warning.
+    expect(at(brands, 'brands[].luxe', 'sdk-unknown-field')).toMatchObject({
+      severity: 'info',
+      wire: ['boolean'],
     });
     expect(at(brands, 'brands[].id', 'sdk-type-mismatch')).toBeUndefined();
 
@@ -102,7 +109,15 @@ describe('pnpm drift:types (real SDK sources, specs and wire baseline)', () => {
 
   it('fails on warnings with --fail-on warning, and filters with --only', () => {
     const map = writeJson('map.json', { entries: [BRANDS, TRANSACTIONS] });
-    expect(cli('--map', map, '--fail-on', 'warning', '--only', 'trendyol')).toBe(1);
+    // Without the overlay, brands' optional totalPages / totalElements stay warnings.
+    expect(cli('--map', map, '--fail-on', 'warning', '--only', 'trendyol', '--no-known')).toBe(1);
+    expect(
+      at(
+        entryOf(readReport().json, 'TrendyolBrandListResponse'),
+        'totalPages',
+        'sdk-unknown-field',
+      ),
+    ).toMatchObject({ severity: 'warning', wire: [] });
     expect(readReport().json.marketplaces.map((m) => m.marketplace)).toEqual(['trendyol']);
     expect(logs.at(-1)).toBe('✖ SDK-type warnings — see types-report.md');
   });

@@ -2,11 +2,14 @@ import { TokenBucketRateLimiter } from '@lonca/core';
 import type { TrendyolTransport } from '../transport.js';
 import type { City, Country, District, Neighborhood } from '../types/misc.js';
 
+/**
+ * One location row. City rows carry no country field (docs and prod wire agree: `id`, `code`,
+ * `name`), so `City.countryCode` is the country code of the lookup that returned the row.
+ */
 interface WireNode {
   code?: number | string;
   id?: number | string;
   cityCode?: number | string;
-  countryCode?: string;
   districtCode?: number | string;
   name?: string;
   [key: string]: unknown;
@@ -56,7 +59,7 @@ export class LocationsResource {
   // ─── Domestic (TR / AZ) ───────────────────────────────────────────────
 
   async getTurkeyCities(): Promise<City[]> {
-    return this.cities(`/integration/member/countries/domestic/TR/cities`);
+    return this.cities(`/integration/member/countries/domestic/TR/cities`, 'TR');
   }
 
   /**
@@ -84,7 +87,7 @@ export class LocationsResource {
   }
 
   async getAzerbaijanCities(): Promise<City[]> {
-    return this.cities(`/integration/member/countries/domestic/AZ/cities`);
+    return this.cities(`/integration/member/countries/domestic/AZ/cities`, 'AZ');
   }
 
   /** List districts for an Azerbaijani city. **Pass the city `id`** (`City.id`), not `code`. */
@@ -97,7 +100,10 @@ export class LocationsResource {
   // ─── International (GULF / CEE) ───────────────────────────────────────
 
   async getCitiesByCountry(countryCode: string): Promise<City[]> {
-    return this.cities(`/integration/member/countries/${encodeURIComponent(countryCode)}/cities`);
+    return this.cities(
+      `/integration/member/countries/${encodeURIComponent(countryCode)}/cities`,
+      countryCode,
+    );
   }
 
   async getDistrictsByCity(countryCode: string, cityId: string | number): Promise<District[]> {
@@ -108,7 +114,8 @@ export class LocationsResource {
 
   // ─── Shared paginators ────────────────────────────────────────────────
 
-  private async cities(path: string): Promise<City[]> {
+  /** `countryCode` is the lookup's country — city rows do not carry one on the wire. */
+  private async cities(path: string, countryCode: string): Promise<City[]> {
     const data = await this.transport.request<unknown[]>({
       method: 'GET',
       path,
@@ -118,7 +125,7 @@ export class LocationsResource {
       id: node.id !== undefined ? String(node.id) : undefined,
       code: String(node.code ?? node.id ?? ''),
       name: node.name,
-      countryCode: node.countryCode,
+      countryCode,
     }));
   }
 

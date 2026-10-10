@@ -233,6 +233,13 @@ export interface City {
   id?: string;
   code: string;
   name?: string;
+  /**
+   * The country the city belongs to — the country code of the lookup that returned it
+   * (`'TR'` for `getTurkeyCities`, `'AZ'` for `getAzerbaijanCities`, the argument of
+   * `getCitiesByCountry`). Trendyol's city rows carry no country field (neither the docs nor
+   * the prod wire), so the SDK fills it from the request; earlier versions read a wire field
+   * that never arrives and always left it `undefined`.
+   */
   countryCode?: string;
   raw: Record<string, unknown>;
 }
