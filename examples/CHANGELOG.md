@@ -1,5 +1,12 @@
 # @lonca/examples
 
+## 0.0.25
+
+### Patch Changes
+
+- Updated dependencies [[`70938e6`](https://github.com/zanaat-dev/lonca/commit/70938e652a643ac45baf3cbeb400e4ca2874447d)]:
+  - @lonca/core@1.1.0
+
 ## 0.0.24
 
 ### Patch Changes
