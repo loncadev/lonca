@@ -8,7 +8,7 @@ sets and JSON types — and never a value. Format and drift rules are documented
 | File               | Environment | Captured   | Result          | Wire baseline (`wire`)                 |
 | ------------------ | ----------- | ---------- | --------------- | -------------------------------------- |
 | `hepsiburada.json` | prod        | 2026-10-10 | 15 ok / 0 error | 15 operations, 4 with no spec match    |
-| `trendyol.json`    | prod        | 2026-10-10 | 15 ok / 0 error | 14 operations, all matched to `specs/` |
+| `trendyol.json`    | prod        | 2026-10-10 | 17 ok / 0 error | 16 operations, all matched to `specs/` |
 
 Both baselines are taken against **production** (every probe is a read-only GET). The earlier
 SIT (Hepsiburada) and stage-placeholder (Trendyol) captures are only in git history.

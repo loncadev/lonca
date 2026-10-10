@@ -77,6 +77,25 @@ export const trendyolProbes: ProbeSet<TrendyolClient> = {
     },
     { name: 'products.listUnapproved', call: (c) => c.products.listUnapproved(PAGE) },
     {
+      name: 'categories.getAttributeValues',
+      call: async (c) => {
+        const leaf = firstLeaf(await c.categories.list());
+        if (!leaf) throw new Error('categories.list returned no leaf category to inspect');
+        const attrs = await c.categories.getAttributes(leaf.id);
+        const attr = attrs.find((a) => !a.allowCustom) ?? attrs[0];
+        if (!attr) throw new Error('getAttributes returned no attribute to inspect');
+        return c.categories.getAttributeValues(leaf.id, attr.id, PAGE);
+      },
+    },
+    {
+      name: 'orders.listStream(7d)',
+      call: (c) => {
+        const lastModifiedEndDate = new Date();
+        const lastModifiedStartDate = new Date(lastModifiedEndDate.getTime() - WEEK_MS);
+        return c.orders.listStream({ ...PAGE, lastModifiedStartDate, lastModifiedEndDate });
+      },
+    },
+    {
       name: 'orders.list(Delivered)',
       call: (c) => c.orders.list({ ...PAGE, status: 'Delivered' }),
     },
