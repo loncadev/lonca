@@ -5,7 +5,9 @@ import type {
   CreateQuestionInput,
   ListQuestionsParams,
   Question,
+  QuestionConversation,
   QuestionCountSummary,
+  QuestionProduct,
   RejectQuestionInput,
 } from '../types/question.js';
 
@@ -181,14 +183,85 @@ function unwrapQuestionList(data: unknown): unknown[] {
   return [];
 }
 
+type Row = Record<string, unknown>;
+
+const asRow = (value: unknown): Row | undefined =>
+  value && typeof value === 'object' && !Array.isArray(value) ? (value as Row) : undefined;
+
+function copyStrings<T extends object>(
+  from: Row,
+  to: T,
+  keys: readonly (keyof T & string)[],
+): void {
+  for (const key of keys) {
+    if (typeof from[key] === 'string') (to as Row)[key] = from[key];
+  }
+}
+
+function normalizeConversation(row: Row): QuestionConversation {
+  const out: QuestionConversation = {};
+  copyStrings(row, out, [
+    'id',
+    'content',
+    'from',
+    'type',
+    'createdAt',
+    'lastModifiedAt',
+    'rejectReason',
+  ]);
+  if (typeof row.isMessageSeen === 'boolean') out.isMessageSeen = row.isMessageSeen;
+  return out;
+}
+
+/**
+ * Map one `IssueViewModel`. The deprecated pre-1.2 fields (`number`, `productSku`,
+ * `createdDate`) are back-filled from their documented equivalents; `text` / `answer` have no
+ * single equivalent (the thread is `conversations`) and are only copied if a response carries them.
+ */
 function normalizeQuestion(row: unknown): Question {
-  const r = (row && typeof row === 'object' ? row : {}) as Record<string, unknown>;
+  const r = asRow(row) ?? {};
   const out: Question = { raw: r };
+  copyStrings(r, out, [
+    'id',
+    'status',
+    'lastContent',
+    'customerId',
+    'orderNumber',
+    'lineItemId',
+    'createdAt',
+    'lastModifiedAt',
+    'expireDate',
+  ]);
+  if (typeof r.issueNumber === 'number') out.issueNumber = r.issueNumber;
+  if (typeof r.didCustomerSeeTheMessage === 'boolean') {
+    out.didCustomerSeeTheMessage = r.didCustomerSeeTheMessage;
+  }
+  const subject = asRow(r.subject);
+  if (subject) {
+    out.subject = {};
+    copyStrings(subject, out.subject, ['id', 'description']);
+  }
+  const product = asRow(r.product);
+  if (product) {
+    const p: QuestionProduct = {};
+    copyStrings(product, p, ['sku', 'name', 'imageUrl', 'stockCode']);
+    out.product = p;
+  }
+  if (Array.isArray(r.conversations)) {
+    out.conversations = r.conversations.flatMap((c) => {
+      const conversation = asRow(c);
+      return conversation ? [normalizeConversation(conversation)] : [];
+    });
+  }
+
+  // Deprecated fields.
   if (typeof r.number === 'string') out.number = r.number;
-  if (typeof r.status === 'string') out.status = r.status;
+  else if (out.issueNumber !== undefined) out.number = String(out.issueNumber);
   if (typeof r.text === 'string') out.text = r.text;
   if (typeof r.answer === 'string') out.answer = r.answer;
   if (typeof r.productSku === 'string') out.productSku = r.productSku;
+  else if (out.product?.sku !== undefined) out.productSku = out.product.sku;
   if (typeof r.createdDate === 'string') out.createdDate = r.createdDate;
+  else if (out.createdAt !== undefined) out.createdDate = out.createdAt;
   return out;
 }

@@ -62,13 +62,75 @@ export type RejectQuestionInput = {
   rejectConversationId?: string;
 } & Record<string, unknown>;
 
-/** One question row. */
+/** The product a question is about (spec `ProductViewModel`). */
+export interface QuestionProduct {
+  sku?: string;
+  name?: string;
+  imageUrl?: string;
+  stockCode?: string;
+}
+
+/** One message in a question thread (spec `ConversationViewModel`). */
+export interface QuestionConversation {
+  id?: string;
+  /** Message text. */
+  content?: string;
+  /** Who wrote the message (customer or merchant side), as Hepsiburada labels it. */
+  from?: string;
+  type?: string;
+  createdAt?: string;
+  lastModifiedAt?: string;
+  isMessageSeen?: boolean;
+  rejectReason?: string;
+}
+
+/** Topic of a question (spec `SubjectViewModel`). */
+export interface QuestionSubject {
+  id?: string;
+  description?: string;
+}
+
+/**
+ * One question (spec `IssueViewModel`). Field names follow the documented response, verified
+ * against a live SIT list on 2026-10-10.
+ */
 export interface Question {
-  number?: string;
+  id?: string;
+  /** Issue number — the identifier `questions.get()` takes (as a string). */
+  issueNumber?: number;
   status?: string;
+  subject?: QuestionSubject;
+  /** Text of the latest message in the thread. */
+  lastContent?: string;
+  /** The full thread: the customer's question and any answers. */
+  conversations?: QuestionConversation[];
+  product?: QuestionProduct;
+  customerId?: string;
+  orderNumber?: string;
+  lineItemId?: string;
+  createdAt?: string;
+  lastModifiedAt?: string;
+  /** Deadline for answering. */
+  expireDate?: string;
+  didCustomerSeeTheMessage?: boolean;
+  /**
+   * @deprecated Hepsiburada sends no `number` field. Filled from `issueNumber` (as a string) for
+   * compatibility — use `issueNumber`.
+   */
+  number?: string;
+  /**
+   * @deprecated Hepsiburada sends no `text` field, so this is never set. Read the question from
+   * `conversations` (or `lastContent` for the latest message).
+   */
   text?: string;
+  /**
+   * @deprecated Hepsiburada sends no `answer` field, so this is never set. Answers are messages
+   * in `conversations`.
+   */
   answer?: string;
+  /** @deprecated Hepsiburada sends no `productSku` field. Filled from `product.sku` — use that. */
   productSku?: string;
+  /** @deprecated Hepsiburada sends no `createdDate` field. Filled from `createdAt` — use that. */
   createdDate?: string;
   /** Untouched raw row. */
   raw: Record<string, unknown>;
