@@ -10,6 +10,7 @@ import type {
   ListOrdersParams,
   ListPackagesParams,
   Order,
+  OrderPrice,
   OrdersPage,
   PackageLabel,
   PackageReceipt,
@@ -610,18 +611,67 @@ function normalizePackagesPage(data: unknown): OrdersPage<ShippingPackage> {
   };
 }
 
+const ORDER_STRING_FIELDS = [
+  'orderNumber',
+  'orderId',
+  'id',
+  'status',
+  'customerId',
+  'orderDate',
+  'lastStatusUpdateDate',
+  'dueDate',
+  'packageNumber',
+  'sku',
+  'barcode',
+  'name',
+  'cargoCompany',
+  'createdDate',
+  // Deprecated: never sent by Hepsiburada; still copied should a row carry it.
+  'externalOrderNumber',
+  'modifiedDate',
+] as const satisfies ReadonlyArray<keyof Order>;
+
+const ORDER_NUMBER_FIELDS = ['quantity', 'vat', 'vatRate'] as const satisfies ReadonlyArray<
+  keyof Order
+>;
+
+/**
+ * Map an order line (`orders.list*()` `items[]`) or the order-detail root
+ * (`getByOrderNumber`) onto {@link Order}: same-named fields are copied when
+ * they carry the documented JSON type (spec `oms-external.json`, confirmed on
+ * the prod wire 2026-10); `merchantSku` is read from the wire's `merchantSKU`.
+ */
 function normalizeOrder(row: unknown): Order {
   const r = (row && typeof row === 'object' ? row : {}) as Record<string, unknown>;
   const out: Order = { raw: r };
-  if (typeof r.orderNumber === 'string') out.orderNumber = r.orderNumber;
-  if (typeof r.externalOrderNumber === 'string') out.externalOrderNumber = r.externalOrderNumber;
-  if (typeof r.status === 'string') out.status = r.status;
+  for (const key of ORDER_STRING_FIELDS) {
+    const value = r[key];
+    if (typeof value === 'string') out[key] = value;
+  }
+  for (const key of ORDER_NUMBER_FIELDS) {
+    const value = r[key];
+    if (typeof value === 'number' && Number.isFinite(value)) out[key] = value;
+  }
+  const merchantSku = typeof r.merchantSKU === 'string' ? r.merchantSKU : r.merchantSku;
+  if (typeof merchantSku === 'string') out.merchantSku = merchantSku;
   out.customerName = extractCustomerName(r);
-  if (typeof r.createdDate === 'string') out.createdDate = r.createdDate;
-  if (typeof r.modifiedDate === 'string') out.modifiedDate = r.modifiedDate;
+  const unitPrice = toOrderPrice(r.unitPrice);
+  if (unitPrice) out.unitPrice = unitPrice;
+  const totalPrice = toOrderPrice(r.totalPrice);
+  if (totalPrice) out.totalPrice = totalPrice;
   if (r.total !== undefined && (typeof r.total === 'number' || typeof r.total === 'string')) {
     out.total = r.total;
   }
+  return out;
+}
+
+/** `{ amount, currency }` with each part kept only when correctly typed; `undefined` for a non-object. */
+function toOrderPrice(value: unknown): OrderPrice | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const v = value as Record<string, unknown>;
+  const out: OrderPrice = {};
+  if (typeof v.amount === 'number' && Number.isFinite(v.amount)) out.amount = v.amount;
+  if (typeof v.currency === 'string') out.currency = v.currency;
   return out;
 }
 

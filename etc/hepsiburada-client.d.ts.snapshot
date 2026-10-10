@@ -139,15 +139,104 @@ interface ListTransactionsParams {
     paymentDateStart?: string;
     paymentDateEnd?: string;
 }
-/** One accounting transaction row. */
+/**
+ * A monetary amount on an accounting row, exactly as `mpfinance-external`
+ * sends it: a major-unit decimal (`value`, e.g. `149.9` lira) plus an ISO 4217
+ * code (`currencyCode`, e.g. `'TRY'`). Not converted to `@lonca/core` `Money`
+ * (integer minor units) — use `moneyFromMajor(value, currencyCode)` for that.
+ */
+interface AccountingAmount {
+    /** Major-unit decimal amount. */
+    value?: number;
+    /** ISO 4217 currency code (e.g. `'TRY'`). */
+    currencyCode?: string;
+}
+/**
+ * One accounting transaction row (`items[]` of
+ * `GET /transactions/merchantid/{merchantId}`).
+ *
+ * Fields mirror the spec (`specs/hepsiburada/mpfinance-external.json`) and the
+ * prod wire. Every field is optional and only set when the wire value has the
+ * documented JSON type — a `null` date (e.g. `paymentDate` before payment) is
+ * left unset. The untouched row is on `raw`.
+ */
 interface AccountingTransaction {
-    transactionId?: string;
-    transactionDate?: string;
-    paymentDate?: string;
-    type?: string;
-    amount?: number;
-    currency?: string;
+    /** Transaction id (wire `id`). */
+    id?: string;
+    /** Transaction type (wire `transactionType`). */
+    transactionType?: string;
+    /** Category of the transaction type (wire `transactionTypeCategory`). */
+    transactionTypeCategory?: string;
+    /** Transaction status. */
+    status?: string;
+    /** Hepsiburada SKU of the line. */
+    sku?: string;
+    /** Product name of the line. */
+    productName?: string;
+    /** Quantity on the line. */
+    quantity?: number;
+    /** Merchant id the row belongs to. */
+    merchantId?: string;
     orderNumber?: string;
+    /** Order line (item) number. */
+    orderItemNumber?: string;
+    packageNumber?: string;
+    invoiceNumber?: string;
+    /** Free-text invoice explanation (`null` on the wire for most rows → unset). */
+    invoiceExplanation?: string;
+    /** `true` when the row is an invoice. */
+    isInvoice?: boolean;
+    /** `true` for income (credit to the merchant), `false` for an expense. */
+    isIncome?: boolean;
+    /**
+     * The row's `amount` object (`{ value, currencyCode }`). Named
+     * `transactionAmount` because the legacy numeric {@link amount} field
+     * already occupies `amount`.
+     */
+    transactionAmount?: AccountingAmount;
+    /** Tax part of the amount (wire `taxAmount`). */
+    taxAmount?: AccountingAmount;
+    /** Net amount (wire `netAmount`). */
+    netAmount?: AccountingAmount;
+    /** ISO 8601 order date-time. */
+    orderDate?: string;
+    /** ISO 8601 invoice date-time. */
+    invoiceDate?: string;
+    /** ISO 8601 due date-time. */
+    dueDate?: string;
+    /** ISO 8601 payment date-time; unset while the wire carries `null`. */
+    paymentDate?: string;
+    /**
+     * @deprecated Hepsiburada sends no `transactionId`. Now back-filled from the
+     *   wire `id` — use {@link id}. Will be removed in the next major.
+     */
+    transactionId?: string;
+    /**
+     * @deprecated Hepsiburada sends no `transactionDate` and none of the real
+     *   dates is an exact equivalent, so this is never populated. Use
+     *   {@link orderDate}, {@link invoiceDate}, {@link dueDate} or
+     *   {@link paymentDate}. Will be removed in the next major.
+     */
+    transactionDate?: string;
+    /**
+     * @deprecated Hepsiburada sends no `type`. Now back-filled from the wire
+     *   `transactionType` — use {@link transactionType}. Will be removed in the
+     *   next major.
+     */
+    type?: string;
+    /**
+     * @deprecated The wire `amount` is an object, so earlier versions never
+     *   populated this. Now back-filled from `amount.value` (major units) — use
+     *   {@link transactionAmount}, which keeps the currency. Will be removed in
+     *   the next major.
+     */
+    amount?: number;
+    /**
+     * @deprecated Hepsiburada sends no top-level `currency`. Now back-filled from
+     *   `amount.currencyCode` — use `transactionAmount.currencyCode`. Will be
+     *   removed in the next major.
+     */
+    currency?: string;
     /** Untouched raw row. */
     raw: Record<string, unknown>;
 }
@@ -268,49 +357,153 @@ interface CatalogField<V = string> {
         value?: V;
     }>;
 }
-/** One row in the merchant's catalog. */
+/** One `{ name, value }` attribute pair (e.g. on `matchedHbProductInfo[]`). */
+interface CatalogAttributePair {
+    /** Attribute name (e.g. `'Renk'`). */
+    name?: string;
+    /** Attribute value, always a string on the wire. */
+    value?: string;
+}
+/** One `{ name, value, mandatory }` attribute on a `listProducts` row. */
+interface CatalogProductAttribute extends CatalogAttributePair {
+    /** Whether the category requires the attribute. */
+    mandatory?: boolean;
+}
+/** One validation finding on a catalog row. */
+interface CatalogValidationResult {
+    /** Name of the attribute that failed validation. */
+    attributeName?: string;
+    /** Human-readable validation message. */
+    message?: string;
+}
+/** One open task on a `listProductsByStatus` row (spec `taskDetails[]`). */
+interface CatalogTaskDetail {
+    reason?: string;
+    url?: string;
+    /** Comments on the task; element shape undocumented, passed through. */
+    commentList?: unknown[];
+}
+/** The Hepsiburada product a `listProductsByStatus` row was matched to (spec `matchedHbProductInfo[]`). */
+interface CatalogMatchedHbProduct {
+    hbSku?: string;
+    productName?: string;
+    brand?: string;
+    /** Image URLs in display order. */
+    images?: string[];
+    /** Variant-defining attributes of the matched product. */
+    variantTypeAttributes?: CatalogAttributePair[];
+}
+/**
+ * One row in the merchant's catalog, from either list endpoint. The two
+ * endpoints return **different** row shapes (spec `mpop-catalog.json`,
+ * confirmed on the prod wire 2026-10); each field says which one fills it:
+ *
+ * - `catalog.listProducts()` (`all-products-of-merchant`): `merchantSku`,
+ *   `barcode`, `hbSku`, `variantGroupId`, `title`, `brand`, `images`,
+ *   `categoryId`, `categoryName`, `description`, `price`, `tax`, `status`,
+ *   the three attribute lists, `validationResults`, `rejectReasons`.
+ * - `catalog.listProductsByStatus()` (`products-by-merchant-and-status`):
+ *   `merchantSku`, `barcode`, `hbSku`, `variantGroupId`, `title`,
+ *   `productStatus` (also copied to `status`), `taskDetails`,
+ *   `validationResults`, `matchedHbProductInfo`, `rejectReasonsMessages`,
+ *   `videoStatus`.
+ *
+ * Every field is optional and only set when the wire value has the documented
+ * JSON type. Fields marked `@deprecated` are documented by neither endpoint
+ * and absent from the prod wire — they are never populated in practice.
+ */
 interface CatalogProduct {
-    /**
-     * Catalog row id. Absent when the wire row has none — `listProductsByStatus`
-     * rows carry no `id` (verified live 2026-08). Never the `''` placeholder
-     * earlier versions emitted.
-     */
-    id?: string;
-    createdAt?: string;
-    createdBy?: string;
-    modifiedAt?: string;
-    modifiedBy?: string;
+    /** Merchant SKU. Both endpoints. */
     merchantSku?: string;
-    preMatchedSku?: string;
-    siblingSku?: string;
-    status?: string;
-    listingStatus?: string;
-    listingFailureReason?: string;
-    validationStatus?: string;
-    productType?: string;
-    uploadDate?: string;
-    productQuality?: number;
-    categoryScore?: number;
+    /** Product barcode. Both endpoints. */
+    barcode?: string;
+    /** Hepsiburada SKU (`HBV…`) once matched. Both endpoints. */
+    hbSku?: string;
+    /** Variant group id. Both endpoints. */
+    variantGroupId?: string;
     /**
-     * Product title, resolved best-effort from the per-SKU `fields` map (or the
-     * raw row). Hepsiburada's catalog keys this as `productName`/`name`, **not**
-     * `title`. `undefined` when the catalog doesn't surface it — never guessed.
+     * Lifecycle status (`CatalogProductLifecycleStatus` vocabulary). Wire
+     * `status` on `listProducts` rows; copied from `productStatus` on
+     * `listProductsByStatus` rows.
+     */
+    status?: string;
+    /** Lifecycle status as `listProductsByStatus` rows spell it (wire `productStatus`). */
+    productStatus?: string;
+    /**
+     * Product title, from the wire's `productName` (both endpoints; also tried:
+     * the legacy `fields` map, `name`, `title`). `undefined` when absent —
+     * never guessed.
      */
     title?: string;
-    /** Hepsiburada category id, resolved best-effort from `fields` / raw. */
+    /** Hepsiburada category id, stringified from the wire number. `listProducts` only. */
     categoryId?: string;
-    /** Human-readable category name, resolved best-effort from `fields` / raw. */
+    /** Human-readable category name. `listProducts` only. */
     categoryName?: string;
-    /** Brand name, resolved best-effort from `fields` / raw. */
+    /** Brand name. `listProducts` only. */
     brand?: string;
-    /** Product description, resolved best-effort from `fields` / raw. */
+    /** Product description. `listProducts` only. */
     description?: string;
-    /** Image URLs in display order, resolved best-effort from `fields` / raw. */
+    /** Image URLs in display order. `listProducts` only. */
     images?: string[];
+    /** Price — a **string** on the wire (spec and prod), passed through unparsed. `listProducts` only. */
+    price?: string;
+    /** VAT rate — a string on the wire, passed through. `listProducts` only. */
+    tax?: string;
+    /** Base (common) attributes. `listProducts` only. */
+    baseAttributes?: CatalogProductAttribute[];
+    /** Category-specific attributes. `listProducts` only. */
+    productAttributes?: CatalogProductAttribute[];
+    /** Variant-defining attributes. `listProducts` only. */
+    variantTypeAttributes?: CatalogProductAttribute[];
+    /** Validation findings. Both endpoints. */
+    validationResults?: CatalogValidationResult[];
+    /** Rejection reasons. `listProducts` only. */
+    rejectReasons?: string[];
+    /** Rejection reason messages. `listProductsByStatus` only. */
+    rejectReasonsMessages?: string[];
+    /** Open tasks on the row. `listProductsByStatus` only. */
+    taskDetails?: CatalogTaskDetail[];
+    /** The Hepsiburada product(s) the row was matched to. `listProductsByStatus` only. */
+    matchedHbProductInfo?: CatalogMatchedHbProduct[];
+    /** Product video status. `listProductsByStatus` only. */
+    videoStatus?: string;
     /**
-     * Raw per-field map (value + revision history) as returned by Hepsiburada.
-     * The typed `title`/`categoryId`/… above are resolved from this; keep reading
-     * `fields` directly for anything not promoted to a typed field.
+     * @deprecated Neither list endpoint documents or sends a row id — never
+     *   populated. Identify rows by {@link merchantSku} / {@link hbSku}. Will be
+     *   removed in the next major.
+     */
+    id?: string;
+    /** @deprecated Not sent by either list endpoint — never populated. Will be removed in the next major. */
+    createdAt?: string;
+    /** @deprecated Not sent by either list endpoint — never populated. Will be removed in the next major. */
+    createdBy?: string;
+    /** @deprecated Not sent by either list endpoint — never populated. Will be removed in the next major. */
+    modifiedAt?: string;
+    /** @deprecated Not sent by either list endpoint — never populated. Will be removed in the next major. */
+    modifiedBy?: string;
+    /** @deprecated Not sent by either list endpoint — never populated. Use `matchedHbProductInfo[].hbSku`. Will be removed in the next major. */
+    preMatchedSku?: string;
+    /** @deprecated Not sent by either list endpoint — never populated. Will be removed in the next major. */
+    siblingSku?: string;
+    /** @deprecated Not sent by either list endpoint — never populated. Will be removed in the next major. */
+    listingStatus?: string;
+    /** @deprecated Not sent by either list endpoint — never populated. Use {@link rejectReasons} / {@link rejectReasonsMessages}. Will be removed in the next major. */
+    listingFailureReason?: string;
+    /** @deprecated Not sent by either list endpoint — never populated. Use {@link validationResults}. Will be removed in the next major. */
+    validationStatus?: string;
+    /** @deprecated Not sent by either list endpoint — never populated. Will be removed in the next major. */
+    productType?: string;
+    /** @deprecated Not sent by either list endpoint — never populated. Will be removed in the next major. */
+    uploadDate?: string;
+    /** @deprecated Not sent by either list endpoint — never populated. Will be removed in the next major. */
+    productQuality?: number;
+    /** @deprecated Not sent by either list endpoint — never populated. Will be removed in the next major. */
+    categoryScore?: number;
+    /**
+     * @deprecated Neither list endpoint sends a per-field `fields` map — never
+     *   populated. The content it was meant to carry is on the typed fields
+     *   above (`title`, `brand`, the attribute lists, …). Will be removed in the
+     *   next major.
      */
     fields?: Record<string, CatalogField<unknown>>;
     /** Untouched raw row. */
@@ -543,12 +736,32 @@ interface GetAttributesParams {
     /** ISO timestamp — only return attributes modified at-or-after this. */
     modifiedAtSince?: string;
 }
-/** One attribute definition for a leaf category. */
+/**
+ * One attribute definition for a leaf category (an element of
+ * `data.baseAttributes[]` / `data.attributes[]` / `data.variantAttributes[]`
+ * of `GET /product/api/categories/{categoryId}/attributes` — spec
+ * `mpop-catalog.json`, confirmed on the prod wire 2026-10).
+ */
 interface CategoryAttribute {
+    /** Attribute id — a string on the wire; kept wide for back-compat. */
     id?: number | string;
     name?: string;
-    externalName?: string;
+    /** Whether a product in this category must set the attribute. */
     mandatory?: boolean;
+    /** Attribute value type, passed through as Hepsiburada spells it. */
+    type?: string;
+    /** Whether the attribute accepts more than one value. */
+    multiValue?: boolean;
+    /**
+     * @deprecated Neither documented nor sent by Hepsiburada — never populated.
+     *   Use {@link name}. Will be removed in the next major.
+     */
+    externalName?: string;
+    /**
+     * @deprecated The attributes endpoint does not inline allowed values — never
+     *   populated. Fetch them with `categories.getAttributeValues(categoryId, id)`.
+     *   Will be removed in the next major.
+     */
     values?: unknown[];
     /**
      * Which bucket this attribute came from. Hepsiburada returns a leaf
@@ -1135,10 +1348,38 @@ interface ListOrdersParams {
 }
 /** Query parameters for `orders.listPackages()` and the status-specific helpers. */
 type ListPackagesParams = ListOrdersParams;
-/** One order row. */
+/**
+ * A price on an order line, exactly as `oms-external` sends it: a major-unit
+ * decimal (`amount`, e.g. `149.9` lira) plus an ISO 4217 code (`currency`).
+ * Not converted to `@lonca/core` `Money` (integer minor units) — use
+ * `moneyFromMajor(amount, currency)` for that.
+ */
+interface OrderPrice {
+    /** Major-unit decimal amount. */
+    amount?: number;
+    /** ISO 4217 currency code (e.g. `'TRY'`). */
+    currency?: string;
+}
+/**
+ * One order row.
+ *
+ * `orders.list()` rows are **order lines** (`items[]` of
+ * `GET /orders/merchantid/{merchantId}`: one row per line item, so an order
+ * with two lines appears twice with the same `orderNumber`). The line fields
+ * below mirror that object (spec `oms-external.json`, confirmed on the prod
+ * wire 2026-10). `orders.getByOrderNumber()` maps the order-detail root onto
+ * the same type; it carries `orderNumber`, `orderId`, `orderDate`,
+ * `createdDate` and a nested `customer`, the line fields stay on `raw.items`.
+ * Every field is optional and only set when the wire value has the documented
+ * JSON type.
+ */
 interface Order {
     orderNumber?: string;
-    externalOrderNumber?: string;
+    /** Hepsiburada order id (wire `orderId`). */
+    orderId?: string;
+    /** Order line (line item) id — the id the line-item actions take (wire `id`). */
+    id?: string;
+    /** Line status (`Open`, `Unpacked`, …). */
     status?: string;
     /**
      * Customer display name, surfaced from the raw row's candidate fields
@@ -1147,8 +1388,59 @@ interface Order {
      * stop guessing from `raw`.
      */
     customerName?: string | null;
+    /** Hepsiburada customer id. */
+    customerId?: string;
+    /** ISO 8601 order date-time (wire `orderDate`). */
+    orderDate?: string;
+    /** ISO 8601 date-time of the line's last status change (wire `lastStatusUpdateDate`). */
+    lastStatusUpdateDate?: string;
+    /** ISO 8601 date-time by which the line must ship (wire `dueDate`). */
+    dueDate?: string;
+    /** Package number once the line is packed. */
+    packageNumber?: string;
+    /** Hepsiburada SKU. */
+    sku?: string;
+    /** Merchant SKU (wire `merchantSKU`, upper-case `SKU`). */
+    merchantSku?: string;
+    /** Product barcode. */
+    barcode?: string;
+    /** Product name of the line. */
+    name?: string;
+    /** Quantity on the line. */
+    quantity?: number;
+    /** Cargo company name. */
+    cargoCompany?: string;
+    /** Unit price. */
+    unitPrice?: OrderPrice;
+    /** Line total (`unitPrice × quantity` after discounts) — not the order total. */
+    totalPrice?: OrderPrice;
+    /** VAT amount. */
+    vat?: number;
+    /** VAT rate (percent). */
+    vatRate?: number;
+    /**
+     * ISO 8601 creation date-time. Documented only on the order-detail root
+     * (`orders.getByOrderNumber()`); `orders.list()` rows carry
+     * {@link orderDate} instead and leave this unset.
+     */
     createdDate?: string;
+    /**
+     * @deprecated Neither documented nor sent by Hepsiburada — never populated.
+     *   Use {@link orderNumber}. Will be removed in the next major.
+     */
+    externalOrderNumber?: string;
+    /**
+     * @deprecated Neither documented nor sent by Hepsiburada — never populated.
+     *   The nearest real field is {@link lastStatusUpdateDate} (the last status
+     *   change, not any modification). Will be removed in the next major.
+     */
     modifiedDate?: string;
+    /**
+     * @deprecated Neither documented nor sent by Hepsiburada — never populated.
+     *   List rows are order lines: use {@link totalPrice} for the line total and
+     *   sum the lines of one `orderNumber` for an order total. Will be removed
+     *   in the next major.
+     */
     total?: number | string;
     /** Untouched raw row. */
     raw: Record<string, unknown>;
@@ -2321,4 +2613,4 @@ interface HepsiburadaClient {
  */
 declare function createHepsiburadaClient(opts: CreateClientOptions): HepsiburadaClient;
 
-export { AccountingResource, type AccountingTransaction, type AdditionalInfoUploadItem, type AnswerQuestionInput, type BulkUnlockInput, type BuyboxOrderRow, type CancelDiscountInput, type CancelLineItemInput, type CargoCompanyOption, type CargoFirm, type CatalogField, type CatalogPage, type CatalogPagingParams, type CatalogProduct, type CatalogProductLifecycleStatus, type CatalogProductStatus, CatalogResource, type CatalogResult, type CatalogTrackingReceipt, CategoriesResource, type Category, type CategoryAttribute, type CategoryAttributeValue, type ChangeCargoCompanyInput, type CheckProductStatusInput, type Claim, type ClaimActionInput, ClaimsResource, type ClaimStatus, type CommissionRow, type CreateClaimInput, type CreateClientOptions, createHepsiburadaClient, type CreateListingUpdateRequestInput, type CreateListingUpdateRequestItem, type CreatePackagesInput, type CreatePercentDiscountInput, type CreateQuestionInput, type CreateTestOrderInput, type CreateTlDiscountInput, type CreateXyDiscountInput, type CustomizableProperty, type DeleteBySkuInput, type Discount, type DiscountBudgets, type DiscountLimits, type DiscountReceipt, type FastListingInput, type GetAttributesParams, hepsiburadaCapabilities, type HepsiburadaCapabilities, type HepsiburadaClient, type HepsiburadaEnvironment, type InventoryUploadItem, type InvoiceLinkInput, type InvoiceLinkItem, type LaborCostInput, type ListCatalogProductsParams, type ListCategoriesParams, type ListClaimsByStatusParams, type ListClaimsParams, type ListDiscountsParams, type Listing, type ListingPricing, type ListingsPage, ListingsResource, type ListingUpdateRequestDetail, type ListingUpdateRequestItem, type ListingUpdateRequestReceipt, type ListingUpdateRequestSearchInput, type ListingUpdateRequestSummary, type ListListingsParams, type ListOrdersParams, type ListPackagesParams, type ListProductsByStatusParams, type ListQuestionsParams, type ListTransactionsParams, type MerchantSkuGroup, type OpenPurchaseOrder, type OpenPurchaseOrderSearchInput, type OpenPurchaseOrderStatus, type Order, type OrdersPage, OrdersResource, type PackageLabel, type PackageReceipt, type PackageStatusInput, type ParcelInfoInput, type PreMatchActionInput, type PriceUploadItem, type PriceUploadResult, type PriceValidation, type ProductUpdateHistoryEntry, type ProductUpdateInput, type ProductUpdateReceipt, ProductUpdatesResource, type ProductUpdateStatus, type PromotionCategory, PromotionsResource, type PurchaseOrderLineRef, type PurchaseOrderType, type Question, type QuestionCountSummary, QuestionsResource, type RejectQuestionInput, type ShippingInfoUploadItem, type ShippingPackage, type ShippingProfile, type ShippingProfileInput, ShippingResource, type SplitPackageInput, type StockUploadItem, type SupplierApprovalStatus, type SupplierEnvelope, type SupplierListing, type SupplierListingSearchInput, type SupplierListingStatus, type SupplierListingType, type SupplierSearchResult, SuppliersResource, TestOrdersResource, type TrackingIdHistoryEntry, type UpdateListingInput, type UploadError, type UploadProductsInput, type UploadReceipt, type UploadResult, type UploadStatus, type WarehouseInput };
+export { type AccountingAmount, AccountingResource, type AccountingTransaction, type AdditionalInfoUploadItem, type AnswerQuestionInput, type BulkUnlockInput, type BuyboxOrderRow, type CancelDiscountInput, type CancelLineItemInput, type CargoCompanyOption, type CargoFirm, type CatalogAttributePair, type CatalogField, type CatalogMatchedHbProduct, type CatalogPage, type CatalogPagingParams, type CatalogProduct, type CatalogProductAttribute, type CatalogProductLifecycleStatus, type CatalogProductStatus, CatalogResource, type CatalogResult, type CatalogTaskDetail, type CatalogTrackingReceipt, type CatalogValidationResult, CategoriesResource, type Category, type CategoryAttribute, type CategoryAttributeValue, type ChangeCargoCompanyInput, type CheckProductStatusInput, type Claim, type ClaimActionInput, ClaimsResource, type ClaimStatus, type CommissionRow, type CreateClaimInput, type CreateClientOptions, createHepsiburadaClient, type CreateListingUpdateRequestInput, type CreateListingUpdateRequestItem, type CreatePackagesInput, type CreatePercentDiscountInput, type CreateQuestionInput, type CreateTestOrderInput, type CreateTlDiscountInput, type CreateXyDiscountInput, type CustomizableProperty, type DeleteBySkuInput, type Discount, type DiscountBudgets, type DiscountLimits, type DiscountReceipt, type FastListingInput, type GetAttributesParams, hepsiburadaCapabilities, type HepsiburadaCapabilities, type HepsiburadaClient, type HepsiburadaEnvironment, type InventoryUploadItem, type InvoiceLinkInput, type InvoiceLinkItem, type LaborCostInput, type ListCatalogProductsParams, type ListCategoriesParams, type ListClaimsByStatusParams, type ListClaimsParams, type ListDiscountsParams, type Listing, type ListingPricing, type ListingsPage, ListingsResource, type ListingUpdateRequestDetail, type ListingUpdateRequestItem, type ListingUpdateRequestReceipt, type ListingUpdateRequestSearchInput, type ListingUpdateRequestSummary, type ListListingsParams, type ListOrdersParams, type ListPackagesParams, type ListProductsByStatusParams, type ListQuestionsParams, type ListTransactionsParams, type MerchantSkuGroup, type OpenPurchaseOrder, type OpenPurchaseOrderSearchInput, type OpenPurchaseOrderStatus, type Order, type OrderPrice, type OrdersPage, OrdersResource, type PackageLabel, type PackageReceipt, type PackageStatusInput, type ParcelInfoInput, type PreMatchActionInput, type PriceUploadItem, type PriceUploadResult, type PriceValidation, type ProductUpdateHistoryEntry, type ProductUpdateInput, type ProductUpdateReceipt, ProductUpdatesResource, type ProductUpdateStatus, type PromotionCategory, PromotionsResource, type PurchaseOrderLineRef, type PurchaseOrderType, type Question, type QuestionCountSummary, QuestionsResource, type RejectQuestionInput, type ShippingInfoUploadItem, type ShippingPackage, type ShippingProfile, type ShippingProfileInput, ShippingResource, type SplitPackageInput, type StockUploadItem, type SupplierApprovalStatus, type SupplierEnvelope, type SupplierListing, type SupplierListingSearchInput, type SupplierListingStatus, type SupplierListingType, type SupplierSearchResult, SuppliersResource, TestOrdersResource, type TrackingIdHistoryEntry, type UpdateListingInput, type UploadError, type UploadProductsInput, type UploadReceipt, type UploadResult, type UploadStatus, type WarehouseInput };

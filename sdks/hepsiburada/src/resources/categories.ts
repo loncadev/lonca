@@ -227,6 +227,9 @@ function normalizeAttribute(row: unknown, group?: CategoryAttribute['group']): C
   if (typeof r.name === 'string') out.name = r.name;
   if (typeof r.externalName === 'string') out.externalName = r.externalName;
   if (typeof r.mandatory === 'boolean') out.mandatory = r.mandatory;
+  if (typeof r.type === 'string') out.type = r.type;
+  if (typeof r.multiValue === 'boolean') out.multiValue = r.multiValue;
+  // Deprecated: never sent by Hepsiburada; still copied should a row carry it.
   if (Array.isArray(r.values)) out.values = r.values;
   if (group) out.group = group;
   return out;

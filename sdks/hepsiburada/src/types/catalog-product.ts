@@ -100,49 +100,158 @@ export interface CatalogField<V = string> {
   }>;
 }
 
-/** One row in the merchant's catalog. */
+/** One `{ name, value }` attribute pair (e.g. on `matchedHbProductInfo[]`). */
+export interface CatalogAttributePair {
+  /** Attribute name (e.g. `'Renk'`). */
+  name?: string;
+  /** Attribute value, always a string on the wire. */
+  value?: string;
+}
+
+/** One `{ name, value, mandatory }` attribute on a `listProducts` row. */
+export interface CatalogProductAttribute extends CatalogAttributePair {
+  /** Whether the category requires the attribute. */
+  mandatory?: boolean;
+}
+
+/** One validation finding on a catalog row. */
+export interface CatalogValidationResult {
+  /** Name of the attribute that failed validation. */
+  attributeName?: string;
+  /** Human-readable validation message. */
+  message?: string;
+}
+
+/** One open task on a `listProductsByStatus` row (spec `taskDetails[]`). */
+export interface CatalogTaskDetail {
+  reason?: string;
+  url?: string;
+  /** Comments on the task; element shape undocumented, passed through. */
+  commentList?: unknown[];
+}
+
+/** The Hepsiburada product a `listProductsByStatus` row was matched to (spec `matchedHbProductInfo[]`). */
+export interface CatalogMatchedHbProduct {
+  hbSku?: string;
+  productName?: string;
+  brand?: string;
+  /** Image URLs in display order. */
+  images?: string[];
+  /** Variant-defining attributes of the matched product. */
+  variantTypeAttributes?: CatalogAttributePair[];
+}
+
+/**
+ * One row in the merchant's catalog, from either list endpoint. The two
+ * endpoints return **different** row shapes (spec `mpop-catalog.json`,
+ * confirmed on the prod wire 2026-10); each field says which one fills it:
+ *
+ * - `catalog.listProducts()` (`all-products-of-merchant`): `merchantSku`,
+ *   `barcode`, `hbSku`, `variantGroupId`, `title`, `brand`, `images`,
+ *   `categoryId`, `categoryName`, `description`, `price`, `tax`, `status`,
+ *   the three attribute lists, `validationResults`, `rejectReasons`.
+ * - `catalog.listProductsByStatus()` (`products-by-merchant-and-status`):
+ *   `merchantSku`, `barcode`, `hbSku`, `variantGroupId`, `title`,
+ *   `productStatus` (also copied to `status`), `taskDetails`,
+ *   `validationResults`, `matchedHbProductInfo`, `rejectReasonsMessages`,
+ *   `videoStatus`.
+ *
+ * Every field is optional and only set when the wire value has the documented
+ * JSON type. Fields marked `@deprecated` are documented by neither endpoint
+ * and absent from the prod wire — they are never populated in practice.
+ */
 export interface CatalogProduct {
-  /**
-   * Catalog row id. Absent when the wire row has none — `listProductsByStatus`
-   * rows carry no `id` (verified live 2026-08). Never the `''` placeholder
-   * earlier versions emitted.
-   */
-  id?: string;
-  createdAt?: string;
-  createdBy?: string;
-  modifiedAt?: string;
-  modifiedBy?: string;
+  /** Merchant SKU. Both endpoints. */
   merchantSku?: string;
-  preMatchedSku?: string;
-  siblingSku?: string;
-  status?: string;
-  listingStatus?: string;
-  listingFailureReason?: string;
-  validationStatus?: string;
-  productType?: string;
-  uploadDate?: string;
-  productQuality?: number;
-  categoryScore?: number;
+  /** Product barcode. Both endpoints. */
+  barcode?: string;
+  /** Hepsiburada SKU (`HBV…`) once matched. Both endpoints. */
+  hbSku?: string;
+  /** Variant group id. Both endpoints. */
+  variantGroupId?: string;
   /**
-   * Product title, resolved best-effort from the per-SKU `fields` map (or the
-   * raw row). Hepsiburada's catalog keys this as `productName`/`name`, **not**
-   * `title`. `undefined` when the catalog doesn't surface it — never guessed.
+   * Lifecycle status (`CatalogProductLifecycleStatus` vocabulary). Wire
+   * `status` on `listProducts` rows; copied from `productStatus` on
+   * `listProductsByStatus` rows.
+   */
+  status?: string;
+  /** Lifecycle status as `listProductsByStatus` rows spell it (wire `productStatus`). */
+  productStatus?: string;
+  /**
+   * Product title, from the wire's `productName` (both endpoints; also tried:
+   * the legacy `fields` map, `name`, `title`). `undefined` when absent —
+   * never guessed.
    */
   title?: string;
-  /** Hepsiburada category id, resolved best-effort from `fields` / raw. */
+  /** Hepsiburada category id, stringified from the wire number. `listProducts` only. */
   categoryId?: string;
-  /** Human-readable category name, resolved best-effort from `fields` / raw. */
+  /** Human-readable category name. `listProducts` only. */
   categoryName?: string;
-  /** Brand name, resolved best-effort from `fields` / raw. */
+  /** Brand name. `listProducts` only. */
   brand?: string;
-  /** Product description, resolved best-effort from `fields` / raw. */
+  /** Product description. `listProducts` only. */
   description?: string;
-  /** Image URLs in display order, resolved best-effort from `fields` / raw. */
+  /** Image URLs in display order. `listProducts` only. */
   images?: string[];
+  /** Price — a **string** on the wire (spec and prod), passed through unparsed. `listProducts` only. */
+  price?: string;
+  /** VAT rate — a string on the wire, passed through. `listProducts` only. */
+  tax?: string;
+  /** Base (common) attributes. `listProducts` only. */
+  baseAttributes?: CatalogProductAttribute[];
+  /** Category-specific attributes. `listProducts` only. */
+  productAttributes?: CatalogProductAttribute[];
+  /** Variant-defining attributes. `listProducts` only. */
+  variantTypeAttributes?: CatalogProductAttribute[];
+  /** Validation findings. Both endpoints. */
+  validationResults?: CatalogValidationResult[];
+  /** Rejection reasons. `listProducts` only. */
+  rejectReasons?: string[];
+  /** Rejection reason messages. `listProductsByStatus` only. */
+  rejectReasonsMessages?: string[];
+  /** Open tasks on the row. `listProductsByStatus` only. */
+  taskDetails?: CatalogTaskDetail[];
+  /** The Hepsiburada product(s) the row was matched to. `listProductsByStatus` only. */
+  matchedHbProductInfo?: CatalogMatchedHbProduct[];
+  /** Product video status. `listProductsByStatus` only. */
+  videoStatus?: string;
   /**
-   * Raw per-field map (value + revision history) as returned by Hepsiburada.
-   * The typed `title`/`categoryId`/… above are resolved from this; keep reading
-   * `fields` directly for anything not promoted to a typed field.
+   * @deprecated Neither list endpoint documents or sends a row id — never
+   *   populated. Identify rows by {@link merchantSku} / {@link hbSku}. Will be
+   *   removed in the next major.
+   */
+  id?: string;
+  /** @deprecated Not sent by either list endpoint — never populated. Will be removed in the next major. */
+  createdAt?: string;
+  /** @deprecated Not sent by either list endpoint — never populated. Will be removed in the next major. */
+  createdBy?: string;
+  /** @deprecated Not sent by either list endpoint — never populated. Will be removed in the next major. */
+  modifiedAt?: string;
+  /** @deprecated Not sent by either list endpoint — never populated. Will be removed in the next major. */
+  modifiedBy?: string;
+  /** @deprecated Not sent by either list endpoint — never populated. Use `matchedHbProductInfo[].hbSku`. Will be removed in the next major. */
+  preMatchedSku?: string;
+  /** @deprecated Not sent by either list endpoint — never populated. Will be removed in the next major. */
+  siblingSku?: string;
+  /** @deprecated Not sent by either list endpoint — never populated. Will be removed in the next major. */
+  listingStatus?: string;
+  /** @deprecated Not sent by either list endpoint — never populated. Use {@link rejectReasons} / {@link rejectReasonsMessages}. Will be removed in the next major. */
+  listingFailureReason?: string;
+  /** @deprecated Not sent by either list endpoint — never populated. Use {@link validationResults}. Will be removed in the next major. */
+  validationStatus?: string;
+  /** @deprecated Not sent by either list endpoint — never populated. Will be removed in the next major. */
+  productType?: string;
+  /** @deprecated Not sent by either list endpoint — never populated. Will be removed in the next major. */
+  uploadDate?: string;
+  /** @deprecated Not sent by either list endpoint — never populated. Will be removed in the next major. */
+  productQuality?: number;
+  /** @deprecated Not sent by either list endpoint — never populated. Will be removed in the next major. */
+  categoryScore?: number;
+  /**
+   * @deprecated Neither list endpoint sends a per-field `fields` map — never
+   *   populated. The content it was meant to carry is on the typed fields
+   *   above (`title`, `brand`, the attribute lists, …). Will be removed in the
+   *   next major.
    */
   fields?: Record<string, CatalogField<unknown>>;
   /** Untouched raw row. */
