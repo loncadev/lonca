@@ -56,7 +56,7 @@ export interface ListN11CancelsParams extends ClaimSearchParams {
   searchDateType?: string;
 }
 
-/** One return claim (`claimReturnList.claimReturn`). Dates are as sent by n11. */
+/** One return claim (`claimReturnList.claimReturn`). Dates are `DD/MM/YYYY` strings. */
 export interface N11ReturnClaim {
   id: string;
   status: N11ReturnStatus;
@@ -96,7 +96,10 @@ export interface N11ReturnClaim {
   raw: Record<string, unknown>;
 }
 
-/** One cancel claim (`claimCancelList.claimCancel`). Dates are as sent by n11. */
+/**
+ * One cancel claim (`claimCancelList.claimCancel`). Dates are `DD/MM/YYYY` strings. The buyer,
+ * payment-date, shipment-company and delivery-fee fields are not in the WSDL but are sent on prod.
+ */
 export interface N11CancelClaim {
   id: string;
   status: N11CancelStatus;
@@ -110,6 +113,12 @@ export interface N11CancelClaim {
   requestDate?: string;
   deniedDate?: string;
   completedDate?: string;
+  paymentDate?: string;
+  shipmentCompany?: string;
+  deliveryFeeType?: string;
+  buyerName?: string;
+  buyerEmail?: string;
+  buyerPhone?: string;
   productId?: string;
   skuId?: string;
   productName?: string;

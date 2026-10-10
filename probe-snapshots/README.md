@@ -8,11 +8,12 @@ sets and JSON types — and never a value. Format and drift rules are documented
 | File               | Environment | Captured   | Result          | Wire baseline (`wire`)                                   |
 | ------------------ | ----------- | ---------- | --------------- | -------------------------------------------------------- |
 | `hepsiburada.json` | prod        | 2026-10-10 | 15 ok / 0 error | 15 operations, 4 with no spec match                      |
-| `n11.json`         | prod        | 2026-10-10 | 4 ok / 0 error  | 4 operations, none in `specs/` yet (no n11 spec)         |
+| `n11.json`         | prod        | 2026-10-10 | 11 ok / 0 error | 8 operations (4 SOAP `POST` reads), no n11 spec yet      |
 | `trendyol.json`    | prod        | 2026-10-10 | 18 ok / 0 error | 17 operations (one `POST` read), all matched to `specs/` |
 
-All baselines are taken against **production** (every probe is a read-only GET, except the
-one Trendyol buybox `POST` read). n11 has no sandbox at all. The earlier
+All baselines are taken against **production**. Every probe is a read-only GET, except the
+Trendyol buybox `POST` read and n11's SOAP reads (SOAP is always `POST`). n11 has no sandbox at
+all. The earlier
 SIT (Hepsiburada) and stage-placeholder (Trendyol) captures are only in git history.
 
 `known-discrepancies.json` is not a snapshot: it is the hand-maintained

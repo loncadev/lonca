@@ -792,6 +792,777 @@
         }
       ]
     },
+    "claims.getCancelDenyReasons": {
+      "status": "ok",
+      "shape": {
+        "types": [
+          "array"
+        ],
+        "items": {
+          "types": [
+            "object"
+          ],
+          "keys": {
+            "id": {
+              "types": [
+                "string"
+              ]
+            },
+            "value": {
+              "types": [
+                "string"
+              ]
+            }
+          }
+        }
+      },
+      "wire": [
+        {
+          "operation": {
+            "key": "POST api.n11.com/ws/claimCancelService",
+            "unmatched": true,
+            "method": "POST",
+            "host": "api.n11.com",
+            "path": "/ws/claimCancelService"
+          },
+          "status": 200,
+          "contentType": "text/xml",
+          "body": "non-json"
+        }
+      ]
+    },
+    "claims.getReturnDenyReasons": {
+      "status": "ok",
+      "shape": {
+        "types": [
+          "array"
+        ],
+        "items": {
+          "types": [
+            "object"
+          ],
+          "keys": {
+            "id": {
+              "types": [
+                "string"
+              ]
+            },
+            "value": {
+              "types": [
+                "string"
+              ]
+            }
+          }
+        }
+      },
+      "wire": [
+        {
+          "operation": {
+            "key": "POST api.n11.com/ws/returnService",
+            "unmatched": true,
+            "method": "POST",
+            "host": "api.n11.com",
+            "path": "/ws/returnService"
+          },
+          "status": 200,
+          "contentType": "text/xml",
+          "body": "non-json"
+        }
+      ]
+    },
+    "claims.getReturnPendingReasons": {
+      "status": "ok",
+      "shape": {
+        "types": [
+          "array"
+        ],
+        "items": {
+          "types": [
+            "object"
+          ],
+          "keys": {
+            "id": {
+              "types": [
+                "string"
+              ]
+            },
+            "value": {
+              "types": [
+                "string"
+              ]
+            }
+          }
+        }
+      },
+      "wire": [
+        {
+          "operation": {
+            "key": "POST api.n11.com/ws/returnService",
+            "unmatched": true,
+            "method": "POST",
+            "host": "api.n11.com",
+            "path": "/ws/returnService"
+          },
+          "status": 200,
+          "contentType": "text/xml",
+          "body": "non-json"
+        }
+      ]
+    },
+    "claims.listCancels(ALL)": {
+      "status": "ok",
+      "shape": {
+        "types": [
+          "object"
+        ],
+        "keys": {
+          "items": {
+            "types": [
+              "array"
+            ],
+            "items": {
+              "types": [
+                "object"
+              ],
+              "keys": {
+                "buyerEmail": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "buyerName": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "buyerPhone": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "completedDate": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "deliveryFeeType": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "executer": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "finalPrice": {
+                  "types": [
+                    "object"
+                  ],
+                  "keys": {
+                    "amount": {
+                      "types": [
+                        "number"
+                      ]
+                    },
+                    "currency": {
+                      "types": [
+                        "string"
+                      ]
+                    }
+                  }
+                },
+                "id": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "orderNumber": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "paymentDate": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "productId": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "productName": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "quantity": {
+                  "types": [
+                    "number"
+                  ]
+                },
+                "raw": {
+                  "types": [
+                    "object"
+                  ],
+                  "keys": {
+                    "buyerEmail": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "buyerName": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "buyerPhone": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "cancelReasonDescription": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "cancelReasonType": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "claimCancelId": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "completedDate": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "deliveryFeeType": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "executer": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "finalPrice": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "orderNumber": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "paymentDate": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "productId": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "productName": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "quantity": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "requestDate": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "shipmentCompany": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "shipmentMethod": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "skuId": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "status": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "unitPrice": {
+                      "types": [
+                        "string"
+                      ]
+                    }
+                  }
+                },
+                "reasonDescription": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "reasonType": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "requestDate": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "shipmentCompany": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "shipmentMethod": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "skuId": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "status": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "unitPrice": {
+                  "types": [
+                    "object"
+                  ],
+                  "keys": {
+                    "amount": {
+                      "types": [
+                        "number"
+                      ]
+                    },
+                    "currency": {
+                      "types": [
+                        "string"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "nextCursor": {
+            "types": [
+              "string"
+            ]
+          }
+        }
+      },
+      "wire": [
+        {
+          "operation": {
+            "key": "POST api.n11.com/ws/claimCancelService",
+            "unmatched": true,
+            "method": "POST",
+            "host": "api.n11.com",
+            "path": "/ws/claimCancelService"
+          },
+          "status": 200,
+          "contentType": "text/xml",
+          "body": "non-json"
+        }
+      ]
+    },
+    "claims.listReturns(ALL)": {
+      "status": "ok",
+      "shape": {
+        "types": [
+          "object"
+        ],
+        "keys": {
+          "items": {
+            "types": [
+              "array"
+            ],
+            "items": {
+              "types": [
+                "object"
+              ],
+              "keys": {
+                "approvedDate": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "attributesNames": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "buyerEmail": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "buyerName": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "buyerPhone": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "campaignNumber": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "cancelledDate": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "deliveryFeeType": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "deniedDate": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "executer": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "finalPrice": {
+                  "types": [
+                    "object"
+                  ],
+                  "keys": {
+                    "amount": {
+                      "types": [
+                        "number"
+                      ]
+                    },
+                    "currency": {
+                      "types": [
+                        "string"
+                      ]
+                    }
+                  }
+                },
+                "id": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "orderNumber": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "paymentDate": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "productId": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "productName": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "quantity": {
+                  "types": [
+                    "number"
+                  ]
+                },
+                "raw": {
+                  "types": [
+                    "object"
+                  ],
+                  "keys": {
+                    "approvedDate": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "attributesNames": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "buyerEmail": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "buyerName": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "buyerPhone": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "campaignNumber": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "cancelledDate": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "claimReturnId": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "deliveryFeeType": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "deniedDate": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "executer": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "finalPrice": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "orderNumber": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "paymentDate": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "productId": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "productName": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "quantity": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "requestDate": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "returnReasonDescription": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "returnReasonType": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "sellerCampaignNumber": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "sellerShipmentCompany": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "sellerTrackingNumber": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "sender": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "shipmentCompany": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "shipmentMethod": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "skuId": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "status": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "trackingNumber": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "unitPrice": {
+                      "types": [
+                        "string"
+                      ]
+                    }
+                  }
+                },
+                "reasonDescription": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "reasonType": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "requestDate": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "sellerCampaignNumber": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "sellerShipmentCompany": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "sellerTrackingNumber": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "sender": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "shipmentCompany": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "shipmentMethod": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "skuId": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "status": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "trackingNumber": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "unitPrice": {
+                  "types": [
+                    "object"
+                  ],
+                  "keys": {
+                    "amount": {
+                      "types": [
+                        "number"
+                      ]
+                    },
+                    "currency": {
+                      "types": [
+                        "string"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "nextCursor": {
+            "types": [
+              "string"
+            ]
+          }
+        }
+      },
+      "wire": [
+        {
+          "operation": {
+            "key": "POST api.n11.com/ws/returnService",
+            "unmatched": true,
+            "method": "POST",
+            "host": "api.n11.com",
+            "path": "/ws/returnService"
+          },
+          "status": 200,
+          "contentType": "text/xml",
+          "body": "non-json"
+        }
+      ]
+    },
     "orders.list": {
       "status": "ok",
       "shape": {
@@ -854,6 +1625,16 @@
                       ]
                     },
                     "postalCode": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "taxHouse": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "taxId": {
                       "types": [
                         "string"
                       ]
@@ -1328,12 +2109,14 @@
                         },
                         "taxHouse": {
                           "types": [
-                            "null"
+                            "null",
+                            "string"
                           ]
                         },
                         "taxId": {
                           "types": [
-                            "null"
+                            "null",
+                            "string"
                           ]
                         },
                         "tcId": {
@@ -1350,6 +2133,7 @@
                     },
                     "cargoSenderNumber": {
                       "types": [
+                        "null",
                         "string"
                       ]
                     },
@@ -1698,12 +2482,14 @@
                     },
                     "taxId": {
                       "types": [
-                        "null"
+                        "null",
+                        "string"
                       ]
                     },
                     "taxOffice": {
                       "types": [
-                        "null"
+                        "null",
+                        "string"
                       ]
                     },
                     "tcIdentityNumber": {
@@ -1781,6 +2567,16 @@
                   }
                 },
                 "status": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "taxId": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "taxOffice": {
                   "types": [
                     "string"
                   ]
@@ -1917,12 +2713,14 @@
                         },
                         "taxHouse": {
                           "types": [
-                            "null"
+                            "null",
+                            "string"
                           ]
                         },
                         "taxId": {
                           "types": [
-                            "null"
+                            "null",
+                            "string"
                           ]
                         },
                         "tcId": {
@@ -1939,6 +2737,7 @@
                     },
                     "cargoSenderNumber": {
                       "types": [
+                        "null",
                         "string"
                       ]
                     },
@@ -2297,12 +3096,14 @@
                     },
                     "taxId": {
                       "types": [
-                        "null"
+                        "null",
+                        "string"
                       ]
                     },
                     "taxOffice": {
                       "types": [
-                        "null"
+                        "null",
+                        "string"
                       ]
                     },
                     "tcIdentityNumber": {
@@ -2959,6 +3760,334 @@
               }
             }
           }
+        }
+      ]
+    },
+    "questions.list(CLOSED, last 30d) → get": {
+      "status": "ok",
+      "shape": {
+        "types": [
+          "object"
+        ],
+        "keys": {
+          "detail": {
+            "types": [
+              "object"
+            ],
+            "keys": {
+              "answer": {
+                "types": [
+                  "string"
+                ]
+              },
+              "answeredDate": {
+                "types": [
+                  "string"
+                ]
+              },
+              "buyerExpose": {
+                "types": [
+                  "string"
+                ]
+              },
+              "email": {
+                "types": [
+                  "string"
+                ]
+              },
+              "fullName": {
+                "types": [
+                  "string"
+                ]
+              },
+              "id": {
+                "types": [
+                  "string"
+                ]
+              },
+              "images": {
+                "types": [
+                  "array"
+                ]
+              },
+              "productId": {
+                "types": [
+                  "string"
+                ]
+              },
+              "productStatus": {
+                "types": [
+                  "string"
+                ]
+              },
+              "productTitle": {
+                "types": [
+                  "string"
+                ]
+              },
+              "question": {
+                "types": [
+                  "string"
+                ]
+              },
+              "questionDate": {
+                "types": [
+                  "string"
+                ]
+              },
+              "raw": {
+                "types": [
+                  "object"
+                ],
+                "keys": {
+                  "answer": {
+                    "types": [
+                      "string"
+                    ]
+                  },
+                  "answeredDate": {
+                    "types": [
+                      "string"
+                    ]
+                  },
+                  "buyerExpose": {
+                    "types": [
+                      "string"
+                    ]
+                  },
+                  "email": {
+                    "types": [
+                      "string"
+                    ]
+                  },
+                  "fullName": {
+                    "types": [
+                      "string"
+                    ]
+                  },
+                  "images": {
+                    "types": [
+                      "string"
+                    ]
+                  },
+                  "productId": {
+                    "types": [
+                      "string"
+                    ]
+                  },
+                  "productStatus": {
+                    "types": [
+                      "string"
+                    ]
+                  },
+                  "productTitle": {
+                    "types": [
+                      "string"
+                    ]
+                  },
+                  "question": {
+                    "types": [
+                      "string"
+                    ]
+                  },
+                  "questionDate": {
+                    "types": [
+                      "string"
+                    ]
+                  },
+                  "questionSubject": {
+                    "types": [
+                      "string"
+                    ]
+                  },
+                  "sellerExpose": {
+                    "types": [
+                      "string"
+                    ]
+                  },
+                  "status": {
+                    "types": [
+                      "string"
+                    ]
+                  }
+                }
+              },
+              "sellerExpose": {
+                "types": [
+                  "string"
+                ]
+              },
+              "status": {
+                "types": [
+                  "string"
+                ]
+              },
+              "subject": {
+                "types": [
+                  "string"
+                ]
+              }
+            }
+          },
+          "page": {
+            "types": [
+              "object"
+            ],
+            "keys": {
+              "items": {
+                "types": [
+                  "array"
+                ],
+                "items": {
+                  "types": [
+                    "object"
+                  ],
+                  "keys": {
+                    "answer": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "id": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "images": {
+                      "types": [
+                        "array"
+                      ]
+                    },
+                    "productId": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "productTitle": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "question": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "raw": {
+                      "types": [
+                        "object"
+                      ],
+                      "keys": {
+                        "answer": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "id": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "images": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "productId": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "productTitle": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "question": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "questionSubject": {
+                          "types": [
+                            "string"
+                          ]
+                        }
+                      }
+                    },
+                    "subject": {
+                      "types": [
+                        "string"
+                      ]
+                    }
+                  }
+                }
+              },
+              "nextCursor": {
+                "types": [
+                  "string"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "wire": [
+        {
+          "operation": {
+            "key": "POST api.n11.com/ws/productService",
+            "unmatched": true,
+            "method": "POST",
+            "host": "api.n11.com",
+            "path": "/ws/productService"
+          },
+          "status": 200,
+          "contentType": "text/xml",
+          "body": "non-json"
+        }
+      ]
+    },
+    "shipping.getShipmentCompanies": {
+      "status": "ok",
+      "shape": {
+        "types": [
+          "array"
+        ],
+        "items": {
+          "types": [
+            "object"
+          ],
+          "keys": {
+            "id": {
+              "types": [
+                "string"
+              ]
+            },
+            "name": {
+              "types": [
+                "string"
+              ]
+            },
+            "shortName": {
+              "types": [
+                "string"
+              ]
+            }
+          }
+        }
+      },
+      "wire": [
+        {
+          "operation": {
+            "key": "POST api.n11.com/ws/shipmentCompanyService",
+            "unmatched": true,
+            "method": "POST",
+            "host": "api.n11.com",
+            "path": "/ws/shipmentCompanyService"
+          },
+          "status": 200,
+          "contentType": "text/xml",
+          "body": "non-json"
         }
       ]
     }

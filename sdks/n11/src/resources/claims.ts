@@ -86,6 +86,12 @@ function normalizeCancel(node: XmlNode): N11CancelClaim {
       reasonDescription: text(c.cancelReasonDescription),
       denyReasonType: text(c.denyReasonType),
       orderNumber: text(c.orderNumber),
+      paymentDate: text(c.paymentDate),
+      shipmentCompany: text(c.shipmentCompany),
+      deliveryFeeType: text(c.deliveryFeeType),
+      buyerName: text(c.buyerName),
+      buyerEmail: text(c.buyerEmail),
+      buyerPhone: text(c.buyerPhone),
       shipmentMethod: text(c.shipmentMethod),
       bundleName: text(c.bundleName),
       requestDate: text(c.requestDate),
@@ -101,11 +107,21 @@ function normalizeCancel(node: XmlNode): N11CancelClaim {
   );
 }
 
+/**
+ * Read a reason-type list. The WSDL wraps each entry (`<list><item>…</item></list>`),
+ * but prod repeats the list element itself, one per reason
+ * (`<list><id/><value/></list><list>…`; observed 2026-10-10). Both are accepted.
+ */
 function reasons(list: XmlNode | undefined, item: string): N11ReasonType[] {
-  return asArray(asObject(list)[item]).map((node) => {
-    const r = asObject(node);
-    return { id: text(r.id) ?? '', value: text(r.value) ?? '' };
-  });
+  return asArray(list)
+    .flatMap((node) => {
+      const wrapped = asObject(node)[item];
+      return wrapped === undefined ? [node] : asArray(wrapped);
+    })
+    .map((node) => {
+      const r = asObject(node);
+      return { id: text(r.id) ?? '', value: text(r.value) ?? '' };
+    });
 }
 
 function page<T>(
@@ -124,9 +140,10 @@ function page<T>(
  * Return and cancel claims (SOAP `ReturnService` / `ClaimCancelService`).
  *
  * Source: developer.n11.com → "İade Talepleri Servisi" / "Parçalı İptal
- * Talebi" and the two WSDLs. **Read-only and unverified on the live API** —
- * approve / deny / pend / partial-cancel are not implemented. n11 fixes the
- * page size (20 returns per page); `limit` is ignored.
+ * Talebi" and the two WSDLs. Read-only; the lists and reason types were
+ * verified against prod on 2026-10-10 (list dates are `DD/MM/YYYY` strings).
+ * Approve / deny / pend / partial-cancel are not implemented. n11 fixes the
+ * page size (20 per page); `limit` is ignored.
  */
 export class ClaimsResource {
   constructor(private readonly transport: N11Transport) {}

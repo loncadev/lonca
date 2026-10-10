@@ -1,4 +1,4 @@
-import { TokenBucketRateLimiter, type CursorPage } from '@lonca/core';
+import { NotFoundError, TokenBucketRateLimiter, type CursorPage } from '@lonca/core';
 import type { N11Transport } from '../transport.js';
 import { asArray, asObject, type XmlNode, type XmlObject } from '../soap/xml.js';
 import { assign, nextPage, pageCursor, paging, soapDate, text } from '../soap/values.js';
@@ -53,8 +53,8 @@ function normalizeDetail(id: string, q: XmlObject): N11QuestionDetail {
  * Product questions (SOAP `ProductService`).
  *
  * Source: developer.n11.com → "Ürün Soru-Cevap Servisi" and
- * `api.n11.com/ws/productService.wsdl`. **Read-only and unverified on the live
- * API** — answering (`SaveProductAnswer`) is not implemented.
+ * `api.n11.com/ws/productService.wsdl`. Read-only; verified against prod on
+ * 2026-10-10. Answering (`SaveProductAnswer`) is not implemented.
  *
  * Rate limit: n11 allows listing questions **once per minute**; the default
  * limiter enforces that for this client. Inject a shared limiter when several
@@ -101,7 +101,11 @@ export class QuestionsResource {
     return result;
   }
 
-  /** One question with the buyer's details (`GetProductQuestionDetail`). */
+  /**
+   * One question with the buyer's details (`GetProductQuestionDetail`). n11
+   * answers an unknown id with `result: success` and no question; that is
+   * thrown as `NotFoundError`.
+   */
   async get(questionId: string | number): Promise<N11QuestionDetail> {
     const id = String(questionId);
     const response = await this.transport.soap({
@@ -109,6 +113,10 @@ export class QuestionsResource {
       operation: 'GetProductQuestionDetail',
       fields: { productQuestionId: id },
     });
-    return normalizeDetail(id, asObject(response.productQuestion));
+    const question = asObject(response.productQuestion);
+    if (Object.keys(question).length === 0) {
+      throw new NotFoundError({ message: 'n11 question not found', status: 200 });
+    }
+    return normalizeDetail(id, question);
   }
 }

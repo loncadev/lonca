@@ -49,9 +49,9 @@ export interface N11QuestionDetail {
   email?: string;
   productStatus?: string;
   status?: string;
-  /** As sent by n11 (format unverified). */
+  /** `YYYY-MM-DD` (unlike the list filters, which take `DD/MM/YYYY`). */
   questionDate?: string;
-  /** As sent by n11 (format unverified). */
+  /** `YYYY-MM-DD`. */
   answeredDate?: string;
   /** Whether the seller's answer is shown publicly. */
   sellerExpose?: string;

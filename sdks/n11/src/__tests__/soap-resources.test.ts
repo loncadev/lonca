@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { paginate, TokenBucketRateLimiter } from '@lonca/core';
+import { NotFoundError, paginate, TokenBucketRateLimiter } from '@lonca/core';
 import { ClaimsResource } from '../resources/claims.js';
 import { QuestionsResource } from '../resources/questions.js';
 import { ShippingResource } from '../resources/shipping.js';
@@ -144,7 +144,8 @@ describe('QuestionsResource', () => {
       buyerExpose: 'Genel',
       images: [],
     });
-    expect(await resource.get('9')).toEqual({ id: '9', images: [], raw: {} });
+    // prod answers an unknown id with result: success and no productQuestion
+    await expect(resource.get('9')).rejects.toBeInstanceOf(NotFoundError);
   });
 });
 
@@ -226,6 +227,9 @@ describe('ClaimsResource', () => {
       '<cancelReasonType>Stok yok</cancelReasonType><cancelReasonDescription>-</cancelReasonDescription>' +
       '<denyReasonType/><orderNumber>200000000002</orderNumber><requestDate>02/10/2026</requestDate>' +
       '<completedDate>03/10/2026</completedDate><productId>1</productId><skuId>2</skuId>' +
+      '<paymentDate>01/10/2026</paymentDate><shipmentCompany>Örnek Kargo</shipmentCompany>' +
+      '<deliveryFeeType>1</deliveryFeeType><buyerName>Ada Yılmaz</buyerName>' +
+      '<buyerEmail>ada@example.invalid</buyerEmail><buyerPhone>5550000000</buyerPhone>' +
       '<productName>Ürün</productName><quantity>1</quantity><unitPrice>10</unitPrice><finalPrice>10</finalPrice></claimCancel>';
     const { transport, soap } = mockTransport(
       response(`${paging(0, 1)}<claimCancelList>${cancel}</claimCancelList>`),
@@ -252,6 +256,12 @@ describe('ClaimsResource', () => {
       status: 'COMPLETED',
       reasonType: 'Stok yok',
       completedDate: '03/10/2026',
+      paymentDate: '01/10/2026',
+      shipmentCompany: 'Örnek Kargo',
+      deliveryFeeType: '1',
+      buyerName: 'Ada Yılmaz',
+      buyerEmail: 'ada@example.invalid',
+      buyerPhone: '5550000000',
       quantity: 1,
       unitPrice: { amount: 1000, currency: 'TRY' },
     });
@@ -288,7 +298,26 @@ describe('ClaimsResource', () => {
     await expect(resource.listCancels({ cursor: '1.5' })).rejects.toThrow(TypeError);
   });
 
-  it('reads the three reason-type lists', async () => {
+  it('reads reason lists in the repeated-list form prod sends', async () => {
+    const { transport } = mockTransport(
+      response(
+        '<result><status>success</status></result>' +
+          '<denyReasonTypeDataList><id>1</id><value>Kullanılmış</value></denyReasonTypeDataList>' +
+          '<denyReasonTypeDataList><id>2</id><value>Eksik</value></denyReasonTypeDataList>',
+      ),
+      response(
+        '<pendingReasonTypeDataList><id>3</id><value>İnceleme</value></pendingReasonTypeDataList>',
+      ),
+    );
+    const resource = new ClaimsResource(transport);
+    expect(await resource.getReturnDenyReasons()).toEqual([
+      { id: '1', value: 'Kullanılmış' },
+      { id: '2', value: 'Eksik' },
+    ]);
+    expect(await resource.getReturnPendingReasons()).toEqual([{ id: '3', value: 'İnceleme' }]);
+  });
+
+  it('reads the three reason-type lists in the WSDL (wrapped) form', async () => {
     const { transport, soap } = mockTransport(
       response(
         '<denyReasonTypeDataList><denyReasonTypeData><id>1</id><value>Kullanılmış</value></denyReasonTypeData>' +

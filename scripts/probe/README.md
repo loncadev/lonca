@@ -74,9 +74,13 @@ list of barcodes to look up (max 10).
 The probes below the original twelve / nine were added to verify SDK fields that the
 SDK-types-vs-spec check (`pnpm drift:types`) could not confirm from the earlier sample.
 
-n11 (`@lonca/n11`, the private research SDK) has four probes, all `GET`: `categories.list`,
+n11 (`@lonca/n11`, the private research SDK) has four REST probes, all `GET`: `categories.list`,
 `categories.getAttributes` (→ the category of the first listed product), `products.list` and
-`orders.list`. n11 documents no sandbox, so its credentials are prod ones and only belong in
+`orders.list`. It also has seven SOAP probes. SOAP sends every call as a `POST` envelope, but these
+only call read operations: shipment companies, return and cancel claim lists, the three reason-type
+lists, and the question list → detail (once per run, since n11 allows one listing per minute). The
+maintainer approved them on 2026-10-10. SOAP bodies are XML, so their `wire` entries record
+`non-json` and the shape comes from the SDK's normalised return value. n11 documents no sandbox, so its credentials are prod ones and only belong in
 `.env.prod`. With no `specs/n11/` yet, `pnpm drift` reports its four operations as
 "no spec match" warnings.
 
