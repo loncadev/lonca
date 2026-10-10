@@ -175,6 +175,10 @@ describe('pnpm drift:types — usage and input errors', () => {
     expect(logs[0]).toMatch(/^Usage: pnpm drift:types/);
   });
 
+  it('accepts a leading `--` (pnpm 11 forwards it from `pnpm drift:types -- --flag`)', () => {
+    expect(runTypesCli(['--', '--help'], io)).toBe(0);
+  });
+
   it('rejects bad flags', () => {
     expect(cli('--bogus')).toBe(2);
     expect(errors[0]).toMatch(/Unknown option/);

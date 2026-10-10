@@ -60,7 +60,8 @@ export function runCli(argv: readonly string[], io: CliIo): number {
   let flags;
   try {
     ({ values: flags } = parseArgs({
-      args: [...argv],
+      // `pnpm <script> -- --flag` forwards the `--` itself (pnpm 11); drop it.
+      args: argv[0] === '--' ? argv.slice(1) : [...argv],
       options: {
         only: { type: 'string', multiple: true },
         'fail-on': { type: 'string', default: 'breaking' },
