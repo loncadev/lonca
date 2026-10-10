@@ -1,5 +1,5 @@
 <p align="left">
-  <img src="https://raw.githubusercontent.com/loncadev/.github/main/brand/logomark.svg" alt="Lonca" height="32">
+  <img src="https://raw.githubusercontent.com/zanaat-dev/.github/main/brand/logomark.svg" alt="Lonca" height="32">
 </p>
 
 # @lonca/core
@@ -11,7 +11,7 @@ Shared primitives for Lonca marketplace SDKs.
 > [!IMPORTANT]
 > **Unofficial.** Part of Lonca, an independent, community-maintained project — not affiliated with, endorsed by, or supported by any marketplace. All marketplace names and trademarks belong to their respective owners.
 
-See [Stability & versioning](https://loncadev.github.io/lonca/stability/) for the semver policy and what counts as the public API.
+See [Stability & versioning](https://zanaat.dev/lonca/stability/) for the semver policy and what counts as the public API.
 
 ## Install
 
@@ -42,7 +42,7 @@ pnpm add @lonca/core
 
 ## Stability
 
-`1.x` — stable. Breaking changes ship only in major versions; see [Stability & versioning](https://loncadev.github.io/lonca/stability/).
+`1.x` — stable. Breaking changes ship only in major versions; see [Stability & versioning](https://zanaat.dev/lonca/stability/).
 
 ## License
 

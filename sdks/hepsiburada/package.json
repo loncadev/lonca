@@ -5,11 +5,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/loncadev/lonca.git",
+    "url": "git+https://github.com/zanaat-dev/lonca.git",
     "directory": "sdks/hepsiburada"
   },
-  "homepage": "https://github.com/loncadev/lonca/tree/main/sdks/hepsiburada#readme",
-  "bugs": "https://github.com/loncadev/lonca/issues",
+  "homepage": "https://github.com/zanaat-dev/lonca/tree/main/sdks/hepsiburada#readme",
+  "bugs": "https://github.com/zanaat-dev/lonca/issues",
   "keywords": [
     "hepsiburada",
     "marketplace",

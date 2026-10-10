@@ -17,7 +17,7 @@ Security fixes are published for the **latest released minor version** of each p
 
 Please report vulnerabilities via GitHub's private vulnerability reporting (only the maintainers can see the report):
 
-👉 [github.com/loncadev/lonca/security/advisories/new](https://github.com/loncadev/lonca/security/advisories/new)
+👉 [github.com/zanaat-dev/lonca/security/advisories/new](https://github.com/zanaat-dev/lonca/security/advisories/new)
 
 This is the only reporting channel. Lonca has no project e-mail address.
 

@@ -50,7 +50,7 @@ function parseArgs(argv) {
 
 async function get(url, attempt = 1) {
   const res = await fetch(encodeURI(url), {
-    headers: { 'User-Agent': 'lonca-specs-fetch (+https://github.com/loncadev/lonca)' },
+    headers: { 'User-Agent': 'lonca-specs-fetch (+https://github.com/zanaat-dev/lonca)' },
   });
   if (res.ok) return res.text();
   if (attempt < 4 && (res.status === 429 || res.status >= 500)) {

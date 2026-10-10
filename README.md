@@ -1,10 +1,10 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/loncadev/.github/main/brand/logomark.svg" alt="Lonca" height="48">
+  <img src="https://raw.githubusercontent.com/zanaat-dev/.github/main/brand/logomark.svg" alt="Lonca" height="48">
 </p>
 
 # Lonca
 
-[![CI](https://github.com/loncadev/lonca/actions/workflows/ci.yml/badge.svg)](https://github.com/loncadev/lonca/actions/workflows/ci.yml)
+[![CI](https://github.com/zanaat-dev/lonca/actions/workflows/ci.yml/badge.svg)](https://github.com/zanaat-dev/lonca/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/@lonca/core.svg?label=%40lonca%2Fcore)](https://www.npmjs.com/package/@lonca/core)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![Node](https://img.shields.io/node/v/@lonca/core.svg)](https://nodejs.org/)
@@ -20,7 +20,7 @@ Open-source SDKs and tooling for Turkish e-commerce marketplaces.
 > [!NOTE]
 > ✅ **Stable** — all three packages (`@lonca/core`, `@lonca/trendyol`, `@lonca/hepsiburada`) are `1.0`. Breaking changes ship only in major versions.
 
-See [Stability & versioning](https://loncadev.github.io/lonca/stability/) for the semver policy, deprecation windows, and what counts as the public API.
+See [Stability & versioning](https://zanaat.dev/lonca/stability/) for the semver policy, deprecation windows, and what counts as the public API.
 
 ## Table of contents
 
@@ -62,9 +62,9 @@ Lonca aims to fill this gap with a community-maintained open standard.
 
 📄 **OpenAPI specs**: [`specs/`](specs/) — curated per-service OpenAPI 3.0 documents for Hepsiburada (7 files, 67 operations) and Trendyol ([`specs/trendyol/`](specs/trendyol/): 13 files, 95 operations, covering every endpoint `@lonca/trendyol` calls). Both are captured from the marketplaces' developer portals and redistributed under the marketplaces' copyright. See [`specs/README.md`](specs/README.md).
 
-📚 **Docs & API reference**: [loncadev.github.io/lonca](https://loncadev.github.io/lonca) — guides, end-to-end flows, and full TypeDoc API reference. Built with [Astro Starlight](https://starlight.astro.build), regenerated on each push to `main`.
+📚 **Docs & API reference**: [zanaat.dev/lonca](https://zanaat.dev/lonca) — guides, end-to-end flows, and full TypeDoc API reference. Built with [Astro Starlight](https://starlight.astro.build), regenerated on each push to `main`.
 
-Need an SDK for another marketplace? Open a [marketplace request](https://github.com/loncadev/lonca/issues/new?template=marketplace_request.yml).
+Need an SDK for another marketplace? Open a [marketplace request](https://github.com/zanaat-dev/lonca/issues/new?template=marketplace_request.yml).
 
 ## Quick start
 
@@ -126,7 +126,7 @@ Requirements:
 - pnpm >= 10 ([Corepack](https://nodejs.org/api/corepack.html) recommended)
 
 ```bash
-git clone https://github.com/loncadev/lonca.git
+git clone https://github.com/zanaat-dev/lonca.git
 cd lonca
 pnpm install
 ```
@@ -169,7 +169,7 @@ and [`packages/drift/README.md`](./packages/drift/README.md).
 
 ## Contributing
 
-Pull requests are welcome. Start with [CONTRIBUTING.md](./CONTRIBUTING.md) and our [Code of Conduct](./CODE_OF_CONDUCT.md). For larger changes, open a [Discussion](https://github.com/loncadev/lonca/discussions) first.
+Pull requests are welcome. Start with [CONTRIBUTING.md](./CONTRIBUTING.md) and our [Code of Conduct](./CODE_OF_CONDUCT.md). For larger changes, open a [Discussion](https://github.com/zanaat-dev/lonca/discussions) first.
 
 ## Security
 
