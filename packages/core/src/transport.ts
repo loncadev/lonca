@@ -26,6 +26,11 @@ export interface BaseRequestOptions {
   method: string;
   /** Request body. Serialized as JSON unless it is a `FormData` (sent as multipart). Skipped for `GET`. */
   body?: unknown;
+  /**
+   * Pre-serialised request body sent exactly as given (e.g. a SOAP envelope). Takes precedence
+   * over `body`; set the matching `Content-Type` through `headers`. Skipped for `GET`.
+   */
+  rawBody?: string;
   /** Caller abort signal, composed with the per-request timeout. */
   signal?: AbortSignal;
   /** Per-endpoint rate limiter; one token is acquired before each attempt. */
@@ -102,7 +107,9 @@ export function createRequester<O extends BaseRequestOptions>(
           headers,
           signal: composeSignal(opts.signal, config.timeoutMs),
         };
-        if (opts.body !== undefined && opts.method !== 'GET') {
+        if (opts.rawBody !== undefined && opts.method !== 'GET') {
+          init.body = opts.rawBody;
+        } else if (opts.body !== undefined && opts.method !== 'GET') {
           if (opts.body instanceof FormData) {
             // multipart: let fetch set Content-Type (it includes the boundary).
             init.body = opts.body;

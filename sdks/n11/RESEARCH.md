@@ -193,7 +193,7 @@ The CONTRIBUTING minimum of orders, products and inventory is reachable over RES
   (`" Shipped"`). Wire types must therefore be confirmed against live traffic, which is exactly what
   the contract probes are for.
 
-## 8. SOAP transport design (not built yet)
+## 8. SOAP transport design
 
 Five documented services still need SOAP: questions, returns, partial cancel, invoice link and
 catalogue search. Options:
@@ -222,6 +222,31 @@ SDK.
 SOAP faults probably arrive as HTTP 500 with a `<faultstring>`. The JSON status mapping would see
 them as retryable `ServerError`s, so the SOAP path needs its own fault-to-`LoncaError` mapping, and
 must not retry faults that are not transient.
+
+**Built (2026-10-10), option 2:**
+
+- `@lonca/core` `createRequester` gained a `rawBody` string option (sent as-is; it takes precedence
+  over the JSON `body`). That is the only core change.
+- `src/soap/xml.ts` is the in-repo parser of about 150 lines plus an envelope serialiser. The parser
+  strips prefixes, turns repeated siblings into arrays and maps `xsi:nil` to `null`. It
+  **rejects DTDs and processing instructions**, so there is no entity expansion and no XXE.
+- `N11Transport.soap({ service, operation, fields })` has its own requester. It POSTs to
+  `https://api.n11.com/ws/<service>/` with `Content-Type: text/xml; charset=utf-8` and
+  `SOAPAction: ""`, and puts the keys only in the envelope's `auth`. Calls are sent as idempotent,
+  because every SOAP method wired so far is a read.
+- **Errors.** `result.status: failure` (sent with HTTP 200) goes through `mapSoapFailure`: an
+  auth-like code is `AuthError`, a "limit" code is `RateLimitError`, anything else is
+  `ValidationError`. A `Fault` with a client `faultcode` is `ValidationError`; other faults follow
+  the HTTP status (5xx is a retried `ServerError`). Both mappings are **unverified** until a live
+  call.
+- **Read resources** (element names from the WSDLs, which declare `elementFormDefault="unqualified"`):
+  - `questions.list` / `questions.get`: `GetProductQuestionList` / `GetProductQuestionDetail`. Dates
+    are `DD/MM/YYYY` on the Istanbul calendar day. The documented once-a-minute limit is the
+    default limiter.
+  - `claims.listReturns` / `listCancels` and the deny / pending reason lists.
+  - `shipping.getShipmentCompanies`.
+- **Not built:** writes (`SaveProductAnswer`, claim approve / deny / pend, `ClaimCancelPartial`,
+  `SaveLinkSellerInvoice`) and `SearchCatalog`.
 
 ## 9. Licence and redistribution
 
@@ -277,6 +302,8 @@ InternalServerException` naming `MissingRequestHeaderException` is an `AuthError
   `listingUpdatedAt: false`, all from the docs.
 - **Tests.** Fixture-based with a mocked transport or `fetch` and invented values (shapes follow
   prod). Line coverage is 100%.
+- **SOAP reads** (section 8): `questions.list` / `get`, `claims.listReturns` / `listCancels` /
+  reason lists, and `shipping.getShipmentCompanies`. They are not yet called live.
 - **Contract probes.** `scripts/probe/probes/n11.mts` runs the four reads above against prod
   (`pnpm probe:prod -- --only n11`); the shape baseline is `probe-snapshots/n11.json`.
 

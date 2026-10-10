@@ -1,7 +1,10 @@
 import type { Logger } from '@lonca/core';
 import { CategoriesResource } from './resources/categories.js';
+import { ClaimsResource } from './resources/claims.js';
 import { OrdersResource } from './resources/orders.js';
 import { ProductsResource } from './resources/products.js';
+import { QuestionsResource } from './resources/questions.js';
+import { ShippingResource } from './resources/shipping.js';
 import { n11Capabilities, type N11Capabilities } from './capabilities.js';
 import { N11Transport, type N11Environment } from './transport.js';
 
@@ -30,8 +33,14 @@ export interface CreateN11ClientOptions {
 
 export interface N11Client {
   categories: CategoriesResource;
+  /** Return and cancel claims (SOAP, read-only). */
+  claims: ClaimsResource;
   orders: OrdersResource;
   products: ProductsResource;
+  /** Product questions (SOAP, read-only). */
+  questions: QuestionsResource;
+  /** Cargo companies (SOAP). */
+  shipping: ShippingResource;
   /** Static feature-capability flags for feature detection. */
   capabilities: N11Capabilities;
 }
@@ -41,6 +50,7 @@ export interface N11Client {
  *
  * **Research skeleton** — private and unpublished. The read resources
  * (`categories`, `orders.list`, `products.list`) are verified against prod;
+ * the SOAP reads (`questions`, `claims`, `shipping`) are not yet;
  * see `sdks/n11/RESEARCH.md`.
  *
  * @example
@@ -66,8 +76,11 @@ export function createN11Client(opts: CreateN11ClientOptions): N11Client {
   });
   return {
     categories: new CategoriesResource(transport),
+    claims: new ClaimsResource(transport),
     orders: new OrdersResource(transport),
     products: new ProductsResource(transport),
+    questions: new QuestionsResource(transport),
+    shipping: new ShippingResource(transport),
     capabilities: n11Capabilities,
   };
 }

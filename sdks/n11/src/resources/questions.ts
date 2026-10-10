@@ -1,0 +1,114 @@
+import { TokenBucketRateLimiter, type CursorPage } from '@lonca/core';
+import type { N11Transport } from '../transport.js';
+import { asArray, asObject, type XmlNode, type XmlObject } from '../soap/xml.js';
+import { assign, nextPage, pageCursor, paging, soapDate, text } from '../soap/values.js';
+import type { ListN11QuestionsParams, N11Question, N11QuestionDetail } from '../types/question.js';
+
+const SERVICE = 'productService';
+const DEFAULT_PAGE_SIZE = 20;
+const MAX_PAGE_SIZE = 100;
+
+function images(node: XmlNode | undefined): string[] {
+  return asArray(asObject(node).image).filter(
+    (x): x is string => typeof x === 'string' && x !== '',
+  );
+}
+
+function normalizeQuestion(node: XmlNode): N11Question {
+  const q = asObject(node);
+  return assign<N11Question>(
+    { id: text(q.id) ?? '', images: images(q.images), raw: q as Record<string, unknown> },
+    {
+      productId: text(q.productId),
+      productTitle: text(q.productTitle),
+      subject: text(q.questionSubject),
+      question: text(q.question),
+      answer: text(q.answer),
+    },
+  );
+}
+
+function normalizeDetail(id: string, q: XmlObject): N11QuestionDetail {
+  return assign<N11QuestionDetail>(
+    { id, images: images(q.images), raw: q as Record<string, unknown> },
+    {
+      productId: text(q.productId),
+      productTitle: text(q.productTitle),
+      subject: text(q.questionSubject),
+      question: text(q.question),
+      answer: text(q.answer),
+      fullName: text(q.fullName),
+      email: text(q.email),
+      productStatus: text(q.productStatus),
+      status: text(q.status),
+      questionDate: text(q.questionDate),
+      answeredDate: text(q.answeredDate),
+      sellerExpose: text(q.sellerExpose),
+      buyerExpose: text(q.buyerExpose),
+    },
+  );
+}
+
+/**
+ * Product questions (SOAP `ProductService`).
+ *
+ * Source: developer.n11.com → "Ürün Soru-Cevap Servisi" and
+ * `api.n11.com/ws/productService.wsdl`. **Read-only and unverified on the live
+ * API** — answering (`SaveProductAnswer`) is not implemented.
+ *
+ * Rate limit: n11 allows listing questions **once per minute**; the default
+ * limiter enforces that for this client. Inject a shared limiter when several
+ * clients use the same key.
+ */
+export class QuestionsResource {
+  private readonly listLimiter: TokenBucketRateLimiter;
+
+  constructor(
+    private readonly transport: N11Transport,
+    listLimiter?: TokenBucketRateLimiter,
+  ) {
+    this.listLimiter =
+      listLimiter ?? new TokenBucketRateLimiter({ capacity: 1, intervalMs: 60_000 });
+  }
+
+  /**
+   * List questions asked in a date window (`GetProductQuestionList`). n11
+   * requires `startDate`, `endDate` and paging; `status` defaults to `OPEN`.
+   */
+  async list(params: ListN11QuestionsParams): Promise<CursorPage<N11Question>> {
+    const page = pageCursor(params.cursor, 'questions');
+    const size = Math.min(Math.max(params.limit ?? DEFAULT_PAGE_SIZE, 1), MAX_PAGE_SIZE);
+    const response = await this.transport.soap({
+      service: SERVICE,
+      operation: 'GetProductQuestionList',
+      fields: {
+        productQuestionSearch: {
+          productId: params.productId,
+          buyerEmail: params.buyerEmail,
+          subject: params.subject,
+          status: params.status,
+          startDate: soapDate(params.startDate),
+          endDate: soapDate(params.endDate),
+        },
+        pagingData: { currentPage: page, pageSize: size },
+      },
+      rateLimiter: this.listLimiter,
+    });
+    const rows = asArray(asObject(response.productQuestions).productQuestion);
+    const result: CursorPage<N11Question> = { items: rows.map(normalizeQuestion) };
+    const next = nextPage(page, rows.length, paging(response.pagingData));
+    if (next !== undefined) result.nextCursor = next;
+    return result;
+  }
+
+  /** One question with the buyer's details (`GetProductQuestionDetail`). */
+  async get(questionId: string | number): Promise<N11QuestionDetail> {
+    const id = String(questionId);
+    const response = await this.transport.soap({
+      service: SERVICE,
+      operation: 'GetProductQuestionDetail',
+      fields: { productQuestionId: id },
+    });
+    return normalizeDetail(id, asObject(response.productQuestion));
+  }
+}
