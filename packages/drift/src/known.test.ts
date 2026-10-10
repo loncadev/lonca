@@ -6,8 +6,10 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { finding } from './engine.js';
 import {
   applyKnownDiscrepancies,
+  createOverlayMatcher,
   KnownDiscrepanciesError,
   loadKnownDiscrepancies,
+  overlayScopeOf,
   parseKnownDiscrepancies,
   type KnownDiscrepancy,
 } from './known.js';
@@ -71,7 +73,7 @@ describe('parseKnownDiscrepancies', () => {
       '  - "$comment" must be a string',
       '  - entries[1]: expected an object, got a string',
       '  - entries[2]: unknown key "note"',
-      '  - entries[2].kind: "known" is not one of type-mismatch, missing-required, undocumented-field, undocumented-null, unmatched-operation',
+      '  - entries[2].kind: "known" is not one of type-mismatch, missing-required, undocumented-field, undocumented-null, unmatched-operation, sdk-type-mismatch, sdk-unknown-field',
       '  - entries[2].since: "09.10.2026" is not a YYYY-MM-DD date',
       '  - entries[3].operation: required, must be a non-empty string',
       '  - entries[3].reason: required, must be a non-empty string',
@@ -206,5 +208,45 @@ describe('applyKnownDiscrepancies', () => {
       'k',
     );
     expect(out.known).toEqual({ source: 'k', entries: 5, accepted: 1, stale });
+  });
+});
+
+describe('overlay scopes (wire report vs SDK-types report)', () => {
+  it('accepts sdk-* kinds and keeps them out of the wire report', () => {
+    const sdkEntry = entry({ kind: 'sdk-unknown-field', path: 'x' });
+    expect(parseKnownDiscrepancies({ entries: [sdkEntry] }, 'k')).toEqual([sdkEntry]);
+    expect(overlayScopeOf('sdk-type-mismatch')).toBe('sdk-types');
+    expect(overlayScopeOf('undocumented-field')).toBe('wire');
+
+    const wireOnly = finding('undocumented-field', 'x', 'observed string, not in the schema');
+    const out = applyKnownDiscrepancies(
+      report(['shop', [op('GET /items', [wireOnly])]]),
+      [sdkEntry],
+      'k',
+    );
+    // the sdk-* entry neither matches a wire finding nor counts as a stale wire entry
+    expect(out.marketplaces[0]!.operations[0]!.findings).toEqual([wireOnly]);
+    expect(out.known).toEqual({ source: 'k', entries: 0, accepted: 0, stale: [] });
+  });
+
+  it('matches SDK-type findings by marketplace, operation, path and kind', () => {
+    const matcher = createOverlayMatcher(
+      [entry({ kind: 'sdk-type-mismatch', path: 'a' }), entry({ kind: 'type-mismatch' })],
+      'sdk-types',
+    );
+    const hit = finding('sdk-type-mismatch', 'a', 'SDK declares string', { sdkPath: 'T.a' });
+    expect(matcher.accept('shop', 'GET /items', hit)).toMatchObject({
+      kind: 'accepted',
+      accepts: 'sdk-type-mismatch',
+      sdkPath: 'T.a',
+    });
+    expect(matcher.accept('other', 'GET /items', hit)).toBe(hit);
+    expect(matcher.accept('shop', 'GET /other', hit)).toBe(hit);
+    expect(matcher.summary('k', ['shop'])).toEqual({
+      source: 'k',
+      entries: 1,
+      accepted: 1,
+      stale: [],
+    });
   });
 });

@@ -37,7 +37,11 @@ export type FindingKind =
   | 'accepted'
   | 'not-observed'
   | 'unmatched-operation'
-  | 'uncomparable';
+  | 'uncomparable'
+  // SDK TypeScript types vs spec (`pnpm drift:types`, src/types-*.ts)
+  | 'sdk-type-mismatch'
+  | 'sdk-unknown-field'
+  | 'sdk-missing-field';
 
 export type Severity = 'breaking' | 'additive' | 'warning' | 'info';
 
@@ -54,6 +58,11 @@ export const DEFAULT_SEVERITY: Record<FindingKind, Severity> = {
   accepted: 'info',
   'not-observed': 'info',
   uncomparable: 'info',
+  // A partial overlap (`number | string` where `integer` is documented) is downgraded to info,
+  // and an SDK field the wire baseline has is info too — see `compareSdkType`.
+  'sdk-type-mismatch': 'warning',
+  'sdk-unknown-field': 'warning',
+  'sdk-missing-field': 'info',
 };
 
 export interface Finding {
@@ -74,6 +83,12 @@ export interface Finding {
   reason?: string;
   /** `accepted`: when the overlay entry was added (`YYYY-MM-DD`). */
   since?: string;
+  /** `sdk-*`: the SDK property behind the finding, e.g. `TrendyolShipmentPackageNode.lines[].lineId`. */
+  sdkPath?: string;
+  /** `sdk-type-mismatch`: the JSON types the SDK declares at `path` (`any` = unconstrained). */
+  sdk?: string[];
+  /** `sdk-*`: JSON types the prod wire baseline observed at `path`; `[]` = not in the baseline. */
+  wire?: JsonType[];
 }
 
 /** Display form of a finding path: `(root)` for the body itself. */
@@ -93,7 +108,7 @@ export function finding(
 // ─── Schema normalisation ──────────────────────────────────────────────────
 
 /** A schema node flattened over `$ref` / `allOf` / `oneOf` / `anyOf`. */
-interface Norm {
+export interface NormalizedSchema {
   /** Allowed JSON types; `undefined` = unconstrained. */
   types: Set<JsonType> | undefined;
   /** Property name → every schema that documents it (unioned when descending). */
@@ -109,6 +124,8 @@ interface Norm {
   /** `$ref`s that could not be resolved locally. */
   unresolved: string[];
 }
+
+type Norm = NormalizedSchema;
 
 interface Ctx {
   document: OpenApiDocument;
@@ -144,7 +161,11 @@ function toJsonType(t: unknown): JsonType | undefined {
   }
 }
 
-function normalizeOne(schema: SchemaObject | undefined, ctx: Ctx, seen: ReadonlySet<string>): Norm {
+function normalizeOne(
+  schema: SchemaObject | undefined,
+  ctx: Pick<Ctx, 'document'>,
+  seen: ReadonlySet<string>,
+): Norm {
   if (!schema || typeof schema !== 'object') return emptyNorm();
   if (typeof schema.$ref === 'string') {
     const ref = schema.$ref;
@@ -231,9 +252,23 @@ function mergeShared(out: Norm, parts: Norm[]): void {
   }
 }
 
-function normalizeUnion(schemas: SchemaObject[], ctx: Ctx): Norm {
+function normalizeUnion(schemas: SchemaObject[], ctx: Pick<Ctx, 'document'>): Norm {
   const norms = schemas.map((s) => normalizeOne(s, ctx, new Set()));
   return norms.length === 1 ? norms[0]! : union(norms);
+}
+
+/**
+ * Flatten one schema position — every schema documenting it, unioned like
+ * `oneOf` — over `$ref` / `allOf` / `oneOf` / `anyOf` with the same rules the
+ * wire comparison uses. Shared with the SDK-type comparison (`types-compare.ts`).
+ */
+export function normalizeSchema(
+  schemas: SchemaObject | readonly SchemaObject[],
+  document: OpenApiDocument,
+): NormalizedSchema {
+  return normalizeUnion(Array.isArray(schemas) ? [...schemas] : [schemas as SchemaObject], {
+    document,
+  });
 }
 
 // ─── Comparison ────────────────────────────────────────────────────────────

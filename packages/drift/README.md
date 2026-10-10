@@ -130,9 +130,11 @@ generated (and `--check`ed), so neither can carry Lonca's notes.
 - A finding that matches an entry (marketplace + operation + path or `*` + kind) is reported as
   `accepted` (info) with the entry's `reason`; the original kind is kept in `accepts`.
 - `kind` must be one that needs attention: `type-mismatch`, `missing-required`,
-  `undocumented-field`, `undocumented-null` or `unmatched-operation`. The file is validated on
-  load (unknown keys, missing fields, bad dates, duplicates); any problem is exit code `2` with
-  one line per problem.
+  `undocumented-field`, `undocumented-null` or `unmatched-operation` — or, for
+  [`pnpm drift:types`](#sdk-types-vs-specs), `sdk-type-mismatch` / `sdk-unknown-field`. Each
+  report only matches (and only flags as stale) the entries of its own kinds. The file is
+  validated on load (unknown keys, missing fields, bad dates, duplicates); any problem is exit
+  code `2` with one line per problem.
 - Entries that matched nothing in the run (for the marketplaces in the report) are listed under
   **Stale overlay entries** in `report.md` and in `report.json` (`known.stale`) — info, never a
   failure. Remove them, or fix the operation / path spelling.
@@ -155,6 +157,123 @@ undocumented endpoints (`unmatched-operation`) are usually better left visible a
 - **warning** — `undocumented-null`: make sure the SDK type allows `null` (or normalises it
   away); the spec most likely just lacks `nullable`, so accept it in the overlay.
   `unmatched-operation`: add the missing definition to `specs/`, or fix the SDK path.
+
+## SDK types vs specs
+
+`pnpm drift:types` (roadmap 4.3) asks the second question: _do the SDKs' own TypeScript types
+for those responses agree with the same documented schemas?_ It reads the SDK **sources** with
+the TypeScript compiler API — the SDKs are never imported or run — and needs no build, network
+or credentials, so it runs on every CI build ([warn-only](#ci-warn-only)).
+
+```bash
+pnpm drift:types                          # all mapped types, report only (exit 0)
+pnpm drift:types --fail-on warning        # exit 1 when there are warnings
+pnpm drift:types --only hepsiburada       # one marketplace (repeatable)
+```
+
+| Flag                             | Default                            | Effect                                                    |
+| -------------------------------- | ---------------------------------- | --------------------------------------------------------- |
+| `--fail-on <level>`              | `never`                            | `warning` (exit 1 on any warning) or `never` (warn-only). |
+| `--only <marketplace>`           | all                                | Restrict to the map entries of one marketplace.           |
+| `--map <file>`                   | `packages/drift/sdk-type-map.json` | The type map.                                             |
+| `--root <dir>`                   | cwd                                | Where the map's `source` paths resolve.                   |
+| `--out-dir <dir>`                | `drift-output/`                    | Where `types-report.md` and `types-report.json` go.       |
+| `--snapshots-dir`, `--specs-dir` | `probe-snapshots/`, `specs/`       | Wire baseline (evidence only; optional) and specs.        |
+| `--known <file>`, `--no-known`   | the default overlay                | [Known-discrepancy overlay](#known-discrepancy-overlay).  |
+
+Exit codes: `0` report written (no warning, or `--fail-on never`), `1` warnings with
+`--fail-on warning`, `2` usage or input error — an invalid map or overlay, or a map entry that
+does not resolve (unknown file / type / spec / operation, a pointer the documented response does
+not have). Nothing is written on exit `2`.
+
+### The type map
+
+[`sdk-type-map.json`](./sdk-type-map.json) is hand-maintained and validated on load. Each entry
+says which SDK type mirrors which documented response object:
+
+```jsonc
+{
+  "marketplace": "hepsiburada",
+  "sdkType": "AccountingTransaction", // interface or type alias; may be declared inside a function
+  "source": "sdks/hepsiburada/src/types/accounting.ts",
+  "spec": "hepsiburada/mpfinance-external.json",
+  "operation": "GET /transactions/merchantid/{merchantId}", // as the drift reports print it
+  "pointer": "items[]", // body path of the object: "(root)", "content[]", "data.items[]", "[]"
+  "ignore": ["raw"], // SDK-only properties: escape hatches, values the SDK builds
+  "coerced": ["id"], // optional: converted on purpose (String(id), ms-epoch → ISO) — type not compared
+  "note": "Public type; the normaliser copies same-named fields with typeof guards.",
+}
+```
+
+Only map a type that **genuinely mirrors a wire object**:
+
+- **Trendyol** — mostly the resources' internal wire-node interfaces
+  (`TrendyolShipmentPackageNode`, `WireQuestion`, `TrendyolProductNode`, …): they are what the
+  normalisers read, so a disagreement there is an SDK bug. Mapping the response envelope at
+  `(root)` covers every nested node (`TrendyolGetOrdersResponse` reaches the package, line,
+  address and history nodes). Public types are mapped where the normaliser copies wire fields
+  as-is (`CargoInvoiceItem`, `ClaimIssueReason`, `SellerVideo`, `OrderLineDiscountDetail`).
+- **Hepsiburada** — the public types whose normaliser copies same-named fields with `typeof`
+  guards or `pickFields` (`Order`, `AccountingTransaction`, `CatalogProduct`, supplier rows, …):
+  a field whose name or JSON type is wrong there is silently never populated.
+
+Intentionally **unmapped**:
+
+- Normalised Trendyol public types — `ShipmentPackage`, `OrderLine`, `OrderAddress`,
+  `OrderCustomer`, `PackageHistoryEntry`, `Claim`, `Question`, `Product`, `ProductVariant`,
+  `ProductStockPrice`, `UnapprovedProduct`, `ProductBase`, `BuyboxInfo`, `BatchRequestResult`,
+  `Brand`, `Category`, `CategoryAttribute`, `FinancialTransaction`, `City` / `District` /
+  `Neighborhood` / `Country`, `SupplierAddress`, `Webhook`: renamed (`lineId` → `id`), stringified
+  ids, ISO dates, synthesised objects. Their wire-node interfaces are mapped instead.
+- Response types without a usable definition in `specs/`: Hepsiburada listings (`Listing`,
+  upload results, buybox / commission rows — `listing-external` is not in `specs/`), claims
+  (`Claim`), shipping (`CargoFirm`, `ShippingProfile`), catalog / product-update tracking
+  (`CatalogProductStatus`, `TrackingIdHistoryEntry`, `ProductUpdate*` — `data` documents no
+  properties), `CategoryAttributeValue` (no schema); Trendyol `ClaimItemAudit` (`raw` only).
+- Envelopes and receipts the SDK builds itself (`CatalogPage`, `CatalogResult`, `OrdersPage`,
+  `QuestionCountSummary`, `DiscountReceipt`, `PackageReceipt`, `*Receipt`, `MutationResult`), the
+  export-center types, webhook **event** payloads (inbound, not responses), and every request
+  type (`*Input`, `*Params` — request-side drift is out of scope).
+- Function-local Trendyol interfaces whose name is not unique in their file (`WireResponse` in
+  `orders.ts`): the extractor rejects ambiguous names, so the stream node / public type is mapped.
+
+### Extraction rules
+
+String / number / boolean literals, enums, template literals and open unions
+(`'A' | 'B' | (string & {})`) reduce to `string` / `number` / `boolean`; `unknown`, `any` and
+type parameters to `any` (never compared); `T[]`, `Array<T>`, tuples to `array` with an element
+type; `Date` to `string`; object types to `object` with their properties (methods dropped), an
+index signature (`[key: string]: unknown`, `Record<…>`) marking extra keys as allowed. Union
+members are merged (`{ url?: string } | string` → `object|string`). Recursion stops at a named
+type already on the path or 8 levels deep.
+
+### Findings
+
+| Kind                | Severity       | Meaning                                                                                                                                                                                                                                                              |
+| ------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sdk-type-mismatch` | warning / info | The SDK declares a JSON type the spec does not allow. **warning** when the two do not overlap (`amount?: number` where an object is documented); **info** when the SDK is only wider (`id?: number \| string` where `integer` is documented). SDK `null` is ignored. |
+| `sdk-unknown-field` | warning / info | An SDK property the schema does not document. **info** when the wire baseline has the key (the docs are incomplete); **warning** otherwise — the SDK may read a field that never arrives.                                                                            |
+| `sdk-missing-field` | info           | Documented properties the SDK type does not declare (left on `raw`) — one collapsed entry per object; the names are in `types-report.json`.                                                                                                                          |
+| `known`             | info           | The SDK's extra type is already recorded as `x-lonca-observed-types` on the spec property.                                                                                                                                                                           |
+| `accepted`          | info           | Accepted by an overlay entry with kind `sdk-type-mismatch` / `sdk-unknown-field`; `path` is the body path as printed in the report.                                                                                                                                  |
+| `uncomparable`      | info           | The spec documents no properties / element type there, or the SDK type hit the depth cap.                                                                                                                                                                            |
+
+Every type finding carries the SDK path (`sdkPath`, e.g. `AccountingTransaction.amount`), the
+SDK and documented types, and — when the probe snapshot has the operation — the JSON types the
+**prod wire baseline** observed at that path (`wire`; `[]` = not observed), so a reader can tell
+which side is wrong. Required-ness is not compared: SDK fields are deliberately optional.
+
+How to act: when the wire agrees with the spec, fix the SDK type (and its normaliser); when the
+wire agrees with the SDK, the docs are wrong — record `x-lonca-observed-types` (Trendyol) or
+accept the finding in the overlay with a reason. A warning without wire evidence needs a probe
+(or a look at the portal) before changing anything.
+
+### CI (warn-only)
+
+The `Verify` workflow ([`ci.yml`](../../.github/workflows/ci.yml)) runs `pnpm drift:types` on one
+Node version after the build and appends `types-report.md` to the job summary. The step is
+`continue-on-error` and runs with `--fail-on never`: findings never fail a build. Raising it to
+`--fail-on warning` is a separate decision once the current warnings are resolved or accepted.
 
 ## Library
 
@@ -180,8 +299,6 @@ The package also provides what the probe runner uses for wire capture:
 
 - **Enum drift.** Snapshots hold JSON types, never values, so an unexpected enum member cannot
   be seen.
-- **SDK types ↔ spec** (roadmap 4.3): checking the SDK's TypeScript response types against the
-  same schemas.
 - Request-side drift (parameters, request bodies) and write endpoints — probes are read-only.
 
 ## Development
@@ -193,3 +310,6 @@ pnpm --filter @lonca/drift test:coverage
 
 `src/cli.test.ts` runs the CLI against a hand-written fixture snapshot
 (`src/__fixtures__/snapshots/trendyol.json`) and the **real** `specs/trendyol/*.json`.
+`src/types-cli.test.ts` runs `pnpm drift:types` against the real SDK sources, specs and wire
+baseline (and checks that every entry of the committed type map resolves);
+`src/types-extract.test.ts` covers the extraction rules with `src/__fixtures__/sdk-types/sample.ts`.

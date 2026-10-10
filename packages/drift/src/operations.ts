@@ -151,6 +151,29 @@ export function buildOperationIndex(
 }
 
 /**
+ * Find the operation of `spec` whose key (`"<METHOD> <server base path + path
+ * template>"`, as {@link buildOperationIndex} and the reports print it) is
+ * `key`, under any of the spec's servers.
+ */
+export function findOperationByKey(
+  spec: SpecFile,
+  key: string,
+): { method: string; specPath: string } | undefined {
+  const servers = spec.document.servers?.length ? spec.document.servers : [{ url: '' }];
+  for (const [specPath, item] of Object.entries(spec.document.paths ?? {})) {
+    for (const method of HTTP_METHODS) {
+      const op = item[method];
+      if (!op || typeof op !== 'object') continue;
+      for (const server of servers) {
+        const path = joinPath(parseServer(server.url).basePath, specPath);
+        if (`${method.toUpperCase()} ${path}` === key) return { method, specPath };
+      }
+    }
+  }
+  return undefined;
+}
+
+/**
  * Segments kept verbatim in an unmatched path: lower-camel / kebab / snake
  * words with at most a two-digit suffix (`api`, `v1`, `merchantid`,
  * `shipment-packages`, `oauth2`). Anything else — numbers, UUIDs, hashes,

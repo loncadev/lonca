@@ -1,0 +1,407 @@
+{
+  "$comment": "Hand-maintained map for `pnpm drift:types` (packages/drift/README.md#sdk-types-vs-specs): which SDK TypeScript type mirrors which documented response object. Only types that genuinely mirror a wire object belong here — for Trendyol that is mostly the resources' internal wire-node interfaces (what the normalisers read), for Hepsiburada the public types whose normaliser copies same-named fields with typeof guards. `pointer` is the body path of the object (`(root)`, `content[]`, `data.items[]`); `ignore` lists SDK-only properties (escape hatches, built values), `coerced` lists properties the normaliser deliberately converts (String(id), ms-epoch → ISO) — present on the wire, type not compared. Keep entries grouped by marketplace and spec, sorted by operation within a spec.",
+  "entries": [
+    {
+      "marketplace": "trendyol",
+      "sdkType": "WireRow",
+      "source": "sdks/trendyol/src/resources/finance.ts",
+      "spec": "trendyol/current-account-statement.json",
+      "operation": "GET /integration/finance/che/sellers/{sellerId}/otherfinancials",
+      "pointer": "content[]"
+    },
+    {
+      "marketplace": "trendyol",
+      "sdkType": "WirePage",
+      "source": "sdks/trendyol/src/resources/finance.ts",
+      "spec": "trendyol/current-account-statement.json",
+      "operation": "GET /integration/finance/che/sellers/{sellerId}/settlements",
+      "pointer": "(root)"
+    },
+    {
+      "marketplace": "trendyol",
+      "sdkType": "CargoInvoiceItem",
+      "source": "sdks/trendyol/src/types/order.ts",
+      "spec": "trendyol/cargo-invoice.json",
+      "operation": "GET /integration/finance/che/sellers/{sellerId}/cargo-invoice/{invoiceSerialNumber}/items",
+      "pointer": "content[]",
+      "ignore": ["raw"],
+      "coerced": ["parcelUniqueId"],
+      "note": "Public type; the normaliser copies same-named fields (parcelUniqueId is stringified)."
+    },
+    {
+      "marketplace": "trendyol",
+      "sdkType": "WireNode",
+      "source": "sdks/trendyol/src/resources/locations.ts",
+      "spec": "trendyol/marketplace.json",
+      "operation": "GET /integration/member/countries",
+      "pointer": "[]",
+      "ignore": ["cityCode", "countryCode", "districtCode"],
+      "note": "One wire-node interface serves every location lookup; the fields only the other lookups read are ignored."
+    },
+    {
+      "marketplace": "trendyol",
+      "sdkType": "WireNode",
+      "source": "sdks/trendyol/src/resources/locations.ts",
+      "spec": "trendyol/marketplace.json",
+      "operation": "GET /integration/member/countries/domestic/TR/cities",
+      "pointer": "[]",
+      "ignore": ["cityCode", "districtCode"],
+      "note": "Shared location wire node; the cities normaliser reads id / code / name / countryCode."
+    },
+    {
+      "marketplace": "trendyol",
+      "sdkType": "WireNode",
+      "source": "sdks/trendyol/src/resources/locations.ts",
+      "spec": "trendyol/marketplace.json",
+      "operation": "GET /integration/member/countries/domestic/TR/cities/{CityCode}/districts",
+      "pointer": "[]",
+      "ignore": ["countryCode", "districtCode"],
+      "note": "Shared location wire node; the districts normaliser reads id / code / name / cityCode."
+    },
+    {
+      "marketplace": "trendyol",
+      "sdkType": "WireNode",
+      "source": "sdks/trendyol/src/resources/locations.ts",
+      "spec": "trendyol/marketplace.json",
+      "operation": "GET /integration/member/countries/domestic/TR/cities/{CityCode}/districts/{DistrictCode}/neighborhoods",
+      "pointer": "[]",
+      "ignore": ["cityCode", "countryCode"],
+      "note": "Shared location wire node; the neighborhoods normaliser reads id / code / name / districtCode."
+    },
+    {
+      "marketplace": "trendyol",
+      "sdkType": "ClaimIssueReason",
+      "source": "sdks/trendyol/src/types/claim.ts",
+      "spec": "trendyol/marketplace.json",
+      "operation": "GET /integration/order/claim-issue-reasons",
+      "pointer": "[]",
+      "note": "Public type; the normaliser copies id / name as-is."
+    },
+    {
+      "marketplace": "trendyol",
+      "sdkType": "WireClaim",
+      "source": "sdks/trendyol/src/resources/claims.ts",
+      "spec": "trendyol/marketplace.json",
+      "operation": "GET /integration/order/sellers/{sellerId}/claims",
+      "pointer": "content[]"
+    },
+    {
+      "marketplace": "trendyol",
+      "sdkType": "TrendyolGetOrdersResponse",
+      "source": "sdks/trendyol/src/resources/orders.ts",
+      "spec": "trendyol/marketplace.json",
+      "operation": "GET /integration/order/sellers/{sellerId}/orders",
+      "pointer": "(root)",
+      "note": "Covers the shipment-package, line, address and history wire nodes the order normalisers read."
+    },
+    {
+      "marketplace": "trendyol",
+      "sdkType": "OrderLineDiscountDetail",
+      "source": "sdks/trendyol/src/types/order.ts",
+      "spec": "trendyol/marketplace.json",
+      "operation": "GET /integration/order/sellers/{sellerId}/orders",
+      "pointer": "content[].lines[].discountDetails[]",
+      "note": "Public type; the normaliser passes the wire array through unchanged."
+    },
+    {
+      "marketplace": "trendyol",
+      "sdkType": "TrendyolShipmentPackageNode",
+      "source": "sdks/trendyol/src/resources/orders.ts",
+      "spec": "trendyol/marketplace.json",
+      "operation": "GET /integration/order/sellers/{sellerId}/orders/stream",
+      "pointer": "content[]"
+    },
+    {
+      "marketplace": "trendyol",
+      "sdkType": "TrendyolBrandListResponse",
+      "source": "sdks/trendyol/src/resources/brands.ts",
+      "spec": "trendyol/product.json",
+      "operation": "GET /integration/product/brands",
+      "pointer": "(root)"
+    },
+    {
+      "marketplace": "trendyol",
+      "sdkType": "TrendyolCategoryAttributeNode",
+      "source": "sdks/trendyol/src/resources/categories.ts",
+      "spec": "trendyol/product.json",
+      "operation": "GET /integration/product/categories/{categoryId}/attributes",
+      "pointer": "categoryAttributes[]"
+    },
+    {
+      "marketplace": "trendyol",
+      "sdkType": "TrendyolAttributeValuesPage",
+      "source": "sdks/trendyol/src/resources/categories.ts",
+      "spec": "trendyol/product.json",
+      "operation": "GET /integration/product/categories/{categoryId}/attributes/{attributeId}/values",
+      "pointer": "(root)"
+    },
+    {
+      "marketplace": "trendyol",
+      "sdkType": "TrendyolCategoriesResponse",
+      "source": "sdks/trendyol/src/resources/categories.ts",
+      "spec": "trendyol/product.json",
+      "operation": "GET /integration/product/product-categories",
+      "pointer": "(root)"
+    },
+    {
+      "marketplace": "trendyol",
+      "sdkType": "TrendyolProductBaseResponse",
+      "source": "sdks/trendyol/src/resources/products.ts",
+      "spec": "trendyol/product.json",
+      "operation": "GET /integration/product/sellers/{sellerId}/product/{barcode}",
+      "pointer": "(root)"
+    },
+    {
+      "marketplace": "trendyol",
+      "sdkType": "TrendyolFilterResponse",
+      "source": "sdks/trendyol/src/resources/products.ts",
+      "spec": "trendyol/product.json",
+      "operation": "GET /integration/product/sellers/{sellerId}/products/approved",
+      "pointer": "(root)",
+      "note": "Covers the product, variant, attribute and brand/category reference wire nodes."
+    },
+    {
+      "marketplace": "trendyol",
+      "sdkType": "TrendyolStockPriceResponse",
+      "source": "sdks/trendyol/src/resources/products.ts",
+      "spec": "trendyol/product.json",
+      "operation": "GET /integration/product/sellers/{sellerId}/products/approved/inventory-and-price",
+      "pointer": "(root)"
+    },
+    {
+      "marketplace": "trendyol",
+      "sdkType": "TrendyolBatchResultResponse",
+      "source": "sdks/trendyol/src/resources/products.ts",
+      "spec": "trendyol/product.json",
+      "operation": "GET /integration/product/sellers/{sellerId}/products/batch-requests/{batchRequestId}",
+      "pointer": "(root)"
+    },
+    {
+      "marketplace": "trendyol",
+      "sdkType": "TrendyolUnapprovedResponse",
+      "source": "sdks/trendyol/src/resources/products.ts",
+      "spec": "trendyol/product.json",
+      "operation": "GET /integration/product/sellers/{sellerId}/products/unapproved",
+      "pointer": "(root)"
+    },
+    {
+      "marketplace": "trendyol",
+      "sdkType": "TrendyolBuyboxResponse",
+      "source": "sdks/trendyol/src/resources/products.ts",
+      "spec": "trendyol/product.json",
+      "operation": "POST /integration/product/sellers/{sellerId}/products/buybox-information",
+      "pointer": "(root)"
+    },
+    {
+      "marketplace": "trendyol",
+      "sdkType": "WireQuestion",
+      "source": "sdks/trendyol/src/resources/questions.ts",
+      "spec": "trendyol/customer-questions.json",
+      "operation": "GET /integration/qna/sellers/{sellerId}/questions/filter",
+      "pointer": "content[]"
+    },
+    {
+      "marketplace": "trendyol",
+      "sdkType": "WireQuestion",
+      "source": "sdks/trendyol/src/resources/questions.ts",
+      "spec": "trendyol/customer-questions.json",
+      "operation": "GET /integration/qna/sellers/{sellerId}/questions/{id}",
+      "pointer": "(root)"
+    },
+    {
+      "marketplace": "trendyol",
+      "sdkType": "TrendyolSupplierAddressesResponse",
+      "source": "sdks/trendyol/src/resources/suppliers.ts",
+      "spec": "trendyol/seller-info.json",
+      "operation": "GET /integration/sellers/{sellerId}/addresses",
+      "pointer": "(root)"
+    },
+    {
+      "marketplace": "trendyol",
+      "sdkType": "SellerVideo",
+      "source": "sdks/trendyol/src/types/video.ts",
+      "spec": "trendyol/video.json",
+      "operation": "GET /integration/video/sellers/{sellerId}/videos",
+      "pointer": "data[]",
+      "ignore": ["raw"],
+      "note": "Public type; the normaliser copies id / status with typeof guards."
+    },
+    {
+      "marketplace": "trendyol",
+      "sdkType": "WireWebhook",
+      "source": "sdks/trendyol/src/resources/webhooks.ts",
+      "spec": "trendyol/webhook.json",
+      "operation": "GET /integration/webhook/sellers/{sellerId}/webhooks",
+      "pointer": "[]"
+    },
+    {
+      "marketplace": "hepsiburada",
+      "sdkType": "Question",
+      "source": "sdks/hepsiburada/src/types/question.ts",
+      "spec": "hepsiburada/asktoseller-merchant.json",
+      "operation": "GET /api/v1.0/issues",
+      "pointer": "data[]",
+      "ignore": ["raw"],
+      "note": "Public type; the normaliser copies same-named fields with typeof guards."
+    },
+    {
+      "marketplace": "hepsiburada",
+      "sdkType": "Question",
+      "source": "sdks/hepsiburada/src/types/question.ts",
+      "spec": "hepsiburada/asktoseller-merchant.json",
+      "operation": "GET /api/v1.0/issues/{number}",
+      "pointer": "(root)",
+      "ignore": ["raw"]
+    },
+    {
+      "marketplace": "hepsiburada",
+      "sdkType": "PromotionCategory",
+      "source": "sdks/hepsiburada/src/types/promotion.ts",
+      "spec": "hepsiburada/diskonto-external.json",
+      "operation": "GET /categories/{merchantId}",
+      "pointer": "data[]",
+      "ignore": ["raw", "name"],
+      "note": "`name` is read from the wire's `categoryName` (renamed), so it is ignored."
+    },
+    {
+      "marketplace": "hepsiburada",
+      "sdkType": "Discount",
+      "source": "sdks/hepsiburada/src/types/promotion.ts",
+      "spec": "hepsiburada/diskonto-external.json",
+      "operation": "GET /self-campaign/{merchantId}/discounts",
+      "pointer": "data.items[]",
+      "ignore": ["raw"],
+      "note": "Public type; the normaliser copies same-named fields with typeof guards."
+    },
+    {
+      "marketplace": "hepsiburada",
+      "sdkType": "AccountingTransaction",
+      "source": "sdks/hepsiburada/src/types/accounting.ts",
+      "spec": "hepsiburada/mpfinance-external.json",
+      "operation": "GET /transactions/merchantid/{merchantId}",
+      "pointer": "items[]",
+      "ignore": ["raw"],
+      "note": "Public type; the normaliser copies same-named fields with typeof guards."
+    },
+    {
+      "marketplace": "hepsiburada",
+      "sdkType": "CategoryAttribute",
+      "source": "sdks/hepsiburada/src/types/category.ts",
+      "spec": "hepsiburada/mpop-catalog.json",
+      "operation": "GET /product/api/categories/{categoryId}/attributes",
+      "pointer": "data.attributes[]",
+      "ignore": ["raw", "group"],
+      "note": "Same schema under data.baseAttributes[] and data.variantAttributes[]; `group` is set by the SDK."
+    },
+    {
+      "marketplace": "hepsiburada",
+      "sdkType": "Category",
+      "source": "sdks/hepsiburada/src/types/category.ts",
+      "spec": "hepsiburada/mpop-catalog.json",
+      "operation": "GET /product/api/categories/get-all-categories",
+      "pointer": "data[]",
+      "note": "Public type; the normaliser copies same-named fields with Number() / String() / Boolean()."
+    },
+    {
+      "marketplace": "hepsiburada",
+      "sdkType": "CatalogProduct",
+      "source": "sdks/hepsiburada/src/types/catalog-product.ts",
+      "spec": "hepsiburada/mpop-catalog.json",
+      "operation": "GET /product/api/products/all-products-of-merchant/{merchantId}",
+      "pointer": "data[]",
+      "ignore": ["raw", "title"],
+      "coerced": ["id", "categoryId"],
+      "note": "`title` is derived (productName / name / title); id and categoryId are stringified."
+    },
+    {
+      "marketplace": "hepsiburada",
+      "sdkType": "CatalogProduct",
+      "source": "sdks/hepsiburada/src/types/catalog-product.ts",
+      "spec": "hepsiburada/mpop-catalog.json",
+      "operation": "GET /product/api/products/products-by-merchant-and-status",
+      "pointer": "data[]",
+      "ignore": ["raw", "title"],
+      "coerced": ["id", "categoryId"]
+    },
+    {
+      "marketplace": "hepsiburada",
+      "sdkType": "CargoCompanyOption",
+      "source": "sdks/hepsiburada/src/types/order.ts",
+      "spec": "hepsiburada/oms-external.json",
+      "operation": "GET /delivery/changeablecargocompanies/merchantid/{merchantId}/orderlineid/{orderLineId}",
+      "pointer": "[]",
+      "ignore": ["raw"],
+      "note": "Public type; the normaliser copies code / name with typeof guards."
+    },
+    {
+      "marketplace": "hepsiburada",
+      "sdkType": "Order",
+      "source": "sdks/hepsiburada/src/types/order.ts",
+      "spec": "hepsiburada/oms-external.json",
+      "operation": "GET /orders/merchantid/{merchantId}",
+      "pointer": "items[]",
+      "ignore": ["raw"],
+      "note": "Public type; the normaliser copies same-named fields with typeof guards (customerName falls back to customer / recipientName)."
+    },
+    {
+      "marketplace": "hepsiburada",
+      "sdkType": "ShippingPackage",
+      "source": "sdks/hepsiburada/src/types/order.ts",
+      "spec": "hepsiburada/oms-external.json",
+      "operation": "GET /packages/merchantid/{merchantId}",
+      "pointer": "[]",
+      "ignore": ["raw"],
+      "note": "Public type; the normaliser copies same-named fields with typeof guards."
+    },
+    {
+      "marketplace": "hepsiburada",
+      "sdkType": "PackageLabel",
+      "source": "sdks/hepsiburada/src/types/order.ts",
+      "spec": "hepsiburada/oms-external.json",
+      "operation": "GET /packages/merchantid/{merchantId}/packagenumber/{packagenumber}/labels",
+      "pointer": "(root)",
+      "ignore": ["raw"],
+      "note": "Public type; the normaliser copies url / base64 / format with typeof guards."
+    },
+    {
+      "marketplace": "hepsiburada",
+      "sdkType": "ListingUpdateRequestItem",
+      "source": "sdks/hepsiburada/src/types/supplier.ts",
+      "spec": "hepsiburada/supplier-api-external.json",
+      "operation": "GET /suppliers/{merchantId}/listingUpdateRequests/{requestId}",
+      "pointer": "data.requestItems[]",
+      "ignore": ["raw"],
+      "note": "Public type; pickFields copies the listed fields when their JSON type matches."
+    },
+    {
+      "marketplace": "hepsiburada",
+      "sdkType": "ListingUpdateRequestSummary",
+      "source": "sdks/hepsiburada/src/types/supplier.ts",
+      "spec": "hepsiburada/supplier-api-external.json",
+      "operation": "POST /suppliers/{merchantId}/listingUpdateRequests/search",
+      "pointer": "data.rows[]",
+      "ignore": ["raw"],
+      "note": "Public type; pickFields copies the listed fields when their JSON type matches."
+    },
+    {
+      "marketplace": "hepsiburada",
+      "sdkType": "OpenPurchaseOrder",
+      "source": "sdks/hepsiburada/src/types/supplier.ts",
+      "spec": "hepsiburada/supplier-api-external.json",
+      "operation": "POST /suppliers/{merchantId}/openPurchaseOrders/search",
+      "pointer": "data.rows[]",
+      "ignore": ["raw"],
+      "note": "Public type; pickFields copies the listed fields when their JSON type matches."
+    },
+    {
+      "marketplace": "hepsiburada",
+      "sdkType": "SupplierListing",
+      "source": "sdks/hepsiburada/src/types/supplier.ts",
+      "spec": "hepsiburada/supplier-api-external.json",
+      "operation": "POST /suppliers/{merchantId}/supplierlistings/search",
+      "pointer": "data.rows[]",
+      "ignore": ["raw"],
+      "note": "Public type; pickFields copies the listed fields when their JSON type matches."
+    }
+  ]
+}
