@@ -251,6 +251,10 @@ describe('pnpm drift — usage errors', () => {
     expect(logs[0]).toContain('Usage: pnpm drift');
   });
 
+  it('accepts a leading `--` (pnpm 11 forwards it from `pnpm drift -- --flag`)', () => {
+    expect(runCli(['--', '--help'], io)).toBe(0);
+  });
+
   it('rejects unknown flags and bad --fail-on values with exit 2', () => {
     expect(runCli(['--nope'], io)).toBe(2);
     expect(runCli(['--fail-on', 'sometimes'], io)).toBe(2);

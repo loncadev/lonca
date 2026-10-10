@@ -67,7 +67,10 @@ import {
 
 // ─── CLI ────────────────────────────────────────────────────────────────────
 
+const argv = process.argv.slice(2);
 const { values: flags } = parseArgs({
+  // `pnpm probe -- --only x` forwards the `--` itself (pnpm 11); drop it.
+  args: argv[0] === '--' ? argv.slice(1) : argv,
   options: {
     check: { type: 'boolean', default: false },
     update: { type: 'boolean', default: false },
