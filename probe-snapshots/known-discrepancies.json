@@ -74,6 +74,38 @@
       "since": "2026-10-09"
     },
     {
+      "marketplace": "hepsiburada",
+      "operation": "GET /orders/merchantid/{merchantId}/ordernumber/{orderNumber}",
+      "path": "items[].cargoCompanyModel.trackingUrl",
+      "kind": "undocumented-null",
+      "reason": "upstream spec omits nullable; prod returns null (same fields as the orders list)",
+      "since": "2026-10-10"
+    },
+    {
+      "marketplace": "hepsiburada",
+      "operation": "GET /orders/merchantid/{merchantId}/ordernumber/{orderNumber}",
+      "path": "items[].creditCardHolderName",
+      "kind": "undocumented-null",
+      "reason": "upstream spec omits nullable; prod returns null (same fields as the orders list)",
+      "since": "2026-10-10"
+    },
+    {
+      "marketplace": "hepsiburada",
+      "operation": "GET /orders/merchantid/{merchantId}/ordernumber/{orderNumber}",
+      "path": "items[].pickUpTime",
+      "kind": "undocumented-null",
+      "reason": "upstream spec omits nullable; prod returns null (same fields as the orders list)",
+      "since": "2026-10-10"
+    },
+    {
+      "marketplace": "hepsiburada",
+      "operation": "GET /orders/merchantid/{merchantId}/ordernumber/{orderNumber}",
+      "path": "items[].slot",
+      "kind": "undocumented-null",
+      "reason": "upstream spec omits nullable; prod returns null (same fields as the orders list)",
+      "since": "2026-10-10"
+    },
+    {
       "marketplace": "trendyol",
       "operation": "GET /integration/order/sellers/{sellerId}/orders",
       "path": "content[].lines[].fastDeliveryOptions[]",

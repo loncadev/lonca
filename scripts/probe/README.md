@@ -44,22 +44,31 @@ credentials / internal error.
 
 ## What is probed
 
-Every probe is a single SDK read call with a small page size (10). No probe calls an
-upload, create, update, delete or "test order" method.
+Every probe is an SDK read call (HTTP `GET`) with a small page size (10); a few chain two or
+three reads to get an id to inspect (marked "→"). No probe calls an upload, create, update,
+delete or "test order" method, nor a read that is sent as a `POST` (e.g. Trendyol's buybox
+check).
 
-| Hepsiburada                                      | Trendyol                                |
-| ------------------------------------------------ | --------------------------------------- |
-| `listings.list`                                  | `products.list`                         |
-| `catalog.listProducts`                           | `orders.list`                           |
-| `catalog.listProductsByStatus(MATCHED)`          | `categories.list`                       |
-| `orders.list`                                    | `brands.list`                           |
-| `categories.list`                                | `locations.getTurkeyCities`             |
-| `categories.getAttributes` (first leaf category) | `questions.list`                        |
-| `claims.list`                                    | `claims.list`                           |
-| `questions.list`                                 | `finance.getSettlements(Sale, last 7d)` |
-| `shipping.getCargoFirms`                         | `webhooks.list`                         |
-| `shipping.listProfiles`                          |                                         |
-| `accounting.listTransactions`                    |                                         |
+| Hepsiburada                                        | Trendyol                                                    |
+| -------------------------------------------------- | ----------------------------------------------------------- |
+| `listings.list`                                    | `products.list`                                             |
+| `catalog.listProducts`                             | `orders.list`                                               |
+| `catalog.listProductsByStatus(MATCHED)`            | `categories.list`                                           |
+| `orders.list`                                      | `brands.list`                                               |
+| `categories.list`                                  | `locations.getTurkeyCities`                                 |
+| `categories.getAttributes` (→ first leaf category) | `questions.list`                                            |
+| `claims.list`                                      | `claims.list`                                               |
+| `questions.list`                                   | `finance.getSettlements(Sale, last 7d)`                     |
+| `shipping.getCargoFirms`                           | `webhooks.list`                                             |
+| `shipping.listProfiles`                            | `locations.getTurkeyDistricts` (→ first city)               |
+| `accounting.listTransactions`                      | `locations.getTurkeyNeighborhoods` (→ first city, district) |
+| `promotions.listCategories`                        | `categories.getAttributes` (→ first leaf category)          |
+| `promotions.listDiscounts`                         | `products.listUnapproved`                                   |
+| `orders.listPackages`                              | `orders.list(Delivered)`                                    |
+| `orders.getByOrderNumber` (→ first order)          | `suppliers.getAddresses` (Trendyol allows 1 request / hour) |
+
+The probes below the original twelve / nine were added to verify SDK fields that the
+SDK-types-vs-spec check (`pnpm drift:types`) could not confirm from the earlier sample.
 
 Add a probe by appending `{ name, call }` to the registry in `probes/<marketplace>.mts`; the
 name is the snapshot key, so keep it stable.
