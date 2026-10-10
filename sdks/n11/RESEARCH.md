@@ -1,0 +1,310 @@
+# n11 seller API: research notes
+
+Roadmap item 5.1, third marketplace. Status: **research**. Nothing in `sdks/n11/` is published or
+supported, and nothing here has been checked against the live API. No n11 account exists yet, and
+no n11 API endpoint was called while writing this.
+
+- **Captured:** 2026-10-10, from n11's public developer portal.
+- **Notation:** every factual claim links to the page it came from. Claims marked **(inferred)**
+  are my reading of the docs, not something the docs say. Claims marked **(unverified)** need a live
+  account to confirm.
+- **Why this file is here and not on the docs site:** the Starlight sidebar
+  (`docs/astro.config.mjs`) is a hand-curated set of user docs for released packages. A page there
+  about an unreleased, unsupported SDK would look like a support claim. Once n11 ships, the
+  user-facing parts can move into `docs/src/content/docs/guides/n11.md`.
+
+## 1. Where the docs are
+
+| What                                     | URL                                                                                                               | Notes                                                                                                                                                                                                                                                                                                                                                      |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Developer portal (current)**           | https://developer.n11.com/documentation/                                                                          | A WordPress/Elementor site with about 25 pages in Turkish: products, orders, returns, notices, n11faturam, n11depom, micro-export, and a changelog. Each page has prose, parameter tables and JSON or XML examples.                                                                                                                                        |
+| Changelog                                | https://developer.n11.com/documentation/changelog/                                                                | Dated entries from 2024-04-04 to 2026-08-03.                                                                                                                                                                                                                                                                                                               |
+| Old support-centre pages (being retired) | e.g. https://magazadestek.n11.com/satis-surecleri/restapi-satici-urun-sorgulama-10493                             | Each one now only says "Dokümantasyon Adresimiz Güncellendi" and links to the new portal. The site returns HTTP 403 to non-browser clients, probably bot protection.                                                                                                                                                                                       |
+| Legacy SOAP manual (.docx, 2020)         | https://n11scdn.akamaized.net/a1/org/sp/w/3/n11_api_dokumantasyonu_turkce_w3KWkpKB.docx?v=1591683564148           | Linked as "API Entegrasyon Dokümanı" from the support-centre footer. It covers the whole old SOAP surface (`api.n11.com/ws/*.wsdl`): Category, City, Product, ProductSelling, ProductStock, Order, ShipmentCompany, Shipment, Settlement, Ticket, ClaimCancel, Return, ClaimExchange and SAP e-invoice services. The `v=` timestamp dates it to June 2020. |
+| Contact                                  | `sellerintegration@n11.com`, given on most changelog entries (https://developer.n11.com/documentation/changelog/) |                                                                                                                                                                                                                                                                                                                                                            |
+
+**Is there a machine-readable definition?** For the REST services, no. The portal publishes no
+OpenAPI, Swagger or Postman collection. Every REST endpoint exists only as prose and examples. The
+SOAP services still in use do have WSDLs, and the portal links them, for example
+`https://api.n11.com/ws/productService.wsdl`
+([questions page](https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/urun-soru-cevap-servisi/)),
+`CatalogService.wsdl`, `SellerInvoiceService.wsdl`, `ReturnService.wsdl` and
+`ClaimCancelService.wsdl`. Those files are served by the **API host** (`api.n11.com`), not by the
+docs site, so I did not fetch them: this task was not allowed to call any n11 API endpoint. As a
+result, this PR has **no `specs/n11/` and no capture script** (see section 9).
+
+## 2. API style: REST is current, SOAP is still in use
+
+n11 is part-way through a SOAP-to-REST migration. As of October 2026 the surface is **mixed**:
+
+- **REST (JSON).** This is current for products, categories, stock and price, and orders.
+  - 2024-04-04: stock/price update and product update moved to REST batch "tasks"
+    ([changelog](https://developer.n11.com/documentation/changelog/)).
+  - 2024-12-25: order listing, order approval and package split moved to REST (same page).
+  - 2025-01-25: n11 announced that the SOAP product-write services were **closed**: all of
+    `ProductSellingService`, all of `ProductStockService`, and `ProductService`'s
+    `SaveProduct` / `UpdateProductBasic` / price and discount methods (same page).
+- **SOAP (XML).** This is still the documented way to:
+  - list and answer product questions (`ProductService` → `GetProductQuestionList`,
+    `GetProductQuestionDetail`, `SaveProductAnswer`;
+    [page](https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/urun-soru-cevap-servisi/));
+  - search the catalogue (`CatalogService` → `SearchCatalog`;
+    [page](https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/hizli-urun-yukleme/));
+  - send invoice links (`SellerInvoiceService` → `SaveLinkSellerInvoice`;
+    [page](https://developer.n11.com/documentation/n11-siparis-entegrasyonu/fatura-linki-gonderme/));
+  - handle return claims (`ReturnService` → `ClaimReturnList`, approve, deny, pend and reason
+    lists; [page](https://developer.n11.com/documentation/iade-entgrasyonu/iade-talepleri-servisi/));
+  - request a partial cancel (`ClaimCancelService` → `ClaimCancelPartial`;
+    [page](https://developer.n11.com/documentation/iade-entgrasyonu/parcali-iptal-talebi/)).
+- **SOAP order services still exist.** The 2025-10-14 changelog entry lists the SOAP
+  `DetailedOrderList`, `OrderDetail` and `OrderList` as affected services, next to REST
+  `GetShipmentPackages`. They were therefore still running at that date. n11 also publishes a
+  SOAP-to-REST field and status mapping for orders
+  ([page](https://developer.n11.com/documentation/bilgilendirme/soap-restapi-siparis-servisi-karsilastirmasi/)).
+  **(inferred)** SOAP order listing is the legacy path, and new integrations should use REST.
+
+**What this means for the SDK (inferred):** build REST-first. Add a small SOAP layer only for
+questions, returns, invoice links and catalogue search, until n11 moves those to REST as well.
+
+## 3. Auth, environments, headers
+
+- **REST auth** is two plain request headers, `appKey` and `appSecret`. Every REST page says
+  "Authorization: no auth seçiniz. Headers alanına appKey ve appSecret bilgisini eklemeniz
+  gerekir." (e.g. [product query](https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/satici-urun-sorgulama/)).
+  Pages spell them as `appKey`/`appSecret` or `appkey`/`appsecret`
+  ([order update](https://developer.n11.com/documentation/n11-siparis-entegrasyonu/siparis-kalemlerini-guncelleme-servisi/)).
+  HTTP header names are case-insensitive, so either spelling should work. The skeleton sends
+  lowercase.
+- **Category endpoints.** Their pages still say only `appKey` is needed
+  ([categories](https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/kategori-agaci-listeleme/)).
+  However, the 2025-06-17 and 2025-07-17 changelog entries say category services stop working
+  without "API Key & Secret" from 2025-08-15. The skeleton sends both headers on every call.
+- **SOAP auth** puts the same key pair in the request body as `auth.appKey` / `auth.appSecret`
+  (examples on every SOAP page above). The namespace is `http://www.n11.com/ws/schemas`.
+- **Getting credentials.** The key and secret come from the n11 Seller Office (`so.n11.com`).
+  **(unverified)** The exact menu path is not on the portal. A third-party guide describes creating
+  an "API account" from the account section, with the secret sent by e-mail and only Admin users
+  allowed to do it (https://docs.helorobo.com/en/helorobo/article/n11-integration).
+- **Environments.** The only base URL in the docs is `https://api.n11.com`, with path families
+  `/cdn/…` (categories), `/ms/…` (products), `/rest/…` (orders) and `/ws/…` (SOAP). The portal
+  documents **no sandbox or test environment** and no test-order service. **(unverified)** The
+  skeleton's `env` therefore only accepts `'prod'`.
+- **Integrator identification.** Product write tasks take a required body field `integrator`:
+  "use the same name in all your requests"
+  ([product create](https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/urun-yukleme/),
+  [price/stock](https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/urun-fiyat-stok-guncelleme/)).
+  n11 documents **no** `User-Agent` convention, unlike Trendyol and Hepsiburada, and no
+  correlation-id header. The skeleton sends neither. It stores `integratorName` on the transport so
+  write resources can fill `integrator`.
+
+## 4. Rate limits and batch limits (documented)
+
+| Limit                                                                                                               | Source                                                                                                                                    |
+| ------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /rest/delivery/v1/shipmentPackages`: at most **1000 requests/minute**                                          | [order listing](https://developer.n11.com/documentation/n11-siparis-entegrasyonu/siparis-listeleme-servisi/)                              |
+| SOAP `GetProductQuestionList`: **once per minute**                                                                  | [questions](https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/urun-soru-cevap-servisi/)                                |
+| Product tasks (create, update, price/stock, delete): **≤ 1000 SKUs** per request                                    | the four task pages, e.g. [price/stock](https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/urun-fiyat-stok-guncelleme/) |
+| `GET /ms/product-query`: `size` default 20, **max 250**                                                             | [product query](https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/satici-urun-sorgulama/)                              |
+| `shipmentPackages`: `size` **max 100**; date window clamped to **15 days**; no orders from before **November 2024** | [order listing](https://developer.n11.com/documentation/n11-siparis-entegrasyonu/siparis-listeleme-servisi/)                              |
+| `SearchCatalog`: ≤ 10 values per multi-value parameter                                                              | [catalogue](https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/hizli-urun-yukleme/)                                     |
+| Legacy SOAP: an over-limit call returns `errorCode` `maxCallLimit.reached`                                          | legacy .docx manual (section 1)                                                                                                           |
+
+Nothing else is documented: no other per-endpoint limits, and no word on whether limits produce
+HTTP 429 or a `Retry-After` header. **(unverified)**
+
+## 5. Pagination
+
+- **REST** uses Spring-Data-style pages. The request takes `page` (0-based) and `size`. The
+  response is `{ content[], totalElements, totalPages, number, size, first, last, empty, pageable }`
+  ([product query](https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/satici-urun-sorgulama/),
+  [task details](https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/task-detail-sorgulama/)).
+  The docs' stopping rule: "start at page 0, use `totalPages`, and treat the page whose `content` is
+  empty as the last one". The order listing response example also has `pageCount`, `totalPages`,
+  `page` and `size` at the top
+  ([order listing](https://developer.n11.com/documentation/n11-siparis-entegrasyonu/siparis-listeleme-servisi/)).
+- **SOAP** uses `pagingData { currentPage (0-based), pageSize }` in the request and
+  `pagingData { currentPage, pageSize, totalCount, pageCount }` in the response
+  ([returns](https://developer.n11.com/documentation/iade-entgrasyonu/iade-talepleri-servisi/)).
+- **Mapping to `@lonca/core`.** REST pages fit `CursorPage` with the page index as the opaque
+  cursor, the same approach `@lonca/trendyol` takes. SOAP pages fit `OffsetPage` / `paginateOffset`
+  (`pageCount` is present) or the same `CursorPage` approach. The skeleton uses `CursorPage` for
+  `products.list`.
+
+## 6. Resource map: n11 vs `@lonca/trendyol` / `@lonca/hepsiburada`
+
+| Area                          | n11 service (style)                                                                                                                                                                                                                                                                                                      | TY equivalent                                     | HB equivalent                                     | Notes                                                                                                                                                                                                                                    |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------- | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Categories                    | `GET /cdn/categories`, the full tree in one call ([doc](https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/kategori-agaci-listeleme/)) (REST)                                                                                                                                                          | `categories.list`                                 | `categories.list`                                 | `subCategories: null` marks a leaf. Products must use a leaf id.                                                                                                                                                                         |
+| Category attributes           | `GET /cdn/category/{id}/attribute`, which returns attributes **with their values** ([doc](https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/kategori-ozellikleri-listeleme/)) (REST)                                                                                                                  | `categories.getAttributes` + `getAttributeValues` | `categories.getAttributes` + `getAttributeValues` | Flags: `isMandatory`, `isVariant`, `isSlicer`, `isCustomValue`, `isN11Grouping`.                                                                                                                                                         |
+| Brands                        | No brand service. Brand is category attribute `attributeId: 1` ("Marka") (same doc)                                                                                                                                                                                                                                      | `brands.list/search`                              | —                                                 | **(inferred)** A cross-marketplace "brands" capability would be `false` for n11.                                                                                                                                                         |
+| Product list (read)           | `GET /ms/product-query` ([doc](https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/satici-urun-sorgulama/)) (REST)                                                                                                                                                                                      | `products.list` / `listInventoryAndPrice`         | `listings.list`                                   | **Implemented in the skeleton.** Price, stock, status and commission all come in one row.                                                                                                                                                |
+| Product create                | `POST /ms/product/tasks/product-create` ([doc](https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/urun-yukleme/)) (REST, async task)                                                                                                                                                                   | `products.create`                                 | `catalog.uploadProductViaFile`                    | Required: `shipmentTemplate` (by name), `preparingDay`, `productMainId`, `vatRate ∈ {0,1,10,20}`, title of at least 15 characters ([errors](https://developer.n11.com/documentation/bilgilendirme/api-hata-mesajlari-ve-aciklamalari/)). |
+| Catalogue match / fast create | SOAP `SearchCatalog`, then REST `product-create` with `catalogId`/`barcode` ([doc](https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/hizli-urun-yukleme/))                                                                                                                                            | `products.getBase` (roughly)                      | `catalog.uploadFastListing` (roughly)             |                                                                                                                                                                                                                                          |
+| Product update                | `POST /ms/product/tasks/product-update` ([doc](https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/urun-bilgisi-guncelleme/)) (REST, async task)                                                                                                                                                        | `products.updateContent`                          | `productUpdates`                                  | `status: Active/Suspended` here works like TY archive/unarchive. Core attributes (brand, colour, size) can only be changed by n11.                                                                                                       |
+| Stock and price               | `POST /ms/product/tasks/price-stock-update` ([doc](https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/urun-fiyat-stok-guncelleme/)) (REST, async task)                                                                                                                                                 | `inventory.update`                                | `listings.uploadStock` / `uploadPrice`            | Stock-only updates are allowed. Price updates need `listPrice` and `salePrice` together, with ≤ 2 decimals, a dot as decimal separator, and `listPrice ≥ salePrice`. `currencyType` is `TL`, `USD` or `EUR`.                             |
+| Product delete                | `POST /ms/product/tasks/product-delete` ([doc](https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/urun-silme/)) (REST, async task)                                                                                                                                                                     | `products.delete`                                 | `catalog.deleteByMerchantSkuList`                 |                                                                                                                                                                                                                                          |
+| Batch status                  | `POST /ms/product/task-details/page-query` (`{ taskId, pageable }`) ([doc](https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/task-detail-sorgulama/)) (REST)                                                                                                                                          | `products.getBatchStatus`                         | `listings.get*Upload`, `catalog.getProductStatus` | Task status values are `IN_QUEUE`, `PROCESSED` and `REJECT`. Each SKU gets `SUCCESS` or `FAIL` plus `reasons[]`. Note the dates are `dd-MM-yyyy HH:mm:ss` strings, not epochs.                                                           |
+| Orders (list)                 | `GET /rest/delivery/v1/shipmentPackages` ([doc](https://developer.n11.com/documentation/n11-siparis-entegrasyonu/siparis-listeleme-servisi/)) (REST)                                                                                                                                                                     | `orders.list`                                     | `orders.list`                                     | Orders are package-centric, like TY shipment packages. Statuses are `Created`, `Picking`, `Shipped`, `Cancelled`, `Delivered`, `Unpacked` and `UnSupplied`, one per request. Timestamps are epoch milliseconds ("GMT+3").                |
+| Order approve                 | `PUT /rest/order/v1/update` (`{ lines:[{lineId}], status:"Picking" }`) ([doc](https://developer.n11.com/documentation/n11-siparis-entegrasyonu/siparis-kalemlerini-guncelleme-servisi/)) (REST)                                                                                                                          | `orders.updatePackageStatus` (Picking)            | `orders.createPackages`                           | Returns a result per line, so it can partly succeed.                                                                                                                                                                                     |
+| Package split                 | `POST /rest/delivery/v1/splitCombinePackage`, `POST …/splitPackageByQuantity` ([split](https://developer.n11.com/documentation/n11-siparis-entegrasyonu/siparis-paket-bolme/), [by qty / cancel](https://developer.n11.com/documentation/n11-siparis-entegrasyonu/miktar-bazli-paket-bolme-siparis-urun-iptali/)) (REST) | `orders.splitPackage` / `splitPackageByQuantity`  | `orders.splitPackage`                             |                                                                                                                                                                                                                                          |
+| Logistics pickup              | `PUT /rest/delivery/v1/collectionRequest` (Horoz, Ceva, Borusan only) ([doc](https://developer.n11.com/documentation/n11-siparis-entegrasyonu/toplama-talebi-olusturma/)) (REST)                                                                                                                                         | —                                                 | —                                                 |                                                                                                                                                                                                                                          |
+| Labour cost (jewellery)       | `PUT /rest/order/v1/labor-costs` ([doc](https://developer.n11.com/documentation/n11-siparis-entegrasyonu/siparis-kalemine-iscilik-bedeli-gonderme/)) (REST)                                                                                                                                                              | `orders.updateLaborCosts`                         | `orders.updateLineItemLaborCost`                  |                                                                                                                                                                                                                                          |
+| Invoice link                  | SOAP `SaveLinkSellerInvoice` ([doc](https://developer.n11.com/documentation/n11-siparis-entegrasyonu/fatura-linki-gonderme/))                                                                                                                                                                                            | `invoices.sendLink`                               | `orders.sendInvoiceLink`                          | HTTPS link to a pdf, png or jpeg, at most 2048 characters. Micro-export orders also need `invoiceNumber` and `invoiceDateTime` ([doc](https://developer.n11.com/documentation/mikro-ihracat/mikro-ihracat/)).                            |
+| Returns (claims)              | SOAP `ReturnService` ([doc](https://developer.n11.com/documentation/iade-entgrasyonu/iade-talepleri-servisi/))                                                                                                                                                                                                           | `claims.*`                                        | `claims.*`                                        | Statuses: `REQUESTED`, `CANCELLED`, `DENIED`, `PENDING`, `PENDED`, `APPROVED`. Dates are `dd/mm/yyyy` strings.                                                                                                                           |
+| Partial cancel                | SOAP `ClaimCancelPartial` ([doc](https://developer.n11.com/documentation/iade-entgrasyonu/parcali-iptal-talebi/))                                                                                                                                                                                                        | `orders.cancelPackageItem`                        | `orders.cancelLineItem`                           |                                                                                                                                                                                                                                          |
+| Questions                     | SOAP `GetProductQuestionList/Detail`, `SaveProductAnswer` ([doc](https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/urun-soru-cevap-servisi/))                                                                                                                                                         | `questions.*`                                     | `questions.*`                                     | One answer per question, 1 to 2048 characters. Listing is limited to once per minute.                                                                                                                                                    |
+| Settlements / finance         | **Not on the new portal.** The legacy SOAP `SettlementService` (`GetSettlementList/Detail`) appears in the 2020 .docx                                                                                                                                                                                                    | `finance.*`                                       | `accounting.*`                                    | **(unverified)** It may no longer be live. Order lines do carry `commissionRate`, `sellerCampaignCommissionRate`, `netMarketingFeeRate` and `netMarketplaceFeeRate`.                                                                     |
+| Shipment companies            | Order docs refer to a `GetShipmentCompanies` method ([order listing](https://developer.n11.com/documentation/n11-siparis-entegrasyonu/siparis-listeleme-servisi/)), but the new portal has no page for it. The legacy SOAP `ShipmentCompanyService` is in the .docx                                                      | — (`orders.changeCargoProvider` only)             | `shipping.getCargoFirms`                          | **(unverified)**                                                                                                                                                                                                                         |
+| Cargo labels                  | Not documented                                                                                                                                                                                                                                                                                                           | `labels.*`                                        | `orders.getPackageLabel`                          | `cargoTrackingNumber` is the n11 "campaign code" the seller hands to the carrier.                                                                                                                                                        |
+| Webhooks                      | Not documented                                                                                                                                                                                                                                                                                                           | `webhooks.*`                                      | —                                                 | Polling only.                                                                                                                                                                                                                            |
+| Test orders                   | Not documented                                                                                                                                                                                                                                                                                                           | `testOrders.*`                                    | `testOrders.*`                                    | There is no sandbox either (section 3).                                                                                                                                                                                                  |
+| n11 warehouse (n11depom)      | `sender` filter `SELLER`/`N11`/`ALL` on product query, order listing and returns ([doc](https://developer.n11.com/documentation/n11depom/n11depom/))                                                                                                                                                                     | —                                                 | —                                                 |                                                                                                                                                                                                                                          |
+
+The CONTRIBUTING minimum of orders, products and inventory is reachable over REST alone.
+
+## 7. Semantics worth knowing before harmonising
+
+- **Async writes.** Every product write returns `{ id, type, status: IN_QUEUE | REJECT, reasons[] }`.
+  The per-SKU outcome is only available from task-details. This is the same model as TY's
+  `batchRequestId` and HB's tracking ids
+  ([price/stock](https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/urun-fiyat-stok-guncelleme/)).
+- **Failures can arrive with HTTP 200.** A task can be `REJECT`, a SKU or line can be `FAIL`, and
+  SOAP responses carry `result.status: "failure"`. **(inferred)** Resources have to turn these into
+  typed results or errors themselves, because the HTTP-status mapping in `errors.ts` never sees
+  them.
+- **Order status vocabulary.** n11 publishes the SOAP-to-REST status mapping
+  ([page](https://developer.n11.com/documentation/bilgilendirme/soap-restapi-siparis-servisi-karsilastirmasi/)).
+  REST package statuses map onto `@lonca/core` `order-status` almost one to one
+  (`Created`, `Picking`, `Shipped`, `Delivered`, `Cancelled`, `UnSupplied`). **(inferred)**
+- **Money.** Prices are decimal numbers in major units with at most 2 decimals. The currency code is
+  `TL`, not `TRY`. The skeleton normalises it to `TRY` and converts with `moneyFromMajor`.
+  - Invoice amount per line: `(price × quantity) − (sellerDiscount + sellerCouponDiscount) = sellerInvoiceAmount`
+    ([order listing](https://developer.n11.com/documentation/n11-siparis-entegrasyonu/siparis-listeleme-servisi/)).
+- **Identifiers grow wider.** The docs warn that `n11ProductId` and `orderNumber` grow in width over
+  time ("9 → 10 digits", "12 → 13 digits"). The SDK keeps all ids as strings, which matches Lonca's
+  convention.
+- **PII.** Order rows carry buyer name, e-mail, GSM, address and `tcId`. Since 2025-10-15 `tcId` can
+  be empty ([changelog](https://developer.n11.com/documentation/changelog/)). Pick-up-point orders
+  (`deliveryAddressType` `KTN`, `EASYPOINT` or `PUP`) put the point's address in `shippingAddress`
+  and leave the buyer only in `billingAddress` (changelog 2026-08-03).
+- **Doc quality.** The product-query response example is not valid JSON
+  (`"sellerNickname": testMagaza` has no quotes), and it types `listPrice` once as `10000` and once
+  as `10000.0`. The order example has a missing comma and status values with a leading space
+  (`" Shipped"`). Wire types must therefore be confirmed against live traffic, which is exactly what
+  the contract probes are for.
+
+## 8. SOAP transport design (not built yet)
+
+Five documented services still need SOAP: questions, returns, partial cancel, invoice link and
+catalogue search. Options:
+
+1. **The `soap` npm package.** It reads the WSDL at runtime and builds clients dynamically. The
+   downside is the weight it would add to a currently near-zero-dependency SDK: a large transitive
+   tree (axios, xml-crypto, formidable and more), a WSDL fetch from the API host whenever a client
+   starts, and untyped dynamic clients. **Rejected.**
+2. **Hand-written envelope builder plus a small XML parser.** Each operation is a short template.
+   The `sch:` namespace, `<auth><appKey/><appSecret/></auth>` and the operation fields are all
+   copied from the doc examples, with proper XML escaping. Responses are parsed with a small parser,
+   either `fast-xml-parser` (one pure-JS dependency, no native code) or an in-repo parser of about
+   100 lines that handles only elements and text, which is all n11's responses use.
+   **Recommended.** Typed request and response interfaces then come from the WSDL or XSD, or from
+   the doc tables.
+3. **Wait for REST.** n11 has migrated one service family per year (products 2024, orders
+   2024–25). Questions and returns may follow, but there is no announced date.
+
+Needed in `@lonca/core` for option 2: `createRequester` currently JSON-stringifies every non-GET
+body (`packages/core/src/transport.ts`). It needs one of two seams. Either let a pre-serialised
+`string` body pass through with a caller-supplied `Content-Type: text/xml; charset=utf-8` and a
+`SOAPAction` header, or give the n11 transport a second, small requester. Responses already come
+back as text when they are not JSON (`safeJson` falls back to text), so parsing can stay in the n11
+SDK.
+
+SOAP faults probably arrive as HTTP 500 with a `<faultstring>`. The JSON status mapping would see
+them as retryable `ServerError`s, so the SOAP path needs its own fault-to-`LoncaError` mapping, and
+must not retry faults that are not transient.
+
+## 9. Licence and redistribution
+
+- The portal footer says "© Telif Hakkı 2026 n11.com. Tüm Hakları Saklıdır." (all rights reserved)
+  on every documentation page. I found no licence grant, no terms specific to the API docs, and no
+  machine-readable REST definition.
+- **So nothing of n11's is redistributed in this PR.** The SDK's TypeScript types are Lonca's own
+  description of the documented wire format, written for interoperability. The test fixtures use
+  invented values shaped like the doc examples. No doc text or examples are copied into the repo
+  beyond short field names and enum values.
+- **If `specs/n11/` is wanted later**, there are two possible sources:
+  - The WSDLs and XSDs from `api.n11.com/ws/*.wsdl`. They are machine-readable, but they come from
+    the API host, and they only cover the SOAP side.
+  - An OpenAPI document compiled by hand from the REST pages, like Trendyol's `video.json`
+    (`specs/trendyol/README.md`).
+
+  Either would follow `specs/README.md`: © n11 (**(unverified)** confirm the operating legal
+  entity before naming it in a README), redistributed for interoperability, not MIT, and taken
+  down on request. Asking `sellerintegration@n11.com` for
+  permission first would be cheap insurance.
+
+## 10. What the skeleton covers
+
+- **Package.** `sdks/n11/` is `@lonca/n11`, `"private": true`, version `0.0.0`. Changesets never
+  publishes private packages. It is not listed in `scripts/health-packages.mts`,
+  `scripts/api-surface.mts` or the docs TypeDoc entry points, all of which use explicit lists, so
+  publish-only checks ignore it.
+- **`createN11Client({ appKey, appSecret, env: 'prod', integratorName, logger?, timeoutMs?, fetch? })`.**
+- **`N11Transport`.** Built on `@lonca/core` `createRequester`. It sends the `appkey` and
+  `appsecret` headers and JSON content headers, and uses the base URL `https://api.n11.com`. It
+  joins array query values with commas.
+- **`mapHttpError`.** Maps 401/403 to `AuthError`, 400/422 to `ValidationError`, 404 to
+  `NotFoundError`, 429 to `RateLimitError`, 5xx to `ServerError`, and anything else to
+  `UNKNOWN`. Messages are fixed and redacted. Issues are read best-effort from `errors[]`,
+  `reasons[]` or `message`.
+- **`products.list(params)`.** `GET /ms/product-query` with every documented filter, `size` clamped
+  to 250, and the page index used as the `CursorPage` cursor. It stops on an empty page,
+  `last: true` or `totalPages`. Rows are normalised to `N11Product`: string ids, `Money` prices, and
+  `raw` kept.
+- **`n11Capabilities`.** `scheduledPricing: false`, `stockOnlyBatch: true`,
+  `listingUpdatedAt: false`, all from the docs.
+- **Tests.** Fixture-based with a mocked transport or `fetch` and invented values. Coverage is 100%.
+
+## 11. Open questions that need an n11 account
+
+1. **Sandbox.** Is there a test environment or test seller? If not, can n11 create test orders for
+   an integrator account? Without one, every write is a production write.
+2. **Error envelope.** What status codes and JSON bodies do REST failures use (bad key, missing
+   secret, validation)? Is 401 used, or 403, or 200 with an error body?
+3. **Rate limits.** What are the limits outside `shipmentPackages` and the question list? Is a 429
+   returned, with `Retry-After`? Are the limits per key or per IP?
+4. **Header names.** Do the `cdn` category endpoints really reject requests without `appSecret` now?
+   Does any endpoint care about header-name case?
+5. **`product-query` wire.** How is `categoryIds` encoded (comma-separated or a repeated
+   parameter)? Is the response `status` vocabulary the same as the `productStatus` filter? What
+   shape is `rejectInfo`? Are numeric fields really numbers? What happens when `page` is past
+   `totalPages`?
+6. **Orders.** Confirm the meaning of "GMT+3 epoch ms" for `startDate`/`endDate`, the 15-day
+   clamping, and the `orderByField` behaviour. Are `Cancelled` and `Unpacked` really filterable?
+7. **SOAP lifetime.** Are SOAP `OrderList`/`DetailedOrderList` and `CategoryService` still up, and
+   is there a sunset date? Are questions and returns moving to REST?
+8. **Finance.** Is the legacy `SettlementService` still live, or is there a REST replacement for
+   settlements and commission invoices?
+9. **Shipment companies, cargo labels, city lists.** Are they still SOAP-only
+   (`ShipmentCompanyService`, `CityService`), and is there any label service?
+10. **Integrator identity.** Does n11 register integrators by name? Should `integrator` match
+    anything configured in Seller Office? Is a `User-Agent` or IP allowlist ever required (both TY and HB
+    needed a meaningful `User-Agent`)?
+11. **WSDLs.** May we fetch and redistribute `api.n11.com/ws/*.wsdl` in `specs/n11/`? Should we ask
+    `sellerintegration@n11.com`?
+12. **Credential scope.** Can one key pair access everything (products, orders, returns), or are
+    there per-service permissions?
+
+## 12. Next steps (proposed)
+
+1. Get an n11 seller or integrator account. Add `N11_APP_KEY` / `N11_APP_SECRET` to `.env` and
+   contract probes for `categories`, `product-query` and `shipmentPackages` (read-only), following
+   `scripts/probe/`.
+2. Decide the `specs/n11/` source (WSDL capture, a hand-compiled OpenAPI, or both). Write
+   `scripts/specs/{fetch,build}-n11.mjs` the same way as Trendyol's, so the scripts read only the
+   docs portal.
+3. Fill in REST resources (categories, products writes and task details, inventory, orders) and
+   reach the CONTRIBUTING minimum.
+4. Add the SOAP layer (section 8) for questions, returns and invoice links.
+5. Harmonise with the TY/HB SDKs (order-status mapping, capabilities, `testing` fake client). Then
+   publish as `0.x` with a changeset.
