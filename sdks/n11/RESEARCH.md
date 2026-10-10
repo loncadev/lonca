@@ -237,8 +237,9 @@ must not retry faults that are not transient.
 - **Errors.** `result.status: failure` (sent with HTTP 200) goes through `mapSoapFailure`: an
   auth-like code is `AuthError`, a "limit" code is `RateLimitError`, anything else is
   `ValidationError`. A `Fault` with a client `faultcode` is `ValidationError`; other faults follow
-  the HTTP status (5xx is a retried `ServerError`). Both mappings are **unverified** until a live
-  call.
+  the HTTP status (5xx is a retried `ServerError`). On prod, a wrong secret answers **HTTP 200**
+  with `result.status: failure` and `errorCode: SELLER_API.authenticationFailed`, which maps to
+  `AuthError`. No fault has been seen yet.
 - **Read resources** (element names from the WSDLs, which declare `elementFormDefault="unqualified"`):
   - `questions.list` / `questions.get`: `GetProductQuestionList` / `GetProductQuestionDetail`. Dates
     are `DD/MM/YYYY` on the Istanbul calendar day. The documented once-a-minute limit is the
@@ -303,7 +304,17 @@ InternalServerException` naming `MissingRequestHeaderException` is an `AuthError
 - **Tests.** Fixture-based with a mocked transport or `fetch` and invented values (shapes follow
   prod). Line coverage is 100%.
 - **SOAP reads** (section 8): `questions.list` / `get`, `claims.listReturns` / `listCancels` /
-  reason lists, and `shipping.getShipmentCompanies`. They are not yet called live.
+  reason lists, and `shipping.getShipmentCompanies`. They were verified on prod on 2026-10-10
+  (read operations only, approved by the maintainer):
+  - **Reason lists.** Prod repeats the list element itself (`<denyReasonTypeDataList><id/><value/>`
+    once per reason), without the WSDL's inner `denyReasonTypeData` wrapper. The SDK accepts both.
+  - **Unknown question id.** `GetProductQuestionDetail` answers `result: success` with no
+    `productQuestion`. The SDK throws `NotFoundError`.
+  - **Extra cancel fields.** `ClaimCancelList` rows also carry `buyerName`, `buyerEmail`,
+    `buyerPhone`, `paymentDate`, `shipmentCompany` and `deliveryFeeType`, none of which is in the
+    WSDL.
+  - **Date formats.** Claim dates are `DD/MM/YYYY`; question-detail dates are `YYYY-MM-DD`.
+  - Every response carries `result.status`, including the question responses, whose WSDL omits it.
 - **Contract probes.** `scripts/probe/probes/n11.mts` runs the four reads above against prod
   (`pnpm probe:prod -- --only n11`); the shape baseline is `probe-snapshots/n11.json`.
 
@@ -358,10 +369,15 @@ totalPages, page, size, content }`, where `pageCount` equals the number of rows 
    Timestamps are epoch ms. `orderByField` and the GMT+3 meaning are still unchecked.
 7. **SOAP lifetime.** Are SOAP `OrderList`/`DetailedOrderList` and `CategoryService` still up, and
    is there a sunset date? Are questions and returns moving to REST?
+   **Partly answered:** `ProductService` (questions), `ReturnService`, `ClaimCancelService` and
+   `ShipmentCompanyService` answer on prod (2026-10-10). The order and category SOAP services were
+   not called. No sunset date is known.
 8. **Finance.** Is the legacy `SettlementService` still live, or is there a REST replacement for
    settlements and commission invoices?
 9. **Shipment companies, cargo labels, city lists.** Are they still SOAP-only
    (`ShipmentCompanyService`, `CityService`), and is there any label service?
+   **Partly answered:** `GetShipmentCompanies` works over SOAP. Cities and labels are still
+   unchecked.
 10. **Integrator identity.** Does n11 register integrators by name? Should `integrator` match
     anything configured in Seller Office? Is a `User-Agent` or IP allowlist ever required (both TY and HB
     needed a meaningful `User-Agent`)?

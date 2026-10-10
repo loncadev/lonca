@@ -13,8 +13,8 @@ export interface N11ShipmentCompany {
  * Shipping reference data (SOAP `ShipmentCompanyService`).
  *
  * Source: `api.n11.com/ws/ShipmentCompanyService.wsdl` (the new portal has no
- * page for it; the order docs refer to `GetShipmentCompanies`). **Unverified
- * on the live API.**
+ * page for it; the order docs refer to `GetShipmentCompanies`). Verified
+ * against prod on 2026-10-10.
  */
 export class ShippingResource {
   constructor(private readonly transport: N11Transport) {}

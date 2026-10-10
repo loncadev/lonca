@@ -1,10 +1,14 @@
 /**
- * n11 read-only probes. Every call here is a GET behind the SDK; the set never
- * touches the product task (create / update / price-stock / delete) or order
- * update services. n11 documents no sandbox, so these run against prod.
+ * n11 read-only probes. The REST probes are GETs; the SOAP probes are `POST`s
+ * by protocol but only call read operations (`Get*`, `*List`, reason-type
+ * lists) — approved by the maintainer on 2026-10-10. The set never touches
+ * the product tasks, order updates, question answers or claim actions. n11
+ * documents no sandbox, so these run against prod.
  */
 import { createN11Client, type N11Client, type N11Environment } from '@lonca/n11';
 import type { ProbeSet } from '../registry.mts';
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 function env(): N11Environment {
   return (process.env.N11_ENV ?? 'prod') as N11Environment;
@@ -49,5 +53,27 @@ export const n11Probes: ProbeSet<N11Client> = {
     },
     { name: 'products.list', call: (c) => c.products.list({ limit: 10 }) },
     { name: 'orders.list', call: (c) => c.orders.list({ limit: 10 }) },
+    // SOAP reads (POST envelopes, read operations only).
+    { name: 'shipping.getShipmentCompanies', call: (c) => c.shipping.getShipmentCompanies() },
+    { name: 'claims.listReturns(ALL)', call: (c) => c.claims.listReturns({ status: 'ALL' }) },
+    { name: 'claims.listCancels(ALL)', call: (c) => c.claims.listCancels({ status: 'ALL' }) },
+    { name: 'claims.getReturnDenyReasons', call: (c) => c.claims.getReturnDenyReasons() },
+    { name: 'claims.getReturnPendingReasons', call: (c) => c.claims.getReturnPendingReasons() },
+    { name: 'claims.getCancelDenyReasons', call: (c) => c.claims.getCancelDenyReasons() },
+    {
+      // n11 allows one question listing per minute; this is the set's only list call.
+      name: 'questions.list(CLOSED, last 30d) → get',
+      call: async (c) => {
+        const end = new Date();
+        const page = await c.questions.list({
+          startDate: new Date(end.getTime() - 30 * DAY_MS),
+          endDate: end,
+          status: 'CLOSED',
+          limit: 5,
+        });
+        const first = page.items[0];
+        return { page, detail: first ? await c.questions.get(first.id) : undefined };
+      },
+    },
   ],
 };

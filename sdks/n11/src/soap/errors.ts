@@ -30,9 +30,11 @@ function issuesOf(info: SoapResultInfo): LoncaErrorIssue[] {
  * Turn a `result.status: "failure"` (sent with HTTP 200) into a `LoncaError`.
  *
  * n11 documents error **codes** only for the REST services, so the mapping
- * below is keyed on substrings and is **unverified** for SOAP:
+ * below is keyed on substrings:
  *
- * - a code or category mentioning authentication → `AuthError`;
+ * - a code or category mentioning authentication → `AuthError` (a wrong
+ *   secret answers HTTP 200 with `SELLER_API.authenticationFailed`, verified
+ *   on prod 2026-10-10);
  * - `maxCallLimit` / a "limit" code (the legacy manual's over-limit code, and
  *   the question list's once-a-minute rule) → `RateLimitError`;
  * - anything else → `ValidationError` (not retried).
