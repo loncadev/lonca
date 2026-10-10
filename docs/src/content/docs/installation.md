@@ -41,4 +41,4 @@ Once a package reaches `1.0`, standard semver guarantees apply.
 ## Stable releases & changelogs
 
 - npm: [`@lonca/core`](https://www.npmjs.com/package/@lonca/core) · [`@lonca/trendyol`](https://www.npmjs.com/package/@lonca/trendyol) · [`@lonca/hepsiburada`](https://www.npmjs.com/package/@lonca/hepsiburada)
-- Per-package CHANGELOG.md: [trendyol](https://github.com/loncadev/lonca/blob/main/sdks/trendyol/CHANGELOG.md) · [hepsiburada](https://github.com/loncadev/lonca/blob/main/sdks/hepsiburada/CHANGELOG.md) · [core](https://github.com/loncadev/lonca/blob/main/packages/core/CHANGELOG.md)
+- Per-package CHANGELOG.md: [trendyol](https://github.com/zanaat/lonca/blob/main/sdks/trendyol/CHANGELOG.md) · [hepsiburada](https://github.com/zanaat/lonca/blob/main/sdks/hepsiburada/CHANGELOG.md) · [core](https://github.com/zanaat/lonca/blob/main/packages/core/CHANGELOG.md)

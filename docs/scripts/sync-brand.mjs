@@ -1,5 +1,5 @@
 // Fetch the canonical Lonca brand assets from the org-wide source of truth
-// (https://github.com/loncadev/.github/tree/main/brand) into `docs/public/brand/`
+// (https://github.com/zanaat/.github/tree/main/brand) into `docs/public/brand/`
 // so Astro can serve the logos from the doc site. No repo carries its own copy.
 // Runs automatically before `pnpm dev` / `pnpm build` (predev / prebuild in
 // docs/package.json). `docs/public/brand/` is gitignored — it's downloaded, not
@@ -9,7 +9,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const RAW_BASE = 'https://raw.githubusercontent.com/loncadev/.github/main/brand';
+const RAW_BASE = 'https://raw.githubusercontent.com/zanaat/.github/main/brand';
 // The assets the doc site references (logo + favicon) plus the rest of the set
 // for completeness. The brand README itself is documentation, not an asset.
 const FILES = ['logomark.svg', 'icon.svg', 'wordmark.svg', 'social-preview.png'];
@@ -32,5 +32,5 @@ for (const file of FILES) {
 }
 
 console.log(
-  `sync-brand: fetched ${copied} file(s) from loncadev/.github/brand → docs/public/brand/`,
+  `sync-brand: fetched ${copied} file(s) from zanaat/.github/brand → docs/public/brand/`,
 );

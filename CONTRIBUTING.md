@@ -18,7 +18,7 @@ Before opening a PR:
 ## Setup
 
 ```bash
-git clone https://github.com/loncadev/lonca.git
+git clone https://github.com/zanaat/lonca.git
 cd lonca
 pnpm install
 ```

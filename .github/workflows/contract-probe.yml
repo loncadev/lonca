@@ -26,7 +26,7 @@ jobs:
   # gates on its output. Forks never have the secrets.
   credentials:
     name: Check credentials
-    if: github.repository == 'loncadev/lonca'
+    if: github.repository == 'zanaat/lonca'
     runs-on: ubuntu-latest
     outputs:
       present: ${{ steps.check.outputs.present }}

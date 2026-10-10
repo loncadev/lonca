@@ -5,11 +5,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/loncadev/lonca.git",
+    "url": "git+https://github.com/zanaat/lonca.git",
     "directory": "sdks/trendyol"
   },
-  "homepage": "https://github.com/loncadev/lonca/tree/main/sdks/trendyol#readme",
-  "bugs": "https://github.com/loncadev/lonca/issues",
+  "homepage": "https://github.com/zanaat/lonca/tree/main/sdks/trendyol#readme",
+  "bugs": "https://github.com/zanaat/lonca/issues",
   "keywords": [
     "trendyol",
     "marketplace",

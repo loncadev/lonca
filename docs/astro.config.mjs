@@ -5,7 +5,7 @@ import starlightTypeDoc, { typeDocSidebarGroup } from 'starlight-typedoc';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://loncadev.github.io',
+  site: 'https://zanaat.dev',
   base: '/lonca',
   integrations: [
     starlight({
@@ -13,7 +13,7 @@ export default defineConfig({
       description:
         'Type-safe TypeScript SDKs for Turkish e-commerce marketplaces (Trendyol, Hepsiburada).',
       logo: {
-        // Source-of-truth: the org brand repo (loncadev/.github/brand), fetched
+        // Source-of-truth: the org brand repo (zanaat/.github/brand), fetched
         // into docs/public/brand/ via `pnpm docs:sync-brand` (runs automatically
         // before docs:dev / docs:build). The SVG carries its own
         // `prefers-color-scheme` rule, so a single file adapts to Starlight's
@@ -22,9 +22,9 @@ export default defineConfig({
         replacesTitle: true,
       },
       favicon: '/brand/icon.svg',
-      social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/loncadev/lonca' }],
+      social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/zanaat/lonca' }],
       editLink: {
-        baseUrl: 'https://github.com/loncadev/lonca/edit/main/docs/',
+        baseUrl: 'https://github.com/zanaat/lonca/edit/main/docs/',
       },
       lastUpdated: true,
       pagination: true,
