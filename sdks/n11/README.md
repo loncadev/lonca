@@ -14,6 +14,9 @@
   `categories.list()` / `categories.getAttributes()` (`/cdn/...`) and `orders.list()`
   (`GET /rest/delivery/v1/shipmentPackages`), on a `@lonca/core` transport that sends n11's
   `appkey` / `appsecret` headers. Read-only contract probes: `pnpm probe:prod -- --only n11`.
+- SOAP reads (not yet called live): `questions.list()` / `get()`, `claims.listReturns()` /
+  `listCancels()` and the reason-type lists, and `shipping.getShipmentCompanies()`. They use a small
+  in-repo XML layer with no dependency.
 
 ```ts
 import { paginate } from '@lonca/core';

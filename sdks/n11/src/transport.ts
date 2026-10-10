@@ -1,5 +1,15 @@
-import { createRequester, type BaseRequestOptions, type Logger } from '@lonca/core';
+import {
+  createRequester,
+  type BaseRequestOptions,
+  type Logger,
+  type TokenBucketRateLimiter,
+} from '@lonca/core';
 import { mapHttpError } from './errors.js';
+import { mapSoapFailure, mapSoapHttpError, type SoapResultInfo } from './soap/errors.js';
+import { asObject, asText, parseXml, toXml, type XmlInput, type XmlObject } from './soap/xml.js';
+
+/** Namespace of every n11 SOAP request element (`elementFormDefault="unqualified"`). */
+const SOAP_NAMESPACE = 'http://www.n11.com/ws/schemas';
 
 /**
  * n11 base URLs.
@@ -49,6 +59,23 @@ export interface RequestOptions extends BaseRequestOptions {
   query?: Record<string, string | number | boolean | readonly (string | number)[] | undefined>;
 }
 
+/** Options for {@link N11Transport.soap}. */
+export interface SoapCallOptions {
+  /** Service path segment under `/ws/`, e.g. `productService`. */
+  service: string;
+  /** Operation name, e.g. `GetProductQuestionList` (the request element is `<Operation>Request`). */
+  operation: string;
+  /** Request fields after `auth`, in schema order. */
+  fields?: { [name: string]: XmlInput };
+  signal?: AbortSignal;
+  rateLimiter?: TokenBucketRateLimiter;
+}
+
+interface SoapRequestOptions extends BaseRequestOptions {
+  /** Service path segment under `/ws/`. */
+  path: string;
+}
+
 /**
  * REST transport for n11's JSON services.
  *
@@ -60,6 +87,7 @@ export interface RequestOptions extends BaseRequestOptions {
 export class N11Transport {
   private readonly baseUrl: string;
   private readonly requester: <T>(opts: RequestOptions) => Promise<T>;
+  private readonly soapRequester: <T>(opts: SoapRequestOptions) => Promise<T>;
 
   constructor(private readonly config: TransportConfig) {
     this.baseUrl = BASE_URLS[config.env];
@@ -73,6 +101,21 @@ export class N11Transport {
       buildHeaders: () => this.buildHeaders(),
       mapHttpError,
     });
+    this.soapRequester = createRequester<SoapRequestOptions>({
+      fetch: config.fetch ?? fetch,
+      logger: config.logger,
+      timeoutMs: config.timeoutMs ?? 30_000,
+      label: 'n11',
+      logPrefix: 'n11',
+      buildUrl: (opts) => `${this.baseUrl}/ws/${opts.path}/`,
+      buildHeaders: () => ({
+        'Content-Type': 'text/xml; charset=utf-8',
+        Accept: 'text/xml',
+        SOAPAction: '""',
+      }),
+      mapHttpError: mapSoapHttpError,
+      logFields: (opts) => ({ soapService: opts.path }),
+    });
   }
 
   /** Integrator name for the `integrator` field of product write tasks. */
@@ -82,6 +125,47 @@ export class N11Transport {
 
   request<T>(opts: RequestOptions): Promise<T> {
     return this.requester<T>(opts);
+  }
+
+  /**
+   * Call one of n11's SOAP services (questions, returns, cancels, shipment
+   * companies, …) and return the `<Operation>Response` element, parsed.
+   *
+   * The key pair travels in the envelope (`auth.appKey` / `auth.appSecret`),
+   * not in headers. Every SOAP call the SDK makes today is a read, so it is
+   * sent as idempotent (retried on 5xx / network failures). A `result.status`
+   * of `failure` — n11 reports those with HTTP 200 — is thrown as a
+   * `LoncaError` (see `mapSoapFailure`).
+   */
+  async soap(opts: SoapCallOptions): Promise<XmlObject> {
+    const envelope =
+      `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:sch="${SOAP_NAMESPACE}">` +
+      `<soapenv:Header/><soapenv:Body><sch:${opts.operation}Request>` +
+      toXml({
+        auth: { appKey: this.config.appKey, appSecret: this.config.appSecret },
+        ...opts.fields,
+      }) +
+      `</sch:${opts.operation}Request></soapenv:Body></soapenv:Envelope>`;
+    const text = await this.soapRequester<unknown>({
+      method: 'POST',
+      path: opts.service,
+      rawBody: envelope,
+      idempotent: true,
+      signal: opts.signal,
+      rateLimiter: opts.rateLimiter,
+    });
+    const body = asObject(asObject(parseXml(typeof text === 'string' ? text : '').Envelope).Body);
+    const response = asObject(body[`${opts.operation}Response`]);
+    const result = asObject(response.result);
+    if (asText(result.status)?.toLowerCase() === 'failure') {
+      const info: SoapResultInfo = { status: 'failure' };
+      for (const key of ['errorCode', 'errorMessage', 'errorCategory'] as const) {
+        const value = asText(result[key]);
+        if (value) info[key] = value;
+      }
+      throw mapSoapFailure(opts.operation, info);
+    }
+    return response;
   }
 
   private buildUrl(path: string, query?: RequestOptions['query']): string {

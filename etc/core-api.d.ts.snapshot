@@ -371,6 +371,11 @@ interface BaseRequestOptions {
     method: string;
     /** Request body. Serialized as JSON unless it is a `FormData` (sent as multipart). Skipped for `GET`. */
     body?: unknown;
+    /**
+     * Pre-serialised request body sent exactly as given (e.g. a SOAP envelope). Takes precedence
+     * over `body`; set the matching `Content-Type` through `headers`. Skipped for `GET`.
+     */
+    rawBody?: string;
     /** Caller abort signal, composed with the per-request timeout. */
     signal?: AbortSignal;
     /** Per-endpoint rate limiter; one token is acquired before each attempt. */

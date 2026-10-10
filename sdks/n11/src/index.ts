@@ -1,11 +1,15 @@
 // Research skeleton — private, unpublished; read resources verified on prod. See RESEARCH.md.
 export { createN11Client, type CreateN11ClientOptions, type N11Client } from './client.js';
-export { N11Transport, type N11Environment } from './transport.js';
+export { N11Transport, type N11Environment, type SoapCallOptions } from './transport.js';
+export { mapSoapFailure, mapSoapHttpError, type SoapResultInfo } from './soap/errors.js';
 export { mapHttpError } from './errors.js';
 export { n11Capabilities, type N11Capabilities } from './capabilities.js';
 export { CategoriesResource } from './resources/categories.js';
+export { ClaimsResource } from './resources/claims.js';
 export { OrdersResource } from './resources/orders.js';
 export { ProductsResource } from './resources/products.js';
+export { QuestionsResource } from './resources/questions.js';
+export { ShippingResource, type N11ShipmentCompany } from './resources/shipping.js';
 export type {
   N11AttributeValue,
   N11Category,
@@ -28,3 +32,20 @@ export type {
   N11SaleStatus,
   N11Sender,
 } from './types/product.js';
+export type {
+  ListN11CancelsParams,
+  ListN11ReturnsParams,
+  N11CancelClaim,
+  N11CancelStatus,
+  N11ClaimExecuter,
+  N11ClaimSearchType,
+  N11ReasonType,
+  N11ReturnClaim,
+  N11ReturnStatus,
+} from './types/claim.js';
+export type {
+  ListN11QuestionsParams,
+  N11Question,
+  N11QuestionDetail,
+  N11QuestionStatus,
+} from './types/question.js';

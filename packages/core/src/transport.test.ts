@@ -154,6 +154,21 @@ describe('createRequester', () => {
       expect((init as RequestInit).body).toBe(JSON.stringify({ a: 1, b: 'x' }));
     });
 
+    it('sends rawBody untouched and prefers it over body', async () => {
+      const { request, fetchMock } = makeRequester();
+      const xml = '<Envelope><Body>a &amp; b</Body></Envelope>';
+      await request({ method: 'POST', rawBody: xml, body: { ignored: true } });
+      const [, init] = fetchMock.mock.calls[0]!;
+      expect((init as RequestInit).body).toBe(xml);
+    });
+
+    it('never sends a rawBody for GET', async () => {
+      const { request, fetchMock } = makeRequester();
+      await request({ method: 'GET', rawBody: '<x/>' });
+      const [, init] = fetchMock.mock.calls[0]!;
+      expect((init as RequestInit).body).toBeUndefined();
+    });
+
     it('never sends a body for GET even when one is provided', async () => {
       const { request, fetchMock } = makeRequester();
       await request({ method: 'GET', body: { ignored: true } });
