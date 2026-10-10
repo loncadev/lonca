@@ -12,24 +12,42 @@ export type SupplierAddressType = 'SHIPMENT' | 'RETURNING' | 'INVOICE' | 'WAREHO
  *
  * Used by `createProduct V2` for `shipmentAddressId` / `returningAddressId`.
  *
- * NOTE: The exact field set is best-effort; some optional fields may differ
- * once verified against real STAGE responses. Bumped fields land in a follow-up
- * minor release if needed.
+ * Field set checked against the docs and the prod wire (2026-10-10).
  */
 export interface SupplierAddress {
   id: string;
-  /** Free-form label set by the seller. */
+  /**
+   * @deprecated Trendyol's address rows carry no name or label — neither the docs nor the prod
+   * wire (2026-10-10) have one — so this is always `undefined`. Identify an address by `id`,
+   * `addressType` and the role flags; use `fullAddress` / `address` for its text.
+   */
   name?: string;
-  /** Primary role declared by Trendyol. */
+  /**
+   * Primary role declared by Trendyol. The docs spell it `Shipment` / `Invoice` / `Returning`;
+   * the SDK upper-cases it.
+   */
   addressType: SupplierAddressType;
   isShipmentAddress: boolean;
   isReturningAddress: boolean;
   isInvoiceAddress: boolean;
   isDefault: boolean;
-  /** Multi-line address string as registered in the Partner Panel. */
+  /** Street address as registered in the Partner Panel. */
   address?: string;
+  /** The complete address text (Trendyol's `fullAddress`). */
+  fullAddress?: string;
+  /** Country name as Trendyol sends it. */
+  country?: string;
   city?: string;
+  /** Trendyol's city code (stringified from the wire number). */
+  cityCode?: string;
   district?: string;
+  /** Trendyol's district id (stringified from the wire number). */
+  districtId?: string;
   postCode?: string;
+  /**
+   * @deprecated Trendyol's address rows carry no `fullName` — neither the docs nor the prod wire
+   * (2026-10-10) have one — so this is always `undefined`. Use `fullAddress` for the complete
+   * address text.
+   */
   fullName?: string;
 }

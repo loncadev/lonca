@@ -107,6 +107,30 @@
     },
     {
       "marketplace": "trendyol",
+      "operation": "GET /integration/member/countries/domestic/TR/cities/{CityCode}/districts",
+      "path": "[].code",
+      "kind": "sdk-unknown-field",
+      "reason": "Docs list only id / name; the prod wire baseline has code (string) on district rows. The SDK reads it into District.code (sdks/trendyol/src/resources/locations.ts).",
+      "since": "2026-10-10"
+    },
+    {
+      "marketplace": "trendyol",
+      "operation": "GET /integration/member/countries/domestic/TR/cities/{CityCode}/districts/{DistrictCode}/neighborhoods",
+      "path": "[].postCode",
+      "kind": "sdk-unknown-field",
+      "reason": "Docs list only id / name; the prod wire baseline has postCode (string) on neighborhood rows. The SDK maps it to Neighborhood.postCode (sdks/trendyol/src/resources/locations.ts).",
+      "since": "2026-10-10"
+    },
+    {
+      "marketplace": "trendyol",
+      "operation": "GET /integration/order/sellers/{sellerId}/orders",
+      "path": "content[].invoiceLink",
+      "kind": "sdk-unknown-field",
+      "reason": "Not in the docs' shipment-package schema; prod packages carry invoiceLink (string). The SDK copies it to ShipmentPackage.invoiceLink (sdks/trendyol/src/resources/orders.ts).",
+      "since": "2026-10-10"
+    },
+    {
+      "marketplace": "trendyol",
       "operation": "GET /integration/order/sellers/{sellerId}/orders",
       "path": "content[].lines[].fastDeliveryOptions[]",
       "kind": "type-mismatch",

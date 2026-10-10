@@ -2,19 +2,25 @@ import { TokenBucketRateLimiter } from '@lonca/core';
 import type { TrendyolTransport } from '../transport.js';
 import type { SupplierAddress, SupplierAddressType } from '../types/supplier-address.js';
 
+/**
+ * One `supplierAddresses[]` row — the fields the docs (`SupplierAddress`) and the prod wire
+ * (2026-10-10) agree on. There is no `name` / `fullName` on the wire.
+ */
 interface TrendyolSupplierAddressNode {
   id: number;
-  name?: string;
   addressType?: string;
   isShipmentAddress?: boolean;
   isReturningAddress?: boolean;
   isInvoiceAddress?: boolean;
   isDefault?: boolean;
   address?: string;
+  fullAddress?: string;
+  country?: string;
   city?: string;
+  cityCode?: number;
   district?: string;
+  districtId?: number;
   postCode?: string;
-  fullName?: string;
 }
 
 interface TrendyolSupplierAddressesResponse {
@@ -29,31 +35,39 @@ const VALID_TYPES: ReadonlySet<SupplierAddressType> = new Set([
 ]);
 
 function normalizeAddressType(raw: string | undefined): SupplierAddressType {
-  if (raw && VALID_TYPES.has(raw as SupplierAddressType)) {
-    return raw as SupplierAddressType;
+  // The docs spell the enum `Shipment` / `Invoice` / `Returning`; compare case-insensitively.
+  const upper = typeof raw === 'string' ? raw.toUpperCase() : undefined;
+  if (upper && VALID_TYPES.has(upper as SupplierAddressType)) {
+    return upper as SupplierAddressType;
   }
   // Trendyol historically used suffixes like "_ADDRESS" — strip and re-check.
-  const stripped = raw?.replace(/_ADDRESS$/, '');
+  const stripped = upper?.replace(/_ADDRESS$/, '');
   if (stripped && VALID_TYPES.has(stripped as SupplierAddressType)) {
     return stripped as SupplierAddressType;
   }
   return 'SHIPMENT';
 }
 
+function optionalString(value: unknown): string | undefined {
+  return typeof value === 'number' || typeof value === 'string' ? String(value) : undefined;
+}
+
 function normalizeAddress(node: TrendyolSupplierAddressNode): SupplierAddress {
   return {
     id: String(node.id),
-    name: node.name,
     addressType: normalizeAddressType(node.addressType),
     isShipmentAddress: node.isShipmentAddress ?? false,
     isReturningAddress: node.isReturningAddress ?? false,
     isInvoiceAddress: node.isInvoiceAddress ?? false,
     isDefault: node.isDefault ?? false,
     address: node.address,
+    fullAddress: node.fullAddress,
+    country: node.country,
     city: node.city,
+    cityCode: optionalString(node.cityCode),
     district: node.district,
+    districtId: optionalString(node.districtId),
     postCode: node.postCode,
-    fullName: node.fullName,
   };
 }
 

@@ -3,25 +3,35 @@ import type { TrendyolTransport } from '../transport.js';
 import type { City, Country, District, Neighborhood } from '../types/misc.js';
 
 /**
- * One location row. City rows carry no country field (docs and prod wire agree: `id`, `code`,
- * `name`), so `City.countryCode` is the country code of the lookup that returned the row.
+ * One country / city / district row. City rows carry no country field (docs and prod wire agree:
+ * `id`, `code`, `name`), so `City.countryCode` is the country code of the lookup that returned the
+ * row. District rows carry no city reference either (prod wire 2026-10-10: `id`, `code`, `name`).
  */
 interface WireNode {
   code?: number | string;
   id?: number | string;
-  cityCode?: number | string;
-  districtCode?: number | string;
   name?: string;
   [key: string]: unknown;
 }
 
-function n<T extends { code: string; raw: Record<string, unknown> }>(
+/**
+ * One neighborhood row. The prod wire (2026-10-10) sends `id`, `name` and `postCode` — no `code`
+ * and no district reference; the docs list `id` and `name` only.
+ */
+interface WireNeighborhoodNode {
+  id?: number | string;
+  name?: string;
+  postCode?: string;
+  [key: string]: unknown;
+}
+
+function n<T extends { code: string; raw: Record<string, unknown> }, W = WireNode>(
   rows: unknown,
-  extract: (node: WireNode) => Omit<T, 'raw'>,
+  extract: (node: W) => Omit<T, 'raw'>,
 ): T[] {
   const list = Array.isArray(rows) ? rows : [];
   return list.map((r) => {
-    const node = r as WireNode;
+    const node = r as W;
     return { ...extract(node), raw: node as Record<string, unknown> } as T;
   });
 }
@@ -139,7 +149,6 @@ export class LocationsResource {
       id: node.id !== undefined ? String(node.id) : undefined,
       code: String(node.code ?? node.id ?? ''),
       name: node.name,
-      cityCode: node.cityCode !== undefined ? String(node.cityCode) : undefined,
     }));
   }
 
@@ -149,11 +158,15 @@ export class LocationsResource {
       path,
       rateLimiter: this.limiter,
     });
-    return n<Neighborhood>(data, (node) => ({
-      id: node.id !== undefined ? String(node.id) : undefined,
-      code: String(node.code ?? node.id ?? ''),
-      name: node.name,
-      districtCode: node.districtCode !== undefined ? String(node.districtCode) : undefined,
-    }));
+    return n<Neighborhood, WireNeighborhoodNode>(data, (node) => {
+      const id = node.id !== undefined ? String(node.id) : undefined;
+      return {
+        id,
+        // Neighborhood rows have no code; `code` mirrors the id (as it always did in practice).
+        code: id ?? '',
+        name: node.name,
+        postCode: typeof node.postCode === 'string' ? node.postCode : undefined,
+      };
+    });
   }
 }

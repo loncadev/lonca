@@ -96,7 +96,9 @@ describe('CategoriesResource.getAttributes', () => {
     expect(call.path).toBe('/integration/product/categories/weird%20id/attributes');
   });
 
-  it('flattens the attribute shape with string IDs and value lists', async () => {
+  it('flattens the attribute shape with string IDs; values stays [] (no inline value list)', async () => {
+    // Neither the docs nor the prod wire (2026-10-10) have `attributeValues` on this endpoint,
+    // so the SDK no longer reads it — the catalog comes from getAttributeValues().
     const transport = mockTransport({
       id: 100,
       categoryAttributes: [
@@ -125,10 +127,7 @@ describe('CategoriesResource.getAttributes', () => {
         allowCustom: false,
         varianter: true,
         slicer: false,
-        values: [
-          { id: '1', name: 'Red' },
-          { id: '2', name: 'Blue' },
-        ],
+        values: [],
       },
     ]);
   });
@@ -146,7 +145,7 @@ describe('CategoriesResource.getAttributes', () => {
           varianter: false,
           slicer: true,
           allowMultipleAttributeValues: false,
-          // Note: live API omits `attributeValues` for many attributes.
+          // Note: the live API sends no `attributeValues` (docs and prod wire agree).
         },
       ],
     });
@@ -164,7 +163,7 @@ describe('CategoriesResource.getAttributes', () => {
         varianter: false,
         slicer: true,
         allowMultipleAttributeValues: false,
-        values: [], // defensively defaulted when API omits the field
+        values: [], // deprecated: always [] — use getAttributeValues()
       },
     ]);
   });

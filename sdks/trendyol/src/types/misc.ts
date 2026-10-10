@@ -247,8 +247,14 @@ export interface City {
 export interface District {
   /** Trendyol's internal district id — pass to `getTurkeyNeighborhoods(cityId, district.id)`. */
   id?: string;
+  /** Trendyol's district code (the prod wire's `code`; falls back to the id when a row has none). */
   code: string;
   name?: string;
+  /**
+   * @deprecated Trendyol's district rows carry no city reference — neither the docs nor the prod
+   * wire (2026-10-10) have one — so this is always `undefined`. Keep the city you passed to
+   * `getTurkeyDistricts` / `getAzerbaijanDistricts` / `getDistrictsByCity` instead.
+   */
   cityCode?: string;
   raw: Record<string, unknown>;
 }
@@ -256,8 +262,20 @@ export interface District {
 export interface Neighborhood {
   /** Trendyol's internal neighborhood id. */
   id?: string;
+  /**
+   * @deprecated Trendyol's neighborhood rows have no code (prod wire 2026-10-10: `id`, `name`,
+   * `postCode`; the docs list `id` and `name`), so this is always the same value as `id` (`''`
+   * when the row has no id). Use `id`.
+   */
   code: string;
   name?: string;
+  /** The neighborhood's postal code (prod wire `postCode`; not in Trendyol's docs). */
+  postCode?: string;
+  /**
+   * @deprecated Trendyol's neighborhood rows carry no district reference — neither the docs nor
+   * the prod wire (2026-10-10) have one — so this is always `undefined`. Keep the district you
+   * passed to `getTurkeyNeighborhoods` instead.
+   */
   districtCode?: string;
   raw: Record<string, unknown>;
 }
