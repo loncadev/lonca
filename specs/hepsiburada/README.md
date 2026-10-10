@@ -9,7 +9,7 @@ API definitions published on the [Hepsiburada developer portal](https://develope
   `katalog-urun-entegrasyonu`, `urun-guncelleme-entegrasyonu`, `tedarikci-entegrasyonu`,
   `muhasebe-entegrasyonu`, `saticiya-sor-entegrasyonu`, `satici-promosyonu-entegrasyonu`),
   exported as one record per operation while the `@lonca/hepsiburada` SDK was being built
-  ("Phase 2b", [#46](https://github.com/zanaat/lonca/pull/46)).
+  ("Phase 2b", [#46](https://github.com/zanaat-dev/lonca/pull/46)).
 - **Captured**: 2026-05-31 (export timestamp). The portal's own per-operation `updatedAt`
   values range from 2026-05-04 to 2026-05-12 and are preserved as `x-lonca-portal-updated-at`.
 - **Copyright**: the API definitions are © Hepsiburada (D-Market Elektronik Hizmetler ve

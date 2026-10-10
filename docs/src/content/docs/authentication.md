@@ -77,7 +77,7 @@ const client = createTrendyolClient({
 
 ## Environment variables (recommended)
 
-Both clients accept secret strings directly, but storing them in `.env` is the typical pattern. The repo's [`examples/`](https://github.com/zanaat/lonca/tree/main/examples) folder shows two read-only smoke scripts you can run against your credentials to verify everything works end-to-end.
+Both clients accept secret strings directly, but storing them in `.env` is the typical pattern. The repo's [`examples/`](https://github.com/zanaat-dev/lonca/tree/main/examples) folder shows two read-only smoke scripts you can run against your credentials to verify everything works end-to-end.
 
 ```bash
 # .env

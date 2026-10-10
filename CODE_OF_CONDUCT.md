@@ -22,7 +22,7 @@ This Code of Conduct applies to all project spaces — the GitHub repository (is
 
 If you experience or witness conduct that violates this code, please contact the maintainers privately:
 
-- Via a [GitHub private security advisory](https://github.com/zanaat/lonca/security/advisories/new). Only the maintainers can see it; say in the title that it is a Code of Conduct report.
+- Via a [GitHub private security advisory](https://github.com/zanaat-dev/lonca/security/advisories/new). Only the maintainers can see it; say in the title that it is a Code of Conduct report.
 
 All reports will be reviewed and investigated promptly and fairly. The maintainers are obligated to respect the privacy and safety of the reporter.
 

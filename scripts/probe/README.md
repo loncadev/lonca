@@ -245,7 +245,7 @@ runs only on `workflow_dispatch`, and a first job checks for the `HB_*` / `TY_*`
 skips the probe (with a notice) when none are configured — which is the current state. Should
 secrets ever be added, it runs `pnpm probe:check --require-credentials`, uploads
 `probe-output/` as an artifact on drift and opens (or comments on) a single issue titled
-**Contract drift detected** labelled `drift`. It only runs in `zanaat/lonca`.
+**Contract drift detected** labelled `drift`. It only runs in `zanaat-dev/lonca`.
 
 Note that Trendyol `stage` is behind an IP allowlist (Cloudflare 403 for unlisted addresses);
 either allowlist the runner egress or point `TY_ENV` at `prod` — all probes are GETs.

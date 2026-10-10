@@ -3,7 +3,7 @@ title: Trendyol guide
 description: End-to-end usage of the @lonca/trendyol SDK — product catalog, orders, finance, claims.
 ---
 
-`@lonca/trendyol` ships full coverage of Trendyol's published API surface. The repo's [`sdks/trendyol/README.md`](https://github.com/zanaat/lonca/blob/main/sdks/trendyol/README.md) keeps the most up-to-date per-resource cheat sheet; this guide hits the highlights and points you at the most useful sections.
+`@lonca/trendyol` ships full coverage of Trendyol's published API surface. The repo's [`sdks/trendyol/README.md`](https://github.com/zanaat-dev/lonca/blob/main/sdks/trendyol/README.md) keeps the most up-to-date per-resource cheat sheet; this guide hits the highlights and points you at the most useful sections.
 
 :::caution[Unofficial]
 `@lonca/trendyol` is an independent, community-maintained SDK. It is not affiliated with, endorsed by, or supported by Trendyol. "Trendyol" and related names are trademarks of their respective owners.
@@ -97,6 +97,6 @@ console.log(res.raw); // whatever the gateway sent — usually undefined for 200
 
 ## See also
 
-- [`sdks/trendyol/README.md`](https://github.com/zanaat/lonca/blob/main/sdks/trendyol/README.md) — full per-resource cheat sheet with method signatures
+- [`sdks/trendyol/README.md`](https://github.com/zanaat-dev/lonca/blob/main/sdks/trendyol/README.md) — full per-resource cheat sheet with method signatures
 - [API Reference](/lonca/api/) — exhaustive type information
-- [`examples/try-trendyol.mts`](https://github.com/zanaat/lonca/blob/main/examples/try-trendyol.mts) — read-only smoke script you can run against your own creds
+- [`examples/try-trendyol.mts`](https://github.com/zanaat-dev/lonca/blob/main/examples/try-trendyol.mts) — read-only smoke script you can run against your own creds

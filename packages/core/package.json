@@ -5,11 +5,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/zanaat/lonca.git",
+    "url": "git+https://github.com/zanaat-dev/lonca.git",
     "directory": "packages/core"
   },
-  "homepage": "https://github.com/zanaat/lonca/tree/main/packages/core#readme",
-  "bugs": "https://github.com/zanaat/lonca/issues",
+  "homepage": "https://github.com/zanaat-dev/lonca/tree/main/packages/core#readme",
+  "bugs": "https://github.com/zanaat-dev/lonca/issues",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
