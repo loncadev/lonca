@@ -1,5 +1,20 @@
 # @lonca/hepsiburada
 
+## 1.1.0
+
+### Minor Changes
+
+- [#163](https://github.com/loncadev/lonca/pull/163) [`2e7491a`](https://github.com/loncadev/lonca/commit/2e7491a49fae1005957f2d91002c1ec50f7c2f5a) Thanks [@keparlak](https://github.com/keparlak)! - `createTrendyolClient` and `createHepsiburadaClient` accept an optional `fetch` implementation (e.g. to add a proxy agent, or to record or mock traffic). It defaults to the global `fetch`, so existing code is unaffected.
+
+- [#168](https://github.com/loncadev/lonca/pull/168) [`20dea75`](https://github.com/loncadev/lonca/commit/20dea75f870f9061fb13194d1f8afbfa512bce97) Thanks [@keparlak](https://github.com/keparlak)! - Typed fields now match what Hepsiburada actually returns (checked against the portal specs and real production responses). Several fields that were typed before could never be filled in. The data was only available on `raw`.
+  
+  - **`accounting.listTransactions()`**: `AccountingTransaction` gains `id`, `transactionType`, `transactionTypeCategory`, `status`, `sku`, `productName`, `quantity`, `merchantId`, `orderItemNumber`, `packageNumber`, `invoiceNumber`, `invoiceExplanation`, `isInvoice`, `isIncome`, `orderDate`, `invoiceDate`, `dueDate`, and the money objects `transactionAmount` (the API's `amount`), `taxAmount` and `netAmount`. Each is a `{ value, currencyCode }` object (new `AccountingAmount` type). The legacy `transactionId`, `type`, `amount` and `currency` fields are now filled from `id`, `transactionType`, `amount.value` and `amount.currencyCode`. They are deprecated, together with `transactionDate`, which Hepsiburada never sends.
+  - **`orders.list*()` / `getByOrderNumber()`**: `Order` gains `id` (line item id), `orderId`, `orderDate`, `lastStatusUpdateDate`, `dueDate`, `packageNumber`, `sku`, `merchantSku`, `barcode`, `name`, `quantity`, `cargoCompany`, `customerId`, `vat`, `vatRate`, and the `{ amount, currency }` prices `unitPrice` and `totalPrice` (new `OrderPrice` type). `externalOrderNumber`, `modifiedDate` and `total` are deprecated because Hepsiburada never sends them. `createdDate` is still filled by `getByOrderNumber()` only.
+  - **`catalog.listProducts()` / `listProductsByStatus()`**: `CatalogProduct` gains the fields each endpoint really returns: `barcode`, `hbSku`, `variantGroupId`, `price`, `tax`, `baseAttributes` / `productAttributes` / `variantTypeAttributes`, `validationResults` and `rejectReasons` from `listProducts()`, and `productStatus`, `taskDetails`, `matchedHbProductInfo`, `rejectReasonsMessages` and `videoStatus` from `listProductsByStatus()`, where `status` is now filled from `productStatus` too. New types: `CatalogProductAttribute`, `CatalogAttributePair`, `CatalogValidationResult`, `CatalogTaskDetail` and `CatalogMatchedHbProduct`. These 15 fields are deprecated because neither endpoint sends them: `id`, `createdAt`, `createdBy`, `modifiedAt`, `modifiedBy`, `preMatchedSku`, `siblingSku`, `listingStatus`, `listingFailureReason`, `validationStatus`, `productType`, `uploadDate`, `productQuality`, `categoryScore` and `fields`.
+  - **`categories.getAttributes()`**: `CategoryAttribute` gains `type` and `multiValue`. `externalName` and `values` are deprecated because they are never sent. Use `categories.getAttributeValues()` to get allowed values.
+  
+  Nothing is removed or narrowed. Deprecated fields stay in place until the next major.
+
 ## 1.0.0
 
 ### Major Changes

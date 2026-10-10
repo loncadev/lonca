@@ -1,5 +1,16 @@
 # @lonca/trendyol
 
+## 1.1.0
+
+### Minor Changes
+
+- [#163](https://github.com/loncadev/lonca/pull/163) [`2e7491a`](https://github.com/loncadev/lonca/commit/2e7491a49fae1005957f2d91002c1ec50f7c2f5a) Thanks [@keparlak](https://github.com/keparlak)! - `createTrendyolClient` and `createHepsiburadaClient` accept an optional `fetch` implementation (e.g. to add a proxy agent, or to record or mock traffic). It defaults to the global `fetch`, so existing code is unaffected.
+
+- [#167](https://github.com/loncadev/lonca/pull/167) [`4fcb527`](https://github.com/loncadev/lonca/commit/4fcb52703df0586462da41ae46c51c66e9a4a3e0) Thanks [@keparlak](https://github.com/keparlak)! - Fix `brands.list` pagination: `paginate((p) => client.brands.list(p))` used to stop after the first page, because the SDK waited for a `totalPages` field that Trendyol never sends. When the response has no page count, a full page now sets `nextCursor` (a short page is the last one); a `totalPages` value is still honoured if present.
+  
+  - `Brand` gains an optional `luxe` flag (Trendyol's luxury-brand marker, present on prod brand rows), on both `brands.list` and `brands.search`.
+  - `City.countryCode` is now filled with the country of the lookup (`'TR'`, `'AZ'`, or the `getCitiesByCountry` argument). Trendyol's city rows have no country field, so it was always `undefined` before.
+
 ## 1.0.1
 
 ### Patch Changes
