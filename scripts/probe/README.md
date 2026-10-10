@@ -44,10 +44,11 @@ credentials / internal error.
 
 ## What is probed
 
-Every probe is an SDK read call (HTTP `GET`) with a small page size (10); a few chain two or
-three reads to get an id to inspect (marked "→"). No probe calls an upload, create, update,
-delete or "test order" method, nor a read that is sent as a `POST` (e.g. Trendyol's buybox
-check).
+Every probe is an SDK read call with a small page size (10); a few chain two or three reads to
+get an id to inspect (marked "→"). No probe calls an upload, create, update, delete or "test
+order" method. All requests are `GET` except one: Trendyol's buybox check
+(`products.getBuyboxInfo`) is a documented read that is sent as a `POST` whose body is only the
+list of barcodes to look up (max 10).
 
 | Hepsiburada                                        | Trendyol                                                    |
 | -------------------------------------------------- | ----------------------------------------------------------- |
@@ -68,6 +69,7 @@ check).
 | `orders.getByOrderNumber` (→ first order)          | `suppliers.getAddresses` (Trendyol allows 1 request / hour) |
 |                                                    | `categories.getAttributeValues` (→ first leaf, attribute)   |
 |                                                    | `orders.listStream(last 7d)`                                |
+|                                                    | `products.getBuyboxInfo` (→ first barcodes; `POST`, read)   |
 
 The probes below the original twelve / nine were added to verify SDK fields that the
 SDK-types-vs-spec check (`pnpm drift:types`) could not confirm from the earlier sample.

@@ -184,6 +184,30 @@
       "kind": "sdk-unknown-field",
       "reason": "Same package node as the orders list, where prod packages carried invoiceLink (string) in the 2026-10-10 05:39 sample; present only on some packages, so a sample can lack it. The SDK copies it to ShipmentPackage.invoiceLink.",
       "since": "2026-10-10"
+    },
+    {
+      "marketplace": "trendyol",
+      "operation": "POST /integration/product/sellers/{sellerId}/products/buybox-information",
+      "path": "buyboxInfo[].secondBuyboxPrice",
+      "kind": "sdk-unknown-field",
+      "reason": "Not in the docs; the prod buybox response (2026-10-10) carries it as a number. The SDK maps it to BuyboxInfo.secondBuyboxPrice.",
+      "since": "2026-10-10"
+    },
+    {
+      "marketplace": "trendyol",
+      "operation": "POST /integration/product/sellers/{sellerId}/products/buybox-information",
+      "path": "buyboxInfo[].thirdBuyboxPrice",
+      "kind": "sdk-unknown-field",
+      "reason": "Not in the docs; the prod buybox response (2026-10-10) carries it as a number. The SDK maps it to BuyboxInfo.thirdBuyboxPrice.",
+      "since": "2026-10-10"
+    },
+    {
+      "marketplace": "trendyol",
+      "operation": "POST /integration/product/sellers/{sellerId}/products/buybox-information",
+      "path": "content",
+      "kind": "sdk-unknown-field",
+      "reason": "Defensive fallback only: the SDK reads buyboxInfo (docs and prod) and falls back to content if a response ever uses that envelope; neither the docs nor prod have it.",
+      "since": "2026-10-10"
     }
   ]
 }
