@@ -1,5 +1,12 @@
 # @lonca/examples
 
+## 0.0.24
+
+### Patch Changes
+
+- Updated dependencies [[`5499c15`](https://github.com/loncadev/lonca/commit/5499c15239e6c899462ed078fa1ee288a3a5a03b)]:
+  - @lonca/hepsiburada@1.2.0
+
 ## 0.0.23
 
 ### Patch Changes

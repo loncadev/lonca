@@ -1,5 +1,13 @@
 # @lonca/hepsiburada
 
+## 1.2.0
+
+### Minor Changes
+
+- [#174](https://github.com/loncadev/lonca/pull/174) [`5499c15`](https://github.com/loncadev/lonca/commit/5499c15239e6c899462ed078fa1ee288a3a5a03b) Thanks [@keparlak](https://github.com/keparlak)! - `questions.list()` / `questions.get()` now expose the fields Hepsiburada actually returns (the documented `IssueViewModel`, verified on SIT): `issueNumber`, `subject`, `lastContent`, `conversations` (the question thread, including answers), `product` (`sku`, `name`, `imageUrl`, `stockCode`), `customerId`, `orderNumber`, `lineItemId`, `createdAt`, `lastModifiedAt`, `expireDate` and `didCustomerSeeTheMessage`. New exported types: `QuestionConversation`, `QuestionProduct`, `QuestionSubject`.
+  
+  Deprecated: `number`, `productSku` and `createdDate` were never sent by Hepsiburada — they are now filled from `issueNumber`, `product.sku` and `createdAt`; use those instead. `text` and `answer` have no single equivalent (read `conversations`) and stay unset unless a response carries them.
+
 ## 1.1.0
 
 ### Minor Changes
