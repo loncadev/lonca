@@ -76,6 +76,20 @@ export const trendyolProbes: ProbeSet<TrendyolClient> = {
       },
     },
     { name: 'products.listUnapproved', call: (c) => c.products.listUnapproved(PAGE) },
+    // The one probe sent as a POST: Trendyol's buybox check is a documented read ("returns the
+    // buybox info of the products"); the body is only the barcode list (max 10).
+    {
+      name: 'products.getBuyboxInfo',
+      call: async (c) => {
+        const page = await c.products.list(PAGE);
+        const barcodes = page.items
+          .flatMap((p) => p.variants.map((v) => v.barcode))
+          .filter((b): b is string => typeof b === 'string' && b.length > 0)
+          .slice(0, 10);
+        if (barcodes.length === 0) throw new Error('products.list returned no barcode to inspect');
+        return c.products.getBuyboxInfo(barcodes);
+      },
+    },
     {
       name: 'categories.getAttributeValues',
       call: async (c) => {

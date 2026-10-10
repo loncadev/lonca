@@ -3649,16 +3649,6 @@
                             "string"
                           ]
                         },
-                        "latitude": {
-                          "types": [
-                            "string"
-                          ]
-                        },
-                        "longitude": {
-                          "types": [
-                            "string"
-                          ]
-                        },
                         "neighborhood": {
                           "types": [
                             "string"
@@ -4665,16 +4655,6 @@
                           ]
                         },
                         "lastName": {
-                          "types": [
-                            "string"
-                          ]
-                        },
-                        "latitude": {
-                          "types": [
-                            "string"
-                          ]
-                        },
-                        "longitude": {
                           "types": [
                             "string"
                           ]
@@ -8705,16 +8685,6 @@
                             "string"
                           ]
                         },
-                        "latitude": {
-                          "types": [
-                            "string"
-                          ]
-                        },
-                        "longitude": {
-                          "types": [
-                            "string"
-                          ]
-                        },
                         "neighborhood": {
                           "types": [
                             "string"
@@ -9725,16 +9695,6 @@
                             "string"
                           ]
                         },
-                        "latitude": {
-                          "types": [
-                            "string"
-                          ]
-                        },
-                        "longitude": {
-                          "types": [
-                            "string"
-                          ]
-                        },
                         "neighborhood": {
                           "types": [
                             "string"
@@ -9844,6 +9804,497 @@
                 "types": [
                   "number"
                 ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "products.getBuyboxInfo": {
+      "status": "ok",
+      "shape": {
+        "types": [
+          "array"
+        ],
+        "items": {
+          "types": [
+            "object"
+          ],
+          "keys": {
+            "barcode": {
+              "types": [
+                "string"
+              ]
+            },
+            "buyboxOrder": {
+              "types": [
+                "number"
+              ]
+            },
+            "buyboxPrice": {
+              "types": [
+                "number"
+              ]
+            },
+            "hasMultipleSeller": {
+              "types": [
+                "boolean"
+              ]
+            },
+            "raw": {
+              "types": [
+                "object"
+              ],
+              "keys": {
+                "barcode": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "buyboxOrder": {
+                  "types": [
+                    "number"
+                  ]
+                },
+                "buyboxPrice": {
+                  "types": [
+                    "number"
+                  ]
+                },
+                "hasMultipleSeller": {
+                  "types": [
+                    "boolean"
+                  ]
+                },
+                "secondBuyboxPrice": {
+                  "types": [
+                    "number"
+                  ]
+                },
+                "thirdBuyboxPrice": {
+                  "types": [
+                    "number"
+                  ]
+                }
+              }
+            },
+            "secondBuyboxPrice": {
+              "types": [
+                "number"
+              ]
+            },
+            "thirdBuyboxPrice": {
+              "types": [
+                "number"
+              ]
+            }
+          }
+        }
+      },
+      "wire": [
+        {
+          "operation": {
+            "key": "GET /integration/product/sellers/{sellerId}/products/approved",
+            "spec": "trendyol/product.json",
+            "operationId": "filterApprovedProducts",
+            "method": "GET",
+            "path": "/integration/product/sellers/{sellerId}/products/approved",
+            "specPath": "/product/sellers/{sellerId}/products/approved",
+            "server": "https://apigw.trendyol.com/integration"
+          },
+          "status": 200,
+          "contentType": "application/json",
+          "body": "json",
+          "shape": {
+            "types": [
+              "object"
+            ],
+            "keys": {
+              "content": {
+                "types": [
+                  "array"
+                ],
+                "items": {
+                  "types": [
+                    "object"
+                  ],
+                  "keys": {
+                    "attributes": {
+                      "types": [
+                        "array"
+                      ],
+                      "items": {
+                        "types": [
+                          "object"
+                        ],
+                        "keys": {
+                          "attributeId": {
+                            "types": [
+                              "number"
+                            ]
+                          },
+                          "attributeName": {
+                            "types": [
+                              "string"
+                            ]
+                          },
+                          "attributeValue": {
+                            "types": [
+                              "string"
+                            ]
+                          },
+                          "attributeValueId": {
+                            "types": [
+                              "number"
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    "brand": {
+                      "types": [
+                        "object"
+                      ],
+                      "keys": {
+                        "id": {
+                          "types": [
+                            "number"
+                          ]
+                        },
+                        "name": {
+                          "types": [
+                            "string"
+                          ]
+                        }
+                      }
+                    },
+                    "category": {
+                      "types": [
+                        "object"
+                      ],
+                      "keys": {
+                        "id": {
+                          "types": [
+                            "number"
+                          ]
+                        },
+                        "name": {
+                          "types": [
+                            "string"
+                          ]
+                        }
+                      }
+                    },
+                    "contentId": {
+                      "types": [
+                        "number"
+                      ]
+                    },
+                    "creationDate": {
+                      "types": [
+                        "number"
+                      ]
+                    },
+                    "description": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "images": {
+                      "types": [
+                        "array"
+                      ],
+                      "items": {
+                        "types": [
+                          "object"
+                        ],
+                        "keys": {
+                          "url": {
+                            "types": [
+                              "string"
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    "lastModifiedBy": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "lastModifiedDate": {
+                      "types": [
+                        "number"
+                      ]
+                    },
+                    "productMainId": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "title": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "variants": {
+                      "types": [
+                        "array"
+                      ],
+                      "items": {
+                        "types": [
+                          "object"
+                        ],
+                        "keys": {
+                          "archived": {
+                            "types": [
+                              "boolean"
+                            ]
+                          },
+                          "attributes": {
+                            "types": [
+                              "array"
+                            ]
+                          },
+                          "barcode": {
+                            "types": [
+                              "string"
+                            ]
+                          },
+                          "blacklisted": {
+                            "types": [
+                              "boolean"
+                            ]
+                          },
+                          "channels": {
+                            "types": [
+                              "array"
+                            ],
+                            "items": {
+                              "types": [
+                                "string"
+                              ]
+                            }
+                          },
+                          "commission": {
+                            "types": [
+                              "number"
+                            ]
+                          },
+                          "deliveryOptions": {
+                            "types": [
+                              "object"
+                            ],
+                            "keys": {
+                              "deliveryDuration": {
+                                "types": [
+                                  "number"
+                                ]
+                              }
+                            }
+                          },
+                          "dimensionalWeight": {
+                            "types": [
+                              "number"
+                            ]
+                          },
+                          "docNeeded": {
+                            "types": [
+                              "boolean"
+                            ]
+                          },
+                          "hasViolation": {
+                            "types": [
+                              "boolean"
+                            ]
+                          },
+                          "locationBasedDelivery": {
+                            "types": [
+                              "string"
+                            ]
+                          },
+                          "locked": {
+                            "types": [
+                              "boolean"
+                            ]
+                          },
+                          "onSale": {
+                            "types": [
+                              "boolean"
+                            ]
+                          },
+                          "origin": {
+                            "types": [
+                              "string"
+                            ]
+                          },
+                          "price": {
+                            "types": [
+                              "object"
+                            ],
+                            "keys": {
+                              "listPrice": {
+                                "types": [
+                                  "number"
+                                ]
+                              },
+                              "priceSeenByCustomer": {
+                                "types": [
+                                  "number"
+                                ]
+                              },
+                              "salePrice": {
+                                "types": [
+                                  "number"
+                                ]
+                              }
+                            }
+                          },
+                          "productUrl": {
+                            "types": [
+                              "string"
+                            ]
+                          },
+                          "sellerCreatedDate": {
+                            "types": [
+                              "number"
+                            ]
+                          },
+                          "sellerModifiedDate": {
+                            "types": [
+                              "number"
+                            ]
+                          },
+                          "stock": {
+                            "types": [
+                              "object"
+                            ],
+                            "keys": {
+                              "lastModifiedDate": {
+                                "types": [
+                                  "number"
+                                ]
+                              },
+                              "quantity": {
+                                "types": [
+                                  "number"
+                                ]
+                              }
+                            }
+                          },
+                          "stockCode": {
+                            "types": [
+                              "string"
+                            ]
+                          },
+                          "supplierId": {
+                            "types": [
+                              "number"
+                            ]
+                          },
+                          "variantId": {
+                            "types": [
+                              "number"
+                            ]
+                          },
+                          "vatRate": {
+                            "types": [
+                              "number"
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "nextPageToken": {
+                "types": [
+                  "string"
+                ]
+              },
+              "page": {
+                "types": [
+                  "number"
+                ]
+              },
+              "size": {
+                "types": [
+                  "number"
+                ]
+              },
+              "totalElements": {
+                "types": [
+                  "number"
+                ]
+              },
+              "totalPages": {
+                "types": [
+                  "number"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "operation": {
+            "key": "POST /integration/product/sellers/{sellerId}/products/buybox-information",
+            "spec": "trendyol/product.json",
+            "operationId": "getBuyboxInformation",
+            "method": "POST",
+            "path": "/integration/product/sellers/{sellerId}/products/buybox-information",
+            "specPath": "/product/sellers/{sellerId}/products/buybox-information",
+            "server": "https://apigw.trendyol.com/integration"
+          },
+          "status": 200,
+          "contentType": "application/json",
+          "body": "json",
+          "shape": {
+            "types": [
+              "object"
+            ],
+            "keys": {
+              "buyboxInfo": {
+                "types": [
+                  "array"
+                ],
+                "items": {
+                  "types": [
+                    "object"
+                  ],
+                  "keys": {
+                    "barcode": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "buyboxOrder": {
+                      "types": [
+                        "number"
+                      ]
+                    },
+                    "buyboxPrice": {
+                      "types": [
+                        "number"
+                      ]
+                    },
+                    "hasMultipleSeller": {
+                      "types": [
+                        "boolean"
+                      ]
+                    },
+                    "secondBuyboxPrice": {
+                      "types": [
+                        "number"
+                      ]
+                    },
+                    "thirdBuyboxPrice": {
+                      "types": [
+                        "number"
+                      ]
+                    }
+                  }
+                }
               }
             }
           }
