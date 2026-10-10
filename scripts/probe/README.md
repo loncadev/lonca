@@ -164,10 +164,9 @@ caused, recorded by a `fetch` wrapper (`createWireRecorder` in
   not read at all (`body: "not-recorded"`) because marketplaces echo request data into them.
 - Retries are collapsed: a `503` followed by a `200` for the same operation records only the
   `200`; several successful calls of one operation merge their shapes.
-- The SDK factories take no `fetch` option, but both transports bind `fetch` when they are
-  constructed, so the runner builds each client while the recorder is temporarily installed as
-  the global `fetch` (`withGlobalFetch`). No SDK code changes; a unit test in
-  `packages/drift/src/wire.test.ts` pins that behaviour for `@lonca/trendyol`.
+- The recorder is passed to each client through the SDKs' `fetch` option
+  (`createTrendyolClient({ …, fetch })` / `createHepsiburadaClient({ …, fetch })`); nothing else
+  about the client changes.
 
 ### Empty samples (`itemsFromBaseline`)
 

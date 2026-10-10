@@ -22,7 +22,8 @@ export interface ProbeSet<TClient> {
   requiredEnv: readonly string[];
   /** Human label of the targeted environment (`sit`, `stage`, `prod`). */
   envLabel: () => string;
-  createClient: () => TClient;
+  /** Build a client whose HTTP traffic goes through `fetch` (the runner's wire recorder). */
+  createClient: (fetch: typeof globalThis.fetch) => TClient;
   probes: readonly Probe<TClient>[];
 }
 

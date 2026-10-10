@@ -44,6 +44,11 @@ export interface CreateClientOptions {
   logger?: Logger;
   /** Request timeout in ms. Default: 30_000. */
   timeoutMs?: number;
+  /**
+   * Custom `fetch` implementation (e.g. to add a proxy agent, record or mock
+   * traffic). Defaults to the global `fetch`.
+   */
+  fetch?: typeof fetch;
 }
 
 export interface TrendyolClient {
@@ -94,6 +99,7 @@ export function createTrendyolClient(opts: CreateClientOptions): TrendyolClient 
     clientIp: opts.clientIp,
     logger: opts.logger,
     timeoutMs: opts.timeoutMs,
+    fetch: opts.fetch,
   });
 
   return buildClient(transport);

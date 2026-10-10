@@ -36,6 +36,11 @@ export interface CreateClientOptions {
   logger?: Logger;
   /** Request timeout in ms. Default: 30_000. */
   timeoutMs?: number;
+  /**
+   * Custom `fetch` implementation (e.g. to add a proxy agent, record or mock
+   * traffic). Defaults to the global `fetch`.
+   */
+  fetch?: typeof fetch;
 }
 
 export interface HepsiburadaClient {
@@ -82,6 +87,7 @@ export function createHepsiburadaClient(opts: CreateClientOptions): HepsiburadaC
     integratorName: opts.integratorName,
     logger: opts.logger,
     timeoutMs: opts.timeoutMs,
+    fetch: opts.fetch,
   });
 
   return buildClient(transport);
