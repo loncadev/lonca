@@ -48,6 +48,33 @@ The `integratorName` you pass is sent as the `User-Agent`, and Hepsiburada is st
 - Use a recognizable bare slug (e.g. your company name). **Do not** include the merchant ID — `0.1.0` / `0.2.0` did this and returned 401 on every call.
   :::
 
+## Client options
+
+Besides the credentials, both factories accept the same optional settings:
+
+| Option      | Default        | What it does                                                                                                                 |
+| ----------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `timeoutMs` | `30_000`       | Per-request timeout in milliseconds.                                                                                         |
+| `logger`    | no-op          | A `Logger` from `@lonca/core` — e.g. `consoleLogger()` — for structured request logs.                                        |
+| `fetch`     | global `fetch` | Custom `fetch` implementation: add a proxy agent, record traffic, or inject a mock in tests. _Since 1.1.0._                  |
+| `clientIp`  | `'127.0.0.1'`  | **Trendyol only.** IPv4 address sent as `x-clientip`; Trendyol requires the header but does not check it against the origin. |
+
+```ts
+import { consoleLogger } from '@lonca/core';
+import { createTrendyolClient } from '@lonca/trendyol';
+
+const client = createTrendyolClient({
+  sellerId: 12345,
+  apiKey: process.env.TY_API_KEY!,
+  apiSecret: process.env.TY_API_SECRET!,
+  env: 'prod',
+  integratorName: 'MyCompany',
+  timeoutMs: 60_000,
+  logger: consoleLogger({ service: 'catalog-sync' }),
+  fetch: (input, init) => fetch(input, init), // e.g. wrap to add tracing
+});
+```
+
 ## Environment variables (recommended)
 
 Both clients accept secret strings directly, but storing them in `.env` is the typical pattern. The repo's [`examples/`](https://github.com/loncadev/lonca/tree/main/examples) folder shows two read-only smoke scripts you can run against your credentials to verify everything works end-to-end.
