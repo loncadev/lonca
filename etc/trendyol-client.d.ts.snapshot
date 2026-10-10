@@ -160,13 +160,13 @@ interface CategoryAttribute {
      */
     allowMultipleAttributeValues?: boolean;
     /**
-     * Allowed values for this attribute.
+     * Allowed values, only if the response inlines them — normally an empty array.
      *
-     * NOTE: Trendyol's live API often omits this field on the `getCategoryAttributes`
-     * response — the endpoint returns attribute metadata + flags, not the full value
-     * catalog. In that case `values` is an empty array. If `allowCustom` is `true`,
-     * any custom text is accepted; otherwise use `client.categories.getAttributeValues(categoryId, attributeId)`
-     * to fetch the catalog from the dedicated V2 endpoint.
+     * @deprecated Trendyol's `getCategoryAttributes` response carries no value list — neither the
+     * docs nor the prod wire (2026-10-10) have `attributeValues` — so this is normally `[]` (an
+     * inline list from an older response format is still mapped). Fetch the catalog with
+     * `client.categories.getAttributeValues(categoryId, attributeId)` (with `paginate()`); when
+     * `allowCustom` is `true`, any custom text is accepted as well.
      */
     values: CategoryAttributeValue[];
 }
@@ -206,8 +206,8 @@ declare class CategoriesResource {
     /**
      * Fetch the allowed values for a single category attribute (paginated).
      *
-     * `getCategoryAttributes` returns attribute metadata + flags but typically
-     * omits the value catalog. Use this method to fetch the catalog for an
+     * `getCategoryAttributes` returns attribute metadata + flags only, never the
+     * value catalog (docs and prod wire agree). Use this method to fetch the catalog for an
      * attribute when `allowCustom` is `false` and you need to map your data
      * onto Trendyol's accepted values.
      *
@@ -823,16 +823,34 @@ interface City {
 interface District {
     /** Trendyol's internal district id — pass to `getTurkeyNeighborhoods(cityId, district.id)`. */
     id?: string;
+    /** Trendyol's district code (the prod wire's `code`; falls back to the id when a row has none). */
     code: string;
     name?: string;
+    /**
+     * @deprecated Trendyol's district rows carry no city reference — neither the docs nor the prod
+     * wire (2026-10-10) have one — so this is always `undefined`. Keep the city you passed to
+     * `getTurkeyDistricts` / `getAzerbaijanDistricts` / `getDistrictsByCity` instead.
+     */
     cityCode?: string;
     raw: Record<string, unknown>;
 }
 interface Neighborhood {
     /** Trendyol's internal neighborhood id. */
     id?: string;
+    /**
+     * @deprecated Trendyol's neighborhood rows have no code (prod wire 2026-10-10: `id`, `name`,
+     * `postCode`; the docs list `id` and `name`), so this is always the same value as `id` (`''`
+     * when the row has no id). Use `id`.
+     */
     code: string;
     name?: string;
+    /** The neighborhood's postal code (prod wire `postCode`; not in Trendyol's docs). */
+    postCode?: string;
+    /**
+     * @deprecated Trendyol's neighborhood rows carry no district reference — neither the docs nor
+     * the prod wire (2026-10-10) have one — so this is always `undefined`. Keep the district you
+     * passed to `getTurkeyNeighborhoods` instead.
+     */
     districtCode?: string;
     raw: Record<string, unknown>;
 }
@@ -2413,25 +2431,43 @@ type SupplierAddressType = 'SHIPMENT' | 'RETURNING' | 'INVOICE' | 'WAREHOUSE';
  *
  * Used by `createProduct V2` for `shipmentAddressId` / `returningAddressId`.
  *
- * NOTE: The exact field set is best-effort; some optional fields may differ
- * once verified against real STAGE responses. Bumped fields land in a follow-up
- * minor release if needed.
+ * Field set checked against the docs and the prod wire (2026-10-10).
  */
 interface SupplierAddress {
     id: string;
-    /** Free-form label set by the seller. */
+    /**
+     * @deprecated Trendyol's address rows carry no name or label — neither the docs nor the prod
+     * wire (2026-10-10) have one — so this is always `undefined`. Identify an address by `id`,
+     * `addressType` and the role flags; use `fullAddress` / `address` for its text.
+     */
     name?: string;
-    /** Primary role declared by Trendyol. */
+    /**
+     * Primary role declared by Trendyol. The docs spell it `Shipment` / `Invoice` / `Returning`;
+     * the SDK upper-cases it.
+     */
     addressType: SupplierAddressType;
     isShipmentAddress: boolean;
     isReturningAddress: boolean;
     isInvoiceAddress: boolean;
     isDefault: boolean;
-    /** Multi-line address string as registered in the Partner Panel. */
+    /** Street address as registered in the Partner Panel. */
     address?: string;
+    /** The complete address text (Trendyol's `fullAddress`). */
+    fullAddress?: string;
+    /** Country name as Trendyol sends it. */
+    country?: string;
     city?: string;
+    /** Trendyol's city code (stringified from the wire number). */
+    cityCode?: string;
     district?: string;
+    /** Trendyol's district id (stringified from the wire number). */
+    districtId?: string;
     postCode?: string;
+    /**
+     * @deprecated Trendyol's address rows carry no `fullName` — neither the docs nor the prod wire
+     * (2026-10-10) have one — so this is always `undefined`. Use `fullAddress` for the complete
+     * address text.
+     */
     fullName?: string;
 }
 

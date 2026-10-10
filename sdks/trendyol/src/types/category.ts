@@ -56,13 +56,13 @@ export interface CategoryAttribute {
    */
   allowMultipleAttributeValues?: boolean;
   /**
-   * Allowed values for this attribute.
+   * Allowed values, only if the response inlines them — normally an empty array.
    *
-   * NOTE: Trendyol's live API often omits this field on the `getCategoryAttributes`
-   * response — the endpoint returns attribute metadata + flags, not the full value
-   * catalog. In that case `values` is an empty array. If `allowCustom` is `true`,
-   * any custom text is accepted; otherwise use `client.categories.getAttributeValues(categoryId, attributeId)`
-   * to fetch the catalog from the dedicated V2 endpoint.
+   * @deprecated Trendyol's `getCategoryAttributes` response carries no value list — neither the
+   * docs nor the prod wire (2026-10-10) have `attributeValues` — so this is normally `[]` (an
+   * inline list from an older response format is still mapped). Fetch the catalog with
+   * `client.categories.getAttributeValues(categoryId, attributeId)` (with `paginate()`); when
+   * `allowCustom` is `true`, any custom text is accepted as well.
    */
   values: CategoryAttributeValue[];
 }

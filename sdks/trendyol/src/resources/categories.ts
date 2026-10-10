@@ -27,11 +27,6 @@ interface TrendyolCategoryNode {
  */
 type TrendyolCategoriesResponse = TrendyolCategoryNode[] | { categories: TrendyolCategoryNode[] };
 
-interface TrendyolCategoryAttributeValue {
-  id: number;
-  name: string;
-}
-
 /**
  * Wire shape of one item in the V2 `getCategoryAttributeValues` page.
  *
@@ -53,6 +48,10 @@ interface TrendyolAttributeValuesPage {
   totalElements?: number;
 }
 
+/**
+ * One `categoryAttributes[]` row. Docs and prod wire (2026-10-10) agree: attribute metadata and
+ * flags only; the value catalog comes from the dedicated values endpoint (`getAttributeValues`).
+ */
 interface TrendyolCategoryAttributeNode {
   attribute?: { id: number; name: string };
   categoryId?: number;
@@ -62,8 +61,11 @@ interface TrendyolCategoryAttributeNode {
   slicer?: boolean;
   /** V2-only: whether the attribute accepts multiple values at once. */
   allowMultipleAttributeValues?: boolean;
-  /** Often omitted by Trendyol's live API; treat as optional. */
-  attributeValues?: TrendyolCategoryAttributeValue[];
+  /**
+   * Inline value list from older responses — in neither the docs nor the prod wire
+   * (2026-10-10). Still mapped into the deprecated `values` if it arrives.
+   */
+  attributeValues?: Array<{ id: number; name: string }>;
 }
 
 function normalizeCategory(node: TrendyolCategoryNode): Category {
@@ -77,7 +79,6 @@ function normalizeCategory(node: TrendyolCategoryNode): Category {
 
 function normalizeAttribute(node: TrendyolCategoryAttributeNode): CategoryAttribute {
   const attr = node.attribute ?? { id: 0, name: '' };
-  const rawValues = node.attributeValues ?? [];
   const out: CategoryAttribute = {
     id: String(attr.id),
     name: attr.name,
@@ -85,7 +86,8 @@ function normalizeAttribute(node: TrendyolCategoryAttributeNode): CategoryAttrib
     allowCustom: !!node.allowCustom,
     varianter: !!node.varianter,
     slicer: !!node.slicer,
-    values: rawValues.map((v) => ({ id: String(v.id), name: v.name })),
+    // Deprecated: normally empty — see `attributeValues` on the node above.
+    values: (node.attributeValues ?? []).map((v) => ({ id: String(v.id), name: v.name })),
   };
   if (node.categoryId !== undefined) {
     out.categoryId = String(node.categoryId);
@@ -176,8 +178,8 @@ export class CategoriesResource {
   /**
    * Fetch the allowed values for a single category attribute (paginated).
    *
-   * `getCategoryAttributes` returns attribute metadata + flags but typically
-   * omits the value catalog. Use this method to fetch the catalog for an
+   * `getCategoryAttributes` returns attribute metadata + flags only, never the
+   * value catalog (docs and prod wire agree). Use this method to fetch the catalog for an
    * attribute when `allowCustom` is `false` and you need to map your data
    * onto Trendyol's accepted values.
    *

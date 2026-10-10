@@ -393,6 +393,35 @@ describe('LocationsResource', () => {
     expect(tr!.raw).toEqual(row);
   });
 
+  it('maps a prod-shaped district row ({ code, id, name } — no city reference)', async () => {
+    const row = { code: '1757', id: 1757, name: 'Kadıköy' };
+    const [district] = await r(mockTransport([row])).getTurkeyDistricts(100);
+    expect(district).toStrictEqual({ id: '1757', code: '1757', name: 'Kadıköy', raw: row });
+    expect(district!.cityCode).toBeUndefined();
+  });
+
+  it('maps a prod-shaped neighborhood row ({ id, name, postCode } — no code)', async () => {
+    const row = { id: 40123, name: 'Caferağa Mah.', postCode: '34710' };
+    const [nb] = await r(mockTransport([row])).getTurkeyNeighborhoods(100, 1757);
+    expect(nb).toStrictEqual({
+      id: '40123',
+      code: '40123', // deprecated: mirrors the id
+      name: 'Caferağa Mah.',
+      postCode: '34710',
+      raw: row,
+    });
+    expect(nb!.districtCode).toBeUndefined();
+  });
+
+  it('leaves Neighborhood.postCode undefined when the row has none or a non-string', async () => {
+    const [a, b, c] = await r(
+      mockTransport([{ id: 1, name: 'A' }, { id: 2, name: 'B', postCode: 34710 }, { name: 'C' }]),
+    ).getTurkeyNeighborhoods(100, 1757);
+    expect(a!.postCode).toBeUndefined();
+    expect(b!.postCode).toBeUndefined();
+    expect(c).toMatchObject({ id: undefined, code: '' });
+  });
+
   it('getTurkeyDistricts and getTurkeyNeighborhoods nest correctly', async () => {
     const transport = mockTransport([]);
     await r(transport).getTurkeyDistricts(34);

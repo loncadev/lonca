@@ -41,7 +41,7 @@ Each entry is a method on the client.
 | `finance`        | `getSettlements({...})`, `getOtherFinancials({...})` — both return typed `FinancialTransaction[]`                                                                                                                                                                                                                                  |
 | `labels`         | `createCommon(trackingNumber, {format: 'ZPL', ...})`, `getCommon(trackingNumber)`                                                                                                                                                                                                                                                  |
 | `testOrders`     | `create({...})`, `updateStatus(id, status, { lines?, params? })`, `setClaimsWaitingInAction()` — **STAGE-only utility**                                                                                                                                                                                                            |
-| `locations`      | `getCountries()`, `getTurkeyCities()`, `getTurkeyDistricts(cityCode)`, `getTurkeyNeighborhoods(cityCode, districtCode)`, `getAzerbaijanCities()`, `getAzerbaijanDistricts(...)`, `getCitiesByCountry/getDistrictsByCity(...)`                                                                                                      |
+| `locations`      | `getCountries()`, `getTurkeyCities()`, `getTurkeyDistricts(cityId)`, `getTurkeyNeighborhoods(cityId, districtId)`, `getAzerbaijanCities()`, `getAzerbaijanDistricts(...)`, `getCitiesByCountry/getDistrictsByCity(...)`                                                                                                            |
 | `exportCenter`   | `listProducts({...})`, `createProducts(items)`, `updatePrices(items)`, `updateStocks(items)`, `getBatchStatus(batchId)`, `listPackagesV2/V3({...})`, `getPackageItems({packageId, ...})`, `getCategoryAttributes(id)`, `getCareInstructions()`, `getCompositions()`, `getOrigins()` — **Trendyol Export Center / İhracat Merkezi** |
 | `videos`         | `create({contentId, url, ...})`, `list({id?, sellerIntegrationStatus?, ...})` — product-page video upload + status                                                                                                                                                                                                                 |
 | **top-level**    | `parseWebhookEvent(rawBody)`, `normalizeShipmentPackage(rawNode)` — for inbound webhook handlers                                                                                                                                                                                                                                   |
@@ -377,8 +377,8 @@ const { videoId } = await client.videos.create({ title, videoUrl, productContent
 // locations (no sellerId — utility lookup)
 const countries = await client.locations.getCountries();
 const cities = await client.locations.getTurkeyCities();
-const districts = await client.locations.getTurkeyDistricts(cityCode);
-const neighborhoods = await client.locations.getTurkeyNeighborhoods(cityCode, districtCode);
+const districts = await client.locations.getTurkeyDistricts(city.id); // pass ids, not codes
+const neighborhoods = await client.locations.getTurkeyNeighborhoods(city.id, district.id); // Neighborhood: id, name, postCode
 ```
 
 ## Mutation results

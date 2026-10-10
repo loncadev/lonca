@@ -9,23 +9,35 @@ function mockTransport(response: unknown) {
   } as unknown as TrendyolTransport;
 }
 
+/**
+ * Shaped like the prod wire (probe baseline 2026-10-10): every `supplierAddresses[]` key the
+ * baseline has, nothing else (no `name` / `fullName`). Values are invented.
+ */
+const wireAddress = {
+  id: 100,
+  addressType: 'Shipment',
+  country: 'Türkiye',
+  city: 'İstanbul',
+  cityCode: 34,
+  district: 'Kadıköy',
+  districtId: 1234,
+  postCode: '34710',
+  address: 'Örnek Sok. No:1',
+  fullAddress: 'Örnek Sok. No:1 Kadıköy/İstanbul',
+  buildingNumber: null,
+  shortAddress: null,
+  stateCountyProvince: null,
+  isShipmentAddress: true,
+  isReturningAddress: true,
+  isInvoiceAddress: false,
+  isDefault: true,
+};
+
 const sampleResponse = {
-  supplierAddresses: [
-    {
-      id: 100,
-      name: 'Main Warehouse',
-      addressType: 'SHIPMENT',
-      isShipmentAddress: true,
-      isReturningAddress: true,
-      isInvoiceAddress: false,
-      isDefault: true,
-      address: 'Some street 1',
-      city: 'Istanbul',
-      district: 'Kadıköy',
-      postCode: '34000',
-      fullName: 'Acme Co.',
-    },
-  ],
+  supplierAddresses: [wireAddress],
+  defaultShipmentAddress: wireAddress,
+  defaultInvoiceAddress: { ...wireAddress, id: 101, addressType: 'Invoice' },
+  defaultReturningAddress: { present: false },
 };
 
 describe('SuppliersResource', () => {
@@ -51,27 +63,65 @@ describe('SuppliersResource', () => {
     );
   });
 
-  it('normalizes IDs to strings and flags to booleans', async () => {
+  it('maps the prod wire fields, with IDs and codes as strings', async () => {
     const transport = mockTransport(sampleResponse);
     const resource = new SuppliersResource(transport);
 
     const addresses = await resource.getAddresses();
 
-    expect(addresses).toEqual([
+    expect(addresses).toStrictEqual([
       {
         id: '100',
-        name: 'Main Warehouse',
         addressType: 'SHIPMENT',
         isShipmentAddress: true,
         isReturningAddress: true,
         isInvoiceAddress: false,
         isDefault: true,
-        address: 'Some street 1',
-        city: 'Istanbul',
+        address: 'Örnek Sok. No:1',
+        fullAddress: 'Örnek Sok. No:1 Kadıköy/İstanbul',
+        country: 'Türkiye',
+        city: 'İstanbul',
+        cityCode: '34',
         district: 'Kadıköy',
-        postCode: '34000',
-        fullName: 'Acme Co.',
+        districtId: '1234',
+        postCode: '34710',
       },
+    ]);
+  });
+
+  it('leaves the deprecated name / fullName unset (Trendyol sends neither)', async () => {
+    const transport = mockTransport(sampleResponse);
+    const [address] = await new SuppliersResource(transport).getAddresses();
+
+    expect(address).not.toHaveProperty('name');
+    expect(address).not.toHaveProperty('fullName');
+  });
+
+  it('leaves cityCode / districtId undefined when the row omits them', async () => {
+    const transport = mockTransport({ supplierAddresses: [{ id: 1, addressType: 'Shipment' }] });
+    const [address] = await new SuppliersResource(transport).getAddresses();
+
+    expect(address!.cityCode).toBeUndefined();
+    expect(address!.districtId).toBeUndefined();
+    expect(address!.fullAddress).toBeUndefined();
+  });
+
+  it('upper-cases the documented Shipment / Invoice / Returning address types', async () => {
+    const transport = mockTransport({
+      supplierAddresses: [
+        { id: 1, addressType: 'Shipment' },
+        { id: 2, addressType: 'Invoice' },
+        { id: 3, addressType: 'Returning' },
+        { id: 4, addressType: 'INVOICE' },
+      ],
+    });
+    const addresses = await new SuppliersResource(transport).getAddresses();
+
+    expect(addresses.map((a) => a.addressType)).toEqual([
+      'SHIPMENT',
+      'INVOICE',
+      'RETURNING',
+      'INVOICE',
     ]);
   });
 
