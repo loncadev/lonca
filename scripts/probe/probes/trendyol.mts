@@ -4,6 +4,7 @@
  */
 import {
   createTrendyolClient,
+  type Category,
   type TrendyolClient,
   type TrendyolEnvironment,
 } from '@lonca/trendyol';
@@ -46,5 +47,50 @@ export const trendyolProbes: ProbeSet<TrendyolClient> = {
       },
     },
     { name: 'webhooks.list', call: (c) => c.webhooks.list() },
+    // Verification targets for SDK fields the type-vs-spec check could not
+    // confirm from the probes above (roadmap Faz 1b). All GET.
+    {
+      name: 'locations.getTurkeyDistricts',
+      call: async (c) => {
+        const [city] = await c.locations.getTurkeyCities();
+        if (!city?.id) throw new Error('getTurkeyCities returned no city to inspect');
+        return c.locations.getTurkeyDistricts(city.id);
+      },
+    },
+    {
+      name: 'locations.getTurkeyNeighborhoods',
+      call: async (c) => {
+        const [city] = await c.locations.getTurkeyCities();
+        if (!city?.id) throw new Error('getTurkeyCities returned no city to inspect');
+        const [district] = await c.locations.getTurkeyDistricts(city.id);
+        if (!district?.id) throw new Error('getTurkeyDistricts returned no district to inspect');
+        return c.locations.getTurkeyNeighborhoods(city.id, district.id);
+      },
+    },
+    {
+      name: 'categories.getAttributes',
+      call: async (c) => {
+        const leaf = firstLeaf(await c.categories.list());
+        if (!leaf) throw new Error('categories.list returned no leaf category to inspect');
+        return c.categories.getAttributes(leaf.id);
+      },
+    },
+    { name: 'products.listUnapproved', call: (c) => c.products.listUnapproved(PAGE) },
+    {
+      name: 'orders.list(Delivered)',
+      call: (c) => c.orders.list({ ...PAGE, status: 'Delivered' }),
+    },
+    // Trendyol caps this endpoint at one request per hour per seller.
+    { name: 'suppliers.getAddresses', call: (c) => c.suppliers.getAddresses() },
   ],
 };
+
+/** Depth-first first category without children. */
+function firstLeaf(categories: readonly Category[]): Category | undefined {
+  for (const category of categories) {
+    if (category.subCategories.length === 0) return category;
+    const leaf = firstLeaf(category.subCategories);
+    if (leaf) return leaf;
+  }
+  return undefined;
+}

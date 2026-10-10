@@ -69,5 +69,21 @@ export const hepsiburadaProbes: ProbeSet<HepsiburadaClient> = {
       call: (c) => c.accounting.listTransactions({ ...PAGE, ...accountingWindow() }),
     },
     { name: 'promotions.listCategories', call: (c) => c.promotions.listCategories() },
+    // Verification targets for SDK fields the type-vs-spec check could not
+    // confirm from the probes above (roadmap Faz 1b). All GET.
+    {
+      name: 'promotions.listDiscounts',
+      call: (c) => c.promotions.listDiscounts({ page: 1, pageSize: 10 }),
+    },
+    { name: 'orders.listPackages', call: (c) => c.orders.listPackages(PAGE) },
+    {
+      name: 'orders.getByOrderNumber',
+      call: async (c) => {
+        const page = await c.orders.list(PAGE);
+        const orderNumber = page.items.find((o) => o.orderNumber)?.orderNumber;
+        if (!orderNumber) throw new Error('orders.list returned no order to inspect');
+        return c.orders.getByOrderNumber(orderNumber);
+      },
+    },
   ],
 };
